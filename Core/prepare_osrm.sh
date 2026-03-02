@@ -7,7 +7,7 @@ CAR_FILE="../"$OSRM_BACKEND"/profiles/car.lua"
 
 # Package mappings for different systems
 declare -A PACKAGE_MAPS
-PACKAGE_MAPS[arch]="base-devel git cmake pkgconf bzip2 libxml2 libzip boost lua52 onetbb git-lfs"
+PACKAGE_MAPS[arch]="base-devel git cmake pkgconf bzip2 libxml2 libzip boost onetbb git-lfs"
 PACKAGE_MAPS[debian]="build-essential git cmake pkg-config libbz2-dev libxml2-dev libzip-dev libboost-all-dev liblua5.2-dev libtbb-dev git-lfs"
 PACKAGE_MAPS[macos]="cmake boost libxml2 libzip lua tbb git-lfs"
 PACKAGE_MAPS[ubuntu]="build-essential git cmake pkg-config libbz2-dev libxml2-dev libzip-dev libboost-all-dev liblua5.2-dev libtbb-dev git-lfs"
@@ -31,7 +31,7 @@ detect_os() {
             echo "ubuntu"
         else
             echo "unknown"
-        fi    
+        fi
     else
         echo "unknown"
     fi
@@ -40,7 +40,7 @@ detect_os() {
 check_package() {
     local package="$1"
     local os="$2"
-    
+
     if [[ -n "${CHECK_COMMANDS[$os]}" ]]; then
         ${CHECK_COMMANDS[$os]} "$package" &> /dev/null
     else
@@ -50,27 +50,27 @@ check_package() {
 
 check_dependencies() {
     echo "Checking dependencies..."
-    
+
     local os=$(detect_os)
     echo "Detected OS: $os"
-    
+
     if [[ "$os" == "unknown" ]]; then
         echo "Unsupported OS"
         exit 1
     fi
-    
+
     local packages=(${PACKAGE_MAPS[$os]})
     local missing=()
-    
+
     for package in "${packages[@]}"; do
         check_package "$package" "$os" || missing+=("$package")
     done
-    
+
     if [ ${#missing[@]} -ne 0 ]; then
         echo "Missing packages: ${missing[*]}"
         exit 1
     fi
-    
+
     echo "All dependencies satisfied."
 }
 

@@ -1,36 +1,49 @@
-﻿using System;
-using System.Security.Cryptography;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 
 namespace MyBenchmarks
 {
-    public class Md5VsSha256
+    public class OSRMRouterBenchmark
     {
-        private const int N = 10000;
-        private readonly byte[] data;
+        private OSRMRouter router;
 
-        private readonly SHA256 sha256 = SHA256.Create();
-        private readonly MD5 md5 = MD5.Create();
+        private const int TotalQueries = 1_000;
 
-        public Md5VsSha256()
+        [Params(1, 2, 4, 8, 16)] // different thread counts
+        public int Parallelism { get; set; }
+
+        [GlobalSetup]
+        public void Setup()
         {
-            data = new byte[N];
-            new Random(42).NextBytes(data);
+            var path = "/home/mertz/Coding/SmartEV/Core/data/output.osrm";
+            router = new OSRMRouter(path);
         }
 
         [Benchmark]
-        public byte[] Sha256() => sha256.ComputeHash(data);
+        public void QueryParallel()
+        {
+            var options = new ParallelOptions { MaxDegreeOfParallelism = Parallelism };
 
-        [Benchmark]
-        public byte[] Md5() => md5.ComputeHash(data);
+            try
+            {
+                Parallel.For(0, TotalQueries, options, i =>
+                {
+                    router.QuerySingleDestination(9.9410, 57.2706, 9.9217, 57.0488);
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception in benchmark: {ex}");
+                throw;
+            }
+        }
     }
 
     public class Program
     {
         public static void Main(string[] args)
         {
-            var summary = BenchmarkRunner.Run<Md5VsSha256>();
+            BenchmarkRunner.Run<OSRMRouterBenchmark>();
         }
     }
 }
