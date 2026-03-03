@@ -17,7 +17,8 @@ public class OsrmRouterBenchmark
     [GlobalSetup]
     public void Setup()
     {
-        var path = "/home/mertz/Coding/SmartEV/Core/data/output.osrm";
+        var path = AppContext.GetData("OsrmDataPath") as string
+            ?? throw new InvalidOperationException("OsrmDataPath not set in project.");
         _router = new OSRMRouter(path);
 
         var stations = new List<Station>(50);
