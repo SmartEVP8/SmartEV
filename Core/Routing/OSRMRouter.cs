@@ -86,19 +86,19 @@ public unsafe partial class OSRMRouter : IDisposable
 
     public (float duration, string polyline) QuerySingleDestination(double evLon, double evLat, double destLon, double destLat)
     {
-        var ptr = ComputeSrcToDest(_osrm, evLon, evLat, destLon, destLat);
+        var resultPtr = ComputeSrcToDest(_osrm, evLon, evLat, destLon, destLat);
 
-        if (ptr == IntPtr.Zero)
+        if (resultPtr == IntPtr.Zero)
         {
             Console.WriteLine("DEBUG: Route returned null");
             return (-1, string.Empty);
         }
 
-        var result = Marshal.PtrToStructure<RouteResult>(ptr);
+        var result = Marshal.PtrToStructure<RouteResult>(resultPtr);
         var polylineStr = Marshal.PtrToStringAnsi(result.Polyline);
 
         FreeMemory(result.Polyline);
-        FreeMemory(ptr);
+        FreeMemory(resultPtr);
 
         return (duration: result.Duration, polyline: polylineStr);
     }
