@@ -1,6 +1,7 @@
 <Project>
   <PropertyGroup>
-    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  <OsrmDataPath>$(MSBuildThisFileDirectory)\data\output.osrm</OsrmDataPath>
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="BenchmarkDotNet" Version="0.15.8" />
@@ -12,5 +13,7 @@
     </PackageVersion>
     <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.4" />
+
+    <RuntimeHostConfigurationOption Include="OsrmDataPath" Value="$(OsrmDataPath)" Trim="true" />
   </ItemGroup>
 </Project>

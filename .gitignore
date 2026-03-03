@@ -26,3 +26,6 @@ packages/
 *.log
 *.tmp
 *.temp
+data/
+
+BenchmarkDotNet.Artifacts/
