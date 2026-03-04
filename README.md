@@ -4,15 +4,15 @@
     - ``git lfs install``
 2. In SmartEV/Core
     - Run ``git lfs pull``
-    - Run ``./prepare_osrm.so``
+    - Run ``./prepare_osrm.sh``
 3. In the OSRM_Wrapper repo
     - Run ``cmake -S . -B build && cmake --build build -j4``
-    - Copy OSRM_Wrapper/build/libosrm_wrapper.so to SmartEV/Simulation/bin/Release
+    - Copy OSRM_Wrapper/build/libosrm_wrapper.so to SmartEV/native
 
 ## If changes are made in C++ project 
 1. In the OSRM_Wrapper repo
     - Run ``cmake -S . -B build && cmake --build build -j4``
-    - Copy OSRM_Wrapper/build/libosrm_wrapper.so to SmartEV/Simulation/bin/Release
+    - Copy OSRM_Wrapper/build/libosrm_wrapper.so to SmartEV/native
 
 ## Running the simulation
 1. In SmartEV/Simulation
