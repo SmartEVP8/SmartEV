@@ -11,7 +11,7 @@ public class CalculateJourney
     /// <returns>A list of cities with their spawn chances for the given grid.</returns>
     /// <example>
     /// var calculateJourney = new CalculateJourney();
-    /// var result = calculateJourney.Calculate(new Position(55.6761, 12.5683), 1f);
+    /// var result = calculateJourney.CalculateSpawn(new Position(55.6761, 12.5683), 1f);
     /// result.cities are then:
     /// ...
     /// Frederikshavn 0.03%
@@ -23,7 +23,7 @@ public class CalculateJourney
     /// <!---->
     /// Other example:
     /// var calculateJourney = new CalculateJourney();
-    /// var result = calculateJourney.Calculate(new Position(55.6761, 12.5683), 0.5f);
+    /// var result = calculateJourney.CalculateSpawn(new Position(55.6761, 12.5683), 0.5f);
     /// result.cities are then:
     /// Frederikshavn: 0.007489727%
     /// Viborg: 0.089010724%
@@ -31,7 +31,7 @@ public class CalculateJourney
     /// København: 34.165975%
     /// Havdrup: 0.13564115%.
     /// </example>
-    public List<City> Calculate(Position position, float scaler)
+    public List<City> CalculateSpawn(Position position, float scaler)
     {
         var cities = new List<City>();
 
