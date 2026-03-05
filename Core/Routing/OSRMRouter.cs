@@ -1,3 +1,5 @@
+namespace Core.Routing;
+
 using System.Runtime.InteropServices;
 using Core.Charging;
 
