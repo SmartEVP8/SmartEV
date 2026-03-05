@@ -27,5 +27,7 @@ packages/
 *.tmp
 *.temp
 data/
+Core/native/
 
 BenchmarkDotNet.Artifacts/
+

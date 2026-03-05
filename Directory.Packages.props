@@ -1,19 +1,20 @@
 <Project>
   <PropertyGroup>
-  <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-  <OsrmDataPath>$(MSBuildThisFileDirectory)\data\output.osrm</OsrmDataPath>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <OsrmDataPath>$(MSBuildThisFileDirectory)\data\output.osrm</OsrmDataPath>
   </PropertyGroup>
   <ItemGroup>
-    <PackageVersion Include="BenchmarkDotNet" Version="0.15.8" />
-    <PackageVersion Include="coverlet.collector" Version="6.0.4" />
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageVersion Include="BenchmarkDotNet" Version="0.15.8"/>
+    <PackageVersion Include="coverlet.collector" Version="6.0.4"/>
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1"/>
     <PackageVersion Include="StyleCop.Analyzers" Version="1.1.118">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageVersion>
-    <PackageVersion Include="xunit" Version="2.9.3" />
-    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.4" />
-
-    <RuntimeHostConfigurationOption Include="OsrmDataPath" Value="$(OsrmDataPath)" Trim="true" />
+    <PackageVersion Include="xunit" Version="2.9.3"/>
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.4"/>
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.3"/>
+    <PackageVersion Include="OpenApiUi" Version="1.1.0"/>
+    <RuntimeHostConfigurationOption Include="OsrmDataPath" Value="$(OsrmDataPath)" Trim="true"/>
   </ItemGroup>
 </Project>

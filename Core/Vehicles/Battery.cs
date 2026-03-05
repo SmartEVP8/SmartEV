@@ -2,10 +2,10 @@ namespace Core.Vehicles;
 
 using Core.Shared;
 
-public class Battery(float capacity, float maxChargeRate, float currentCharge, Socket socket)
+public class Battery(ushort capacity, ushort maxChargeRate, float currentCharge, Socket socket)
 {
-    public readonly float Capacity = capacity;
-    public readonly float MaxChargeRate = maxChargeRate;
-    public float CurrentCharge { get; } = currentCharge;
-    public readonly Socket Socket = socket;
+    public readonly ushort Capacity = capacity; // 2 bytes
+    public readonly ushort MaxChargeRate = maxChargeRate; // 2 bytes
+    public float CurrentCharge { get; } = currentCharge; // 4 bytes
+    public readonly Socket Socket = socket; // 1 byte
 }
