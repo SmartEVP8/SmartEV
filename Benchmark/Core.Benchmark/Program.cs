@@ -92,9 +92,6 @@ public class OsrmRouterBenchmark
     }
 }
 
-/// <summary>
-/// Entry point for the benchmark application.
-/// </summary>
 public static class Program
 {
     /// <summary>
