@@ -29,7 +29,8 @@ public unsafe partial class OSRMRouter : IDisposable
         double evLat,
         [In] int[] indices,
         int numIndices,
-        float* outBuffer);
+        float* outDurations,
+        float* outDistances);
 
     [LibraryImport(_lib)]
     private static partial IntPtr ComputeSrcToDest(
@@ -38,6 +39,16 @@ public unsafe partial class OSRMRouter : IDisposable
         double evLat,
         double destLon,
         double destLat);
+
+    [LibraryImport(_lib)]
+    private static partial void PointsToPoints(
+        IntPtr osrm,
+        [In] double[] srcCoords,
+        int numSrcs,
+        [In] double[] dstCoords,
+        int numDsts,
+        float* outDurations,
+        float* outDistances);
 
     [StructLayout(LayoutKind.Sequential)]
     private struct RouteResult
@@ -56,43 +67,36 @@ public unsafe partial class OSRMRouter : IDisposable
     public void InitStations(List<Station> stations)
     {
         var coords = new double[stations.Count * 2];
-
         for (var i = 0; i < stations.Count; i++)
         {
-            coords[i * 2] = stations[i].Position.Latitude;
-            coords[(i * 2) + 1] = stations[i].Position.Longitude;
+            coords[i * 2] = stations[i].Position.Longitude;
+            coords[(i * 2) + 1] = stations[i].Position.Latitude;
         }
-
         RegisterStations(_osrm, coords, stations.Count);
     }
 
-    public float[] QueryStations(double evLon, double evLat, int[] indices)
+    public (float[] durations, float[] distances) QueryStations(double evLon, double evLat, int[] indices)
     {
         if (indices.Length == 0)
-            return [];
+            return ([], []);
 
-        var result = new float[indices.Length];
+        var durations = new float[indices.Length];
+        var distances = new float[indices.Length];
 
-        unsafe
+        fixed (float* durPtr = durations)
+        fixed (float* distPtr = distances)
         {
-            fixed (float* ptr = result)
-            {
-                ComputeTableIndexed(_osrm, evLon, evLat, indices, indices.Length, ptr);
-            }
+            ComputeTableIndexed(_osrm, evLon, evLat, indices, indices.Length, durPtr, distPtr);
         }
 
-        return result;
+        return (durations, distances);
     }
 
     public (float duration, string polyline) QuerySingleDestination(double evLon, double evLat, double destLon, double destLat)
     {
         var resultPtr = ComputeSrcToDest(_osrm, evLon, evLat, destLon, destLat);
-
         if (resultPtr == IntPtr.Zero)
-        {
-            Console.WriteLine("DEBUG: Route returned null");
             return (-1, string.Empty);
-        }
 
         var result = Marshal.PtrToStructure<RouteResult>(resultPtr);
         var polylineStr = Marshal.PtrToStringAnsi(result.Polyline);
@@ -100,7 +104,23 @@ public unsafe partial class OSRMRouter : IDisposable
         FreeMemory(result.Polyline);
         FreeMemory(resultPtr);
 
-        return (duration: result.Duration, polyline: polylineStr);
+        return (result.Duration, polylineStr);
+    }
+
+    public (float[] durations, float[] distances) QueryPointsToPoints(
+        double[] srcCoords, int numSrcs,
+        double[] dstCoords, int numDsts)
+    {
+        var durations = new float[numSrcs * numDsts];
+        var distances = new float[numSrcs * numDsts];
+
+        fixed (float* durPtr = durations)
+        fixed (float* distPtr = distances)
+        {
+            PointsToPoints(_osrm, srcCoords, numSrcs, dstCoords, numDsts, durPtr, distPtr);
+        }
+
+        return (durations, distances);
     }
 
     public void Dispose() => DeleteOSRM(_osrm);

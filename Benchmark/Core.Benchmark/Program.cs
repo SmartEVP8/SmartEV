@@ -13,6 +13,8 @@ public class OsrmRouterBenchmark
     private OSRMRouter _router = null!;
     private int[] _stationIndices = null!;
     private (double Lon, double Lat)[] _evCoordinates = null!;
+    private double[] _evCoordsFlat = null!;
+    private double[] _stationCoordsFlat = null!;
 
     [GlobalSetup]
     public void Setup()
@@ -36,13 +38,23 @@ public class OsrmRouterBenchmark
         _stationIndices = Enumerable.Range(0, 50).ToArray();
 
         _evCoordinates = new (double Lon, double Lat)[1000];
+        _evCoordsFlat = new double[1000 * 2];
         for (int i = 0; i < 1000; i++)
         {
-            _evCoordinates[i] = (9.9200 + (i * 0.002), 57.0400 + (i * 0.002));
+            double lon = 9.9200 + (i * 0.002);
+            double lat = 57.0400 + (i * 0.002);
+            _evCoordinates[i] = (lon, lat);
+            _evCoordsFlat[i * 2] = lon;
+            _evCoordsFlat[i * 2 + 1] = lat;
+        }
+
+        _stationCoordsFlat = new double[50 * 2];
+        for (int i = 0; i < 50; i++)
+        {
+            _stationCoordsFlat[i * 2] = stations[i].Position.Longitude;
+            _stationCoordsFlat[i * 2 + 1] = stations[i].Position.Latitude;
         }
     }
-
-
 
     [GlobalCleanup]
     public void Cleanup()
@@ -51,7 +63,7 @@ public class OsrmRouterBenchmark
     }
 
     [Benchmark]
-    public void Query10000Cars50StationsParallel()
+    public void Query1000Cars50StationsParallel()
     {
         var options = new ParallelOptions
         {
@@ -62,6 +74,19 @@ public class OsrmRouterBenchmark
             var (lon, lat) = _evCoordinates[i];
             _ = _router.QueryStations(lon, lat, _stationIndices);
         });
+    }
+
+    [Benchmark]
+    public void Query1000Cars50StationsBulk()
+    {
+        _ = _router.QueryPointsToPoints(_evCoordsFlat, 1000, _stationCoordsFlat, 50);
+    }
+
+    [Benchmark]
+    public void QuerySingleDestination()
+    {
+        var (lon, lat) = _evCoordinates[0];
+        _ = _router.QuerySingleDestination(lon, lat, _stationCoordsFlat[0], _stationCoordsFlat[1]);
     }
 }
 
