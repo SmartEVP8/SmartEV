@@ -6,54 +6,97 @@ namespace Core.DayCycles;
 public static class PassingOfDay
 {
     /// <summary>
-    /// A 2D array representing congestion values for each hour of each day of the week.
+    /// Total registered EVs in Denmark according to DST - April 2025 (Rounded down).
+    /// Source: https://www.dst.dk/da/Statistik/udgivelser/NytHtml?cid=49510.
     /// </summary>
-    public static readonly int[,] Congestion =
-    {
-        // congestion[day, hour]
-        // day index: 0=Monday ... 6=Sunday
-        // hour index: 0=00:00 ... 23=23:00
-        // Example:
-        // congestion[0,0] -> Monday 00:00
-        // congestion[3,6] -> Thursday 06:00
+    public static readonly int TotalEVs = 400000;
 
+    /// <summary>
+    /// Minimum number of EVs expected on the road even with almost no congestion.
+    /// Estimated as ~3% of total EVs. (400,000 * 0.03 = 12,000).
+    /// </summary>
+    private const int BaselineCars = 12000;
+
+    /// <summary>
+    /// Maximum number of EVs on the road during peak congestion.
+    /// Estimated as ~80% of total EVs, based on the assumption that not all EVs will be on the road 
+    /// at the same time, even during peak hours. (400,000 * 0.80 = 320,000).
+    /// </summary>
+    private const int PeakCars = 320000;
+
+    /// <summary>
+    /// Maximum measured congestion (km with critical congestion) from the dataset.
+    /// Used to normalize the congestion values.
+    /// </summary>
+    private const float MaxCongestionKm = 125f;
+
+    /// <summary>
+    /// An enumeration representing the days of the week.
+    /// </summary>
+    public enum Day
+    {
+        Monday,
+        Tuesday,
+        Wednesday,
+        Thursday,
+        Friday,
+        Saturday,
+        Sunday,
+    }
+
+    /// <summary>
+    /// Raw congestion data representing km of critically congested road.
+    /// Numbers are estimated from the Vejdirektoratet dataset, based on eye estimations.
+    /// Source: https://www.vejdirektoratet.dk/side/trafikkens-udvikling-i-tal
+    /// </summary>
+    private static readonly float[,] CongestionKm =
+    {
         // Monday
-        //  00     01     02     03     04     05      06      07      08      09     10     11      12      13      14      15      16      17     18     19     20     21     22    23
-        { 10000, 10000, 10000, 10000, 50000, 100000, 300000, 300000, 200000, 100000, 50000, 75000, 100000, 125000, 125000, 150000, 125000, 75000, 80000, 75000, 75000, 40000, 25000, 10000 },
+        { 5, 5, 5, 5, 20, 40, 110, 120, 90, 60, 40, 30, 40, 50, 60, 65, 60, 35, 40, 35, 35, 20, 10, 5 },
 
         // Tuesday
-        //  00     01     02     03     04     05      06      07      08      09     10     11      12      13      14      15      16      17     18      19     20     21     22    23
-        { 10000, 10000, 10000, 10000, 50000, 100000, 300000, 300000, 200000, 100000, 50000, 80000, 125000, 150000, 200000, 200000, 150000, 100000, 80000, 75000, 50000, 40000, 25000, 10000 },
+        { 5, 5, 5, 5, 20, 40, 120, 125, 90, 60, 40, 35, 50, 60, 80, 80, 60, 40, 35, 30, 20, 15, 10, 5 },
 
         // Wednesday
-        //  00     01     02     03     04     05     06      07      08      09      10     11     12      13      14      15      16     17     18     19     20     21     22     23
-        { 10000, 10000, 10000, 10000, 50000, 75000, 150000, 175000, 150000, 125000, 50000, 75000, 100000, 125000, 150000, 150000, 125000, 75000, 80000, 75000, 50000, 40000, 25000, 10000 },
+        { 5, 5, 5, 5, 20, 30, 60, 70, 60, 50, 20, 30, 40, 50, 60, 60, 50, 30, 35, 30, 20, 15, 10, 5 },
 
         // Thursday
-        //  00     01     02     03     04     05     06      07      08      09      10     11      12      13      14      15      16      17      18      19     20     21     22     23
-        { 10000, 10000, 10000, 10000, 50000, 75000, 150000, 175000, 150000, 125000, 75000, 100000, 150000, 200000, 200000, 175000, 150000, 125000, 100000, 80000, 50000, 50000, 25000, 10000 },
+        { 5, 5, 5, 5, 20, 30, 60, 70, 60, 50, 30, 40, 60, 80, 80, 70, 60, 50, 40, 30, 20, 20, 10, 5 },
 
         // Friday
-        //  00     01     02    03      04     05    06      07      08     09    10      11      12      13      14      15      16      17      18     19     20     21     22     23
-        { 10000, 10000, 10000, 10000, 25000, 40000, 50000, 75000, 100000, 75000, 60000, 100000, 140000, 190000, 185000, 160000, 140000, 100000, 75000, 50000, 50000, 40000, 25000, 10000 },
+        { 5, 5, 5, 5, 10, 15, 20, 30, 40, 30, 25, 40, 55, 75, 72, 65, 55, 40, 30, 20, 20, 15, 10, 5 },
 
         // Saturday
-        //  00     01     02     03     04     05     06    07      08     09     10     11     12      13      14    15      16     17     18     19     20     21     22     23
-        { 10000, 10000, 10000, 10000, 10000, 10000, 15000, 20000, 30000, 35000, 50000, 75000, 100000, 100000, 80000, 60000, 70000, 60000, 65000, 60000, 50000, 40000, 25000, 10000 },
+        { 5, 5, 5, 5, 5, 5, 8, 10, 15, 18, 20, 30, 40, 40, 30, 25, 28, 25, 26, 25, 20, 15, 10, 5 },
 
         // Sunday
-        //  00     01     02     03     04     05     06     07     08     09    10      11     12     13     14     15     16     17     18    19     20      21    22     23
-        { 10000, 10000, 10000, 10000, 10000, 10000, 15000, 20000, 25000, 30000, 35000, 40000, 50000, 40000, 50000, 75000, 80000, 80000, 70000, 65000, 50000, 40000, 20000, 10000 },
+        { 5, 5, 5, 5, 5, 5, 8, 10, 12, 15, 18, 20, 25, 20, 25, 30, 32, 32, 28, 26, 20, 15, 8, 5 },
     };
 
     /// <summary>
-    /// Gets the congestion value for the specified day and hour.
+    /// Gets the estimated number of EVs on the road for a specific day and hour.
     /// </summary>
-    /// <param name="day">The day of the week (0-6).</param>
-    /// <param name="hour">The hour of the day (0-23).</param>
-    /// <returns>The congestion value.</returns>
-    public static int GetCongestion(int day, int hour)
+    /// <param name="day">The day of the week.</param>
+    /// <param name="hour">The hour of the day (0-23).</param
+    /// <returns>The estimated number of EVs on the road.</returns>
+    public static int GetCongestion(Day day, int hour)
     {
-        return Congestion[day, hour];
+        if (hour < 0 || hour > 23)
+        {
+            throw new ArgumentOutOfRangeException(nameof(hour), "Hour must be between 0 and 23.");
+        }
+
+        if ((int)day < 0 || (int)day > 6)
+        {
+            throw new ArgumentOutOfRangeException(nameof(day), "Day must be between Monday and Sunday.");
+        }
+
+        float km = CongestionKm[(int)day, hour];
+
+        float congestionIndex = km / MaxCongestionKm;
+
+        float cars = BaselineCars + ((PeakCars - BaselineCars) * congestionIndex);
+
+        return (int)Math.Min(cars, TotalEVs);
     }
 }
