@@ -6,9 +6,10 @@ using Core.Shared;
 /// </summary>
 public class StationTest
 {
-    private static Station CreateStation(float price = 3.0f) =>
-        new(id: 1, name: "Test Station", address: "Test Street 1",
-            position: new Position(10.0, 56.0), chargers: null, price: price);
+    private static Station CreateStation(float price = 3.0f, Random? random = null) =>
+        new (id: 1, name: "Test Station", address: "Test Street 1",
+            position: new Position(10.0, 56.0), chargers: null, price: price,
+            random: random ?? new Random(42));
 
     /// <summary>
     /// Verifies that the constructor sets <see cref="Station.Price"/> to the supplied value.
@@ -52,11 +53,8 @@ public class StationTest
     [Fact]
     public void CalculatePrice_ChangesPrice()
     {
-        const float initialPrice = 3.0f;
-        Station station = CreateStation(initialPrice);
-
+        Station station = CreateStation(random: new Random(42));
         station.CalculatePrice(12);
-
-        Assert.NotEqual(initialPrice, station.Price);
+        Assert.NotEqual(3.0f, station.Price);
     }
 }
