@@ -34,7 +34,7 @@ public class CalculateJourney
     /// </example>
     public List<City> CalculateSpawn(Position position, float scaler, List<City> cities)
     {
-        var diststuff = new List<(string, float)>();
+        var populationPrDistance = new List<(string, float)>();
         foreach (var city in cities)
         {
             // Calculate the distance between the city and the center position using the Haversine formula, and calculate a spawn chance based on the population and distance.
@@ -51,18 +51,18 @@ public class CalculateJourney
             var distance = (float)(6371 * c); // Earth's radius in kilometers
 
             // Calculate spawn chance based on population and distance, using the scaler to adjust the influence of population. The distance is raised to the power of 0.8 to reduce its influence on spawn chance, and the population is raised to the power of the scaler to adjust its influence.
-            diststuff.Add((city.Name, (float)Math.Pow(city.Population, scaler) / (float)Math.Pow(distance, 0.8)));
+            populationPrDistance.Add((city.Name, (float)Math.Pow(city.Population, scaler) / (float)Math.Pow(distance, 0.8)));
         }
 
         // Normalize spawn chances so they sum to 1, and create a new list of cities with their spawn chances.
-        var diffsum = diststuff.Sum(x => x.Item2);
+        var sumOfPopulationPrDistance = populationPrDistance.Sum(x => x.Item2);
         var result = new List<City>();
         foreach (var city in cities)
         {
-            var dist = diststuff.First(x => x.Item1 == city.Name).Item2;
+            var dist = populationPrDistance.First(x => x.Item1 == city.Name).Item2;
 
             // The spawn chance is the normalized value of the distance and population, so that the sum of all spawn chances is 1. This means that if a city has a spawn chance of 0.2, it has a 20% chance of being chosen as its destination when spawning a journey.
-            result.Add(new City(city.Name, city.Position, city.Population, dist / diffsum));
+            result.Add(new City(city.Name, city.Position, city.Population, dist / sumOfPopulationPrDistance));
         }
 
         return result;
