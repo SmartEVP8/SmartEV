@@ -2,6 +2,7 @@ namespace Core.Spawning;
 
 /// <summary>
 /// Implements Vose's Alias Method for efficient sampling from a discrete probability distribution.
+/// https://cwyman.org/papers/rtg2-aliasMethod.pdf
 /// </summary>
 public class AliasSampler
 {
