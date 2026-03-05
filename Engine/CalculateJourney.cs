@@ -8,6 +8,7 @@ public class CalculateJourney
     /// Calculates the spawn chances for cities based on their population and distance from center position of a grid.
     /// </summary> <param name="position">The center position of the grid.</param>
     /// <param name="scaler">A scaler to adjust the influence of population on spawn chance. Used to incentivise going to big cities or discourage.</param>
+    /// <param name="cities">A list of cities to calculate spawn chances for.</param>
     /// <returns>A list of cities with their spawn chances for the given grid.</returns>
     /// <example>
     /// var calculateJourney = new CalculateJourney();
@@ -31,22 +32,8 @@ public class CalculateJourney
     /// København: 34.165975%
     /// Havdrup: 0.13564115%.
     /// </example>
-    public List<City> CalculateSpawn(Position position, float scaler)
+    public List<City> CalculateSpawn(Position position, float scaler, List<City> cities)
     {
-        var cities = new List<City>();
-
-        // Read city data from CSV file, gathered from https://www.dst.dk/da/, and create City objects with name, population and position.
-        using (var reader = new StreamReader("CityInfo.csv"))
-        {
-            while (!reader.EndOfStream)
-            {
-                var line = reader.ReadLine();
-                var values = line?.Split(',');
-                if (values == null || values[1] == "Population" ) continue; // Skip header
-                cities.Add(new City(values[0], 0.1f, new Position(float.Parse(values[2]), float.Parse(values[3])), int.Parse(values[1])));
-            }
-        }
-
         var diststuff = new List<(string, float)>();
         foreach (var city in cities)
         {
@@ -75,7 +62,7 @@ public class CalculateJourney
             var dist = diststuff.First(x => x.Item1 == city.Name).Item2;
 
             // The spawn chance is the normalized value of the distance and population, so that the sum of all spawn chances is 1. This means that if a city has a spawn chance of 0.2, it has a 20% chance of being chosen as its destination when spawning a journey.
-            result.Add(new City(city.Name, dist / diffsum, city.Position, city.Population));
+            result.Add(new City(city.Name, city.Position, city.Population, dist / diffsum));
         }
 
         return result;
