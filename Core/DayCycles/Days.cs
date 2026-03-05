@@ -79,7 +79,7 @@ public static class PassingOfDay
     /// <param name="day">The day of the week.</param>
     /// <param name="hour">The hour of the day (0-23).</param
     /// <returns>The estimated number of EVs on the road.</returns>
-    public static int GetCongestion(Day day, int hour)
+    public static int GetEVsOnRoad(Day day, int hour)
     {
         if (hour < 0 || hour > 23)
         {
