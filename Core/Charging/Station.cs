@@ -3,7 +3,7 @@ namespace Core.Charging;
 using Core.Shared;
 
 /// <summary>
-/// A EV charging station.
+/// An EV charging station.
 /// </summary>
 /// <param name="id">The id of the station.</param>
 /// <param name="name">The name of the station, e.g. 'OK Aarselv, Logistikparken'.</param>
@@ -38,7 +38,7 @@ public class Station(ushort id,
     /// </remarks>
     public void CalculatePrice(int hour = 12) {
         float basePrice = EnergyPrices.GetPrice(hour);
-        float deviation = 0.10f + ((float)_random.NextDouble() * 0.10f); // 10–20%
+        float deviation = 0.10f + (_random.NextSingle() * 0.10f); // 10–20%
         float sign = _random.Next(2) == 0 ? 1.0f : -1.0f;
         Price = basePrice * (1.0f + (sign * deviation));
     }

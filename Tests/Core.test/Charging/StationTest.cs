@@ -1,0 +1,62 @@
+using Core.Charging;
+using Core.Shared;
+
+/// <summary>
+/// Tests for <see cref="Station"/>.
+/// </summary>
+public class StationTest
+{
+    private static Station CreateStation(float price = 3.0f) =>
+        new(id: 1, name: "Test Station", address: "Test Street 1",
+            position: new Position(10.0, 56.0), chargers: null, price: price);
+
+    /// <summary>
+    /// Verifies that the constructor sets <see cref="Station.Price"/> to the supplied value.
+    /// </summary>
+    /// <param name="price">The initial price to supply.</param>
+    [Theory]
+    [InlineData(2.69f)]
+    [InlineData(5.14f)]
+    [InlineData(0.0f)]
+    public void Constructor_SetsPrice(float price)
+    {
+        Station station = CreateStation(price);
+
+        Assert.Equal(price, station.Price);
+    }
+
+    /// <summary>
+    /// Verifies that <see cref="Station.CalculatePrice"/> sets <see cref="Station.Price"/>
+    /// within ±20% of the base price returned by <see cref="EnergyPrices.GetPrice"/>.
+    /// </summary>
+    /// <param name="hour">The hour of the day (0–23) to pass to <see cref="Station.CalculatePrice"/>.</param>
+    [Theory]
+    [InlineData(0)]
+    [InlineData(12)]
+    [InlineData(18)]
+    [InlineData(23)]
+    public void CalculatePrice_SetsPrice_WithinExpectedRange(int hour)
+    {
+        Station station = CreateStation();
+        float basePrice = EnergyPrices.GetPrice(hour);
+
+        station.CalculatePrice(hour);
+
+        Assert.InRange(station.Price, basePrice * 0.80f, basePrice * 1.20f);
+    }
+
+    /// <summary>
+    /// Verifies that <see cref="Station.CalculatePrice"/> changes <see cref="Station.Price"/>
+    /// from its initial value.
+    /// </summary>
+    [Fact]
+    public void CalculatePrice_ChangesPrice()
+    {
+        const float initialPrice = 3.0f;
+        Station station = CreateStation(initialPrice);
+
+        station.CalculatePrice(12);
+
+        Assert.NotEqual(initialPrice, station.Price);
+    }
+}
