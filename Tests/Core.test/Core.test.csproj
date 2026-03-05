@@ -11,8 +11,12 @@
     <PackageReference Include="StyleCop.Analyzers" />
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio" />
-  </ItemGroup>
+    </ItemGroup>
+
+
+
   <ItemGroup>
     <Using Include="Xunit" />
+    <ProjectReference Include="..\..\Core\Core.csproj" />
   </ItemGroup>
 </Project>
