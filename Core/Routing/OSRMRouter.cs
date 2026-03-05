@@ -81,11 +81,13 @@ public unsafe partial class OSRMRouter : IDisposable
     public void InitStations(List<Station> stations)
     {
         var coords = new double[stations.Count * 2];
+
         for (var i = 0; i < stations.Count; i++)
         {
             coords[i * 2] = stations[i].Position.Longitude;
             coords[(i * 2) + 1] = stations[i].Position.Latitude;
         }
+
         RegisterStations(_osrm, coords, stations.Count);
     }
 
