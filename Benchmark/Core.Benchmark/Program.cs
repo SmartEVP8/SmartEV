@@ -1,7 +1,8 @@
-using BenchmarkDotNet.Attributes;
+using Core.Benchmark;
 using Core.Routing;
-namespace Core.Benchmark;
+namespace Simulation;
 
+using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 using Core.Charging;
 using Core.Shared;
@@ -91,6 +92,9 @@ public class OsrmRouterBenchmark
     }
 }
 
+/// <summary>
+/// Entry point for the benchmark application.
+/// </summary>
 public static class Program
 {
     /// <summary>
