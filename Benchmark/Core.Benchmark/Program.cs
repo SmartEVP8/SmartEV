@@ -9,7 +9,7 @@ using System.Linq;
 [MemoryDiagnoser]
 public class OsrmRouterBenchmark
 {
-    private OSRMRouter _router = null!;
+    private Core.Routing.OSRMRouter _router = null!;
     private int[] _stationIndices = null!;
     private (double Lon, double Lat)[] _evCoordinates = null!;
     private double[] _evCoordsFlat = null!;
@@ -20,7 +20,7 @@ public class OsrmRouterBenchmark
     {
         var path = AppContext.GetData("OsrmDataPath") as string
             ?? throw new InvalidOperationException("OsrmDataPath not set in project.");
-        _router = new OSRMRouter(path);
+        _router = new Core.Routing.OSRMRouter(path);
 
         var stations = new List<Station>(50);
         for (ushort i = 0; i < 50; i++)
