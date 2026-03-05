@@ -24,9 +24,8 @@ public class PassingOfDayTests
     }
 
     /// <summary>
-    /// Tests that providing an invalid hour (less than 0 or greater than 23) throws an ArgumentOutOfRangeException.
-    /// This ensures that the method correctly validates the hour input and does not allow out-of-range values.
-    /// The test iterates over a set of invalid hours and asserts that the expected exception is thrown for each case.
+    /// Tests that providing an invalid hour (less than 0 or greater than 23) throws an
+    /// ArgumentOutOfRangeException.
     /// </summary>
     /// <param name="hour">The invalid hour to test.</param>
     [Theory]
