@@ -3,6 +3,9 @@ namespace Core.Routing;
 using System.Runtime.InteropServices;
 using Core.Charging;
 
+/// <summary>
+/// Provides routing and station query functionality using the OSRM (Open Source Routing Machine) wrapper library.
+/// </summary>
 public unsafe partial class OSRMRouter : IDisposable
 {
     private const string _lib = "osrm_wrapper";
@@ -59,13 +62,22 @@ public unsafe partial class OSRMRouter : IDisposable
         public IntPtr Polyline;
     }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="OSRMRouter"/> class.
+    /// </summary>
+    /// <param name="mapPath">The path to the OSRM map data file.</param>
+    /// <exception cref="InvalidOperationException">Thrown when OSRM initialization fails.</exception>
     public OSRMRouter(string mapPath)
     {
         _osrm = InitializeOSRM(mapPath);
         if (_osrm == IntPtr.Zero)
-            throw new Exception("OSRM init failed.");
+            throw new Exception("OSRM initialization failed.");
     }
 
+    /// <summary>
+    /// Initializes the router with a list of charging stations.
+    /// </summary>
+    /// <param name="stations">The list of charging stations to register.</param>
     public void InitStations(List<Station> stations)
     {
         var coords = new double[stations.Count * 2];
@@ -77,6 +89,13 @@ public unsafe partial class OSRMRouter : IDisposable
         RegisterStations(_osrm, coords, stations.Count);
     }
 
+    /// <summary>
+    /// Queries the durations and distances from an electric vehicle to specified stations.
+    /// </summary>
+    /// <param name="evLon">The longitude coordinate of the electric vehicle.</param>
+    /// <param name="evLat">The latitude coordinate of the electric vehicle.</param>
+    /// <param name="indices">An array of station indices to query.</param>
+    /// <returns>A tuple containing arrays of durations and distances to each station.</returns>
     public (float[] durations, float[] distances) QueryStations(double evLon, double evLat, int[] indices)
     {
         if (indices.Length == 0)
@@ -94,6 +113,14 @@ public unsafe partial class OSRMRouter : IDisposable
         return (durations, distances);
     }
 
+    /// <summary>
+    /// Queries the duration and polyline route from an electric vehicle to a single destination.
+    /// </summary>
+    /// <param name="evLon">The longitude coordinate of the electric vehicle.</param>
+    /// <param name="evLat">The latitude coordinate of the electric vehicle.</param>
+    /// <param name="destLon">The longitude coordinate of the destination.</param>
+    /// <param name="destLat">The latitude coordinate of the destination.</param>
+    /// <returns>A tuple containing the duration and polyline string for the route.</returns>
     public (float duration, string polyline) QuerySingleDestination(double evLon, double evLat, double destLon, double destLat)
     {
         var resultPtr = ComputeSrcToDest(_osrm, evLon, evLat, destLon, destLat);
@@ -101,7 +128,7 @@ public unsafe partial class OSRMRouter : IDisposable
             return (-1, string.Empty);
 
         var result = Marshal.PtrToStructure<RouteResult>(resultPtr);
-        var polylineStr = Marshal.PtrToStringAnsi(result.Polyline);
+        var polylineStr = Marshal.PtrToStringAnsi(result.Polyline) !;
 
         FreeMemory(result.Polyline);
         FreeMemory(resultPtr);
@@ -109,9 +136,19 @@ public unsafe partial class OSRMRouter : IDisposable
         return (result.Duration, polylineStr);
     }
 
+    /// <summary>
+    /// Queries durations and distances between multiple source and destination points.
+    /// </summary>
+    /// <param name="srcCoords">Array of source coordinates in [lon, lat, lon, lat, ...] format.</param>
+    /// <param name="numSrcs">The number of source points.</param>
+    /// <param name="dstCoords">Array of destination coordinates in [lon, lat, lon, lat, ...] format.</param>
+    /// <param name="numDsts">The number of destination points.</param>
+    /// <returns>A tuple containing matrices of durations and distances between all source and destination pairs.</returns>
     public (float[] durations, float[] distances) QueryPointsToPoints(
-        double[] srcCoords, int numSrcs,
-        double[] dstCoords, int numDsts)
+        double[] srcCoords,
+        int numSrcs,
+        double[] dstCoords,
+        int numDsts)
     {
         var durations = new float[numSrcs * numDsts];
         var distances = new float[numSrcs * numDsts];
@@ -125,5 +162,8 @@ public unsafe partial class OSRMRouter : IDisposable
         return (durations, distances);
     }
 
+    /// <summary>
+    /// Disposes the OSRM router and releases unmanaged resources.
+    /// </summary>
     public void Dispose() => DeleteOSRM(_osrm);
 }
