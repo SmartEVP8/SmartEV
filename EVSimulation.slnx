@@ -1,8 +1,14 @@
 <Solution>
   <Project Path="Core/Core.csproj"/>
   <Project Path="Tests/Core.test/Core.test.csproj"/>
-  <Project Path="Simulation/Simulation.csproj"/>
-  <Project Path="Tests/Simulation.test/Simulation.test.csproj"/>
+  <Project Path="Headless/Headless.csproj"/>
+  <Project Path="Tests/Headless.test/Headless.test.csproj"/>
   <Project Path="Benchmark/Core.Benchmark/Core.Benchmark.csproj"/>
-  <Project Path="Benchmark/Simulation.Benchmark/Simulation.Benchmark.csproj"/>
+  <Project Path="Benchmark/Headless.Benchmark/Headless.Benchmark.csproj"/>
+  <Project Path="Engine/Engine.csproj"/>
+  <Project Path="Tests/Engine.test/Engine.test.csproj"/>
+  <Project Path="Benchmark/Engine.Benchmark/Engine.Benchmark.csproj"/>
+  <Project Path="API/API.csproj"/>
+  <Project Path="Tests/API.test/API.test.csproj"/>
+  <Project Path="Benchmark/API.Benchmark/API.Benchmark.csproj"/>
 </Solution>
