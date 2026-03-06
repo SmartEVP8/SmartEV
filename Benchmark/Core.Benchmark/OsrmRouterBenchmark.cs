@@ -26,7 +26,7 @@ public class OsrmRouterBenchmark
     {
         var path = AppContext.GetData("OsrmDataPath") as string
             ?? throw new InvalidOperationException("OsrmDataPath not set in project.");
-        _router = new Core.Routing.OSRMRouter(path);
+        _router = new Routing.OSRMRouter(path);
 
         var stations = new List<Station>(50);
         for (ushort i = 0; i < 50; i++)

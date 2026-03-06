@@ -28,6 +28,8 @@ packages/
 *.temp
 data/osrm/
 Core/native/
+*.parquet
+
 
 BenchmarkDotNet.Artifacts/
 
