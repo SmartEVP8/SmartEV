@@ -34,6 +34,10 @@ public static class ParquetService
                 LogicalColumnReader<float> r => r.ReadAll(numRows),
                 LogicalColumnReader<double> r => r.ReadAll(numRows),
                 LogicalColumnReader<int> r => r.ReadAll(numRows),
+                LogicalColumnReader<ushort> r => r.ReadAll(numRows),
+                LogicalColumnReader<uint> r => r.ReadAll(numRows),
+                LogicalColumnReader<ulong> r => r.ReadAll(numRows),
+                LogicalColumnReader<short> r => r.ReadAll(numRows),
                 LogicalColumnReader<long> r => r.ReadAll(numRows),
                 LogicalColumnReader<string> r => r.ReadAll(numRows),
                 LogicalColumnReader<bool> r => r.ReadAll(numRows),
@@ -87,6 +91,14 @@ public static class ParquetService
                 using (var w = rowGroup.NextColumn().LogicalWriter<int>()) w.WriteBatch(i); break;
             case long[] l:
                 using (var w = rowGroup.NextColumn().LogicalWriter<long>()) w.WriteBatch(l); break;
+            case ushort[] us:
+                using (var w = rowGroup.NextColumn().LogicalWriter<ushort>()) w.WriteBatch(us); break;
+            case uint[] ui:
+                using (var w = rowGroup.NextColumn().LogicalWriter<uint>()) w.WriteBatch(ui); break;
+            case ulong[] ul:
+                using (var w = rowGroup.NextColumn().LogicalWriter<ulong>()) w.WriteBatch(ul); break;
+            case short[] sh:
+                using (var w = rowGroup.NextColumn().LogicalWriter<short>()) w.WriteBatch(sh); break;
             case string[] s:
                 using (var w = rowGroup.NextColumn().LogicalWriter<string>()) w.WriteBatch(s); break;
             case bool[] b:
@@ -108,6 +120,10 @@ public static class ParquetService
         _ when type == typeof(float) => new Column<float>(name),
         _ when type == typeof(double) => new Column<double>(name),
         _ when type == typeof(int) => new Column<int>(name),
+        _ when type == typeof(ushort) => new Column<ushort>(name),
+        _ when type == typeof(uint) => new Column<uint>(name),
+        _ when type == typeof(ulong) => new Column<ulong>(name),
+        _ when type == typeof(short) => new Column<short>(name),
         _ when type == typeof(long) => new Column<long>(name),
         _ when type == typeof(string) => new Column<string>(name),
         _ when type == typeof(bool) => new Column<bool>(name),
