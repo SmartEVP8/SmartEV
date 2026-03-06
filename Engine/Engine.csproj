@@ -6,9 +6,9 @@
     <Nullable>enable</Nullable>
     </PropertyGroup>
 
-<ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\Core\Core.csproj" />
+    <PackageReference Include="StyleCop.Analyzers" />
   </ItemGroup>
-
 
 </Project>

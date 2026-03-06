@@ -7,10 +7,10 @@ public static class Polygooner
     /// <summary>
     /// Generates a grid of the specified size (in degrees) and marks cells that are inside any of the provided polygons.
     /// </summary>
-    /// <param name="size">The size in degrees of each grid cell</param>
-    /// <param name="polygons">The polygons to check intersections against</param>
-    /// <returns>A 2D grid with 1 or 0</returns>
-    public static bool[][] GenerateGrid(double size, List<List<Position>> polygons)
+    /// <param name="size">The size in degrees of each grid cell.</param>
+    /// <param name="polygons">The polygons to check intersections against.</param>
+    /// <returns>A 2D grid with 1 or 0.</returns>
+    public static Grid GenerateGrid(double size, List<List<Position>> polygons)
     {
         var (min, max) = ComputeBoundingBox(polygons);
         var diffLat = max.Latitude - min.Latitude;
@@ -24,42 +24,55 @@ public static class Polygooner
         var latSteps = (int)Math.Ceiling(diffLat / size);
         var lonSteps = (int)Math.Ceiling(diffLon / lonSize);
 
-        var grid = new bool[latSteps][];
+        var gridCells = new GridCell[latSteps][];
 
         for (var i = 0; i < latSteps; i++)
         {
-            grid[i] = new bool[lonSteps];
             for (var j = 0; j < lonSteps; j++)
             {
-                var centerLat = min.Latitude + (i + 0.5) * size;
-                var centerLon = min.Longitude + (j + 0.5) * lonSize;
+                var centerLat = min.Latitude + ((i + 0.5) * size);
+                var centerLon = min.Longitude + ((j + 0.5) * lonSize);
+                var centerPos = new Position(centerLat, centerLon);
+
+                gridCells[i][j] = new GridCell(false, centerPos);
 
                 foreach (var polygon in polygons)
                 {
                     if (PointInPolygon(polygon, centerLat, centerLon))
                     {
-                        grid[i][j] = true;
+                        gridCells[i][j].Spawnable = true;
                         break;
                     }
                 }
             }
         }
 
-        return grid;
+        return new Grid(gridCells);
     }
 
+    /// <summary>
+    /// Ray casting algorithm for point-in-polygon testing.
+    /// https://www.geeksforgeeks.org/c/point-in-polygon-in-c/.
+    /// </summary>
     private static bool PointInPolygon(List<Position> polygon, double lat, double lon)
     {
         var inside = false;
-        var n = polygon.Count;
-        for (int i = 0, j = n - 1; i < n; j = i++)
+        var vertexCount = polygon.Count;
+
+        for (int current = 0, previous = vertexCount - 1; current < vertexCount; previous = current++)
         {
-            var xi = polygon[i].Longitude; var yi = polygon[i].Latitude;
-            var xj = polygon[j].Longitude; var yj = polygon[j].Latitude;
-            if (((yi > lat) != (yj > lat)) &&
-                (lon < (xj - xi) * (lat - yi) / (yj - yi) + xi))
+            var currentLon = polygon[current].Longitude;
+            var currentLat = polygon[current].Latitude;
+            var previousLon = polygon[previous].Longitude;
+            var previousLat = polygon[previous].Latitude;
+
+            var edgeStradlesPoint = (currentLat > lat) != (previousLat > lat);
+            var rayIntersectsEdge = lon < ((previousLon - currentLon) * (lat - currentLat) / (previousLat - currentLat)) + currentLon;
+
+            if (edgeStradlesPoint && rayIntersectsEdge)
                 inside = !inside;
         }
+
         return inside;
     }
 
