@@ -26,6 +26,6 @@ packages/
 *.log
 *.tmp
 *.temp
-data/
+data/osrm
 
 BenchmarkDotNet.Artifacts/

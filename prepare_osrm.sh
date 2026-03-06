@@ -1,9 +1,9 @@
 set -e
 
-DATA_DIR="data"
+DATA_DIR="Data/osrm"
 OSM_FILE="output.osm.pbf"
 OSRM_BACKEND="osrm-backend-362b388d7e0582291662105d7bfc004a3a44a393"
-CAR_FILE="../"$OSRM_BACKEND"/profiles/car.lua"
+CAR_FILE="../../"$OSRM_BACKEND"/profiles/car.lua"
 
 # Package mappings for different systems
 declare -A PACKAGE_MAPS
@@ -92,15 +92,17 @@ fi
 
 mkdir -p "$DATA_DIR" && cd "$DATA_DIR"
 
-if [ ! -f "../$OSM_FILE" ]; then
+if [ ! -f "../../$OSM_FILE" ]; then
     echo "OSM file not found: $OSM_FILE"
     exit 1
 fi
 
-if [ ! -d "$OSM_FILE" ]; then
-    cp "../$OSM_FILE" "$OSM_FILE"
-fi
+# ✅ stay inside Data/osrm (remove cd ..)
 
+# ✅ copy the PBF into Data/osrm if not already there
+if [ ! -f "$OSM_FILE" ]; then
+    cp "../../$OSM_FILE" "$OSM_FILE"
+fi
 
 echo "Running OSRM extract..."
 osrm-extract -p "$CAR_FILE" "$OSM_FILE"
@@ -109,7 +111,7 @@ echo "Running OSRM contract (CH pipeline)..."
 osrm-contract "$OSM_FILE"
 
 echo "Returning to project root..."
-cd ..
+cd ../..
 rm -rf "$OSRM_BACKEND"
 
 echo "OSRM dataset preparation complete."
