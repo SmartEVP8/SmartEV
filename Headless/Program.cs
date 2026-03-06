@@ -19,7 +19,6 @@ public static class Program
             {
                 Console.Write(cell.Spawnable ? "1 " : "0 ");
             }
-            Console.WriteLine();
         }
     }
 }
