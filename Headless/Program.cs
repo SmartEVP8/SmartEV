@@ -10,11 +10,17 @@ public static class Program
         var polygons = PolygonParser.Parse(
             File.ReadAllText("../data/denmark.polygon.json"));
 
-        var grid = Polygooner.GenerateGrid(0.09, polygons);
+        var grid = Polygooner.GenerateGrid(0.1, polygons);
 
-        for (var i = grid.Length - 1; i >= 0; i--)
+        // Print the grid to the console
+        foreach (var row in grid.SpawnableCells.AsEnumerable().Reverse())
         {
-            Console.WriteLine("[" + string.Join(" ", grid[i].Select(v => v == true ? 1 : 0)) + " ]");
+            foreach (var cell in row)
+            {
+                Console.Write(cell.Spawnable ? "1 " : "0 ");
+            }
+
+            Console.WriteLine();
         }
     }
 }
