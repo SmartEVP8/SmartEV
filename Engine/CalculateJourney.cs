@@ -1,70 +1,104 @@
 namespace Engine;
+
+using Core.Routing;
 using Core.Shared;
 using Core.Spawning;
 
+/// <summary>
+/// Calculates the spawn chances for cities based on their population and distance to grid centers.
+/// The process involves three main steps:
+/// 1. CalculateDistance: Uses OSRM to compute distances from grid centers to cities.
+/// 2. CalculateSpawnChance: Computes spawn chances as population divided by distance, scaled by a given factor.
+/// 3. NormalizeSpawnChance: Normalizes spawn chances so that they sum to 1 for each grid center, representing probabilities.
+/// </summary>
+/// <remarks>
+/// This class is designed to be used in a headless environment for testing and simulation purposes.
+/// It relies on the OSRMRouter for distance calculations and the City class for city data.
+/// </remarks>
 public class CalculateJourney
 {
     /// <summary>
-    /// Calculates the spawn chances for cities based on their population and distance from center position of a grid.
-    /// </summary> <param name="position">The center position of the grid.</param>
-    /// <param name="scaler">A scaler to adjust the influence of population on spawn chance. Used to incentivise going to big cities or discourage.</param>
-    /// <param name="cities">A list of cities to calculate spawn chances for.</param>
-    /// <returns>A list of cities with their spawn chances for the given grid.</returns>
-    /// <example>
-    /// var calculateJourney = new CalculateJourney();
-    /// var result = calculateJourney.CalculateSpawn(new Position(55.6761, 12.5683), 1f);
-    /// result.cities are then:
-    /// ...
-    /// Frederikshavn 0.03%
-    /// Viborg: 0.05%
-    /// Frederiksberg: 4.692597%
-    /// København: 75.6652%
-    /// Havdrup: 0.02577%.
-    /// ...
-    /// <!---->
-    /// Other example:
-    /// var calculateJourney = new CalculateJourney();
-    /// var result = calculateJourney.CalculateSpawn(new Position(55.6761, 12.5683), 0.5f);
-    /// result.cities are then:
-    /// Frederikshavn: 0.007489727%
-    /// Viborg: 0.089010724%
-    /// Frederiksberg: 5.2175224%
-    /// København: 34.165975%
-    /// Havdrup: 0.13564115%.
-    /// </example>
-    public List<City> CalculateSpawn(Position position, float scaler, List<City> cities)
+    /// Calculates the spawn chances for cities based on their population and distance to grid centers.
+    /// </summary>
+    /// <param name="gridCenterPosition">A list of positions representing the centers of the grids.</param>
+    /// <param name="scaler">A scaling factor to adjust the influence of population on spawn chances.</param>
+    /// <param name="cities">A list of City objects containing information about each city, including name, position, and population.</param>
+    /// <returns>A list of tuples, where each tuple contains a grid index and an matrix of city names with their corresponding normalized spawn chances.</returns>
+    public List<(int, (string, float)[])> CalculateSpawn(List<Position> gridCenterPosition, float scaler, List<City> cities)
     {
-        var populationPrDistance = new List<(string, float)>();
-        foreach (var city in cities)
+    // Get distances from CalculateDistance
+    var distanceData = CalculateDistance(gridCenterPosition, cities);
+
+    // Calculate spawn chance as population divided by distance, multiplied by scaler
+    var spawnData = CalculateSpawnChance(distanceData, cities, scaler);
+    return NormalizeSpawnChance(spawnData);
+    }
+
+    private List<(int GridIndex, (string CityName, float Distance)[])> CalculateDistance(List<Position> gridCenterPosition, List<City> cities)
+    {
+        var distanceList = new List<(int, (string, float)[])>();
+        var routing = new OSRMRouter("../data/output.osrm");
+        var gridpositions = gridCenterPosition.SelectMany(p => new double[] { p.Longitude, p.Latitude }).ToArray();
+        var citypositions = cities.SelectMany(c => new double[] { c.Position.Longitude, c.Position.Latitude }).ToArray();
+
+        var (_, dis) = routing.QueryPointsToPoints(gridpositions, gridCenterPosition.Count, citypositions, cities.Count);
+        for (var j = 0; j < gridCenterPosition.Count; j++)
         {
-            // Calculate the distance between the city and the center position using the Haversine formula, and calculate a spawn chance based on the population and distance.
-            // https://en.wikipedia.org/wiki/Haversine_formula
-            var lat1 = position.Latitude * Math.PI / 180.0;
-            var lon1 = position.Longitude * Math.PI / 180.0;
-            var lat2 = city.Position.Latitude * Math.PI / 180.0;
-            var lon2 = city.Position.Longitude * Math.PI / 180.0;
+            var distanceMatrix = new (string, float)[cities.Count];
+            for (var i = 0; i < cities.Count; i++)
+            {
+                var distance = dis[i + (cities.Count * j)];
+                distanceMatrix[i] = (cities[i].Name, distance);
+            }
 
-            var a = Math.Pow(Math.Sin((lat2 - lat1) / 2), 2) +
-                       (Math.Cos(lat1) * Math.Cos(lat2) *
-                       Math.Pow(Math.Sin((lon2 - lon1) / 2), 2));
-            var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
-            var distance = (float)(6371 * c); // Earth's radius in kilometers
-
-            // Calculate spawn chance based on population and distance, using the scaler to adjust the influence of population. The distance is raised to the power of 0.8 to reduce its influence on spawn chance, and the population is raised to the power of the scaler to adjust its influence.
-            populationPrDistance.Add((city.Name, (float)Math.Pow(city.Population, scaler) / (float)Math.Pow(distance, 0.8)));
+            distanceList.Add((j, distanceMatrix));
         }
 
-        // Normalize spawn chances so they sum to 1, and create a new list of cities with their spawn chances.
-        var sumOfPopulationPrDistance = populationPrDistance.Sum(x => x.Item2);
-        var result = new List<City>();
-        foreach (var city in cities)
-        {
-            var dist = populationPrDistance.First(x => x.Item1 == city.Name).Item2;
+        return distanceList;
+    }
 
-            // The spawn chance is the normalized value of the distance and population, so that the sum of all spawn chances is 1. This means that if a city has a spawn chance of 0.2, it has a 20% chance of being chosen as its destination when spawning a journey.
-            result.Add(new City(city.Name, city.Position, city.Population, dist / sumOfPopulationPrDistance));
+    private List<(int GridIndex, (string CityName, float SpawnChance)[])> CalculateSpawnChance(List<(int GridIndex, (string CityName, float Distance)[])> distanceData, List<City> cities, float scaler)
+    {
+    var spawnChanceList = new List<(int, (string, float)[])>();
+    foreach (var (gridIndex, cityDistances) in distanceData)
+    {
+        var spawnChances = new (string, float)[cityDistances.Length];
+        for (var i = 0; i < cityDistances.Length; i++)
+        {
+            var cityName = cityDistances[i].CityName;
+            var distance = cityDistances[i].Distance;
+            var population = cities.First(c => c.Name == cityName).Population;
+
+            // Handle zero or very small distances to avoid division by zero
+            var adjustedDistance = Math.Max(distance, 1.0f); // Minimum distance of 1 meter
+
+            var spawnChance = Math.Pow(population, scaler) / Math.Pow(adjustedDistance, 0.8);
+            spawnChances[i] = (cityName, (float)spawnChance);
         }
 
-        return result;
+        spawnChanceList.Add((gridIndex, spawnChances));
+    }
+
+    return spawnChanceList;
+    }
+
+    private List<(int GridIndex, (string CityName, float SpawnChance)[])> NormalizeSpawnChance(List<(int GridIndex, (string CityName, float SpawnChance)[])> spawnChanceData)
+    {
+        var normalizedList = new List<(int, (string, float)[])>();
+
+        foreach (var (gridIndex, citySpawnChances) in spawnChanceData)
+        {
+            // Calculate total spawn chance for THIS grid only
+            var gridTotalSpawnChance = citySpawnChances.Sum(c => c.SpawnChance);
+
+            // Normalize so this grid's cities sum to 1 (100%)
+            var normalizedSpawnChances = citySpawnChances
+                .Select(c => (c.CityName, c.SpawnChance / gridTotalSpawnChance))
+                .ToArray();
+
+            normalizedList.Add((gridIndex, normalizedSpawnChances));
+        }
+
+        return normalizedList;
     }
 }

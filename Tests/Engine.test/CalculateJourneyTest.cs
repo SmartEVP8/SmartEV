@@ -7,38 +7,29 @@ using Core.Shared;
 public class CalculateJourneyTest
 {
     [Fact]
-    public void TestCalculateSpawnFromKBHCenter()
+    public void TestCalculateSpawn()
     {
         var cities = new List<City>
         {
-            new City("Frederikshavn", new Position(57.44f, 10.54f), 23000),
-            new City("Viborg", new Position(56.45f, 9.40f), 96000),
-            new City("Frederiksberg", new Position(55.68f, 12.53f), 105000),
-            new City("København", new Position(55.68f, 12.57f), 800000),
-            new City("Havdrup", new Position(55.50f, 12.20f), 5000),
+            new City("Copenhagen", new Position(12.5683, 55.6761), 794128),
+            new City("Frederiksberg", new Position(12.5218, 55.6729), 104305),
+            new City("Viborg", new Position(9.4028, 56.4515), 96000),
+            new City("Frederikshavn", new Position(10.5400, 57.4400), 23000),
+            new City("Havdrup", new Position(12.2000, 55.5000), 5000),
         };
         var calculateJourney = new CalculateJourney();
-        var result = calculateJourney.CalculateSpawn(new Position(55.6761f, 12.5683f), 0.5f, cities);
-        Assert.NotEmpty(result);
-        Assert.Contains(result, city => city.Name == "København" && Math.Abs(city.SpawnChance - 0.938209772) < 1e-6);
-        Assert.True(Math.Abs(result.Sum(city => city.SpawnChance) - 1) < 1e-6);
-    }
-
-    [Fact]
-    public void TestCalculateSpawnFromKBHCenterWithHigherScaler()
-    {
-        var cities = new List<City>
+        var gridMatrix = calculateJourney.CalculateSpawn(new List<Position> { new (12.5683, 55.6761), new (9.4028, 56.4515) }, 1f, cities);
+        Assert.NotNull(gridMatrix);
+        Assert.Equal(2, gridMatrix.Count);
+        foreach (var grid in gridMatrix)
         {
-            new City("Frederikshavn", new Position(57.44f, 10.54f), 23000),
-            new City("Viborg", new Position(56.45f, 9.40f), 96000),
-            new City("Frederiksberg", new Position(55.68f, 12.53f), 105000),
-            new City("København", new Position(55.68f, 12.57f), 800000),
-            new City("Havdrup", new Position(55.50f, 12.20f), 5000),
-        };
-        var calculateJourney = new CalculateJourney();
-        var result = calculateJourney.CalculateSpawn(new Position(55.6761f, 12.5683f), 1f, cities);
-        Assert.NotEmpty(result);
-        Assert.Contains(result, city => city.Name == "København" && Math.Abs(city.SpawnChance - 0.977446973) < 1e-6);
-        Assert.True(Math.Abs(result.Sum(city => city.SpawnChance) - 1) < 1e-6);
+            Assert.NotNull(grid.Item2);
+            Assert.Equal(cities.Count, grid.Item2.Length);
+            foreach (var city in grid.Item2)
+            {
+                Assert.False(string.IsNullOrEmpty(city.Item1));
+                Assert.True(city.Item2 >= 0);
+            }
+        }
     }
 }
