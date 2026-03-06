@@ -9,9 +9,17 @@ RUN apt-get update && apt-get install -y \
     libzip-dev \
     libbz2-dev \
     libexpat1-dev \
+    osrm-backend \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
+
+# Prepare OSRM data
+COPY output.osm.pbf .
+RUN mkdir -p data/osrm && \
+    cp output.osm.pbf data/osrm/output.osm.pbf && \
+    osrm-extract -p /usr/share/osrm/profiles/car.lua data/osrm/output.osm.pbf && \
+    osrm-contract data/osrm/output.osm.pbf
 
 # Copy solution and restore
 COPY EVSimulation.slnx .
