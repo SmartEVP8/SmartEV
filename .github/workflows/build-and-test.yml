@@ -20,4 +20,4 @@ jobs:
       - name: Build and test
         run: |
           docker build -t smartev-test .
-          docker run smartev-test dotnet test --no-build
+          docker run smartev-test dotnet test
