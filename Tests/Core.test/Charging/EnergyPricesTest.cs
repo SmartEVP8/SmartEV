@@ -6,6 +6,15 @@ using Core.Charging;
 public class EnergyPricesTest
 {
     /// <summary>
+    /// Initializes a new instance of the <see cref="EnergyPricesTest"/> class.
+    /// </summary>
+    public EnergyPricesTest()
+    {
+        var csvPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "data", "energy_prices.csv");
+        EnergyPrices.Initialize(csvPath);
+    }
+
+    /// <summary>
     /// Verifies that <see cref="EnergyPrices.GetHourPrice"/> returns the correct price for a given hour.
     /// </summary>
     /// <param name="day">The day from DayOfWeek enum.</param>
@@ -17,7 +26,7 @@ public class EnergyPricesTest
     [InlineData(DayOfWeek.Saturday, 23, 3.009931f)]
     public void GetHourPrice_ReturnsExpectedPrice(DayOfWeek day, int hour, float expected)
     {
-        float result = EnergyPrices.GetHourPrice(day, hour);
+        var result = EnergyPrices.GetHourPrice(day, hour);
 
         Assert.Equal(expected, result);
     }
@@ -40,27 +49,17 @@ public class EnergyPricesTest
     [Fact]
     public void GetHourPrice_InvalidDay_ThrowsArgumentOutOfRangeException()
     {
-        var validHour = 0;
-        Assert.Throws<ArgumentOutOfRangeException>(() => EnergyPrices.GetHourPrice((DayOfWeek)99, validHour));
+        Assert.Throws<ArgumentOutOfRangeException>(() => EnergyPrices.GetHourPrice((DayOfWeek)99, 0));
     }
 
     /// <summary>
-    /// Verifies that <see cref="EnergyPrices.GetDayPrice"/> returns 24 entries for a valid day.
+    /// Verifies that <see cref="EnergyPrices.GetDayPrice"/> returns exactly 24 entries containing all hours 0-23.
     /// </summary>
     [Fact]
-    public void GetDayPrice_ValidDay_Returns24Entries()
+    public void GetDayPrice_ValidDay_Returns24EntriesWithAllHours()
     {
         var result = EnergyPrices.GetDayPrice(DayOfWeek.Monday);
         Assert.Equal(24, result.Count);
-    }
-
-    /// <summary>
-    /// Verifies that <see cref="EnergyPrices.GetDayPrice"/> returns all hours 0-23 as keys.
-    /// </summary>
-    [Fact]
-    public void GetDayPrice_ValidDay_ContainsAllHours()
-    {
-        var result = EnergyPrices.GetDayPrice(DayOfWeek.Monday);
         for (var hour = 0; hour <= 23; hour++)
             Assert.True(result.ContainsKey(hour), $"Missing hour {hour}");
     }

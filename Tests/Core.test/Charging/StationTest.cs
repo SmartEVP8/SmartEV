@@ -6,11 +6,6 @@ using Core.Shared;
 /// </summary>
 public class StationTest
 {
-    private static Station CreateStation(float price = 3.0f, Random? random = null) =>
-        new (id: 1, name: "Test Station", address: "Test Street 1",
-            position: new Position(10.0, 56.0), chargers: null, price: price,
-            random: random ?? new Random(42));
-
     /// <summary>
     /// Verifies that the constructor sets <see cref="Station.Price"/> to the supplied value.
     /// </summary>
@@ -58,4 +53,9 @@ public class StationTest
         station.CalculatePrice(DayOfWeek.Monday, 12);
         Assert.NotEqual(3.0f, station.Price);
     }
+
+    private static Station CreateStation(float price = 3.0f, Random? random = null) =>
+        new (id: 1, name: "Test Station", address: "Test Street 1",
+            position: new Position(10.0, 56.0), chargers: null, price: price,
+            random: random ?? new Random(42));
 }

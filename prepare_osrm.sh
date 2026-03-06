@@ -1,9 +1,9 @@
 set -e
 
-DATA_DIR="data"
+DATA_DIR="data/osrm"
 OSM_FILE="output.osm.pbf"
 OSRM_BACKEND="osrm-backend-362b388d7e0582291662105d7bfc004a3a44a393"
-CAR_FILE="../"$OSRM_BACKEND"/profiles/car.lua"
+CAR_FILE="../../"$OSRM_BACKEND"/profiles/car.lua"
 
 # Package mappings for different systems
 declare -A PACKAGE_MAPS
@@ -92,13 +92,13 @@ fi
 
 mkdir -p "$DATA_DIR" && cd "$DATA_DIR"
 
-if [ ! -f "../$OSM_FILE" ]; then
+if [ ! -f "../../$OSM_FILE" ]; then
     echo "OSM file not found: $OSM_FILE"
     exit 1
 fi
 
 if [ ! -d "$OSM_FILE" ]; then
-    cp "../$OSM_FILE" "$OSM_FILE"
+    cp "../../$OSM_FILE" "$OSM_FILE"
 fi
 
 
