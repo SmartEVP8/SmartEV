@@ -5,10 +5,27 @@ using Core.Routing;
 using Core.Services;
 using Core.Shared;
 
+using Engine.Parsers;
+using Engine.Grid;
+
 public static class Program
 {
-    public static void Main()
+    public static async Task Main()
     {
+        var polygons = PolygonParser.Parse(
+            File.ReadAllText("../data/denmark.polygon.json"));
+
+        var grid = Polygooner.GenerateGrid(0.1, polygons);
+
+        // Print the grid to the console
+        foreach (var row in grid.SpawnableCells.AsEnumerable().Reverse())
+        {
+            foreach (var cell in row)
+            {
+                Console.Write(cell.Spawnable ? "1 " : "0 ");
+            }
+        }
+
         var path = AppContext.GetData("OsrmDataPath") as string
             ?? throw new InvalidOperationException("OsrmDataPath not set in project.");
 
@@ -22,7 +39,9 @@ public static class Program
                 name: $"Station {i}",
                 address: string.Empty,
                 position: new Position(9.9217 + (i * 0.01), 57.0488 + (i * 0.01)),
-                chargers: []));
+                chargers: [],
+                price: 3.0f,
+                random: new Random(i)));
         }
 
         router.InitStations(stations);
