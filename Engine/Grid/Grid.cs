@@ -6,6 +6,7 @@ using Core.Shared;
 /// A grid of spawnable cells that are either one or zero
 /// </summary>
 /// <param name="spawnableCells">The spawnable cell and their midpoint.</param>
+
 public class Grid(List<List<GridCell>> spawnableCells)
 {
     /// <summary>
