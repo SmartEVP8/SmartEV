@@ -10,5 +10,10 @@ public static class Program
     /// <summary>
     /// Runs the OSRM router benchmarks.
     /// </summary>
-    public static void Main() => BenchmarkRunner.Run<OsrmRouterBenchmark>();
+    public static void Main()
+    {
+        //       BenchmarkRunner.Run<OsrmRouterBenchmark>();
+        BenchmarkRunner.Run<Polyline6DecodeTests>();
+        BenchmarkRunner.Run<Polyline6DecodeParallelTests>();
+    }
 }
