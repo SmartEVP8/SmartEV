@@ -1,4 +1,5 @@
 using Core.Charging;
+using Core.DayCycles;
 using Core.Shared;
 
 /// <summary>
@@ -30,16 +31,17 @@ public class StationTest
     /// Verifies that <see cref="Station.CalculatePrice"/> sets <see cref="Station.Price"/>
     /// within ±20% of the base price returned by <see cref="EnergyPrices.GetPrice"/>.
     /// </summary>
+    /// <param name="day">The day of the week to check.</param>
     /// <param name="hour">The hour of the day (0–23) to pass to <see cref="Station.CalculatePrice"/>.</param>
     [Theory]
-    [InlineData(0)]
-    [InlineData(12)]
-    [InlineData(18)]
-    [InlineData(23)]
-    public void CalculatePrice_SetsPrice_WithinExpectedRange(int hour)
+    [InlineData(DaysOfWeek.Monday, 0)]
+    [InlineData(DaysOfWeek.Monday, 12)]
+    [InlineData(DaysOfWeek.Monday, 18)]
+    [InlineData(DaysOfWeek.Monday, 23)]
+    public void CalculatePrice_SetsPrice_WithinExpectedRange(DaysOfWeek day, int hour)
     {
         Station station = CreateStation();
-        float basePrice = EnergyPrices.GetPrice(hour);
+        float basePrice = EnergyPrices.GetHourPrice(day, hour);
 
         station.CalculatePrice(hour);
 
