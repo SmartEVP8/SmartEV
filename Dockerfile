@@ -1,4 +1,16 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+
+# Install OSRM runtime dependencies to match the wrapper image
+RUN apt-get update && apt-get install -y \
+    libboost-all-dev \
+    libtbb-dev \
+    liblua5.4-dev \
+    libxml2-dev \
+    libzip-dev \
+    libbz2-dev \
+    libexpat1-dev \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 # Copy solution and restore
@@ -19,7 +31,7 @@ COPY Tests/Core.test/Core.test.csproj Tests/Core.test/
 RUN dotnet restore
 
 # Copy the .so from OSRM wrapper image
-COPY --from=ghcr.io/smartevp8/osrm_wrapper:latest /usr/local/lib/libosrm_wrapper.so Core/native/
+COPY --from=ghcr.io/smartevp8/osrm_wrapper:latest /build/build/libosrm_wrapper.so Core/native/
 
 # Copy everything else including data/
 COPY . .
