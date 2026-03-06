@@ -10,8 +10,7 @@
   <ItemGroup>
     <PackageReference Include="StyleCop.Analyzers" />
     <ProjectReference Include="..\Core\Core.csproj" />
-    </ItemGroup>
-
-
+    <ProjectReference Include="..\Engine\Engine.csproj" />
+  </ItemGroup>
 
 </Project>
