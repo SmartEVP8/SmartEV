@@ -1,12 +1,17 @@
 namespace DayCyclesTests;
 
+using static Core.DayCycles.RoadCongestion;
+using static Core.DayCycles.Cars;
+using static Core.DayCycles.Days;
+using System;
+using Xunit;
+
 /// <summary>
-/// Tests for the PassingOfDay class, which estimates the number of EVs
+/// Tests for the RoadCongestion class, which estimates the number of EVs
 /// on the road based on congestion data.
 /// </summary>
-public class PassingOfDayTests
+public class CarsOnRoadTests
 {
-
     /// <summary>
     /// Tests that providing valid hours (0-23) returns a number of EVs on the road
     /// that is within the expected range (0 to TotalEVs).
@@ -14,12 +19,12 @@ public class PassingOfDayTests
     [Fact]
     public void ValidHours()
     {
-        var day = Core.DayCycles.PassingOfDay.Day.Monday;
+        var day = Day.Monday;
 
         for (int hour = 0; hour < 24; hour++)
         {
-            int evsOnRoad = Core.DayCycles.PassingOfDay.GetEVsOnRoad(day, hour);
-            Assert.InRange(evsOnRoad, 0, Core.DayCycles.PassingOfDay.TotalEVs);
+            int evsOnRoad = GetEVsOnRoad(day, hour);
+            Assert.InRange(evsOnRoad, 0, TotalEVs);
         }
     }
 
@@ -33,14 +38,13 @@ public class PassingOfDayTests
     [InlineData(24)]
     public void InvalidHour(int hour)
     {
-        var day = Core.DayCycles.PassingOfDay.Day.Monday;
+        var day = Day.Monday;
 
-        Assert.Throws<ArgumentOutOfRangeException>(() =>
-            Core.DayCycles.PassingOfDay.GetEVsOnRoad(day, hour));
+        Assert.Throws<ArgumentOutOfRangeException>(() => GetEVsOnRoad(day, hour));
     }
 
     /// <summary>
-    /// Tests that providing valid day values (0-6 corresponding to Monday-Sunday) 
+    /// Tests that providing valid day values (0-6 corresponding to Monday-Sunday)
     /// returns a number of EVs on the road that is within the expected range (0 to TotalEVs).
     /// </summary>
     [Fact]
@@ -48,9 +52,9 @@ public class PassingOfDayTests
     {
         for (int dayValue = 0; dayValue < 7; dayValue++)
         {
-            var day = (Core.DayCycles.PassingOfDay.Day)dayValue;
-            int evsOnRoad = Core.DayCycles.PassingOfDay.GetEVsOnRoad(day, 12);
-            Assert.InRange(evsOnRoad, 0, Core.DayCycles.PassingOfDay.TotalEVs);
+            var day = (Day)dayValue;
+            int evsOnRoad = GetEVsOnRoad(day, 12);
+            Assert.InRange(evsOnRoad, 0, TotalEVs);
         }
     }
 
@@ -65,8 +69,7 @@ public class PassingOfDayTests
     [InlineData(99)]
     public void InvalidDay(int invalidDayValue)
     {
-        Assert.Throws<ArgumentOutOfRangeException>(() =>
-            Core.DayCycles.PassingOfDay.GetEVsOnRoad((Core.DayCycles.PassingOfDay.Day)invalidDayValue, 12));
+        Assert.Throws<ArgumentOutOfRangeException>(() => GetEVsOnRoad((Day)invalidDayValue, 12));
     }
 
     /// <summary>
@@ -76,11 +79,11 @@ public class PassingOfDayTests
     [Fact]
     public void Result_ShouldNeverExceedTotalEVs()
     {
-        var day = Core.DayCycles.PassingOfDay.Day.Tuesday;
+        var day = Day.Tuesday;
         int hour = 7;
 
-        int evsOnRoad = Core.DayCycles.PassingOfDay.GetEVsOnRoad(day, hour);
+        int evsOnRoad = GetEVsOnRoad(day, hour);
 
-        Assert.InRange(evsOnRoad, 0, Core.DayCycles.PassingOfDay.TotalEVs);
+        Assert.InRange(evsOnRoad, 0, TotalEVs);
     }
 }
