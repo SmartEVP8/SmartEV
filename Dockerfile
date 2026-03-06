@@ -2,8 +2,7 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /app
 
 # Copy and restore
-COPY *.sln .
-COPY Core/Core.csproj Core/
+COPY EVSimulation.sln .COPY Core/Core.csproj Core/
 COPY API/API.csproj API/
 COPY Engine/Engine.csproj Engine/
 COPY Headless/Headless.csproj Headless/
