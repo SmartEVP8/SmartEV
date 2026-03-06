@@ -1,24 +1,31 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 
-# Install OSRM runtime dependencies to match the wrapper image
+# Install dependencies
 RUN apt-get update && apt-get install -y \
-    libboost-all-dev \
-    libtbb-dev \
-    liblua5.4-dev \
-    libxml2-dev \
-    libzip-dev \
-    libbz2-dev \
-    libexpat1-dev \
-    osrm-backend \
+    build-essential cmake pkg-config \
+    libbz2-dev libxml2-dev libzip-dev \
+    libboost-all-dev liblua5.2-dev libtbb-dev \
+    libboost-all-dev libtbb-dev liblua5.4-dev \
+    libxml2-dev libzip-dev libbz2-dev libexpat1-dev \
+    curl \
     && rm -rf /var/lib/apt/lists/*
+
+# Build OSRM and process data
+RUN curl -L https://github.com/Project-OSRM/osrm-backend/archive/362b388d7e0582291662105d7bfc004a3a44a393.tar.gz | tar -xz \
+    && cd osrm-backend-362b388d7e0582291662105d7bfc004a3a44a393 \
+    && mkdir -p build && cd build \
+    && cmake .. -DCMAKE_BUILD_TYPE=Release \
+    && make -j$(nproc) \
+    && make install \
+    && cd ../.. \
+    && rm -rf osrm-backend-362b388d7e0582291662105d7bfc004a3a44a393
 
 WORKDIR /app
 
-# Prepare OSRM data
 COPY output.osm.pbf .
 RUN mkdir -p data/osrm && \
     cp output.osm.pbf data/osrm/output.osm.pbf && \
-    osrm-extract -p /usr/share/osrm/profiles/car.lua data/osrm/output.osm.pbf && \
+    osrm-extract -p /usr/local/share/osrm/profiles/car.lua data/osrm/output.osm.pbf && \
     osrm-contract data/osrm/output.osm.pbf
 
 # Copy solution and restore
@@ -38,9 +45,9 @@ COPY Tests/Engine.test/Engine.test.csproj Tests/Engine.test/
 COPY Tests/Core.test/Core.test.csproj Tests/Core.test/
 RUN dotnet restore
 
-# Copy the .so from OSRM wrapper image
+# Copy .so from OSRM wrapper image
 COPY --from=ghcr.io/smartevp8/osrm_wrapper:latest /build/build/libosrm_wrapper.so Core/native/
 
-# Copy everything else including data/
+# Copy everything and build
 COPY . .
 RUN dotnet build --no-restore
