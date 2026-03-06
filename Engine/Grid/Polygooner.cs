@@ -24,27 +24,22 @@ public static class Polygooner
         var latSteps = (int)Math.Ceiling(diffLat / size);
         var lonSteps = (int)Math.Ceiling(diffLon / lonSize);
 
-        var gridCells = new GridCell[latSteps][];
+        var gridCells = new List<List<GridCell>>(latSteps);
 
         for (var i = 0; i < latSteps; i++)
         {
+            var row = new List<GridCell>(lonSteps);
+
             for (var j = 0; j < lonSteps; j++)
             {
                 var centerLat = min.Latitude + ((i + 0.5) * size);
                 var centerLon = min.Longitude + ((j + 0.5) * lonSize);
                 var centerPos = new Position(centerLat, centerLon);
-
-                gridCells[i][j] = new GridCell(false, centerPos);
-
-                foreach (var polygon in polygons)
-                {
-                    if (PointInPolygon(polygon, centerLat, centerLon))
-                    {
-                        gridCells[i][j].Spawnable = true;
-                        break;
-                    }
-                }
+                var spawnable = polygons.Any(polygon => PointInPolygon(polygon, centerLat, centerLon));
+                row.Add(new GridCell(spawnable, centerPos));
             }
+
+            gridCells.Add(row);
         }
 
         return new Grid(gridCells);

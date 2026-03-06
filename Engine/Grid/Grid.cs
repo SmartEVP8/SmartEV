@@ -6,12 +6,12 @@ using Core.Shared;
 /// A grid of spawnable cells that are either one or zero
 /// </summary>
 /// <param name="spawnableCells">The spawnable cell and their midpoint.</param>
-public class Grid(GridCell[][] spawnableCells)
+public class Grid(List<List<GridCell>> spawnableCells)
 {
     /// <summary>
     /// A 2D array of GridCells, where each cell contains a boolean indicating if it's spawnable and its midpoint position.
     /// </summary>
-    public readonly GridCell[][] SpawnableCells = spawnableCells;
+    public readonly List<List<GridCell>> SpawnableCells = spawnableCells;
 }
 
 /// <summary>
