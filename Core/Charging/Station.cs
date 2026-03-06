@@ -1,6 +1,7 @@
 namespace Core.Charging;
 
 using Core.Shared;
+using System;
 
 /// <summary>
 /// An EV charging station.
@@ -38,9 +39,9 @@ public class Station(ushort id,
     /// The new price is randomly generated in the range [3.0, 5.0].
     /// Call this periodically to simulate dynamic pricing.
     /// </remarks>
-    public void CalculatePrice(int hour = 12)
+    public void CalculatePrice(DayOfWeek day = DayOfWeek.Monday, int hour = 12)
     {
-        var basePrice = EnergyPrices.GetPrice(hour);
+        var basePrice = EnergyPrices.GetHourPrice(day, hour);
         var deviation = 0.10f + (_random.NextSingle() * 0.10f); // 10–20%
         var sign = _random.Next(2) == 0 ? 1.0f : -1.0f;
         Price = basePrice * (1.0f + (sign * deviation));

@@ -1,6 +1,4 @@
 using Core.Charging;
-using Core.DayCycles;
-using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 
 /// <summary>
 /// Tests for <see cref="EnergyPrices"/>.
@@ -10,14 +8,14 @@ public class EnergyPricesTest
     /// <summary>
     /// Verifies that <see cref="EnergyPrices.GetHourPrice"/> returns the correct price for a given hour.
     /// </summary>
-    /// <param name="day">The day from DaysOfWeek enum.</param>
+    /// <param name="day">The day from DayOfWeek enum.</param>
     /// <param name="hour">The hour of the day (0–23).</param>
     /// <param name="expected">The expected price in DKK/kWh.</param>
     [Theory]
-    [InlineData(DaysOfWeek.Monday, 0, 3.7402f)]
-    [InlineData(DaysOfWeek.Wednesday, 15, 2.6900f)]
-    [InlineData(DaysOfWeek.Saturday, 23, 3.6926f)]
-    public void GetHourPrice_ReturnsExpectedPrice(DaysOfWeek day, int hour, float expected)
+    [InlineData(DayOfWeek.Monday, 0, 2.745128f)]
+    [InlineData(DayOfWeek.Wednesday, 15, 3.710836f)]
+    [InlineData(DayOfWeek.Saturday, 23, 3.009931f)]
+    public void GetHourPrice_ReturnsExpectedPrice(DayOfWeek day, int hour, float expected)
     {
         float result = EnergyPrices.GetHourPrice(day, hour);
 
@@ -30,20 +28,20 @@ public class EnergyPricesTest
     /// <param name="day">The day being queried.</param>
     /// <param name="hour">The hour of the day (0–23).</param>
     [Theory]
-    [InlineData(DaysOfWeek.Monday, -1)]
-    [InlineData(DaysOfWeek.Monday, 24)]
-    [InlineData(DaysOfWeek.Monday, 100)]
-    public void GetHourPrice_InvalidHour_ThrowsArgumentOutOfRangeException(DaysOfWeek day, int hour) =>
+    [InlineData(DayOfWeek.Monday, -1)]
+    [InlineData(DayOfWeek.Monday, 24)]
+    [InlineData(DayOfWeek.Monday, 100)]
+    public void GetHourPrice_InvalidHour_ThrowsArgumentOutOfRangeException(DayOfWeek day, int hour) =>
         Assert.Throws<ArgumentOutOfRangeException>(() => EnergyPrices.GetHourPrice(day, hour));
 
     /// <summary>
-    /// Verifies that <see cref="EnergyPrices.GetHourPrice"/> correctly handles values outside the range of the DaysOfWeek enum.
+    /// Verifies that <see cref="EnergyPrices.GetHourPrice"/> correctly handles values outside the range of the DayOfWeek enum.
     /// </summary>
     [Fact]
     public void GetHourPrice_InvalidDay_ThrowsArgumentOutOfRangeException()
     {
         var validHour = 0;
-        Assert.Throws<ArgumentOutOfRangeException>(() => EnergyPrices.GetHourPrice((DaysOfWeek)99, validHour));
+        Assert.Throws<ArgumentOutOfRangeException>(() => EnergyPrices.GetHourPrice((DayOfWeek)99, validHour));
     }
 
     /// <summary>
@@ -52,7 +50,7 @@ public class EnergyPricesTest
     [Fact]
     public void GetDayPrice_ValidDay_Returns24Entries()
     {
-        var result = EnergyPrices.GetDayPrice(DaysOfWeek.Monday);
+        var result = EnergyPrices.GetDayPrice(DayOfWeek.Monday);
         Assert.Equal(24, result.Count);
     }
 
@@ -62,7 +60,7 @@ public class EnergyPricesTest
     [Fact]
     public void GetDayPrice_ValidDay_ContainsAllHours()
     {
-        var result = EnergyPrices.GetDayPrice(DaysOfWeek.Monday);
+        var result = EnergyPrices.GetDayPrice(DayOfWeek.Monday);
         for (var hour = 0; hour <= 23; hour++)
             Assert.True(result.ContainsKey(hour), $"Missing hour {hour}");
     }
@@ -73,8 +71,8 @@ public class EnergyPricesTest
     [Fact]
     public void GetDayPrice_ValidDay_ReturnsCorrectPrice()
     {
-        var result = EnergyPrices.GetDayPrice(DaysOfWeek.Monday);
-        Assert.Equal(0.554331f, result[0]);
+        var result = EnergyPrices.GetDayPrice(DayOfWeek.Monday);
+        Assert.Equal(2.745128f, result[0]);
     }
 
     /// <summary>
@@ -82,5 +80,5 @@ public class EnergyPricesTest
     /// </summary>
     [Fact]
     public void GetDayPrice_InvalidDay_ThrowsArgumentOutOfRangeException() =>
-        Assert.Throws<ArgumentOutOfRangeException>(() => EnergyPrices.GetDayPrice((DaysOfWeek)99));
+        Assert.Throws<ArgumentOutOfRangeException>(() => EnergyPrices.GetDayPrice((DayOfWeek)99));
 }

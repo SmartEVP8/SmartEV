@@ -1,5 +1,4 @@
 using Core.Charging;
-using Core.DayCycles;
 using Core.Shared;
 
 /// <summary>
@@ -34,16 +33,16 @@ public class StationTest
     /// <param name="day">The day of the week to check.</param>
     /// <param name="hour">The hour of the day (0–23) to pass to <see cref="Station.CalculatePrice"/>.</param>
     [Theory]
-    [InlineData(DaysOfWeek.Monday, 0)]
-    [InlineData(DaysOfWeek.Monday, 12)]
-    [InlineData(DaysOfWeek.Monday, 18)]
-    [InlineData(DaysOfWeek.Monday, 23)]
-    public void CalculatePrice_SetsPrice_WithinExpectedRange(DaysOfWeek day, int hour)
+    [InlineData(DayOfWeek.Monday, 0)]
+    [InlineData(DayOfWeek.Monday, 12)]
+    [InlineData(DayOfWeek.Monday, 18)]
+    [InlineData(DayOfWeek.Monday, 23)]
+    public void CalculatePrice_SetsPrice_WithinExpectedRange(DayOfWeek day, int hour)
     {
         Station station = CreateStation();
         float basePrice = EnergyPrices.GetHourPrice(day, hour);
 
-        station.CalculatePrice(hour);
+        station.CalculatePrice(DayOfWeek.Monday, hour);
 
         Assert.InRange(station.Price, basePrice * 0.80f, basePrice * 1.20f);
     }
@@ -56,7 +55,7 @@ public class StationTest
     public void CalculatePrice_ChangesPrice()
     {
         Station station = CreateStation(random: new Random(42));
-        station.CalculatePrice(12);
+        station.CalculatePrice(DayOfWeek.Monday, 12);
         Assert.NotEqual(3.0f, station.Price);
     }
 }
