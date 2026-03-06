@@ -51,25 +51,37 @@ public static class Polygooner
     }
 
     /// <summary>
-    /// Ray casting algorithm for point-in-polygon testing.
-    /// https://www.geeksforgeeks.org/c/point-in-polygon-in-c/.
+    /// Determines if a point (lat, lon) is inside a polygon using the ray casting algorithm.
+    ///
+    /// The idea: cast an imaginary ray rightward from the test point and count how many
+    /// polygon edges it crosses. Odd crossings = inside, even crossings = outside.
+    ///
+    /// This works because to get from inside a shape to outside, you must cross its boundary.
     /// </summary>
     private static bool PointInPolygon(List<Position> polygon, double lat, double lon)
     {
         var inside = false;
         var vertexCount = polygon.Count;
 
-        for (int current = 0, previous = vertexCount - 1; current < vertexCount; previous = current++)
+        for (var current = 0; current < vertexCount; current++)
         {
+            var previous = (current + vertexCount - 1) % vertexCount;
+
             var currentLon = polygon[current].Longitude;
             var currentLat = polygon[current].Latitude;
             var previousLon = polygon[previous].Longitude;
             var previousLat = polygon[previous].Latitude;
 
-            var edgeStradlesPoint = (currentLat > lat) != (previousLat > lat);
-            var rayIntersectsEdge = lon < ((previousLon - currentLon) * (lat - currentLat) / (previousLat - currentLat)) + currentLon;
+            // Only edges where one vertex is above and one is below the test latitude can be crossed
+            if ((currentLat > lat) == (previousLat > lat))
+                continue;
 
-            if (edgeStradlesPoint && rayIntersectsEdge)
+            // Find the longitude where this edge crosses the test latitude
+            var interpolationFactor = (lat - currentLat) / (previousLat - currentLat);
+            var crossingLon = currentLon + ((previousLon - currentLon) * interpolationFactor);
+
+            // If the crossing is to our right, our rightward ray hits it — toggle inside/outside
+            if (lon < crossingLon)
                 inside = !inside;
         }
 
