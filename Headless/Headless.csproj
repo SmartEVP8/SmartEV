@@ -12,7 +12,4 @@
     <ProjectReference Include="..\Core\Core.csproj" />
     <ProjectReference Include="..\Engine\Engine.csproj" />
   </ItemGroup>
-
-
-
 </Project>
