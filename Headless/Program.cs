@@ -1,12 +1,10 @@
 namespace Headless;
 
-using Core.Charging;
 using Core.Routing;
-using Core.Services;
 using Core.Shared;
-
-using Engine.Parsers;
 using Engine.Grid;
+using Engine.Parsers;
+using Parquet.Serialization;
 
 public static class Program
 {
@@ -17,13 +15,10 @@ public static class Program
 
         var grid = Polygooner.GenerateGrid(0.1, polygons);
 
-        // Print the grid to the console
-        foreach (var row in grid.SpawnableCells.AsEnumerable().Reverse())
+        foreach (var gridRow in grid.SpawnableCells.AsEnumerable().Reverse())
         {
-            foreach (var cell in row)
-            {
+            foreach (var cell in gridRow)
                 Console.Write(cell.Spawnable ? "1 " : "0 ");
-            }
         }
 
         var path = AppContext.GetData("OsrmDataPath") as string
@@ -31,48 +26,37 @@ public static class Program
 
         using var router = new OSRMRouter(path);
 
-        var stations = new List<Station>();
-        for (ushort i = 0; i < 250; i++)
+        var srcCoords = new (double Lon, double Lat)[]
         {
-            stations.Add(new Station(
-                id: i,
-                name: $"Station {i}",
-                address: string.Empty,
-                position: new Position(9.9217 + (i * 0.01), 57.0488 + (i * 0.01)),
-                chargers: [],
-                price: 3.0f,
-                random: new Random(i)));
-        }
-
-        router.InitStations(stations);
-
-        var evCoords = new (double Lon, double Lat)[]
-        {
-            (9.9200, 57.0400),
-            (9.9300, 57.0500),
-            (9.9400, 57.0600),
+            (12.5683, 55.6761), // Copenhagen
+            (9.9217,  57.0488), // Aalborg
+            (10.2039, 56.1629), // Aarhus
         };
 
-        var evCoordsFlat = evCoords.SelectMany(e => new[] { e.Lon, e.Lat }).ToArray();
-        var stationCoordsFlat = stations.SelectMany(s => new[] { s.Position.Longitude, s.Position.Latitude }).ToArray();
-
-        var (durations, distances) = router.QueryPointsToPoints(evCoordsFlat, evCoords.Length, stationCoordsFlat, stations.Count);
-
-        var outputPath = Path.Combine(Directory.GetCurrentDirectory(), "points_to_points.parquet");
-        ParquetService.Write(outputPath, new Dictionary<string, Array>
+        var dstCoords = new (double Lon, double Lat)[]
         {
-            ["duration"] = durations,
-            ["distance"] = distances,
-        });
+            (12.5683, 55.6761), // Copenhagen
+            (10.2039, 56.1629), // Aarhus
+            (9.9217,  57.0488), // Aalborg
+        };
 
-        Console.WriteLine($"Written: {outputPath}");
+        var srcPos = srcCoords.SelectMany(e => new[] { e.Lon, e.Lat }).ToArray();
+        var dstPos = dstCoords.SelectMany(e => new[] { e.Lon, e.Lat }).ToArray();
 
-        var result = ParquetService.Read(outputPath);
-        var readDurs = (float[])result["duration"];
-        var readDists = (float[])result["distance"];
+        var outputPath = Path.Combine(Directory.GetCurrentDirectory(), "parquetExample.parquet");
 
-        Console.WriteLine($"Read {readDurs.Length} rows from points_to_points.parquet");
-        for (var i = 0; i < 15; i++)
-            Console.WriteLine($"Row {i}: duration={readDurs[i]}s distance={readDists[i]}m");
+        for (var i = 0; i < 3; i++)
+        {
+            var (durations, distances) = router.QueryPointsToPoints(srcPos, srcCoords.Length, dstPos, dstCoords.Length);
+            var rows = durations.Zip(distances, (dur, dist) => new Routing { Duration = dur, Distance = dist }).ToList();
+            var options = new ParquetSerializerOptions { Append = i > 0 };
+            await ParquetSerializer.SerializeAsync(rows, outputPath, options);
+        }
+
+        Console.WriteLine($"\nWritten: {outputPath}");
+
+        IList<Routing> data = await ParquetSerializer.DeserializeAsync<Routing>(outputPath);
+        for (var i = 0; i < data.Count; i++)
+            Console.WriteLine($"  Row {i}: duration={data[i].Duration}s distance={data[i].Distance}m");
     }
 }
