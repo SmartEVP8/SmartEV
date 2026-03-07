@@ -4,49 +4,8 @@ using Core.Routing;
 using Core.Spawning;
 using Engine.Grid;
 
-
-/// <summary>
-/// Calculates the chances a EV to drive to a city based on their population and distance to grid centers.
-/// The process involves three main steps:
-/// 1. CalculateDistance: Uses OSRM to compute distances from grid centers to cities.
-/// 2. CalculateSpawnChance: Computes spawn chances as population divided by distance, scaled by a given factor.
-/// 3. NormalizeSpawnChance: Normalizes spawn chances so that they sum to 1 for each grid center, representing probabilities.
-/// </summary>
-/// <remarks>
-/// This class is designed to be used in a headless environment for testing and simulation purposes.
-/// It relies on the OSRMRouter for distance calculations and the City class for city data.
-/// </remarks>
 public class CalculateJourney
 {
-    /*
-    /// <summary>
-    /// Calculates the chances for a EV to drive to a city based on the city's population and distance to grid centers.
-    /// </summary>
-    /// <param name="grids">A list of all grids of Denmark.</param>
-    /// <param name="scaler">A scaling factor to adjust the influence of population on spawn chances.</param>
-    /// <param name="cities">A list of City objects containing information about each city, including name, position, and population.</param>
-    /// <param name="router">An instance of OSRMRouter used to calculate distances between grid centers and cities.</param>
-    /// <returns>A list of tuples, where each tuple contains a grid index and an matrix of city names with their corresponding normalized spawn chances.</returns>
-    public SpawnableGrid CalculateDestChance(SpawnableGrid grids,  List<City> cities, OSRMRouter router)
-    {
-        var newGrids = new SpawnableGrid([]);
-        Parallel.ForEach(grids.SpawnableCells, (list) =>
-        {
-            // Step 1: Calculate distances from grid centers to cities
-            var distanceData = CalculateDistance(list, cities, router);
-
-            // Step 2: Calculate chances based on population and distance
-            // var chanceData = CalculateChances(distanceData, cities, scaler);
-
-            // Step 3: Normalize chances to get probabilities
-            // var result = NormalizeChances(chanceData);
-            newGrids.SpawnableCells.Add(distanceData);
-        });
-
-        return newGrids;
-    }
-    */
-
     public SpawnableGrid CalculateDistance(SpawnGrid grid, List<City> cities, OSRMRouter router)
     {
         var newGrid = new List<SpawnableCells>[grid.Cells.Count];
@@ -95,8 +54,8 @@ public class CalculateJourney
 
                 // Handle zero or very small distances to avoid division by zero
                 var adjustedDistance = Math.Max(distance, 1.0f); // Minimum distance of 1 meter
-
                 var destChance = (float)(Math.Pow(population, scaler) / Math.Pow(adjustedDistance, 0.8));
+
                 cell.CityInfo[i] = new CityInfo(cityName, distance, destChance);
             }
         }
@@ -104,54 +63,32 @@ public class CalculateJourney
         return grid;
     }
 
-    public SpawnableGrid CalculateSpawnRate(SpawnableGrid grid)
+    public AliasSampler CalculateSpawnRate(SpawnableGrid grid)
     {
-        var totalDestChance = grid.SpawnableCells.SelectMany(g => g).Sum(c => c.CityInfo.Sum(ci => ci.DestChance));
+        var cells = grid.SpawnableCells
+            .SelectMany(g => g)
+            .Where(c => c.spawnChance > 0)
+            .ToList();
 
-        foreach (var cell in grid.SpawnableCells.SelectMany(g => g))
-        {
-            if (cell.spawnChance is <= 0) continue; // Skip grids with zero spawn chance
-            var allDestChance = cell.CityInfo.Sum(ci => ci.DestChance);
-            cell.spawnChance = allDestChance / totalDestChance; // Normalize to get spawn chance as a probability
-        }
+        var weights = new float[cells.Count];
 
-        return grid;
+        for (var i = 0; i < cells.Count; i++)
+            weights[i] = cells[i].CityInfo.Sum(ci => ci.DestChance);
+
+        return new AliasSampler(weights);
     }
 
-    private static float[] ComputeAllDistances(List<City> cities, OSRMRouter router, List<GridCell> cell)
+    private static float[] ComputeAllDistances(List<City> cities, OSRMRouter router, List<GridCell> cells)
     {
-        var gridCenters = cell
-                        .SelectMany(g => new double[]
-                        {
-                    g.Midpoint.Longitude, g.Midpoint.Latitude,
-                        }).ToArray();
+        var cityPositions = cities
+                .SelectMany(c => new double[] { c.Position.Longitude, c.Position.Latitude })
+                .ToArray();
 
-        var citypositions = cities
-        .SelectMany(c => new double[] { c.Position.Longitude, c.Position.Latitude })
-        .ToArray();
+        var gridCenters = cells
+                .SelectMany(g => new double[] { g.Midpoint.Longitude, g.Midpoint.Latitude })
+                .ToArray();
 
-        var (_, distance) = router.QueryPointsToPoints(gridCenters, cell.Count, citypositions, cities.Count);
-        return distance;
+        var (_, distances) = router.QueryPointsToPoints(gridCenters, cells.Count, cityPositions, cities.Count);
+        return distances;
     }
-
-    /*
-        private List<SpawnableGridCells> NormalizeChances(List<SpawnableGridCells> grids)
-        {
-            foreach (var grid in grids)
-            {
-                if (grid.spawnChance is <= 0) continue; // Skip grids with zero spawn chance
-
-                // Calculate total spawn chance for THIS grid only
-                var gridTotalChance = grid.CityChances.Sum(c => c.CityDestChance);
-
-                // Normalize so this grid's cities sum to 1 (100%)
-                var normalizedChances = grid.CityChances
-                    .Select(c => (c.CityName, c.CityDestChance / gridTotalChance))
-                    .ToList();
-                grid.CityChances = normalizedChances;
-            }
-
-            return grids;
-        }
-        */
 }
