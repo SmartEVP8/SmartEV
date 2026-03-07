@@ -109,7 +109,7 @@ echo "Running OSRM contract (CH pipeline)..."
 osrm-contract "$OSM_FILE"
 
 echo "Returning to project root..."
-cd ..
+cd ../..
 rm -rf "$OSRM_BACKEND"
 
 echo "OSRM dataset preparation complete."
