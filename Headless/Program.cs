@@ -1,3 +1,5 @@
+using Core.Spawning;
+using Engine;
 namespace Headless;
 
 using Core.Charging;
@@ -7,72 +9,52 @@ using Core.Shared;
 
 using Engine.Parsers;
 using Engine.Grid;
+using System.Security.Cryptography;
 
 public static class Program
 {
     public static async Task Main()
     {
-        var polygons = PolygonParser.Parse(
-            File.ReadAllText("../data/denmark.polygon.json"));
-
-        var grid = Polygooner.GenerateGrid(0.1, polygons);
-
-        // Print the grid to the console
-        foreach (var row in grid.SpawnableCells.AsEnumerable().Reverse())
+        var router = new OSRMRouter("../data/osrm/output.osrm");
+        // Read cities from ../CityInfo.csv
+        var cityinfo = File.ReadAllLines("../data/CityInfo.csv").Skip(1).Select(line =>
         {
-            foreach (var cell in row)
+            var parts = line.Split(',');
+            var name = parts[0];
+            var longitude = double.Parse(parts[2]);
+            var latitude = double.Parse(parts[3]);
+            var population = int.Parse(parts[1]);
+            return new City(name, new Position(longitude: longitude, latitude), population);
+        }).ToList();
+        if (cityinfo.Count == 0)
+        {
+            Console.WriteLine("No cities found in CityInfo.csv");
+            return;
+        }
+        var spawnableGrid = new SpawnableGrid([]);
+        for (ushort i = 0; i < 1; i++)
+        {
+            var row = new List<SpawnableGridCells>();
+            for (ushort j = 0; j < 1; j++)
             {
-                Console.Write(cell.Spawnable ? "1 " : "0 ");
+                row.Add(new SpawnableGridCells(1.0f, new Position(10.01099600811421, 56.94347985757521), new List<(string CityName, float CitySpawnChance)>()));
+            }
+            spawnableGrid.SpawnableCells.Add(row);
+        }
+        var calculateJourney = new CalculateJourney();
+        var gridMatrix = calculateJourney.CalculateDestChance(spawnableGrid, 0.6f, cityinfo, router);
+        // Print the spawn chances for each cell in the grid
+        for (ushort i = 0; i < spawnableGrid.SpawnableCells.Count; i++)
+        {
+            for (ushort j = 0; j < spawnableGrid.SpawnableCells[i].Count; j++)
+            {
+                var cell = spawnableGrid.SpawnableCells[i][j];
+                Console.WriteLine($"Cell ({i}, {j}) at {cell.midpoint}:");
+                foreach (var cityChance in cell.CityChances)
+                {
+                    Console.WriteLine($"  City: {cityChance.CityName}, Spawn Chance: {cityChance.CityDestChance * 100}%");
+                }
             }
         }
-
-        var path = AppContext.GetData("OsrmDataPath") as string
-            ?? throw new InvalidOperationException("OsrmDataPath not set in project.");
-
-        using var router = new OSRMRouter(path);
-
-        var stations = new List<Station>();
-        for (ushort i = 0; i < 250; i++)
-        {
-            stations.Add(new Station(
-                id: i,
-                name: $"Station {i}",
-                address: string.Empty,
-                position: new Position(9.9217 + (i * 0.01), 57.0488 + (i * 0.01)),
-                chargers: [],
-                price: 3.0f,
-                random: new Random(i)));
-        }
-
-        router.InitStations(stations);
-
-        var evCoords = new (double Lon, double Lat)[]
-        {
-            (9.9200, 57.0400),
-            (9.9300, 57.0500),
-            (9.9400, 57.0600),
-        };
-
-        var evCoordsFlat = evCoords.SelectMany(e => new[] { e.Lon, e.Lat }).ToArray();
-        var stationCoordsFlat = stations.SelectMany(s => new[] { s.Position.Longitude, s.Position.Latitude }).ToArray();
-
-        var (durations, distances) = router.QueryPointsToPoints(evCoordsFlat, evCoords.Length, stationCoordsFlat, stations.Count);
-
-        var outputPath = Path.Combine(Directory.GetCurrentDirectory(), "points_to_points.parquet");
-        ParquetService.Write(outputPath, new Dictionary<string, Array>
-        {
-            ["duration"] = durations,
-            ["distance"] = distances,
-        });
-
-        Console.WriteLine($"Written: {outputPath}");
-
-        var result = ParquetService.Read(outputPath);
-        var readDurs = (float[])result["duration"];
-        var readDists = (float[])result["distance"];
-
-        Console.WriteLine($"Read {readDurs.Length} rows from points_to_points.parquet");
-        for (var i = 0; i < 15; i++)
-            Console.WriteLine($"Row {i}: duration={readDurs[i]}s distance={readDists[i]}m");
     }
 }
