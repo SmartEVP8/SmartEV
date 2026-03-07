@@ -1,13 +1,12 @@
 namespace DayCyclesTests;
 
-using static Core.DayCycles.RoadCongestion;
-using static Core.DayCycles.Cars;
+using static Core.DayCycles.CarsOnRoad;
 using static Core.DayCycles.Days;
 using System;
 using Xunit;
 
 /// <summary>
-/// Tests for the RoadCongestion class, which estimates the number of EVs
+/// Tests for the CarsOnRoad class, which estimates the number of EVs
 /// on the road based on congestion data.
 /// </summary>
 public class CarsOnRoadTests
@@ -23,7 +22,7 @@ public class CarsOnRoadTests
 
         for (int hour = 0; hour < 24; hour++)
         {
-            int evsOnRoad = GetEVsOnRoad(day, hour);
+            var evsOnRoad = GetEVsOnRoad(day, hour);
             Assert.InRange(evsOnRoad, 0, TotalEVs);
         }
     }
@@ -53,7 +52,7 @@ public class CarsOnRoadTests
         for (int dayValue = 0; dayValue < 7; dayValue++)
         {
             var day = (Day)dayValue;
-            int evsOnRoad = GetEVsOnRoad(day, 12);
+            var evsOnRoad = GetEVsOnRoad(day, 12);
             Assert.InRange(evsOnRoad, 0, TotalEVs);
         }
     }
@@ -82,7 +81,7 @@ public class CarsOnRoadTests
         var day = Day.Tuesday;
         int hour = 7;
 
-        int evsOnRoad = GetEVsOnRoad(day, hour);
+        var evsOnRoad = GetEVsOnRoad(day, hour);
 
         Assert.InRange(evsOnRoad, 0, TotalEVs);
     }
