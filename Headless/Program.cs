@@ -1,11 +1,10 @@
 namespace Headless;
 
 using Core.Routing;
-using Core.Models;
-using Core.Services;
+using Core.Shared;
 using Engine.Grid;
 using Engine.Parsers;
-using Parquet;
+using Parquet.Serialization;
 
 public static class Program
 {
@@ -41,36 +40,23 @@ public static class Program
             (9.9217,  57.0488), // Aalborg
         };
 
-        var srcFlat = srcCoords.SelectMany(e => new[] { e.Lon, e.Lat }).ToArray();
-        var dstFlat = dstCoords.SelectMany(e => new[] { e.Lon, e.Lat }).ToArray();
+        var srcPos = srcCoords.SelectMany(e => new[] { e.Lon, e.Lat }).ToArray();
+        var dstPos = dstCoords.SelectMany(e => new[] { e.Lon, e.Lat }).ToArray();
 
-        var (durations, distances) = router.QueryPointsToPoints(srcFlat, srcCoords.Length, dstFlat, dstCoords.Length);
+        var outputPath = Path.Combine(Directory.GetCurrentDirectory(), "parquetExample.parquet");
 
-        var outputPath = Path.Combine(Directory.GetCurrentDirectory(), "points_to_points.parquet");
-
-        await using (var writer = await Writer.CreateAsync(outputPath, RoutingRow.Schema))
+        for (var i = 0; i < 3; i++)
         {
-            // RowGroup 0
-            await writer.AppendAsync(RoutingRow.ToColumns(durations, distances));
-            var (durations2, distances2) = router.QueryPointsToPoints(dstFlat, dstCoords.Length, srcFlat, srcCoords.Length);
-
-            // RowGroup 1
-            await writer.AppendAsync(RoutingRow.ToColumns(durations2, distances2));
+            var (durations, distances) = router.QueryPointsToPoints(srcPos, srcCoords.Length, dstPos, dstCoords.Length);
+            var rows = durations.Zip(distances, (dur, dist) => new Routing { Duration = dur, Distance = dist }).ToList();
+            var options = new ParquetSerializerOptions { Append = i > 0 };
+            await ParquetSerializer.SerializeAsync(rows, outputPath, options);
         }
 
         Console.WriteLine($"\nWritten: {outputPath}");
-        using var readStream = File.OpenRead(outputPath);
-        using var reader = await ParquetReader.CreateAsync(readStream);
 
-        Console.WriteLine();
-        for (var g = 0; g < reader.RowGroupCount; g++)
-        {
-            using var rowGroup = reader.OpenRowGroupReader(g);
-            var readDurs = (float[])(await rowGroup.ReadColumnAsync(RoutingRow.Schema.DataFields[0])).Data;
-            var readDists = (float[])(await rowGroup.ReadColumnAsync(RoutingRow.Schema.DataFields[1])).Data;
-
-            for (var i = 0; i < readDurs.Length; i++)
-                Console.WriteLine($"  [{g}] Row {i}: duration={readDurs[i]}s distance={readDists[i]}m");
-        }
+        IList<Routing> data = await ParquetSerializer.DeserializeAsync<Routing>(outputPath);
+        for (var i = 0; i < data.Count; i++)
+            Console.WriteLine($"  Row {i}: duration={data[i].Duration}s distance={data[i].Distance}m");
     }
 }
