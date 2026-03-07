@@ -1,12 +1,11 @@
 namespace Headless;
 
-using Core.Charging;
 using Core.Routing;
+using Core.Models;
 using Core.Services;
-using Core.Shared;
-
-using Engine.Parsers;
 using Engine.Grid;
+using Engine.Parsers;
+using Parquet;
 
 public static class Program
 {
@@ -17,13 +16,10 @@ public static class Program
 
         var grid = Polygooner.GenerateGrid(0.1, polygons);
 
-        // Print the grid to the console
-        foreach (var row in grid.SpawnableCells.AsEnumerable().Reverse())
+        foreach (var gridRow in grid.SpawnableCells.AsEnumerable().Reverse())
         {
-            foreach (var cell in row)
-            {
+            foreach (var cell in gridRow)
                 Console.Write(cell.Spawnable ? "1 " : "0 ");
-            }
         }
 
         var path = AppContext.GetData("OsrmDataPath") as string
@@ -31,48 +27,50 @@ public static class Program
 
         using var router = new OSRMRouter(path);
 
-        var stations = new List<Station>();
-        for (ushort i = 0; i < 250; i++)
+        var srcCoords = new (double Lon, double Lat)[]
         {
-            stations.Add(new Station(
-                id: i,
-                name: $"Station {i}",
-                address: string.Empty,
-                position: new Position(9.9217 + (i * 0.01), 57.0488 + (i * 0.01)),
-                chargers: [],
-                price: 3.0f,
-                random: new Random(i)));
-        }
-
-        router.InitStations(stations);
-
-        var evCoords = new (double Lon, double Lat)[]
-        {
-            (9.9200, 57.0400),
-            (9.9300, 57.0500),
-            (9.9400, 57.0600),
+            (12.5683, 55.6761), // Copenhagen
+            (9.9217,  57.0488), // Aalborg
+            (10.2039, 56.1629), // Aarhus
         };
 
-        var evCoordsFlat = evCoords.SelectMany(e => new[] { e.Lon, e.Lat }).ToArray();
-        var stationCoordsFlat = stations.SelectMany(s => new[] { s.Position.Longitude, s.Position.Latitude }).ToArray();
+        var dstCoords = new (double Lon, double Lat)[]
+        {
+            (12.5683, 55.6761), // Copenhagen
+            (10.2039, 56.1629), // Aarhus
+            (9.9217,  57.0488), // Aalborg
+        };
 
-        var (durations, distances) = router.QueryPointsToPoints(evCoordsFlat, evCoords.Length, stationCoordsFlat, stations.Count);
+        var srcFlat = srcCoords.SelectMany(e => new[] { e.Lon, e.Lat }).ToArray();
+        var dstFlat = dstCoords.SelectMany(e => new[] { e.Lon, e.Lat }).ToArray();
+
+        var (durations, distances) = router.QueryPointsToPoints(srcFlat, srcCoords.Length, dstFlat, dstCoords.Length);
 
         var outputPath = Path.Combine(Directory.GetCurrentDirectory(), "points_to_points.parquet");
-        ParquetService.Write(outputPath, new Dictionary<string, Array>
+
+        await using (var writer = await Writer.CreateAsync(outputPath, RoutingRow.Schema))
         {
-            ["duration"] = durations,
-            ["distance"] = distances,
-        });
+            // RowGroup 0
+            await writer.AppendAsync(RoutingRow.ToColumns(durations, distances));
+            var (durations2, distances2) = router.QueryPointsToPoints(dstFlat, dstCoords.Length, srcFlat, srcCoords.Length);
 
-        Console.WriteLine($"Written: {outputPath}");
+            // RowGroup 1
+            await writer.AppendAsync(RoutingRow.ToColumns(durations2, distances2));
+        }
 
-        var result = ParquetService.Read(outputPath);
-        var readDurs = (float[])result["duration"];
-        var readDists = (float[])result["distance"];
+        Console.WriteLine($"\nWritten: {outputPath}");
+        using var readStream = File.OpenRead(outputPath);
+        using var reader = await ParquetReader.CreateAsync(readStream);
 
-        Console.WriteLine($"Read {readDurs.Length} rows from points_to_points.parquet");
-        for (var i = 0; i < 15; i++)
-            Console.WriteLine($"Row {i}: duration={readDurs[i]}s distance={readDists[i]}m");
+        Console.WriteLine();
+        for (var g = 0; g < reader.RowGroupCount; g++)
+        {
+            using var rowGroup = reader.OpenRowGroupReader(g);
+            var readDurs = (float[])(await rowGroup.ReadColumnAsync(RoutingRow.Schema.DataFields[0])).Data;
+            var readDists = (float[])(await rowGroup.ReadColumnAsync(RoutingRow.Schema.DataFields[1])).Data;
+
+            for (var i = 0; i < readDurs.Length; i++)
+                Console.WriteLine($"  [{g}] Row {i}: duration={readDurs[i]}s distance={readDists[i]}m");
+        }
     }
 }

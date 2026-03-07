@@ -36,7 +36,10 @@ public class OsrmRouterBenchmark
                 name: string.Empty,
                 address: string.Empty,
                 position: new Position(9.9217 + (i * 0.001), 57.0488 + (i * 0.001)),
-                chargers: []));
+                chargers: [],
+                price: 3.0f,
+                random: new Random(i)));
+
         }
 
         _router.InitStations(stations);

@@ -10,6 +10,7 @@
     <PackageReference Include="StyleCop.Analyzers" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Simulation\Simulation.csproj" />
+    <ProjectReference Include="..\..\Headless\Headless.csproj" />
+    <ProjectReference Include="..\..\Core\Core.csproj" />
   </ItemGroup>
 </Project>
