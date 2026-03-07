@@ -61,4 +61,23 @@ public class AliasSampler
         var threshold = rng.NextDouble();
         return threshold < _probability[bucketIndex] ? bucketIndex : _alias[bucketIndex];
     }
+
+    /// <summary>
+    /// Computes the original probabilities from the alias table.
+    /// This is useful for debugging and verification purposes.
+    /// </summary>
+    /// <returns>List of the original probabilities.</returns>
+    public List<float> GetProbabilities()
+    {
+        var n = _probability.Length;
+        var probs = new float[n];
+
+        for (var i = 0; i < n; i++)
+        {
+            probs[i] += _probability[i] / n;
+            probs[_alias[i]] += (1 - _probability[i]) / n;
+        }
+
+        return [.. probs];
+    }
 }

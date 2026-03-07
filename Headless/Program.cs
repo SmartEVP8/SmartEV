@@ -1,22 +1,18 @@
-using Core.Spawning;
-using Engine;
 namespace Headless;
 
-using Core.Charging;
+using Core.Spawning;
 using Core.Routing;
-using Core.Services;
 using Core.Shared;
 
+using Engine;
 using Engine.Parsers;
 using Engine.Grid;
-using System.Security.Cryptography;
 
 public static class Program
 {
     public static async Task Main()
     {
         var router = new OSRMRouter("../data/osrm/output.osrm");
-        // Read cities from ../CityInfo.csv
         var cityinfo = File.ReadAllLines("../data/CityInfo.csv").Skip(1).Select(line =>
         {
             var parts = line.Split(',');
@@ -26,11 +22,13 @@ public static class Program
             var population = int.Parse(parts[1]);
             return new City(name, new Position(longitude: longitude, latitude), population);
         }).ToList();
+
         if (cityinfo.Count == 0)
         {
             Console.WriteLine("No cities found in CityInfo.csv");
             return;
         }
+
         var polygons = PolygonParser.Parse(File.ReadAllText("../data/denmark.polygon.json"));
         var grid = Polygooner.GenerateGrid(0.1, polygons);
         foreach (var row in grid.Cells.AsEnumerable())
@@ -39,24 +37,26 @@ public static class Program
             {
                 Console.Write(cell.Spawnable ? "1 " : "0 ");
             }
+
             Console.WriteLine();
         }
 
-        var calculateJourney = new CalculateJourney();
-        var distanceMatrix = calculateJourney.CalculateDistance(grid,  cityinfo, router);
-        var scaler = 0.5f; // Adjust this value to control the influence of population on spawn chances
-        var destChanceGrid = calculateJourney.CalculateChances(distanceMatrix, cityinfo, scaler);
-        var spawnChanceGrid = calculateJourney.CalculateSpawnRate(destChanceGrid);
+        var pipeline = new CalculateJourney(grid, cityinfo, router);
+        var samplers = pipeline.Compute(1.0f);
 
-        // Print the spawn chances for each cell in the grid
-        for (ushort i = 0; i < spawnChanceGrid.SpawnableCells.Count; i++)
+        if (samplers == null)
         {
-            for (ushort j = 0; j < spawnChanceGrid.SpawnableCells[i].Count; j++)
-            {
-                var cell = distanceMatrix.SpawnableCells[i][j];
-                Console.WriteLine($"Cell ({i}, {j}) at {cell.midpoint}:");
-                Console.WriteLine($"  Spawn Chance: {cell.spawnChance}");
-            }
+            Console.WriteLine("Samplers were not created successfully.");
+            return;
         }
+
+        var probabilities = samplers.SourceSampler.GetProbabilities();
+
+        probabilities.ForEach(val => Console.WriteLine(val + " "));
+
+
+        var lol = grid.Cells.SelectMany(c => c).Count(c => c.Spawnable == true);
+        Console.WriteLine($"Total spawnable cells: {lol}");
+        Console.WriteLine($"Total probabilities samples: {probabilities.Count}");
     }
 }

@@ -1,21 +1,26 @@
 using Core.Shared;
 using Core.Spawning;
 
-public class SpawnableGrid(List<List<SpawnableCell>> spawnableCells)
+internal class GravityGrid(List<List<GravityCell>> cells)
 {
-    public readonly List<List<SpawnableCell>> SpawnableCells = spawnableCells;
+    public readonly List<List<GravityCell>> Cells = cells;
 }
 
-public class SpawnableCell(float spawnChance, Position Centerpoint, List<CityInfo> CityChances)
+internal class GravityCell(Position centerPoint, List<CityInfo> cityInfo)
 {
-    public readonly List<CityInfo> CityInfo = CityChances;
-    public readonly Position Centerpoint = Centerpoint;
-    public AliasSampler? CitySampler = null;
+    public readonly Position Centerpoint = centerPoint;
+    public readonly List<CityInfo> CityInfo = cityInfo;
 }
 
-public struct CityInfo(string CityName, float DistToCity, float Population)
+internal struct CityInfo(string cityName, float distToCity, float population)
 {
-    public readonly string CityName = CityName;
-    public readonly float DistToCity = DistToCity;
-    public readonly float Population = Population;
+    public readonly string CityName = cityName;
+    public readonly float DistToCity = distToCity;
+    public readonly float Population = population;
+}
+
+public class SimulationSamplers(AliasSampler source, AliasSampler[] destinations)
+{
+    public readonly AliasSampler SourceSampler = source;
+    public readonly AliasSampler[] DestinationSamplers = destinations;
 }

@@ -6,7 +6,7 @@ using Core.Charging;
 /// <summary>
 /// Provides routing and station query functionality using the OSRM (Open Source Routing Machine) wrapper library.
 /// </summary>
-public unsafe partial class OSRMRouter : IDisposable
+public unsafe partial class OSRMRouter : IDisposable, IMatrixRouter
 {
     private const string _lib = "osrm_wrapper";
 
@@ -130,7 +130,7 @@ public unsafe partial class OSRMRouter : IDisposable
             return (-1, string.Empty);
 
         var result = Marshal.PtrToStructure<RouteResult>(resultPtr);
-        var polylineStr = Marshal.PtrToStringAnsi(result.Polyline) !;
+        var polylineStr = Marshal.PtrToStringAnsi(result.Polyline)!;
 
         FreeMemory(result.Polyline);
         FreeMemory(resultPtr);
@@ -142,16 +142,14 @@ public unsafe partial class OSRMRouter : IDisposable
     /// Queries durations and distances between multiple source and destination points.
     /// </summary>
     /// <param name="srcCoords">Array of source coordinates in [lon, lat, lon, lat, ...] format.</param>
-    /// <param name="numSrcs">The number of source points.</param>
     /// <param name="dstCoords">Array of destination coordinates in [lon, lat, lon, lat, ...] format.</param>
-    /// <param name="numDsts">The number of destination points.</param>
     /// <returns>A tuple containing matrices of durations and distances between all source and destination pairs.</returns>
     public (float[] durations, float[] distances) QueryPointsToPoints(
-        double[] srcCoords,
-        int numSrcs,
-        double[] dstCoords,
-        int numDsts)
+    double[] srcCoords,
+    double[] dstCoords)
     {
+        var numSrcs = srcCoords.Length / 2;
+        var numDsts = dstCoords.Length / 2;
         var durations = new float[numSrcs * numDsts];
         var distances = new float[numSrcs * numDsts];
 
