@@ -5,9 +5,9 @@ public class SpawnableGrid(List<List<SpawnableGridCells>> spawnableCells)
     public readonly List<List<SpawnableGridCells>> SpawnableCells = spawnableCells;
 }
 
-public class SpawnableGridCells (float spawnChance, Position midpoint, List<(string CityName, float CitySpawnChance)> CityChances)
+public class SpawnableGridCells (float spawnChance, Position midpoint, List<(string CityName, float CitySpawnChance, float DestChance)> CityChances)
 {
-    public readonly float spawnChance = spawnChance;
-    public List<(string CityName, float CityDestChance)> CityChances = CityChances;
+    public float spawnChance = spawnChance;
+    public List<(string CityName, float DistToCity, float DestChance)> CityInfo = CityChances;
     public readonly Position midpoint = midpoint;
 }

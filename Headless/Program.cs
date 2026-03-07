@@ -32,17 +32,21 @@ public static class Program
             return;
         }
         var spawnableGrid = new SpawnableGrid([]);
-        for (ushort i = 0; i < 1; i++)
+        for (ushort i = 0; i < 5; i++)
         {
             var row = new List<SpawnableGridCells>();
-            for (ushort j = 0; j < 1; j++)
+            for (ushort j = 0; j < 5; j++)
             {
-                row.Add(new SpawnableGridCells(1.0f, new Position(10.01099600811421, 56.94347985757521), new List<(string CityName, float CitySpawnChance)>()));
+                row.Add(new SpawnableGridCells(1.0f, new Position(10.01099600811421 + ( i * 0.05), 56.94347985757521 + (j* 0.05)), new List<(string CityName, float CityDistance, float DestChance)>()));
             }
             spawnableGrid.SpawnableCells.Add(row);
         }
         var calculateJourney = new CalculateJourney();
-        var gridMatrix = calculateJourney.CalculateDestChance(spawnableGrid, 0.6f, cityinfo, router);
+        var distanceMatrix = calculateJourney.CalculateDistance(spawnableGrid,  cityinfo, router);
+        var scaler = 0.5f; // Adjust this value to control the influence of population on spawn chances
+        var destChanceGrid = calculateJourney.CalculateChances(distanceMatrix, cityinfo, scaler);
+        var spawnChanceGrid = calculateJourney.CalculateSpawnRate(destChanceGrid);
+
         // Print the spawn chances for each cell in the grid
         for (ushort i = 0; i < spawnableGrid.SpawnableCells.Count; i++)
         {
@@ -50,10 +54,7 @@ public static class Program
             {
                 var cell = spawnableGrid.SpawnableCells[i][j];
                 Console.WriteLine($"Cell ({i}, {j}) at {cell.midpoint}:");
-                foreach (var cityChance in cell.CityChances)
-                {
-                    Console.WriteLine($"  City: {cityChance.CityName}, Spawn Chance: {cityChance.CityDestChance * 100}%");
-                }
+                Console.WriteLine($" Spawn Chance: {cell.spawnChance * 100}%");
             }
         }
     }
