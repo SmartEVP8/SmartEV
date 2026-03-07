@@ -18,7 +18,7 @@ public static class Program
         var grid = Polygooner.GenerateGrid(0.1, polygons);
 
         // Print the grid to the console
-        foreach (var row in grid.SpawnableCells.AsEnumerable().Reverse())
+        foreach (var row in grid.Cells.AsEnumerable().Reverse())
         {
             foreach (var cell in row)
             {
@@ -32,7 +32,7 @@ public static class Program
         using var router = new OSRMRouter(path);
 
         var stations = new List<Station>();
-        for (ushort i = 0; i < 250; i++)
+        for (ushort i = 0; i < 10; i++)
         {
             stations.Add(new Station(
                 id: i,
