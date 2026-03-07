@@ -10,7 +10,7 @@ public static class Polygooner
     /// <param name="size">The size in degrees of each grid cell.</param>
     /// <param name="polygons">The polygons to check intersections against.</param>
     /// <returns>A 2D grid with 1 or 0.</returns>
-    public static Grid GenerateGrid(double size, List<List<Position>> polygons)
+    public static SpawnGrid GenerateGrid(double size, List<List<Position>> polygons)
     {
         var (min, max) = ComputeBoundingBox(polygons);
         var diffLat = max.Latitude - min.Latitude;
@@ -42,7 +42,7 @@ public static class Polygooner
             gridCells.Add(row);
         }
 
-        return new Grid(gridCells, min, size, lonSize);
+        return new SpawnGrid(gridCells, min, size, lonSize);
     }
 
     /// <summary>

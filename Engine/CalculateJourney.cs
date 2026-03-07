@@ -2,6 +2,8 @@ namespace Engine;
 
 using Core.Routing;
 using Core.Spawning;
+using Engine.Grid;
+
 
 /// <summary>
 /// Calculates the chances a EV to drive to a city based on their population and distance to grid centers.
@@ -45,57 +47,61 @@ public class CalculateJourney
     }
     */
 
-    public SpawnableGrid CalculateDistance(SpawnableGrid grid, List<City> cities, OSRMRouter router)
+    public SpawnableGrid CalculateDistance(SpawnGrid grid, List<City> cities, OSRMRouter router)
     {
+        var newGrid = new List<SpawnableCells>[grid.Cells.Count];
 
-        var newGrids = new SpawnableGrid([]);
-        Parallel.ForEach(grid.SpawnableCells, (list) =>
+        Parallel.For(0, grid.Cells.Count, index =>
         {
-            var gridCenters = list.SelectMany(g => new double[]
-                {
-                    g.midpoint.Longitude, g.midpoint.Latitude,
-                }).ToArray();
-            var citypositions = cities.SelectMany(c => new double[] { c.Position.Longitude, c.Position.Latitude }).ToArray();
-            var (_, distance) = router.QueryPointsToPoints(gridCenters, list.Count, citypositions, cities.Count);
+            var cell = grid.Cells[index];
+            var distance = ComputeAllDistances(cities, router, cell);
 
-            for (var i = 0; i < list.Count; i++)
+            var cellData = new List<SpawnableCells>(cell.Count);
+            for (var i = 0; i < cell.Count; i++)
             {
-                if (list[i].spawnChance <= 0) continue; // Skip grids with zero spawn chance
-                var distanceMatrix = new (string, float, float)[cities.Count];
-                for (var j = 0; j < cities.Count; j++)
+                var distanceList = new List<CityInfo>(cities.Count);
+                if (!cell[i].Spawnable)
                 {
-                    if (distance[j + (cities.Count * i)] < 0) continue;
-                    distanceMatrix[j] = (cities[j].Name, distance[j + (cities.Count * i)], 0f);
+                    cellData.Add(new SpawnableCells(0f, cell[i].Midpoint, distanceList));
+                    continue;
                 }
 
-                list[i].CityInfo = distanceMatrix.Where(d => d != default).ToList();
+                for (var j = 0; j < cities.Count; j++)
+                {
+                    var distToCity = distance[j + (cities.Count * i)];
+                    if (distToCity < 0) continue;
+                    distanceList.Add(new CityInfo(cities[j].Name, distToCity, 0f));
+                }
+
+                cellData.Add(new SpawnableCells(1f, cell[i].Midpoint, distanceList));
             }
+
+            newGrid[index] = cellData;
         });
 
-        return grid;
+        return new SpawnableGrid(newGrid.ToList());
     }
 
-    public SpawnableGrid CalculateChances(SpawnableGrid grid, List<City> cities, float scaler)
+    public SpawnableGrid CalculateDestChances(SpawnableGrid grid, List<City> cities, float scaler)
     {
-    foreach (var list in grid.SpawnableCells.SelectMany(g => g))
-    {
-        var cityChances = new (string, float, float)[list.CityInfo.Count];
-        for (var i = 0; i < list.CityInfo.Count; i++)
+        foreach (var cell in grid.SpawnableCells.SelectMany(cell => cell))
         {
-            if (list.spawnChance is <= 0) continue; // Skip grids with zero spawn chance
-            var cityName = list.CityInfo[i].CityName;
-            var distance = list.CityInfo[i].DistToCity; // This is actually the distance from CalculateDistance
-            var population = cities.First(c => c.Name == cityName).Population;
+            for (var i = 0; i < cell.CityInfo.Count; i++)
+            {
+                if (cell.spawnChance is <= 0) continue; // Skip grids with zero spawn chance
+                var cityName = cell.CityInfo[i].CityName;
+                var distance = cell.CityInfo[i].DistToCity;
+                var population = cities.First(c => c.Name == cityName).Population;
 
-            // Handle zero or very small distances to avoid division by zero
-            var adjustedDistance = Math.Max(distance, 1.0f); // Minimum distance of 1 meter
+                // Handle zero or very small distances to avoid division by zero
+                var adjustedDistance = Math.Max(distance, 1.0f); // Minimum distance of 1 meter
 
-            var destChance = (float)(Math.Pow(population, scaler) / Math.Pow(adjustedDistance, 0.8));
-            list.CityInfo[i] = (cityName, distance, destChance);
+                var destChance = (float)(Math.Pow(population, scaler) / Math.Pow(adjustedDistance, 0.8));
+                cell.CityInfo[i] = new CityInfo(cityName, distance, destChance);
+            }
         }
-    }
 
-    return grid;
+        return grid;
     }
 
     public SpawnableGrid CalculateSpawnRate(SpawnableGrid grid)
@@ -104,31 +110,48 @@ public class CalculateJourney
 
         foreach (var cell in grid.SpawnableCells.SelectMany(g => g))
         {
-           var allDestChance = cell.CityInfo.Sum(ci => ci.DestChance);
-           cell.spawnChance = allDestChance / totalDestChance; // Normalize to get spawn chance as a probability
+            if (cell.spawnChance is <= 0) continue; // Skip grids with zero spawn chance
+            var allDestChance = cell.CityInfo.Sum(ci => ci.DestChance);
+            cell.spawnChance = allDestChance / totalDestChance; // Normalize to get spawn chance as a probability
         }
 
         return grid;
     }
 
-/*
-    private List<SpawnableGridCells> NormalizeChances(List<SpawnableGridCells> grids)
+    private static float[] ComputeAllDistances(List<City> cities, OSRMRouter router, List<GridCell> cell)
     {
-        foreach (var grid in grids)
-        {
-            if (grid.spawnChance is <= 0) continue; // Skip grids with zero spawn chance
+        var gridCenters = cell
+                        .SelectMany(g => new double[]
+                        {
+                    g.Midpoint.Longitude, g.Midpoint.Latitude,
+                        }).ToArray();
 
-            // Calculate total spawn chance for THIS grid only
-            var gridTotalChance = grid.CityChances.Sum(c => c.CityDestChance);
+        var citypositions = cities
+        .SelectMany(c => new double[] { c.Position.Longitude, c.Position.Latitude })
+        .ToArray();
 
-            // Normalize so this grid's cities sum to 1 (100%)
-            var normalizedChances = grid.CityChances
-                .Select(c => (c.CityName, c.CityDestChance / gridTotalChance))
-                .ToList();
-            grid.CityChances = normalizedChances;
-        }
-
-        return grids;
+        var (_, distance) = router.QueryPointsToPoints(gridCenters, cell.Count, citypositions, cities.Count);
+        return distance;
     }
-    */
+
+    /*
+        private List<SpawnableGridCells> NormalizeChances(List<SpawnableGridCells> grids)
+        {
+            foreach (var grid in grids)
+            {
+                if (grid.spawnChance is <= 0) continue; // Skip grids with zero spawn chance
+
+                // Calculate total spawn chance for THIS grid only
+                var gridTotalChance = grid.CityChances.Sum(c => c.CityDestChance);
+
+                // Normalize so this grid's cities sum to 1 (100%)
+                var normalizedChances = grid.CityChances
+                    .Select(c => (c.CityName, c.CityDestChance / gridTotalChance))
+                    .ToList();
+                grid.CityChances = normalizedChances;
+            }
+
+            return grids;
+        }
+        */
 }
