@@ -1,106 +1,78 @@
-using Core.Benchmark;
-using Core.Routing;
-namespace Simulation;
+using BenchmarkDotNet.Engines;
+namespace Headless;
 
-using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Running;
 using Core.Charging;
+using Core.Routing;
+using Core.Services;
 using Core.Shared;
-using System.Collections.Generic;
-using System.Linq;
-
-[MemoryDiagnoser]
-public class OsrmRouterBenchmark
-{
-    private OSRMRouter _router = null!;
-    private int[] _stationIndices = null!;
-    private (double Lon, double Lat)[] _evCoordinates = null!;
-    private double[] _evCoordsFlat = null!;
-    private double[] _stationCoordsFlat = null!;
-
-    [GlobalSetup]
-    public void Setup()
-    {
-        var path = AppContext.GetData("OsrmDataPath") as string
-            ?? throw new InvalidOperationException("OsrmDataPath not set in project.");
-        _router = new OSRMRouter(path);
-
-        var stations = new List<Station>(50);
-        for (ushort i = 0; i < 50; i++)
-        {
-            stations.Add(new Station(
-                id: i,
-                name: string.Empty,
-                address: string.Empty,
-                position: new Position(9.9217 + (i * 0.001), 57.0488 + (i * 0.001)),
-                chargers: []));
-        }
-
-        _router.InitStations(stations);
-        _stationIndices = Enumerable.Range(0, 50).ToArray();
-
-        _evCoordinates = new (double Lon, double Lat)[1000];
-        _evCoordsFlat = new double[1000 * 2];
-        for (int i = 0; i < 1000; i++)
-        {
-            double lon = 9.9200 + (i * 0.002);
-            double lat = 57.0400 + (i * 0.002);
-            _evCoordinates[i] = (lon, lat);
-            _evCoordsFlat[i * 2] = lon;
-            _evCoordsFlat[i * 2 + 1] = lat;
-        }
-
-        _stationCoordsFlat = new double[50 * 2];
-        for (int i = 0; i < 50; i++)
-        {
-            _stationCoordsFlat[i * 2] = stations[i].Position.Longitude;
-            _stationCoordsFlat[i * 2 + 1] = stations[i].Position.Latitude;
-        }
-    }
-
-    [GlobalCleanup]
-    public void Cleanup()
-    {
-        _router?.Dispose();
-    }
-
-    [Benchmark]
-    public void Query1000Cars50StationsParallel()
-    {
-        var options = new ParallelOptions
-        {
-            MaxDegreeOfParallelism = Environment.ProcessorCount
-        };
-        Parallel.For(0, _evCoordinates.Length, options, i =>
-        {
-            var (lon, lat) = _evCoordinates[i];
-            _ = _router.QueryStations(lon, lat, _stationIndices);
-        });
-    }
-
-    [Benchmark]
-    public void Query1000Cars50StationsBulk()
-    {
-        _ = _router.QueryPointsToPoints(_evCoordsFlat, 1000, _stationCoordsFlat, 50);
-    }
-
-    [Benchmark]
-    public void QuerySingleDestination()
-    {
-        var (lon, lat) = _evCoordinates[0];
-        _ = _router.QuerySingleDestination(lon, lat, _stationCoordsFlat[0], _stationCoordsFlat[1]);
-    }
-}
+using Engine.Grid;
+using Engine.Parsers;
 
 public static class Program
 {
-    /// <summary>
-    /// Runs the OSRM router benchmarks.
-    /// </summary>
-    public static void Main()
+    public static async Task Main()
     {
-        //       BenchmarkRunner.Run<OsrmRouterBenchmark>();
-        BenchmarkRunner.Run<Polyline6DecodeTests>();
-        BenchmarkRunner.Run<Polyline6DecodeParallelTests>();
+        var polygons = PolygonParser.Parse(
+            File.ReadAllText("../data/denmark.polygon.json"));
+
+        var grid = Polygooner.GenerateGrid(0.1, polygons);
+
+        // Print the grid to the console
+        foreach (var row in grid.SpawnableCells.AsEnumerable().Reverse())
+        {
+            foreach (var cell in row)
+            {
+                Console.Write(cell.Spawnable ? "1 " : "0 ");
+            }
+        }
+
+        var path = AppContext.GetData("OsrmDataPath") as string
+            ?? throw new InvalidOperationException("OsrmDataPath not set in project.");
+
+        using var router = new OSRMRouter(path);
+
+        var stations = new List<Station>();
+        for (ushort i = 0; i < 250; i++)
+        {
+            stations.Add(new Station(
+                id: i,
+                name: $"Station {i}",
+                address: string.Empty,
+                position: new Position(9.9217 + (i * 0.01), 57.0488 + (i * 0.01)),
+                chargers: [],
+                price: 3.0f,
+                random: new Random(i)));
+        }
+
+        router.InitStations(stations);
+
+        var evCoords = new (double Lon, double Lat)[]
+        {
+            (9.9200, 57.0400),
+            (9.9300, 57.0500),
+            (9.9400, 57.0600),
+        };
+
+        var evCoordsFlat = evCoords.SelectMany(e => new[] { e.Lon, e.Lat }).ToArray();
+        var stationCoordsFlat = stations.SelectMany(s => new[] { s.Position.Longitude, s.Position.Latitude }).ToArray();
+
+        var (durations, distances) = router.QueryPointsToPoints(evCoordsFlat, evCoords.Length, stationCoordsFlat, stations.Count);
+
+        var outputPath = Path.Combine(Directory.GetCurrentDirectory(), "points_to_points.parquet");
+        ParquetService.Write(outputPath, new Dictionary<string, Array>
+        {
+            ["duration"] = durations,
+            ["distance"] = distances,
+        });
+
+        Console.WriteLine($"Written: {outputPath}");
+
+        var result = ParquetService.Read(outputPath);
+        var readDurs = (float[])result["duration"];
+        var readDists = (float[])result["distance"];
+
+        Console.WriteLine($"Read {readDurs.Length} rows from points_to_points.parquet");
+        for (var i = 0; i < 15; i++)
+            Console.WriteLine($"Row {i}: duration={readDurs[i]}s distance={readDists[i]}m");
     }
 }

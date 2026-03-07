@@ -1,9 +1,11 @@
 
 namespace Headless;
 using Engine;
+using Engine.Grid;
 using Core.Spawning;
 using Core.Shared;
 using Core.Routing;
+using Engine.Parsers;
 
 public static class fun
 {
@@ -11,7 +13,7 @@ public static class fun
     {
         var router = new OSRMRouter("../data/output.osrm");
         //Read cities from ../CityInfo.csv
-        var cityinfo = File.ReadAllLines("../CityInfo.csv").Skip(1).Select(line =>
+        var cityinfo = File.ReadAllLines("../data/CityInfo.csv").Skip(1).Select(line =>
         {
             var parts = line.Split(',');
             var name = parts[0];
@@ -25,18 +27,14 @@ public static class fun
             Console.WriteLine("No cities found in CityInfo.csv");
             return;
         }
+        var spawnableGrid = new SpawnableGrid([]);
+        var polygons = PolygonParser.Parse(
+            File.ReadAllText("../data/denmark.polygon.json"));
+        var grids = Polygooner.GenerateGrid(0.1, polygons);
+
+
         var calculateJourney = new CalculateJourney();
-        var gridMatrix = calculateJourney.CalculateDestChance(new List<Position> { new (12.5683, 55.6761), new (9.4028, 56.4515) }, 1f, cityinfo, router);
-        foreach (var grid in gridMatrix)
-        {
-            Console.WriteLine($"Grid {grid.Item1}:");
-            foreach (var city in grid.Item2)
-            {
-                Console.WriteLine($"  {city.Item1}: {city.Item2}");
-            }
-            Console.WriteLine("Sum of spawn chances: " + grid.Item2.Sum(c => c.Item2));
-        }
+        var gridMatrix = calculateJourney.CalculateDestChance(spawnableGrid, 1f, cityinfo, router);
+
     }
 }
-
-
