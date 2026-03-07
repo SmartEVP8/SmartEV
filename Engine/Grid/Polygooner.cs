@@ -34,15 +34,15 @@ public static class Polygooner
             {
                 var centerLat = min.Latitude + ((i + 0.5) * size);
                 var centerLon = min.Longitude + ((j + 0.5) * lonSize);
-                var centerPos = new Position(centerLat, centerLon);
-                var spawnable = polygons.Any(polygon => PointInPolygon(polygon, centerLat, centerLon));
+                var centerPos = new Position(centerLon, centerLat);
+                var spawnable = polygons.Any(polygon => PointInPolygon(polygon, centerLon, centerLat));
                 row.Add(new GridCell(spawnable, centerPos));
             }
 
             gridCells.Add(row);
         }
 
-        return new Grid(gridCells);
+        return new Grid(gridCells, min, size, lonSize);
     }
 
     /// <summary>
@@ -53,7 +53,7 @@ public static class Polygooner
     ///
     /// This works because to get from inside a shape to outside, you must cross its boundary.
     /// </summary>
-    private static bool PointInPolygon(List<Position> polygon, double lat, double lon)
+    private static bool PointInPolygon(List<Position> polygon, double lon, double lat)
     {
         var inside = false;
         var vertexCount = polygon.Count;
@@ -101,6 +101,6 @@ public static class Polygooner
             }
         }
 
-        return (new Position(minLat, minLon), new Position(maxLat, maxLon));
+        return (new Position(minLon, minLat), new Position(maxLon, maxLat));
     }
 }

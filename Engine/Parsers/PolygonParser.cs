@@ -51,7 +51,7 @@ public static class PolygonParser
                 var lon = coord[0];
                 var lat = coord[1];
 
-                polygonPoints.Add(new Position(lat, lon));
+                polygonPoints.Add(new Position(lon, lat));
             }
 
             polygons.Add(polygonPoints);
