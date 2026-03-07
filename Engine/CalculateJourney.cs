@@ -4,13 +4,11 @@ using Core.Routing;
 using Core.Shared;
 using Core.Spawning;
 
-public class Grid
+public class Grid (float spawnChance, Position midpoint, List<(string CityName, float CitySpawnChance)> CityDestChances)
 {
-    public readonly int Id;
-    public readonly float spawnChance;
-    public List<(string CityName, float SpawnChance)> CityDestChances;
-    public Position topright;
-    public Position bottomleft;
+    public readonly float spawnChance = spawnChance;
+    public List<(string CityName, float CitySpawnChance)> CityDestChances = CityDestChances;
+    public readonly Position midpoint = midpoint;
 }
 
 /// <summary>
@@ -29,7 +27,7 @@ public class CalculateJourney
     /// <summary>
     /// Calculates the chances for a EV to drive to a city based on the city's population and distance to grid centers.
     /// </summary>
-    /// <param name="grids">A list of all grids of Denmark</param>
+    /// <param name="grids">A list of all grids of Denmark.</param>
     /// <param name="scaler">A scaling factor to adjust the influence of population on spawn chances.</param>
     /// <param name="cities">A list of City objects containing information about each city, including name, position, and population.</param>
     /// <param name="router">An instance of OSRMRouter used to calculate distances between grid centers and cities.</param>
@@ -48,8 +46,7 @@ public class CalculateJourney
     {
         var gridCenters = grids.SelectMany(g => new double[]
         {
-            (g.bottomleft.Longitude + g.topright.Longitude) / 2,
-            (g.bottomleft.Latitude + g.topright.Latitude) / 2,
+            g.midpoint.Longitude, g.midpoint.Latitude,
         }).ToArray();
         var citypositions = cities.SelectMany(c => new double[] { c.Position.Longitude, c.Position.Latitude }).ToArray();
 
@@ -79,7 +76,7 @@ public class CalculateJourney
         for (var i = 0; i < grid.CityDestChances.Count; i++)
         {
             var cityName = grid.CityDestChances[i].CityName;
-            var distance = grid.CityDestChances[i].SpawnChance; // This is actually the distance from CalculateDistance
+            var distance = grid.CityDestChances[i].CitySpawnChance; // This is actually the distance from CalculateDistance
             var population = cities.First(c => c.Name == cityName).Population;
 
             // Handle zero or very small distances to avoid division by zero
@@ -98,11 +95,11 @@ public class CalculateJourney
         foreach (var grid in grids)
         {
             // Calculate total spawn chance for THIS grid only
-            var gridTotalSpawnChance = grid.CityDestChances.Sum(c => c.SpawnChance);
+            var gridTotalSpawnChance = grid.CityDestChances.Sum(c => c.CitySpawnChance);
 
             // Normalize so this grid's cities sum to 1 (100%)
             var normalizedSpawnChances = grid.CityDestChances
-                .Select(c => (c.CityName, c.SpawnChance / gridTotalSpawnChance))
+                .Select(c => (c.CityName, c.CitySpawnChance / gridTotalSpawnChance))
                 .ToArray();
         }
         return grids;
