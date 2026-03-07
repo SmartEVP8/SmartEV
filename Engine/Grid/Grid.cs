@@ -35,8 +35,8 @@ public class SpawnGrid(List<List<GridCell>> spawnableCells, Position min, double
 /// A single cell in the grid, which can be spawnable or not, and has a midpoint position
 /// </summary>
 /// <param name="spawnable">Bool for spawnable or now.</param>
-/// <param name="midpoint">Center of the grid.</param>
-public class GridCell(bool spawnable, Position midpoint)
+/// <param name="centerpoint">Center of the grid.</param>
+public class GridCell(bool spawnable, Position centerpoint)
 {
     /// <summary>
     /// Spawnable indicates whether this cell is spawnable (true) or not (false).
@@ -46,5 +46,5 @@ public class GridCell(bool spawnable, Position midpoint)
     /// <summary>
     /// The midpoint of the cell, represented as a Position (latitude and longitude).
     /// </summary>
-    public Position Midpoint = midpoint;
+    public Position Centerpoint = centerpoint;
 }

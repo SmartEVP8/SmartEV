@@ -8,20 +8,20 @@ public class CalculateJourney
 {
     public SpawnableGrid CalculateDistance(SpawnGrid grid, List<City> cities, OSRMRouter router)
     {
-        var newGrid = new List<SpawnableCells>[grid.Cells.Count];
+        var newGrid = new List<SpawnableCell>[grid.Cells.Count];
 
         Parallel.For(0, grid.Cells.Count, index =>
         {
             var cell = grid.Cells[index];
             var distance = ComputeAllDistances(cities, router, cell);
 
-            var cellData = new List<SpawnableCells>(cell.Count);
+            var cellData = new List<SpawnableCell>(cell.Count);
             for (var i = 0; i < cell.Count; i++)
             {
                 var distanceList = new List<CityInfo>(cities.Count);
                 if (!cell[i].Spawnable)
                 {
-                    cellData.Add(new SpawnableCells(0f, cell[i].Midpoint, distanceList));
+                    cellData.Add(new SpawnableCell(0f, cell[i].Centerpoint, distanceList));
                     continue;
                 }
 
@@ -29,10 +29,10 @@ public class CalculateJourney
                 {
                     var distToCity = distance[j + (cities.Count * i)];
                     if (distToCity < 0) continue;
-                    distanceList.Add(new CityInfo(cities[j].Name, distToCity, 0f));
+                    distanceList.Add(new CityInfo(cities[j].Name, distToCity, cities[j].Population));
                 }
 
-                cellData.Add(new SpawnableCells(1f, cell[i].Midpoint, distanceList));
+                cellData.Add(new SpawnableCell(1f, cell[i].Centerpoint, distanceList));
             }
 
             newGrid[index] = cellData;
@@ -41,41 +41,34 @@ public class CalculateJourney
         return new SpawnableGrid(newGrid.ToList());
     }
 
-    public SpawnableGrid CalculateDestChances(SpawnableGrid grid, List<City> cities, float scaler)
+    public SpawnableGrid CalculateDestChances(SpawnableGrid grid, float scaler = 1f)
     {
         foreach (var cell in grid.SpawnableCells.SelectMany(cell => cell))
         {
-            for (var i = 0; i < cell.CityInfo.Count; i++)
-            {
-                if (cell.spawnChance is <= 0) continue; // Skip grids with zero spawn chance
-                var cityName = cell.CityInfo[i].CityName;
-                var distance = cell.CityInfo[i].DistToCity;
-                var population = cities.First(c => c.Name == cityName).Population;
-
-                // Handle zero or very small distances to avoid division by zero
-                var adjustedDistance = Math.Max(distance, 1.0f); // Minimum distance of 1 meter
-                var destChance = (float)(Math.Pow(population, scaler) / Math.Pow(adjustedDistance, 0.8));
-
-                cell.CityInfo[i] = new CityInfo(cityName, distance, destChance);
-            }
+            cell.CitySampler = new AliasSampler(cell.CityInfo.Select(ci => CalculatePopulationDistanceWeight(ci, scaler)).ToArray());
         }
 
         return grid;
     }
 
-    public AliasSampler CalculateSpawnRate(SpawnableGrid grid)
+    public AliasSampler CalculateSpawnRate(SpawnableGrid grid, float scaler = 1f)
     {
         var cells = grid.SpawnableCells
             .SelectMany(g => g)
-            .Where(c => c.spawnChance > 0)
             .ToList();
 
         var weights = new float[cells.Count];
 
         for (var i = 0; i < cells.Count; i++)
-            weights[i] = cells[i].CityInfo.Sum(ci => ci.DestChance);
+            weights[i] = cells[i].CityInfo.Sum(ci => CalculatePopulationDistanceWeight(ci, scaler));
 
         return new AliasSampler(weights);
+    }
+
+    private static float CalculatePopulationDistanceWeight(CityInfo city, float scaler)
+    {
+        var adjustedDistance = Math.Max(city.DistToCity, 1.0f); // Minimum distance of 1 meter
+        return (float)(Math.Pow(city.Population, scaler) / Math.Pow(adjustedDistance, 0.8));
     }
 
     private static float[] ComputeAllDistances(List<City> cities, OSRMRouter router, List<GridCell> cells)
@@ -85,7 +78,7 @@ public class CalculateJourney
                 .ToArray();
 
         var gridCenters = cells
-                .SelectMany(g => new double[] { g.Midpoint.Longitude, g.Midpoint.Latitude })
+                .SelectMany(g => new double[] { g.Centerpoint.Longitude, g.Centerpoint.Latitude })
                 .ToArray();
 
         var (_, distances) = router.QueryPointsToPoints(gridCenters, cells.Count, cityPositions, cities.Count);

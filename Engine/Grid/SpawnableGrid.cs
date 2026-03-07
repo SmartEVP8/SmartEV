@@ -1,20 +1,21 @@
 using Core.Shared;
+using Core.Spawning;
 
-public class SpawnableGrid(List<List<SpawnableCells>> spawnableCells)
+public class SpawnableGrid(List<List<SpawnableCell>> spawnableCells)
 {
-    public readonly List<List<SpawnableCells>> SpawnableCells = spawnableCells;
+    public readonly List<List<SpawnableCell>> SpawnableCells = spawnableCells;
 }
 
-public class SpawnableCells(float spawnChance, Position midpoint, List<CityInfo> CityChances)
+public class SpawnableCell(float spawnChance, Position Centerpoint, List<CityInfo> CityChances)
 {
-    public float spawnChance = spawnChance;
-    public List<CityInfo> CityInfo = CityChances;
-    public readonly Position midpoint = midpoint;
+    public readonly List<CityInfo> CityInfo = CityChances;
+    public readonly Position Centerpoint = Centerpoint;
+    public AliasSampler? CitySampler = null;
 }
 
-public struct CityInfo(string CityName, float DistToCity, float DestChance)
+public struct CityInfo(string CityName, float DistToCity, float Population)
 {
     public readonly string CityName = CityName;
     public readonly float DistToCity = DistToCity;
-    public readonly float DestChance = DestChance;
+    public readonly float Population = Population;
 }
