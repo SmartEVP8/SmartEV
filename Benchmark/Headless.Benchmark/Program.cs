@@ -8,7 +8,7 @@ public class OSRMRouterBenchmark
 {
     private OSRMRouter router;
 
-    private const int TotalQueries = 1_001;
+    private const int TotalQueries = 1_000;
 
     [Params(1, 2, 4, 8, 16)] // different thread counts
     public int Parallelism { get; set; }
