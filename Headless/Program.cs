@@ -1,8 +1,3 @@
-using Engine;
-using Core.Spawning;
-using Core.Shared;
-using Core.Routing;
-
 namespace Headless;
 
 using Core.Charging;
@@ -12,8 +7,6 @@ using Core.Shared;
 
 using Engine.Parsers;
 using Engine.Grid;
-
-namespace Headless;
 
 public static class Program
 {
