@@ -5,23 +5,23 @@ using Core.Spawning;
 using Engine.Grid;
 
 /// <summary>
-/// CalculateJourney computes the sampling distributions for source and destination points
+/// JourneyPipeline computes the sampling distributions for source and destination points
 /// based on a grid of spawnable cells and a list of cities.
 /// It uses a gravity model to weight the influence of each city on the spawnable cells,
 /// taking into account both the population of the cities and their distance from the cells.
 /// </summary>
-public class CalculateJourney
+public class JourneyPipeline
 {
     private readonly GravityGrid _grid;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="CalculateJourney"/> class.
+    /// Initializes a new instance of the <see cref="JourneyPipeline"/> class.
     /// Precomputes distances from each spawnable cell to each city and builds a SpawnableGrid that includes this information.
     /// </summary>
     /// <param name="grid">Controls which cells are spawnable. Non spawnable grid cells get 0% probability.</param>
     /// <param name="cities">Used to compute weights for grid cells.</param>
     /// <param name="router">Computes matrix destination table.</param>
-    public CalculateJourney(SpawnGrid grid, List<City> cities, IMatrixRouter router) => _grid = BuildGravityGrid(grid, cities, router);
+    public JourneyPipeline(SpawnGrid grid, List<City> cities, IMatrixRouter router) => _grid = BuildGravityGrid(grid, cities, router);
 
     /// <summary>
     /// Computes the sampling distributions for source and destination points based on the gravity model.
