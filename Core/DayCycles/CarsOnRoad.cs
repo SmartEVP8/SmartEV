@@ -18,14 +18,14 @@ public static class CarsOnRoad
     /// Was decided to be ~3% of total EVs, as we assume that there will at least be some
     /// EVs on the road at all times. (556,000 * 0.03 = 16,680).
     /// </summary>
-    public const int BaselineCars = 16680;
+    public const int BaselineCars = TotalEVs * 3 / 100;
 
     /// <summary>
     /// Maximum number of EVs on the road during peak congestion.
     /// Estimated as ~75% of total EVs, based on the assumption that not all EVs will be on the road
     /// at the same time, even during peak hours. (556,000 * 0.75 = 417,000).
     /// </summary>
-    public const int PeakCars = 417000;
+    public const int PeakCars = TotalEVs * 75 / 100;
 
     /// <summary>
     /// Maximum measured congestion (km with critical congestion) from the dataset.
