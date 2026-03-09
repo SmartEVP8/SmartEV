@@ -42,8 +42,8 @@ public static class Polyline6ToPoints
 
             // Step 2
             points.Add(new Position(
-                lat * _scale,
-                lng * _scale));
+                lng * _scale,
+                lat * _scale));
         }
 
         return new Paths(points);

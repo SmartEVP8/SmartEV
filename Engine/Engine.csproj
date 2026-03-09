@@ -7,8 +7,7 @@
     </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Core\Core.csproj" />
     <PackageReference Include="StyleCop.Analyzers" />
+    <ProjectReference Include="..\Core\Core.csproj" />
   </ItemGroup>
-
 </Project>

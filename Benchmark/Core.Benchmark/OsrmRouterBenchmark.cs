@@ -34,6 +34,8 @@ public class OsrmRouterBenchmark
             stations.Add(new Station(
                 id: i,
                 name: string.Empty,
+                price: 0,
+                random: new Random(i),
                 address: string.Empty,
                 position: new Position(9.9217 + (i * 0.001), 57.0488 + (i * 0.001)),
                 chargers: []));
@@ -88,7 +90,7 @@ public class OsrmRouterBenchmark
     /// Benchmarks bulk querying of 1000 cars to 50 stations.
     /// </summary>
     [Benchmark]
-    public void Query1000Cars50StationsBulk() => _ = _router.QueryPointsToPoints(_evCoordsFlat, 1000, _stationCoordsFlat, 50);
+    public void Query1000Cars50StationsBulk() => _ = _router.QueryPointsToPoints(_evCoordsFlat, _stationCoordsFlat);
 
     /// <summary>
     /// Benchmarks querying a single destination.

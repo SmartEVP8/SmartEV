@@ -7,18 +7,18 @@ namespace Core.Spawning;
 public class AliasSampler
 {
     private readonly int[] _alias;
-    private readonly double[] _probability;
+    private readonly float[] _probability;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AliasSampler"/> class.
     /// It constructs the alias table based on the provided weights.
     /// </summary>
     /// <param name="values">A list of weights that will be sampled from.</param>
-    public AliasSampler(double[] values)
+    public AliasSampler(float[] values)
     {
         var length = values.Length;
         _alias = new int[length];
-        _probability = new double[length];
+        _probability = new float[length];
 
         var avgWeight = values.Sum() / length;
         var weights = values.ToArray();
@@ -37,7 +37,7 @@ public class AliasSampler
             small.TryDequeue(out var s, out var sw);
             large.TryDequeue(out var l, out var lw);
 
-            _probability[s] = sw / avgWeight;
+            _probability[s] = (float)sw / avgWeight;
             _alias[s] = l;
 
             var remaining = lw + sw - avgWeight;
@@ -46,8 +46,8 @@ public class AliasSampler
             else large.Enqueue(l, remaining);
         }
 
-        while (large.Count > 0) _probability[large.Dequeue()] = 1.0;
-        while (small.Count > 0) _probability[small.Dequeue()] = 1.0;
+        while (large.Count > 0) _probability[large.Dequeue()] = 1.0f;
+        while (small.Count > 0) _probability[small.Dequeue()] = 1.0f;
     }
 
     /// <summary>
@@ -60,5 +60,24 @@ public class AliasSampler
         var bucketIndex = rng.Next(_alias.Length);
         var threshold = rng.NextDouble();
         return threshold < _probability[bucketIndex] ? bucketIndex : _alias[bucketIndex];
+    }
+
+    /// <summary>
+    /// Computes the original probabilities from the alias table.
+    /// This is useful for debugging and verification purposes.
+    /// </summary>
+    /// <returns>List of the original probabilities.</returns>
+    public List<float> GetProbabilities()
+    {
+        var n = _probability.Length;
+        var probs = new float[n];
+
+        for (var i = 0; i < n; i++)
+        {
+            probs[i] += _probability[i] / n;
+            probs[_alias[i]] += (1 - _probability[i]) / n;
+        }
+
+        return [.. probs];
     }
 }
