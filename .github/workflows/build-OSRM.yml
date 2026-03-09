@@ -1,12 +1,19 @@
-name: build-and-test
+name: build-osrm
 
 on:
-  pull_request:
+  push:
     branches: [ main ]
+    paths:
+      - output.osm.pbf
+      - Dockerfile.osrm
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
     steps:
       - uses: actions/checkout@v4
         with:
@@ -29,17 +36,14 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build
+      - name: Build and push
         uses: docker/build-push-action@v5
         with:
           context: .
-          push: false
-          load: true
-          tags: smartev-test
-          build-args: |
-            OSRM_BUILDER_TAG=${{ hashFiles('output.osm.pbf') }}
+          file: Dockerfile.osrm
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/osrm_builder:latest
+            ghcr.io/${{ github.repository_owner }}/osrm_builder:${{ hashFiles('output.osm.pbf') }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
-      - name: Run tests
-        run: docker run smartev-test dotnet test
