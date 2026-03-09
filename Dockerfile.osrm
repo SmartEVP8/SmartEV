@@ -36,3 +36,4 @@ RUN apt-get update && apt-get install -y \
 COPY --from=osrm-build /usr/local/bin/osrm-* /usr/local/bin/
 COPY --from=osrm-build /usr/local/share/osrm /usr/local/share/osrm
 COPY --from=osrm-build /data /data
+

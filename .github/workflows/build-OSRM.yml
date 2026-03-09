@@ -43,7 +43,7 @@ jobs:
           file: Dockerfile.osrm
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/osrm_builder:latest
-            ghcr.io/${{ github.repository_owner }}/osrm_builder:${{ hashFiles('output.osm.pbf') }}
+            ghcr.io/tbjerregaard/osrm_builder:latest
+            ghcr.io/tbjerregaard/osrm_builder:${{ hashFiles('output.osm.pbf') }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
