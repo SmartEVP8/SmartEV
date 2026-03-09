@@ -41,7 +41,7 @@ public static class Program
             Console.WriteLine();
         }
 
-        var pipeline = new CalculateJourney(grid, cityinfo, router);
+        var pipeline = new JourneyPipeline(grid, cityinfo, router);
         var samplers = pipeline.Compute(1.0f);
 
         if (samplers == null)

@@ -1,5 +1,6 @@
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
+using Core.Routing;
 
 namespace MyBenchmarks
 {

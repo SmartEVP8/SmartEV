@@ -18,7 +18,7 @@ public static class Program
         var grid = Polygooner.GenerateGrid(0.1, polygons);
 
         // Print the grid to the console
-        foreach (var row in grid.SpawnableCells.AsEnumerable().Reverse())
+        foreach (var row in grid.Cells.AsEnumerable().Reverse())
         {
             foreach (var cell in row)
             {
@@ -56,7 +56,7 @@ public static class Program
         var evCoordsFlat = evCoords.SelectMany(e => new[] { e.Lon, e.Lat }).ToArray();
         var stationCoordsFlat = stations.SelectMany(s => new[] { s.Position.Longitude, s.Position.Latitude }).ToArray();
 
-        var (durations, distances) = router.QueryPointsToPoints(evCoordsFlat, evCoords.Length, stationCoordsFlat, stations.Count);
+        var (durations, distances) = router.QueryPointsToPoints(evCoordsFlat, stationCoordsFlat);
 
         var outputPath = Path.Combine(Directory.GetCurrentDirectory(), "points_to_points.parquet");
         ParquetService.Write(outputPath, new Dictionary<string, Array>
