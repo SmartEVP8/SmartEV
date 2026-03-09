@@ -16,7 +16,7 @@ namespace Engine.Metrics;
 /// </summary>
 public sealed class MetricsService : IAsyncDisposable
 {
-    private readonly IMetricWriter<CarSnapshotMetric>? _cars;
+    private readonly IMetricWriter<EVSnapshotMetric>? _cars;
     private readonly IMetricWriter<StationSnapshotMetric>? _stations;
     private readonly IMetricWriter<DeadlineMetric>? _deadlines;
 
@@ -31,7 +31,7 @@ public sealed class MetricsService : IAsyncDisposable
         var files = new MetricsFileManager(config.OutputDirectory, runId);
 
         if (config.RecordCarSnapshots)
-            _cars = new MetricWriter<CarSnapshotMetric>(config.BufferSize, files.GetMetricPath<CarSnapshotMetric>());
+            _cars = new MetricWriter<EVSnapshotMetric>(config.BufferSize, files.GetMetricPath<EVSnapshotMetric>());
         if (config.RecordStationSnapshots)
             _stations = new MetricWriter<StationSnapshotMetric>(config.BufferSize, files.GetMetricPath<StationSnapshotMetric>());
         if (config.RecordDeadlines)
@@ -40,7 +40,7 @@ public sealed class MetricsService : IAsyncDisposable
 
     /// <summary>Records a car snapshot. No-op if car snapshots are disabled in config.</summary>
     /// <param name="metric">The car snapshot metric to record.</param>
-    public void RecordCar(CarSnapshotMetric metric) => _cars?.Record(metric);
+    public void RecordCar(EVSnapshotMetric metric) => _cars?.Record(metric);
 
     /// <summary>Records a station snapshot. No-op if station snapshots are disabled in config.</summary>
     /// <param name="metric">The station snapshot metric to record.</param>
@@ -53,14 +53,14 @@ public sealed class MetricsService : IAsyncDisposable
     /// <summary>
     /// Signals all writers to stop, drains their channels, and flushes remaining
     /// buffered metrics to parquet. All writers drain in parallel.
-    /// Await this once at the end of the simulation before exiting.
     /// </summary>
     /// <returns>A task that completes once all metrics have been flushed and all writers have fully stopped. </returns>
-    public ValueTask DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
-        return new ValueTask(Task.WhenAll(
-        _cars?.DrainAndFlushAsync() ?? Task.CompletedTask,
-        _stations?.DrainAndFlushAsync() ?? Task.CompletedTask,
-        _deadlines?.DrainAndFlushAsync() ?? Task.CompletedTask));
+        var tasks = new List<Task>();
+        if (_cars is not null) tasks.Add(_cars.DisposeAsync().AsTask());
+        if (_stations is not null) tasks.Add(_stations.DisposeAsync().AsTask());
+        if (_deadlines is not null) tasks.Add(_deadlines.DisposeAsync().AsTask());
+        await Task.WhenAll(tasks);
     }
 }

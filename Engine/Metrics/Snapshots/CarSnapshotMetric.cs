@@ -1,5 +1,6 @@
 namespace Engine.Metrics;
 
-public class CarSnapshotMetric
+public class EVSnapshotMetric
 {
+    public int Timestamp { get; set; }
 }

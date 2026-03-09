@@ -21,6 +21,7 @@ public sealed class MetricWriter<T> : IMetricWriter<T>
     private readonly Task _writerTask;
     private readonly int _bufferSize;
     private readonly FileInfo _path;
+    private bool _hasWritten;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MetricWriter{T}"/> class.
@@ -34,10 +35,11 @@ public sealed class MetricWriter<T> : IMetricWriter<T>
         _path = path;
         _channel = Channel.CreateUnbounded<T>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
         _writerTask = Task.Run(DrainAsync);
+        _hasWritten = false;
     }
 
     /// <inheritdoc/>
-    public async Task DrainAndFlushAsync()
+    public async ValueTask DisposeAsync()
     {
         _channel.Writer.Complete();
         await _writerTask;
@@ -76,9 +78,10 @@ public sealed class MetricWriter<T> : IMetricWriter<T>
         {
             CompressionMethod = CompressionMethod.Snappy,
             RowGroupSize = buffer.Count,
-            Append = true,
+            Append = _hasWritten,
         };
         await ParquetSerializer.SerializeAsync(buffer, _path.ToString(), options);
         buffer.Clear();
+        _hasWritten = true;
     }
 }
