@@ -1,6 +1,7 @@
 <Project>
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <AllowMissingPrunePackageData>true</AllowMissingPrunePackageData>
     <OsrmDataPath>$(MSBuildThisFileDirectory)\data\osrm\output.osrm</OsrmDataPath>
   </PropertyGroup>
   <ItemGroup>
