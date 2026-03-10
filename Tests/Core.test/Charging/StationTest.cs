@@ -7,6 +7,15 @@ using Core.Shared;
 public class StationTest
 {
     /// <summary>
+    /// Initializes a new instance of the <see cref="StationTest"/> class.
+    /// </summary>
+    public StationTest()
+    {
+        var csvPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "data", "energy_prices.csv");
+        EnergyPrices.Initialize(csvPath);
+    }
+
+    /// <summary>
     /// Verifies that the constructor sets <see cref="Station.Price"/> to the supplied value.
     /// </summary>
     /// <param name="price">The initial price to supply.</param>
@@ -55,7 +64,7 @@ public class StationTest
     }
 
     private static Station CreateStation(float price = 3.0f, Random? random = null) =>
-        new (id: 1, name: "Test Station", address: "Test Street 1",
+        new(id: 1, name: "Test Station", address: "Test Street 1",
             position: new Position(10.0, 56.0), chargers: null, price: price,
             random: random ?? new Random(42));
 }
