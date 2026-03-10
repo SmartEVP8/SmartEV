@@ -7,4 +7,11 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\Engine\Engine.csproj" />
+    <ProjectReference Include="..\..\Headless\Headless.csproj" />
+    <ProjectReference Include="..\..\Core\Core.csproj" />
+    <PackageReference Include="BenchmarkDotNet" />
+    <PackageReference Include="StyleCop.Analyzers" />
+  </ItemGroup>
 </Project>

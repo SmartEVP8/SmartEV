@@ -15,19 +15,21 @@ public static class GeoMath
     /// <param name="a">1st Postion.</param>
     /// <param name="b">2nd Postion.</param>
     /// <returns>Returns the distance between the 2 positions in km.</returns>
+    private const double DegToRad = Math.PI / 180.0;
     public static double HaversineDistance(Position a, Position b)
     {
-        var earthRadius = 6371.0; // Radius of the Earth in kilometers
         var dLat = ToRad(b.Latitude - a.Latitude);
         var dLon = ToRad(b.Longitude - a.Longitude);
         var lat1 = ToRad(a.Latitude);
         var lat2 = ToRad(b.Latitude);
 
-        var h = (Math.Sin(dLat / 2) * Math.Sin(dLat / 2)) +
-                (Math.Cos(lat1) * Math.Cos(lat2) *
-                Math.Sin(dLon / 2) * Math.Sin(dLon / 2));
+        var sinDLat = Math.Sin(dLat / 2);
+        var sinDLon = Math.Sin(dLon / 2);
 
-        return earthRadius * 2 * Math.Atan2(Math.Sqrt(h), Math.Sqrt(1 - h));
+        var h = (sinDLat * sinDLat) +
+                (Math.Cos(lat1) * Math.Cos(lat2) * sinDLon * sinDLon);
+
+        return 6371.0 * 2 * Math.Atan2(Math.Sqrt(h), Math.Sqrt(1 - h));
     }
 
     /// <summary>
@@ -51,6 +53,6 @@ public static class GeoMath
         return Math.Atan2(y, x);
     }
 
-    private static double ToRad(double degrees) => degrees * (Math.PI / 180);
+    private static double ToRad(double degrees) => degrees * DegToRad;
 
 }
