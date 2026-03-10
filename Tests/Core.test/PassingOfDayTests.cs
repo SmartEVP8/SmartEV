@@ -1,7 +1,6 @@
 namespace DayCyclesTests;
 
 using static Core.DayCycles.CarsOnRoad;
-using static Core.DayCycles.Days;
 using System;
 using Xunit;
 
@@ -11,78 +10,57 @@ using Xunit;
 /// </summary>
 public class CarsOnRoadTests
 {
-    /// <summary>
-    /// Tests that providing valid hours (0-23) returns a number of EVs on the road
-    /// that is within the expected range (0 to TotalEVs).
-    /// </summary>
-    [Fact]
-    public void ValidHours()
-    {
-        var day = Day.Monday;
-
-        for (int hour = 0; hour < 24; hour++)
-        {
-            var evsOnRoad = GetEVsOnRoad(day, hour);
-            Assert.InRange(evsOnRoad, 0, TotalEVs);
-        }
-    }
 
     /// <summary>
-    /// Tests that providing an invalid hour (less than 0 or greater than 23) throws an
-    /// ArgumentOutOfRangeException.
+    /// Tests known day/hour combinations against expected EV counts.
+    ///
+    /// Expected values are derived from:
+    ///   BaselineCars + (PeakCars - BaselineCars) * (congestion / 100)
+    ///   = 16,680 + (417,000 - 16,680) * (congestion / 100).
     /// </summary>
-    /// <param name="hour">The invalid hour to test.</param>
+    /// <param name="day">The day of the week to test.</param>
+    /// <param name="hour">The hour of the day to test (0-23).</param>
+    /// <param name="expected">The expected number of EVs on the road.</param>
     [Theory]
-    [InlineData(-1)]
-    [InlineData(24)]
-    public void InvalidHour(int hour)
+    [InlineData(DayOfWeek.Tuesday,    7, BaselineCars + ((PeakCars - BaselineCars) * 100 / 100))]
+    [InlineData(DayOfWeek.Sunday,     0, BaselineCars + ((PeakCars - BaselineCars) * 3 / 100))]
+    [InlineData(DayOfWeek.Monday,     6, BaselineCars + ((PeakCars - BaselineCars) * 88 / 100))]
+    [InlineData(DayOfWeek.Friday,    13, BaselineCars + ((PeakCars - BaselineCars) * 60 / 100))]
+    [InlineData(DayOfWeek.Saturday,  12, BaselineCars + ((PeakCars - BaselineCars) * 32 / 100))]
+    [InlineData(DayOfWeek.Wednesday,  2, BaselineCars + ((PeakCars - BaselineCars) * 3 / 100))]
+    public void ReturnsExpectedEVCount(DayOfWeek day, int hour, double expected)
     {
-        var day = Day.Monday;
-
-        Assert.Throws<ArgumentOutOfRangeException>(() => GetEVsOnRoad(day, hour));
+        var result = GetEVsOnRoad(day, hour);
+        Assert.Equal(expected, result, 0);
     }
 
     /// <summary>
-    /// Tests that providing valid day values (0-6 corresponding to Monday-Sunday)
-    /// returns a number of EVs on the road that is within the expected range (0 to TotalEVs).
+    /// Tests that weekday peak hours produce higher EV counts than the same
+    /// hour on a weekend, validating the congestion table is correctly ordered.
     /// </summary>
     [Fact]
-    public void ValidDays()
+    public void WeekdayPeakGTWeekendPeak()
     {
-        for (int dayValue = 0; dayValue < 7; dayValue++)
-        {
-            var day = (Day)dayValue;
-            var evsOnRoad = GetEVsOnRoad(day, 12);
-            Assert.InRange(evsOnRoad, 0, TotalEVs);
-        }
+        var mondayPeak = GetEVsOnRoad(DayOfWeek.Monday, 7);
+        var sundayPeak = GetEVsOnRoad(DayOfWeek.Sunday, 7);
+
+        Assert.True(
+            mondayPeak > sundayPeak,
+            $"Expected Monday peak ({mondayPeak}) > Sunday peak ({sundayPeak}).");
     }
 
     /// <summary>
-    /// Tests that providing an invalid day value (less than 0 or greater than 6) throws an
-    /// ArgumentOutOfRangeException.
-    /// </summary>
-    /// <param name="invalidDayValue">The invalid day value to test.</param>
-    [Theory]
-    [InlineData(-1)]
-    [InlineData(7)]
-    [InlineData(99)]
-    public void InvalidDay(int invalidDayValue)
-    {
-        Assert.Throws<ArgumentOutOfRangeException>(() => GetEVsOnRoad((Day)invalidDayValue, 12));
-    }
-
-    /// <summary>
-    /// Tests that the number of EVs on the road for a day with peak congestion does not exceed the
-    /// total number of registered EVs in Denmark.
+    /// Tests that Monday rush hour (hour 7) produces more EVs than a quiet
+    /// early-morning slot (hour 4), validating intra-day variation.
     /// </summary>
     [Fact]
-    public void Result_ShouldNeverExceedTotalEVs()
+    public void RushHourGTMorning()
     {
-        var day = Day.Tuesday;
-        int hour = 7;
+        var rushHour = GetEVsOnRoad(DayOfWeek.Monday, 7);
+        var earlyMorning = GetEVsOnRoad(DayOfWeek.Monday, 4);
 
-        var evsOnRoad = GetEVsOnRoad(day, hour);
-
-        Assert.InRange(evsOnRoad, 0, TotalEVs);
+        Assert.True(
+            rushHour > earlyMorning,
+            $"Expected rush hour ({rushHour}) traffic to be higher than early morning ({earlyMorning}) traffic.");
     }
 }

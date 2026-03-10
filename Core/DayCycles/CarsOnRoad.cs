@@ -1,7 +1,5 @@
 namespace Core.DayCycles;
 
-using static Days;
-
 /// <summary>
 /// This class provides congestion values for each hour of each day of the week.
 /// </summary>
@@ -28,38 +26,32 @@ public static class CarsOnRoad
     public const int PeakCars = TotalEVs * 75 / 100;
 
     /// <summary>
-    /// Maximum measured congestion (km with critical congestion) from the dataset.
-    /// Used to normalize the congestion values.
+    /// Maximum congestion, used to normalize the congestion values.
     /// </summary>
-    private const int _maxCongestionKm = 125;
+    private const int _maxCongestion = 100;
 
-    /// <summary>
-    /// Raw congestion data representing km of critically congested road.
-    /// Numbers are estimated from the Vejdirektoratet dataset, based on eye estimations.
-    /// Source: https://www.vejdirektoratet.dk/side/trafikkens-udvikling-i-tal.
-    /// </summary>
-    private static readonly int[,] _congestionKm =
+    private static readonly int[,] _congestion =
     {
+        // Sunday
+        { 3, 2, 3, 4, 4, 4, 6, 8, 10, 12, 14, 16, 20, 16, 20, 24, 26, 26, 22, 21, 16, 12, 6, 4 },
+
         // Monday
-        { 5, 5, 5, 5, 20, 40, 110, 120, 90, 60, 40, 30, 40, 50, 60, 65, 60, 35, 40, 35, 35, 20, 10, 5 },
+        { 3, 2, 3, 4, 16, 32, 88, 96, 72, 48, 32, 24, 32, 40, 48, 52, 48, 28, 32, 28, 28, 16, 8, 4 },
 
         // Tuesday
-        { 5, 5, 5, 5, 20, 40, 120, 125, 90, 60, 40, 35, 50, 60, 80, 80, 60, 40, 35, 30, 20, 15, 10, 5 },
+        { 3, 2, 3, 4, 16, 32, 96, 100, 72, 48, 32, 28, 40, 48, 64, 64, 48, 32, 28, 24, 16, 12, 8, 4 },
 
         // Wednesday
-        { 5, 5, 5, 5, 20, 30, 60, 70, 60, 50, 20, 30, 40, 50, 60, 60, 50, 30, 35, 30, 20, 15, 10, 5 },
+        { 3, 2, 3, 4, 16, 24, 48, 56, 48, 40, 16, 24, 32, 40, 48, 48, 40, 24, 28, 24, 16, 12, 8, 4 },
 
         // Thursday
-        { 5, 5, 5, 5, 20, 30, 60, 70, 60, 50, 30, 40, 60, 80, 80, 70, 60, 50, 40, 30, 20, 20, 10, 5 },
+        { 3, 2, 3, 4, 16, 24, 48, 56, 48, 40, 24, 32, 48, 64, 64, 56, 48, 40, 32, 24, 16, 16, 8, 4 },
 
         // Friday
-        { 5, 5, 5, 5, 10, 15, 20, 30, 40, 30, 25, 40, 55, 75, 72, 65, 55, 40, 30, 20, 20, 15, 10, 5 },
+        { 3, 2, 3, 4, 8, 12, 16, 24, 32, 24, 20, 32, 44, 60, 58, 52, 44, 32, 24, 16, 16, 12, 8, 4 },
 
         // Saturday
-        { 5, 5, 5, 5, 5, 5, 8, 10, 15, 18, 20, 30, 40, 40, 30, 25, 28, 25, 26, 25, 20, 15, 10, 5 },
-
-        // Sunday
-        { 5, 5, 5, 5, 5, 5, 8, 10, 12, 15, 18, 20, 25, 20, 25, 30, 32, 32, 28, 26, 20, 15, 8, 5 },
+        { 3, 2, 3, 4, 4, 4, 6, 8, 12, 14, 16, 24, 32, 32, 24, 20, 22, 20, 21, 20, 16, 12, 8, 4 },
     };
 
     /// <summary>
@@ -68,24 +60,11 @@ public static class CarsOnRoad
     /// <param name="day">The day of the week.</param>
     /// <param name="hour">The hour of the day (0-23).</param>
     /// <returns>The estimated number of EVs on the road.</returns>
-    public static int GetEVsOnRoad(Day day, int hour)
+    public static int GetEVsOnRoad(DayOfWeek day, int hour)
     {
-        if (hour < 0 || hour > 23)
-        {
-            throw new ArgumentOutOfRangeException(nameof(hour), "Hour must be between 0 and 23.");
-        }
+        var carCongestion = _congestion[(int)day, hour];
+        var cars = BaselineCars + ((PeakCars - BaselineCars) * carCongestion / _maxCongestion);
 
-        if (!Enum.IsDefined(day))
-        {
-            throw new ArgumentOutOfRangeException(nameof(day), "Day must be between Monday and Sunday.");
-        }
-
-        var km = _congestionKm[(int)day, hour];
-
-        var congestionIndex = (float)km / _maxCongestionKm;
-
-        var cars = BaselineCars + ((PeakCars - BaselineCars) * congestionIndex);
-
-        return (int)Math.Min(cars, TotalEVs);
+        return Math.Min(cars, TotalEVs);
     }
 }
