@@ -5,6 +5,7 @@ using System.Linq;
 using BenchmarkDotNet.Attributes;
 using Core.Charging;
 using Core.Shared;
+using Core.Routing;
 
 /// <summary>
 /// Benchmark suite for OSRM router performance testing.
@@ -26,7 +27,7 @@ public class OsrmRouterBenchmark
     {
         var path = AppContext.GetData("OsrmDataPath") as string
             ?? throw new InvalidOperationException("OsrmDataPath not set in project.");
-        _router = new Routing.OSRMRouter(path);
+        _router = new OSRMRouter(path);
 
         var stations = new List<Station>(50);
         for (ushort i = 0; i < 50; i++)
@@ -34,8 +35,6 @@ public class OsrmRouterBenchmark
             stations.Add(new Station(
                 id: i,
                 name: string.Empty,
-                price: 0,
-                random: new Random(i),
                 address: string.Empty,
                 position: new Position(9.9217 + (i * 0.001), 57.0488 + (i * 0.001)),
                 chargers: [],
