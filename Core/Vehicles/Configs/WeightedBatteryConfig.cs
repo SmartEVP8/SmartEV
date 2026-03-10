@@ -1,8 +1,8 @@
-namespace Core.Vehicles.Configurations;
+namespace Core.Vehicles.Configs;
 
 /// <summary>
 /// An aggregate of a battery config and a weight, 
-/// used to add relative frequency in conjunction with other WeightedBatteryConfigs.
+/// used to add relative frequency as compared to other WeightedBatteryConfigs.
 /// </summary>
 /// <param name="config">A battery config.</param>
 /// <param name="weight">An integer weight.</param>

@@ -1,7 +1,7 @@
 namespace Engine.Vehicles;
 
 using Core.Vehicles;
-using Core.Vehicles.Configurations;
+using Core.Vehicles.Configs;
 
 /// <summary>
 /// Factory for creating EVs, supporting for single or batch creation.

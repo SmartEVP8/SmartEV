@@ -1,4 +1,4 @@
-namespace Core.Vehicles.Configurations;
+namespace Core.Vehicles.Configs;
 
 /// <summary>
 /// Configuration for EVs. 

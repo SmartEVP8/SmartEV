@@ -1,4 +1,4 @@
-namespace Core.Vehicles.Configurations;
+namespace Core.Vehicles.Configs;
 
 using Core.Shared;
 
