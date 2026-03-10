@@ -29,6 +29,31 @@ public class SpawnGrid(List<List<GridCell>> spawnableCells, Position min, double
 
         return Cells[row][col];
     }
+
+    /// <summary>
+    /// Given a cell, compute the bounding box (min and max lat/lon) of that cell based on its center point and the grid's lat/lon size.
+    /// </summary>
+    /// <param name="cell"></param>
+    /// <returns>
+    /// A tuple containing the minimum and maximum Position (lat/lon) that defines the bounding box of the cell.
+    /// </returns>
+    public (Position Min, Position Max) GetBoundingBox(GridCell cell)
+    {
+        var halfLat = LatSize / 2.0;
+        var halfLon = LonSize / 2.0;
+
+        var min = new Position(
+            cell.Centerpoint.Longitude - halfLon,
+            cell.Centerpoint.Latitude - halfLat
+        );
+
+        var max = new Position(
+            cell.Centerpoint.Longitude + halfLon,
+            cell.Centerpoint.Latitude + halfLat
+        );
+
+        return (min, max);
+    }
 }
 
 /// <summary>
@@ -36,7 +61,7 @@ public class SpawnGrid(List<List<GridCell>> spawnableCells, Position min, double
 /// </summary>
 /// <param name="spawnable">Bool for spawnable or now.</param>
 /// <param name="centerpoint">Center of the grid.</param>
-public class GridCell(bool spawnable, Position centerpoint, double latSize, double lonSize)
+public class GridCell(bool spawnable, Position centerpoint)
 {
     /// <summary>
     /// Spawnable indicates whether this cell is spawnable (true) or not (false).
@@ -47,28 +72,4 @@ public class GridCell(bool spawnable, Position centerpoint, double latSize, doub
     /// The midpoint of the cell, represented as a Position (latitude and longitude).
     /// </summary>
     public Position Centerpoint = centerpoint;
-
-    /// <summary>
-    /// Computes the geographic bounding box of the cell based on its centre point and dimensions.
-    /// </summary>
-    /// <returns>
-    /// A tuple containing the minimum and maximum positions of the cell,
-    /// where Min is the south-west corner and Max is the north-east corner.
-    /// </returns>
-    public double LatSize { get; } = latSize;
-    public double LonSize { get; } = lonSize;
-
-    public (Position Min, Position Max) BoundingBox
-{
-    get
-    {
-        var halfLat = LatSize / 2.0;
-        var halfLon = LonSize / 2.0;
-
-        var min = new Position(Centerpoint.Longitude - halfLon, Centerpoint.Latitude - halfLat);
-        var max = new Position(Centerpoint.Longitude + halfLon, Centerpoint.Latitude + halfLat);
-
-        return (min, max);
-    }
-}
 }

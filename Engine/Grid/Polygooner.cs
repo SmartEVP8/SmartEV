@@ -36,7 +36,7 @@ public static class Polygooner
                 var centerLon = min.Longitude + ((j + 0.5) * lonSize);
                 var centerPos = new Position(centerLon, centerLat);
                 var spawnable = polygons.Any(polygon => PointInPolygon(polygon, centerLon, centerLat));
-                row.Add(new GridCell(spawnable, centerPos, size, lonSize));
+                row.Add(new GridCell(spawnable, centerPos));
             }
 
             gridCells.Add(row);
