@@ -29,6 +29,31 @@ public class SpawnGrid(List<List<GridCell>> spawnableCells, Position min, double
 
         return Cells[row][col];
     }
+
+    /// <summary>
+    /// Given a cell, compute the bounding box (min and max lat/lon) of that cell based on its center point and the grid's lat/lon size.
+    /// </summary>
+    /// <param name="cell"></param>
+    /// <returns>
+    /// A tuple containing the minimum and maximum Position (lat/lon) that defines the bounding box of the cell.
+    /// </returns>
+    public (Position Min, Position Max) GetBoundingBox(GridCell cell)
+    {
+        var halfLat = LatSize / 2.0;
+        var halfLon = LonSize / 2.0;
+
+        var min = new Position(
+            cell.Centerpoint.Longitude - halfLon,
+            cell.Centerpoint.Latitude - halfLat
+        );
+
+        var max = new Position(
+            cell.Centerpoint.Longitude + halfLon,
+            cell.Centerpoint.Latitude + halfLat
+        );
+
+        return (min, max);
+    }
 }
 
 /// <summary>
