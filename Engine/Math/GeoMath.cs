@@ -3,12 +3,14 @@ namespace Engine.GeoMath;
 using Core.Shared;
 
 /// <summary>
-/// This class provides methods for calculating distances and bearings between positions on the Earth's surface using the Haversine formula.
+/// This class provides methods for calculating distances and bearings between
+/// positions on the Earth's surface using the Haversine formula.
 /// </summary>
 public static class GeoMath
 {
     /// <summary>
     /// Calculates the Haversine distance between two positions on the Earth's surface.
+    /// https://www.ancientportsantiques.com/wp-content/uploads/Documents/ETUDESarchivees/MedNavigationRoutes/MedNav/TrigoSpherique.pdf#page=1.
     /// </summary>
     /// <param name="a">1st Postion.</param>
     /// <param name="b">2nd Postion.</param>
@@ -31,6 +33,7 @@ public static class GeoMath
     /// <summary>
     /// Calculates the bearing from one position to another.
     /// The bearing is the angle between the north direction and the line connecting the two positions, measured in radians.
+    /// https://www.ancientportsantiques.com/wp-content/uploads/Documents/ETUDESarchivees/MedNavigationRoutes/MedNav/TrigoSpherique.pdf#page=3.
     /// </summary>
     /// <param name="from">The position the bearing should start from.</param>
     /// <param name="to">The position the bearing is going to end on.</param>
