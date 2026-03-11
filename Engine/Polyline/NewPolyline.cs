@@ -4,7 +4,6 @@ using Core.Charging;
 using Core.Shared;
 using Engine.GeoMath;
 
-
 public static class NewPolyline
 {
     public static List<ushort> StationsInPolyline(
@@ -34,7 +33,7 @@ public static class NewPolyline
                 {
                     if (IsStationInRadius(station.Position, wp, wp2, radius))
                     {
-                        indexesOfValidStations.Add(station.id);
+                        indexesOfValidStations.Add(station.GetId());
                         break;
                     }
                 }

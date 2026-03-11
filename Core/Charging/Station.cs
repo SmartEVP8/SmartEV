@@ -25,7 +25,7 @@ public class Station(ushort id,
     /// <summary>The current KWh price at the station.</summary>
     public float Price = price;
     private readonly Random _random = random;
-    public readonly ushort id = id;
+    private readonly ushort id = id;
     private readonly string _name = name;
     private readonly string _address = address;
     public readonly Position Position = position;
@@ -46,4 +46,6 @@ public class Station(ushort id,
         var sign = _random.Next(2) == 0 ? 1.0f : -1.0f;
         Price = basePrice * (1.0f + (sign * deviation));
     }
+
+    public ushort GetId() => id;
 }
