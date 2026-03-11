@@ -7,7 +7,6 @@
     </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NetTopologySuite" />
     <PackageReference Include="StyleCop.Analyzers" />
     <ProjectReference Include="..\Core\Core.csproj" />
   </ItemGroup>

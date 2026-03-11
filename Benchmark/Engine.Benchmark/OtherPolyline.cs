@@ -1,12 +1,11 @@
-using Core.Utils;
 namespace Engine.Benchmark;
-
 
 using BenchmarkDotNet.Attributes;
 using Core.Charging;
 using Core.Shared;
 using Engine.Polyline;
 using Core.Routing;
+using Core.Utils;
 using BenchmarkDotNet.Diagnosers;
 
 /// <summary>
@@ -18,7 +17,7 @@ using BenchmarkDotNet.Diagnosers;
 /// </summary>
 [MemoryDiagnoser]
 [EventPipeProfiler(EventPipeProfile.GcVerbose)]
-public class PolilineBufferBenchmark
+public class OtherPolylineBenchmark
 {
     private Core.Routing.OSRMRouter _router = null!;
     private List<Station> _stations = null!;
@@ -33,26 +32,27 @@ public class PolilineBufferBenchmark
         var path = AppContext.GetData("OsrmDataPath") as string
             ?? throw new InvalidOperationException("OsrmDataPath not set in project.");
         _router = new OSRMRouter(path);
-        var route = _router.QuerySingleDestination(9.935932, 57.046707, 10.2000, 56.1500);
+        var route = _router.QuerySingleDestination(9.935932, 57.046707, 12.5683, 55.6761);
         var polyline = route.polyline;
         _path = Polyline6ToPoints.DecodePolyline(polyline);
 
         _stations = new List<Station>();
         var rand = new Random();
-        for (int i = 0; i < 1000; i++)
+        for (int i = 0; i < 4000; i++)
         {
-            var lat = 56.0 + (rand.NextDouble() * (57.0 - 56.0));
-            var lon = 9.0 + (rand.NextDouble() * (10.5 - 9.0));
+            var lat = 55.0 + (rand.NextDouble() * (57.0 - 55.0));
+            var lon = 9.0 + (rand.NextDouble() * (12.0 - 9.0));
             _stations.Add(new Station((ushort)i, $"Station{i}", $"Address{i}", new Position(lon, lat), null, 50f, rand));
         }
+
         // Warmup        PolylineBuffer.StationsInPolyline(_stations, _path, 50, 0.1, 0.1);
-        var nearbyStations = PolylineBuffer.StationsInPolyline(_stations, _path, 50, 0.1, 0.1);
-        var _ = nearbyStations.Count; // Use the result to prevent optimization
+        var nearbyStations = NewPolyline.StationsInPolyline(_stations, _path, 10, 0.1, 0.1);
+        var _ = nearbyStations; // Use the result to prevent optimization
     }
 
     [GlobalCleanup]
     public void Cleanup() => _router?.Dispose();
 
     [Benchmark]
-    public void BenchmarkStationsInPolyline() => _ = PolylineBuffer.StationsInPolyline(_stations, _path, 50, 0.1, 0.1);
+    public void BenchmarkStationsInPolyline() => _ = NewPolyline.StationsInPolyline(_stations, _path, 10, 0.1, 0.1);
 }

@@ -49,15 +49,7 @@ public static class Program
             new Station(22, "Station22", "Address22", new Position(10.5, 57.0), null, 50f, new Random()),
         };
 
-        var nearbyStations = PolylineBuffer.StationsInPolyline(stations, path, 50, 0.1, 0.1);
+        //var nearbyStations = NewPolyline.StationsInPolyline(stations, path, 50, 0.1, 0.1);
 
-        Console.WriteLine("Stations within 50 km of the route:");
-        foreach (var station in nearbyStations)
-        {
-            Console.WriteLine($"at {station.Position.Longitude}, {station.Position.Latitude}");
-        }
-
-        // Warmup
-        PolylineBuffer.StationsInPolyline(stations, path, 50, 0.1, 0.1);
     }
 }

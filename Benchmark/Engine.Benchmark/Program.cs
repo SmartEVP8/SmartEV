@@ -14,6 +14,7 @@ public static class Program
 {
     public static async Task Main()
     {
-        BenchmarkRunner.Run<PolilineBufferBenchmark>();
+        //BenchmarkRunner.Run<PolilineBufferBenchmark>();
+        BenchmarkRunner.Run<OtherPolylineBenchmark>();
     }
 }

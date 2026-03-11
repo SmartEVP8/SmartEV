@@ -1,9 +1,7 @@
-using System.Diagnostics;
 namespace Engine.Polyline;
 
 using Core.Charging;
 using Core.Shared;
-using System.Collections.Concurrent;
 using Engine.GeoMath;
 
 /// <summary>
@@ -30,8 +28,6 @@ public static class PolylineBuffer
         double latSize,
         double lonSize)
     {
-        var stopwatch = Stopwatch.StartNew();
-
 
         // Compute bounding box of the path with added radius buffer
         var minLat = double.MaxValue;
@@ -57,9 +53,9 @@ public static class PolylineBuffer
                 s.Position.Longitude <= maxLon + radiusInLon)
             .ToList();
 
-        var stationsCloseToLine = new ConcurrentBag<Station>();
+        var stationsCloseToLine = new List<Station>();
         // Parallelise over stations, not segments — allows early exit per station
-        Parallel.ForEach(candidates, station =>
+        foreach (var station in candidates)
         {
             for (var i = 0; i < path.Waypoints.Count - 1; i++)
             {
@@ -71,14 +67,14 @@ public static class PolylineBuffer
                         radius))
                 {
                     stationsCloseToLine.Add(station);
-                    return; // Early exit — no need to check remaining segments
+                    break;
                 }
             }
 
             // Check final waypoint
             if (GeoMath.HaversineDistance(station.Position, path.Waypoints[^1]) <= radius)
                 stationsCloseToLine.Add(station);
-        });
+        }
 
         return stationsCloseToLine.OrderBy(s => s.Position.Longitude).ToList();
     }
