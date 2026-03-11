@@ -7,48 +7,46 @@ using Core.Vehicles;
 /// ChargingAllocator provides a unified interface for allocating available power to electric vehicles
 /// based on the type of charging point and the capacities of the connected batteries.
 /// </summary>
-public static class ChargingAllocator
+/// <remarks>
+/// Initializes a new instance of the <see cref="ChargingAllocator"/> class.
+/// </remarks>
+/// <param name="chargingModel">The charging model to use for computing charging times.</param>
+public class ChargingAllocator(ChargingModel chargingModel)
 {
     /// <summary>
-    /// Allocates available power to one or two batteries based on the type of charging point.
+    /// Allocates available power to the connected batteries based on the type of charging point
+    /// and computes the expected charging times.
     /// </summary>
-    /// <param name="chargingPoint">The charging point for which to allocate power.</param>
+    /// <param name="chargingPoint">The charging point to allocate power to.</param>
     /// <param name="availablePower">The total power available for allocation.</param>
-    /// <param name="batteries">The batteries to which power should be allocated.</param>
-    /// <returns>The result of the power allocation.</returns>
-    public static AllocationResult Allocate(IChargingPoint chargingPoint, double availablePower, params Battery[] batteries)
+    /// <param name="socTarget1">The target state of charge for the first battery.</param>
+    /// <param name="socTarget2">The target state of charge for the second battery.
+    ///                          This is ignored for single-charging points.</param>
+    /// <param name="batteries">The batteries to allocate power to.</param>
+    /// <returns>The result of the allocation and computation.</returns>
+    /// <exception cref="ArgumentException">Thrown when the charging point type is unknown.</exception>
+    public ChargingEstimate AllocateAndCompute(
+        IChargingPoint chargingPoint,
+        double availablePower,
+        double socTarget1,
+        double socTarget2,
+        params Battery[] batteries)
     {
-        return chargingPoint switch
+        var allocation = chargingPoint switch
         {
-            SingleChargingPoint => AllocateSingle(availablePower, batteries[0]),
-            DualChargingPoint => AllocateDual(availablePower, batteries[0], batteries[1]),
+            SingleChargingPoint => PowerDistributor.DistributeSingle(availablePower, batteries[0].MaxChargeRate),
+            DualChargingPoint => PowerDistributor.DistributeDual(availablePower, batteries[0].MaxChargeRate, batteries[1].MaxChargeRate),
             _ => throw new ArgumentException("Unknown charging point type", nameof(chargingPoint))
         };
-    }
 
-    /// <summary>
-    /// Allocates power for a single charging point, considering only one battery's capacity.
-    /// </summary>
-    /// <param name="availablePower">The total power available for allocation.</param>
-    /// <param name="battery">The battery to which power should be allocated.</param>
-    /// <returns>The result of the power allocation.</returns>
-    private static AllocationResult AllocateSingle(double availablePower, Battery battery)
-    {
-        var allocated = Math.Min(availablePower, battery.MaxChargeRate);
-        return new AllocationResult(allocated, 0, availablePower - allocated);
-    }
+        var time1 = chargingModel.GetChargingTimeHours(
+            batteries[0].CurrentCharge, socTarget1, batteries[0].Capacity, allocation.Allocated1);
 
-    /// <summary>
-    /// Allocates power for a dual charging point, distributing available power between
-    /// two batteries using a fair-split algorithm.
-    /// </summary>
-    /// <param name="availablePower">The total power available for allocation.</param>
-    /// <param name="battery1">The first battery to which power should be allocated.</param>
-    /// <param name="battery2">The second battery to which power should be allocated.</param>
-    /// <returns>The result of the power allocation.</returns>
-    private static AllocationResult AllocateDual(double availablePower, Battery battery1, Battery battery2)
-    {
-        var (a1, a2, wasted) = PowerDistributor.Distribute(availablePower, battery1.MaxChargeRate, battery2.MaxChargeRate);
-        return new AllocationResult(a1, a2, wasted);
+        var time2 = batteries.Length > 1
+            ? chargingModel.GetChargingTimeHours(
+                batteries[1].CurrentCharge, socTarget2, batteries[1].Capacity, allocation.Allocated2)
+            : 0.0;
+
+        return new ChargingEstimate(time1, time2);
     }
 }

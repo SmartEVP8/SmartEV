@@ -6,4 +6,4 @@ namespace Core.Charging;
 /// <param name="Allocated1">Power allocated to the first (or only) consumer.</param>
 /// <param name="Allocated2">Power allocated to the second consumer. Zero (0) for single charging points.</param>
 /// <param name="Wasted">Power that could not be consumed by any vehicle.</param>
-public record AllocationResult(double Allocated1, double Allocated2, double Wasted);
+public record PowerAllocation(double Allocated1, double Allocated2, double Wasted);
