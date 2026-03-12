@@ -46,4 +46,6 @@ public class Station(ushort id,
         var sign = _random.Next(2) == 0 ? 1.0f : -1.0f;
         Price = basePrice * (1.0f + (sign * deviation));
     }
+
+    public uint GetId() => _id;
 }
