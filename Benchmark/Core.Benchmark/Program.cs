@@ -1,19 +1,18 @@
-using BenchmarkDotNet.Engines;
 namespace Headless;
 
 using Core.Charging;
 using Core.Routing;
-using Core.Services;
 using Core.Shared;
 using Engine.Grid;
 using Engine.Parsers;
+using Parquet.Serialization;
 
 public static class Program
 {
     public static async Task Main()
     {
         var polygons = PolygonParser.Parse(
-            File.ReadAllText("../data/denmark.polygon.json"));
+            File.ReadAllText("../../data/denmark.polygon.json"));
 
         var grid = Polygooner.GenerateGrid(0.1, polygons);
 
@@ -56,23 +55,21 @@ public static class Program
         var evCoordsFlat = evCoords.SelectMany(e => new[] { e.Lon, e.Lat }).ToArray();
         var stationCoordsFlat = stations.SelectMany(s => new[] { s.Position.Longitude, s.Position.Latitude }).ToArray();
 
-        var (durations, distances) = router.QueryPointsToPoints(evCoordsFlat, stationCoordsFlat);
-
         var outputPath = Path.Combine(Directory.GetCurrentDirectory(), "points_to_points.parquet");
-        ParquetService.Write(outputPath, new Dictionary<string, Array>
+
+        for (var i = 0; i < 3; i++)
         {
-            ["duration"] = durations,
-            ["distance"] = distances,
-        });
+            var (durations, distances) = router.QueryPointsToPoints(evCoordsFlat, stationCoordsFlat);
+            var rows = durations.Zip(distances, (dur, dist) => new Routing { Duration = dur, Distance = dist }).ToList();
+            var options = new ParquetSerializerOptions { Append = i > 0 };
+            await ParquetSerializer.SerializeAsync(rows, outputPath, options);
+        }
 
-        Console.WriteLine($"Written: {outputPath}");
+        Console.WriteLine($"\nWritten: {outputPath}");
 
-        var result = ParquetService.Read(outputPath);
-        var readDurs = (float[])result["duration"];
-        var readDists = (float[])result["distance"];
-
-        Console.WriteLine($"Read {readDurs.Length} rows from points_to_points.parquet");
+        IList<Routing> data = await ParquetSerializer.DeserializeAsync<Routing>(outputPath);
+        Console.WriteLine($"Read {data.Count} rows from points_to_points.parquet");
         for (var i = 0; i < 15; i++)
-            Console.WriteLine($"Row {i}: duration={readDurs[i]}s distance={readDists[i]}m");
+            Console.WriteLine($"  Row {i}: duration={data[i].Duration}s distance={data[i].Distance}m");
     }
 }

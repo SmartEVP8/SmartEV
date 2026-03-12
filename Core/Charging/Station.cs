@@ -47,5 +47,5 @@ public class Station(ushort id,
         Price = basePrice * (1.0f + (sign * deviation));
     }
 
-    public ushort GetId() => id;
+    public uint GetId() => _id;
 }
