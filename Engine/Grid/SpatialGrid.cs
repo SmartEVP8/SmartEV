@@ -26,7 +26,13 @@ public class SpatialGrid
         {
             var key = ToRowCol(station.Position.Latitude, station.Position.Longitude);
             if (_cells.TryGetValue(key, out var list))
+            {
                 list.Add(station.GetId());
+            }
+            else
+            {
+                throw new Exception($"Station {station.GetId()} at position {station.Position} is outside the grid bounds.");
+            }
         }
     }
 
