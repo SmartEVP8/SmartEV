@@ -1,3 +1,5 @@
+using Core.Charging.ChargingModel.Chargepoint;
+
 namespace Core.Charging;
 
 /// <summary>
@@ -13,4 +15,6 @@ public readonly struct Charger(int id, int maxPowerKW, IChargingPoint chargingPo
     private readonly int _id = id;
     private readonly int _maxPowerKW = maxPowerKW;
     private readonly IChargingPoint _chargingpoint = chargingPoint;
+
+
 }

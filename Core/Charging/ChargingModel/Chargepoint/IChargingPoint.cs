@@ -1,5 +1,6 @@
-namespace Core.Charging;
+namespace Core.Charging.ChargingModel.Chargepoint;
 
+using System.Collections.Immutable;
 using Core.Shared;
 
 public interface IChargingPoint
@@ -8,5 +9,8 @@ public interface IChargingPoint
     /// Get a list of the compatible sockets for this charging point, no duplicates.
     /// </summary>
     /// <returns>Get a list of the compatible sockets for the charging point, no duplicates.</returns>
-    List<Socket> GetSockets();
+    ImmutableArray<Socket> GetSockets();
+
+
+    (double PowerA, double PowerB) GetPowerDistribution(double maxKW, double socA, double? socB, IChargingCurve curveA, IChargingCurve? curveB);
 }
