@@ -2,10 +2,12 @@ namespace Engine.Grid;
 
 using Core.Charging;
 using Core.Shared;
+using Engine.GeoMath;
 
 public class SpatialGrid
 {
-    private readonly Dictionary<RowCol, List<uint>> _cells = [];
+    private readonly Dictionary<RowCol, List<ushort>> _cells = [];
+    private readonly Dictionary<ushort, Position> _stationPositions = [];
     private readonly Position _min;
     private readonly double _latSize;
     private readonly double _lonSize;
@@ -24,6 +26,7 @@ public class SpatialGrid
 
         foreach (var station in stations)
         {
+            _stationPositions[station.GetId()] = station.Position;
             var key = ToRowCol(station.Position.Latitude, station.Position.Longitude);
             if (_cells.TryGetValue(key, out var list))
                 list.Add(station.GetId());
@@ -35,7 +38,7 @@ public class SpatialGrid
     /// </summary>
     /// <param name="pos">The position of interest.</param>
     /// <returns>A list of uints of station id's.</returns>
-    public IReadOnlyList<uint> GetStations(Position pos)
+    public IReadOnlyList<ushort> GetStations(Position pos)
     {
         var key = ToRowCol(pos.Latitude, pos.Longitude);
         return _cells.TryGetValue(key, out var list) ? list : [];
@@ -47,7 +50,7 @@ public class SpatialGrid
     /// <param name="minPos">Left-bottom corner of the bounding box.</param>
     /// <param name="maxPos">Right-top corner of the bounding box.</param>
     /// <returns>A list of uints of station id's.</returns>
-    public IReadOnlyList<uint> GetStations(Position minPos, Position maxPos)
+    public IReadOnlyList<ushort> GetStations(Position minPos, Position maxPos, Position wp1, Position wp2, double radius)
     {
         var minLat = Math.Min(minPos.Latitude, maxPos.Latitude);
         var maxLat = Math.Max(minPos.Latitude, maxPos.Latitude);
@@ -57,7 +60,7 @@ public class SpatialGrid
         var minRowCol = ToRowCol(minLat, minLon);
         var maxRowCol = ToRowCol(maxLat, maxLon);
 
-        var result = new HashSet<uint>();
+        var result = new HashSet<ushort>();
 
         for (var row = minRowCol.Row; row <= maxRowCol.Row; row++)
         {
@@ -67,7 +70,13 @@ public class SpatialGrid
                 if (_cells.TryGetValue(key, out var list))
                 {
                     foreach (var stationId in list)
-                        _ = result.Add(stationId);
+                    {
+                        if (_stationPositions.TryGetValue(stationId, out var stationPos))
+                        {
+                            if (GeoMath.IsInRadius(stationPos, wp1, wp2, radius))
+                                result.Add(stationId);
+                        }
+                    }
                 }
             }
         }

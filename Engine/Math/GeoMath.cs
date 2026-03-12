@@ -53,6 +53,38 @@ public static class GeoMath
         return Math.Atan2(y, x);
     }
 
+    public static bool IsInRadius(Position point, Position waypoint1, Position waypoint2, double radius)
+    {
+        var distToStation = HaversineDistance(point, waypoint1);
+        if (distToStation <= radius) return true; // Quick check for stations near the waypoint
+
+        // Calculate the length of the line segment between the two waypoints and the distance from the first waypoint to the station
+        var segmentLength = HaversineDistance(waypoint1, waypoint2);
+
+        if (segmentLength == 0) return false;
+
+        // Calculate the bearing from waypoint1 to waypoint2 and from waypoint1 to the station
+        var segmentBearing = Bearing(waypoint1, waypoint2);
+        var stationBearing = Bearing(waypoint1, point);
+
+        // Calculate the angle between the segment and the station
+        var angle = stationBearing - segmentBearing;
+
+        // Normalize
+        while (angle > Math.PI) angle -= 2 * Math.PI;
+        while (angle < -Math.PI) angle += 2 * Math.PI;
+
+        // Distance along and perpendicular to the segment
+        var along = distToStation * Math.Cos(angle);
+
+        // Pythagorean theorem to find the perpendicular distance
+        // from the station to the line defined by the waypoints
+        var perp = Math.Sqrt((distToStation * distToStation) - (along * along));
+
+        // Must be between the two circles and within radius
+        return along >= 0 && along <= segmentLength && perp <= radius;
+    }
+
     private static double ToRad(double degrees) => degrees * DegToRad;
 
 }

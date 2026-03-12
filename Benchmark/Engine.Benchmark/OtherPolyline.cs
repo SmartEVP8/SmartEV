@@ -1,3 +1,5 @@
+using Engine.Parsers;
+using Engine.Grid;
 namespace Engine.Benchmark;
 
 using BenchmarkDotNet.Attributes;
@@ -21,6 +23,7 @@ public class OtherPolylineBenchmark
 {
     private Core.Routing.OSRMRouter _router = null!;
     private List<Station> _stations = null!;
+    private SpatialGrid _spatialGrid = null!;
     private Paths _path = null!;
     /// <summary>
     /// Initializes the benchmark setup with stations and EV coordinates.
@@ -44,15 +47,16 @@ public class OtherPolylineBenchmark
             var lon = 9.0 + (rand.NextDouble() * (12.0 - 9.0));
             _stations.Add(new Station((ushort)i, $"Station{i}", $"Address{i}", new Position(lon, lat), null, 50f, rand));
         }
-
-        // Warmup        PolylineBuffer.StationsInPolyline(_stations, _path, 50, 0.1, 0.1);
-        var nearbyStations = NewPolyline.StationsInPolyline(_stations, _path, 10, 0.1, 0.1);
-        var _ = nearbyStations; // Use the result to prevent optimization
+        var gridPath = AppContext.GetData("GridPath") as string
+            ?? throw new InvalidOperationException("GridPath not set in project.");
+        var polygons = PolygonParser.Parse(File.ReadAllText(gridPath));
+        var grid = Polygooner.GenerateGrid(0.1, polygons);
+        _spatialGrid = new SpatialGrid(grid, _stations);
     }
 
     [GlobalCleanup]
     public void Cleanup() => _router?.Dispose();
 
     [Benchmark]
-    public void BenchmarkStationsInPolyline() => _ = NewPolyline.StationsInPolyline(_stations, _path, 10, 0.1, 0.1);
+    public void BenchmarkStationsInPolyline() => _ = NewPolyline.StationsInPolyline(_spatialGrid, _path, 10, 0.1, 0.1);
 }

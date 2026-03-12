@@ -48,8 +48,16 @@ public static class Program
             new Station(21, "Station21", "Address21", new Position(10.0, 57.0), null, 50f, new Random()),
             new Station(22, "Station22", "Address22", new Position(10.5, 57.0), null, 50f, new Random()),
         };
+        var polygons = PolygonParser.Parse(File.ReadAllText("../data/denmark.polygon.json"));
+        var grid = Polygooner.GenerateGrid(0.1, polygons);
+        var spatialGrid = new SpatialGrid(grid, stations);
 
-        //var nearbyStations = NewPolyline.StationsInPolyline(stations, path, 50, 0.1, 0.1);
-
+        var nearbyStations = NewPolyline.StationsInPolyline(spatialGrid, path, 50, 0.1, 0.1);
+        Console.WriteLine(nearbyStations.Count());
+        foreach (var stationId in nearbyStations)
+        {
+            var station = stations.First(s => s.GetId() == stationId);
+            Console.WriteLine($"Station {station.GetId()} at position {station.Position.Latitude}, {station.Position.Longitude}");
+        }
     }
 }

@@ -3,6 +3,7 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <AllowMissingPrunePackageData>true</AllowMissingPrunePackageData>
     <OsrmDataPath>$(MSBuildThisFileDirectory)\data\osrm\output.osrm</OsrmDataPath>
+    <GridPath>$(MSBuildThisFileDirectory)\data\denmark.polygon.json</GridPath>
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="BenchmarkDotNet" Version="0.15.8" />
@@ -18,5 +19,6 @@
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.3" />
     <PackageVersion Include="OpenApiUi" Version="1.1.0" />
     <RuntimeHostConfigurationOption Include="OsrmDataPath" Value="$(OsrmDataPath)" Trim="true" />
+    <RuntimeHostConfigurationOption Include="GridPath" Value="$(GridPath)" Trim="false" />
   </ItemGroup>
 </Project>
