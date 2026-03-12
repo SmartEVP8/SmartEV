@@ -31,23 +31,23 @@ public class SpatialGrid
     }
 
     /// <summary>
-    /// Given a position, return the list of city ids that are in the same cell as that position.
+    /// Given a position, return the list of station ids that are in the same cell as that position.
     /// </summary>
     /// <param name="pos">The position of interest.</param>
     /// <returns>A list of uints of station id's.</returns>
-    public IReadOnlyList<uint> GetCities(Position pos)
+    public IReadOnlyList<uint> GetStations(Position pos)
     {
         var key = ToRowCol(pos.Latitude, pos.Longitude);
         return _cells.TryGetValue(key, out var list) ? list : [];
     }
 
     /// <summary>
-    /// Given two positions representing a bounding box, return the list of city ids that are within it.
+    /// Given two positions representing a bounding box, return the list of stations ids that are within it.
     /// </summary>
     /// <param name="minPos">Left-bottom corner of the bounding box.</param>
     /// <param name="maxPos">Right-top corner of the bounding box.</param>
     /// <returns>A list of uints of station id's.</returns>
-    public IReadOnlyList<uint> GetCities(Position minPos, Position maxPos)
+    public IReadOnlyList<uint> GetStations(Position minPos, Position maxPos)
     {
         var minLat = Math.Min(minPos.Latitude, maxPos.Latitude);
         var maxLat = Math.Max(minPos.Latitude, maxPos.Latitude);
