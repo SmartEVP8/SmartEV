@@ -88,6 +88,55 @@ public class SpatialGrid
         (int)Math.Floor((lat - _min.Latitude) / _latSize),
         (int)Math.Floor((lon - _min.Longitude) / _lonSize)
     );
+
+    public List<ushort> GetStationsAlongPolyline(
+    Paths path,
+    double radius)
+    {
+        var midLat = path.Waypoints.Average(w => w.Latitude);
+        var latKmPerDeg = 111.32;
+        var lonKmPerDeg = 111.32 * Math.Cos(midLat * Math.PI / 180.0);
+
+        var radiusInLatDeg = radius / latKmPerDeg;
+        var radiusInLonDeg = radius / lonKmPerDeg;
+
+        var seen = new HashSet<ushort>();
+
+        for (var i = 0; i < path.Waypoints.Count - 1; i++)
+        {
+            var wp = path.Waypoints[i];
+            var wp2 = path.Waypoints[i + 1];
+            var minPos = new Position(
+                Math.Min(wp.Longitude, wp2.Longitude) - radiusInLonDeg,
+                Math.Min(wp.Latitude, wp2.Latitude) - radiusInLatDeg);
+            var maxPos = new Position(
+                Math.Max(wp.Longitude, wp2.Longitude) + radiusInLonDeg,
+                Math.Max(wp.Latitude, wp2.Latitude) + radiusInLatDeg);
+
+            CollectSegment(minPos, maxPos, wp, wp2, radius, seen);
+        }
+
+        return [.. seen];
+    }
+
+    private void CollectSegment(
+        Position minPos, Position maxPos,
+        Position wp1, Position wp2,
+        double radius,
+        HashSet<ushort> result)
+    {
+        var minRowCol = ToRowCol(minPos.Latitude, minPos.Longitude);
+        var maxRowCol = ToRowCol(maxPos.Latitude, maxPos.Longitude);
+
+        for (var row = minRowCol.Row; row <= maxRowCol.Row; row++)
+            for (var col = minRowCol.Col; col <= maxRowCol.Col; col++)
+                if (_cells.TryGetValue(new RowCol(row, col), out var list))
+                    foreach (var stationId in list)
+                        if (!result.Contains(stationId))
+                            if (_stationPositions.TryGetValue(stationId, out var pos))
+                                if (GeoMath.IsInRadius(pos, wp1, wp2, radius))
+                                    result.Add(stationId);
+    }
 }
 
 readonly struct RowCol(int row, int col)

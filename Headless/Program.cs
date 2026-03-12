@@ -52,7 +52,7 @@ public static class Program
         var grid = Polygooner.GenerateGrid(0.1, polygons);
         var spatialGrid = new SpatialGrid(grid, stations);
 
-        var nearbyStations = NewPolyline.StationsInPolyline(spatialGrid, path, 50, 0.1, 0.1);
+        var nearbyStations = NewPolyline.StationsInPolyline(spatialGrid, path, 50);
         Console.WriteLine(nearbyStations.Count());
         foreach (var stationId in nearbyStations)
         {

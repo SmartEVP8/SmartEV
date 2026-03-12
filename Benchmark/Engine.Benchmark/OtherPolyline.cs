@@ -18,7 +18,6 @@ using BenchmarkDotNet.Diagnosers;
 /// allowing for performance analysis and optimization if needed.
 /// </summary>
 [MemoryDiagnoser]
-[EventPipeProfiler(EventPipeProfile.GcVerbose)]
 public class OtherPolylineBenchmark
 {
     private Core.Routing.OSRMRouter _router = null!;
@@ -58,5 +57,5 @@ public class OtherPolylineBenchmark
     public void Cleanup() => _router?.Dispose();
 
     [Benchmark]
-    public void BenchmarkStationsInPolyline() => _ = NewPolyline.StationsInPolyline(_spatialGrid, _path, 10, 0.1, 0.1);
+    public void BenchmarkStationsInPolyline() => _ = NewPolyline.StationsInPolyline(_spatialGrid, _path, 10);
 }
