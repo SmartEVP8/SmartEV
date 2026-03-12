@@ -5,7 +5,6 @@ namespace Engine.Benchmark;
 using BenchmarkDotNet.Attributes;
 using Core.Charging;
 using Core.Shared;
-using Engine.Polyline;
 using Core.Routing;
 using Core.Utils;
 using BenchmarkDotNet.Diagnosers;
@@ -57,5 +56,5 @@ public class OtherPolylineBenchmark
     public void Cleanup() => _router?.Dispose();
 
     [Benchmark]
-    public void BenchmarkStationsInPolyline() => _ = NewPolyline.StationsInPolyline(_spatialGrid, _path, 10);
+    public void BenchmarkStationsInPolyline() => _ = _spatialGrid.GetStationsAlongPolyline(_path, 10);
 }

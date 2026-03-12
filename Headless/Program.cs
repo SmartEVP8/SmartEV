@@ -1,5 +1,4 @@
 using Core.Charging;
-using Engine.Polyline;
 using System.Diagnostics;
 namespace Headless;
 
@@ -52,7 +51,7 @@ public static class Program
         var grid = Polygooner.GenerateGrid(0.1, polygons);
         var spatialGrid = new SpatialGrid(grid, stations);
 
-        var nearbyStations = NewPolyline.StationsInPolyline(spatialGrid, path, 50);
+        var nearbyStations = spatialGrid.GetStationsAlongPolyline(path, 50);
         Console.WriteLine(nearbyStations.Count());
         foreach (var stationId in nearbyStations)
         {

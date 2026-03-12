@@ -129,13 +129,25 @@ public class SpatialGrid
         var maxRowCol = ToRowCol(maxPos.Latitude, maxPos.Longitude);
 
         for (var row = minRowCol.Row; row <= maxRowCol.Row; row++)
+        {
             for (var col = minRowCol.Col; col <= maxRowCol.Col; col++)
+            {
                 if (_cells.TryGetValue(new RowCol(row, col), out var list))
+                {
                     foreach (var stationId in list)
+                    {
                         if (!result.Contains(stationId))
+                        {
                             if (_stationPositions.TryGetValue(stationId, out var pos))
+                            {
                                 if (GeoMath.IsInRadius(pos, wp1, wp2, radius))
                                     result.Add(stationId);
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
