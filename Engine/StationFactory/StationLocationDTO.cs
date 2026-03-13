@@ -1,6 +1,6 @@
 namespace Engine.StationFactory;
 
-public class ChargingLocationDTO
+public class StationLocationDTO
 {
     public string Name { get; set; } = "";
     public string Address { get; set; } = "";

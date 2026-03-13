@@ -80,12 +80,12 @@ public class StationFactory
     public List<Station> CreateStations(FileInfo file)
     {
         if (!file.Exists)
-            throw new FileNotFoundException("Charging location file not found.", file.FullName);
+            throw new FileNotFoundException("Station location file not found.", file.FullName);
 
         var json = File.ReadAllText(file.FullName);
 
-        var locations = JsonSerializer.Deserialize<List<ChargingLocationDTO>>(json)
-            ?? new List<ChargingLocationDTO>();
+        var locations = JsonSerializer.Deserialize<List<StationLocationDTO>>(json)
+            ?? new List<StationLocationDTO>();
 
         if (locations.Count == 0)
         {
@@ -133,7 +133,7 @@ public class StationFactory
     /// <returns>
     /// The created station.
     /// </returns>
-    private Station CreateStation(ushort id, ChargingLocationDTO location, List<Charger> chargers)
+    private Station CreateStation(ushort id, StationLocationDTO location, List<Charger> chargers)
     {
         var position = new Position(location.Longitude, location.Latitude);
         var price = EnergyPrices.GetHourPrice(DayOfWeek.Monday, 12);
