@@ -7,6 +7,9 @@
     </PropertyGroup>
 
     <ItemGroup>
+    <None Include="..\Data\energy_prices.csv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <PackageReference Include="Parquet.Net" />
     <PackageReference Include="StyleCop.Analyzers" />
     <ProjectReference Include="..\Core\Core.csproj" />
