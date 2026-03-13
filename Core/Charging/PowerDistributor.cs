@@ -1,6 +1,4 @@
-namespace Engine.Charging;
-
-using Core.Charging;
+namespace Core.Charging;
 
 /// <summary>
 /// PowerDistributor provides a method to fairly distribute available power between two consumers,

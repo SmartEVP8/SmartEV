@@ -10,7 +10,7 @@ using Core.Vehicles;
 /// <param name="allocator"> The charging allocator to use for computing charging times. </param>
 /// <param name="chargingPoint"> The charging point where the session is taking place. </param>
 /// <param name="availablePower"> The total power available for allocation. </param>
-public class ChargingSession(ChargingAllocator allocator, IChargingPoint chargingPoint, double availablePower)
+public class ChargingSession(ChargingModel chargingModel, IChargingPoint chargingPoint, double availablePower)
 {
     private EV? _car1;
     private EV? _car2;
@@ -29,8 +29,10 @@ public class ChargingSession(ChargingAllocator allocator, IChargingPoint chargin
     {
         if (_car1 is null)
             StartChargingFirstCar(car, socTarget);
-        else
+        else if (_car2 is null)
             StartChargingSecondCar(car, socTarget);
+        else
+            throw new InvalidOperationException("The charging session is already full.");
     }
 
     /// <summary>
@@ -45,7 +47,22 @@ public class ChargingSession(ChargingAllocator allocator, IChargingPoint chargin
             StopChargingFirstCar();
         else if (_car2 == car)
             StopChargingSecondCar();
+        else
+            throw new ArgumentException("The specified car is not currently being charged.", nameof(car));
     }
+
+    private ChargingEstimate Allocate() => chargingPoint switch
+    {
+        SingleChargingPoint sp when _car1 is not null =>
+            sp.AllocateAndCompute(chargingModel, availablePower, _car1SocTarget, _car1.GetBattery()),
+        SingleChargingPoint => throw new InvalidOperationException("Cannot allocate with no cars in session."),
+
+        DualChargingPoint dp when _car1 is not null && _car2 is not null =>
+            dp.AllocateAndCompute(chargingModel, availablePower, _car1SocTarget, _car2SocTarget, _car1.GetBattery(), _car2.GetBattery()),
+        DualChargingPoint dp when _car1 is not null =>
+            dp.AllocateAndCompute(chargingModel, availablePower, _car1SocTarget, _car1.GetBattery()),
+        _ => throw new InvalidOperationException("Cannot allocate with no cars in session.")
+    };
 
     // TODO: Change the discards (_ = allocator.AllocateAndCompute(...)) to actually store the results
     // and use them to track the state of charge of the cars in the session.
@@ -53,18 +70,19 @@ public class ChargingSession(ChargingAllocator allocator, IChargingPoint chargin
     {
         _car1 = car;
         _car1SocTarget = socTarget;
-        _ = allocator.AllocateAndCompute(chargingPoint, availablePower, socTarget, 0.0, car.Battery);
+        _ = Allocate();
     }
 
     private void StartChargingSecondCar(EV car, double socTarget)
     {
         _car2 = car;
-        _ = allocator.AllocateAndCompute(chargingPoint, availablePower, _car1SocTarget, socTarget, _car1!.Battery, car.Battery);
+        _car2SocTarget = socTarget;
+        _ = Allocate();
     }
 
     private void StopChargingFirstCar()
     {
-        _car1!.UpdateCharge((float)_car1SocTarget);
+        _car1!.SetCharge((float)_car1SocTarget);
         _car1 = null;
         _car1SocTarget = 0.0;
 
@@ -74,19 +92,19 @@ public class ChargingSession(ChargingAllocator allocator, IChargingPoint chargin
             _car1SocTarget = _car2SocTarget;
             _car2 = null;
             _car2SocTarget = 0.0;
-            _ = allocator.AllocateAndCompute(chargingPoint, availablePower, _car1SocTarget, 0.0, _car1.Battery);
         }
+
+        if (_car1 is not null)
+            _ = Allocate();
     }
 
     private void StopChargingSecondCar()
     {
-        _car2!.UpdateCharge((float)_car2SocTarget);
+        _car2!.SetCharge((float)_car2SocTarget);
         _car2 = null;
         _car2SocTarget = 0.0;
 
         if (_car1 is not null)
-        {
-            _ = allocator.AllocateAndCompute(chargingPoint, availablePower, _car1SocTarget, 0.0, _car1.Battery);
-        }
+            _ = Allocate();
     }
 }

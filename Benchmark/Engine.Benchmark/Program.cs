@@ -1,2 +1,9 @@
-﻿// See https://aka.ms/new-console-template for more information
-Console.WriteLine("Hello, World!");
+﻿namespace Engine.Benchmark;
+
+using BenchmarkDotNet.Running;
+
+public class Program
+{
+    public static void Main(string[] args) =>
+        BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);
+}
