@@ -1,65 +1,91 @@
-name: Calculate Priority from Labels
+name: Calculate PUIE Score
+
 on:
-  issues:
-    types: [opened, edited, labeled, unlabeled]
+  projects_v2_item:
+    types: [edited]
+
 jobs:
-  calculate-priority:
+  calculate-puie:
     runs-on: ubuntu-latest
-    permissions:
-      issues: write
     steps:
-      - name: Math from Labels
+      - name: Calculate and Write PUIE Score
         uses: actions/github-script@v7
         with:
+          github-token: ${{ secrets.PROJECT_TOKEN }}
           script: |
-            const issueLabels = context.payload.issue.labels.map(l => l.name);
+            // 1. Map the IDs
+            const projectId = 'PVT_kwDOD30sZM4BPAuK';
+            const importanceFieldId = 'PVTF_lADOD30sZM4BPAuKzg_Zue4';
+            const urgencyFieldId = 'PVTF_lADOD30sZM4BPAuKzg_Zuc4';
+            const effortFieldId = 'PVTF_lADOD30sZM4BPAuKzg_ZukE';
+            const puieFieldId = 'PVTF_lADOD30sZM4BPAuKzg-t06k';
 
-            const getVal = (prefix) => {
-              const label = issueLabels.find(l => l.startsWith(prefix));
-              return label ? parseFloat(label.split(':')[1]) : null;
-            };
+            // 2. Identify the item from the payload (Singular in JS)
+            const item = context.payload.project_v2_item;
+            if (!item) {
+              console.log("No item found in payload. Ensure the trigger is 'projects_v2_item'.");
+              return;
+            }
+            const itemId = item.node_id;
 
-            const impact = getVal('importance:');
-            const urgency = getVal('urgency:');
-            const effort = getVal('effort:');
-
-            if (impact !== null && urgency !== null && effort !== null && effort !== 0) {
-              const score = ((impact * urgency) / effort).toFixed(2);
-
-              // Remove existing priority labels
-              const allLabels = await github.rest.issues.listLabelsOnIssue({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number
-              });
-              for (const l of allLabels.data) {
-                if (l.name.startsWith('priority:')) {
-                  await github.rest.issues.removeLabel({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    issue_number: context.issue.number,
-                    name: l.name
-                  });
+            // 3. Fetch current field values via GraphQL
+            const result = await github.graphql(`
+              query($itemId: ID!) {
+                node(id: $itemId) {
+                  ... on ProjectV2Item {
+                    fieldValues(first: 20) {
+                      nodes {
+                        ... on ProjectV2ItemFieldNumberValue {
+                          field { ... on ProjectV2Field { id } }
+                          number
+                        }
+                      }
+                    }
+                  }
                 }
               }
+            `, { itemId });
 
-              // Create the label if it doesn't exist
-              try {
-                await github.rest.issues.createLabel({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  name: "priority: " + score,
-                  color: "0075ca"
-                });
-              } catch (e) {
-                if (e.status !== 422) throw e;
-              }
+            const fields = result.node.fieldValues.nodes || [];
+            const getVal = (id) => {
+              const f = fields.find(nodes => nodes.field?.id === id);
+              return f ? f.number : null;
+            };
 
-              // Add the new priority label
-              await github.rest.issues.addLabels({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                labels: ["priority: " + score]
-              });
+            const importance = getVal(importanceFieldId);
+            const urgency = getVal(urgencyFieldId);
+            const effort = getVal(effortFieldId);
+            const currentPUIE = getVal(puieFieldId);
+
+            // 4. Logic & Calculation
+            // Ensure effort is present and not zero to avoid division by zero
+            if (importance === null || urgency === null || !effort) {
+              console.log("Required fields (Imp, Urg, Eff) are not all set. Skipping.");
+              return;
             }
+
+            const score = parseFloat(((importance * urgency) / effort).toFixed(2));
+
+            // 5. Infinite Loop Prevention
+            // The 'edited' event triggers when we write the score. 
+            // We must exit if the score hasn't actually changed.
+            if (score === currentPUIE) {
+              console.log(`Current PUIE (${currentPUIE}) matches calculated (${score}). No update needed.`);
+              return;
+            }
+
+            // 6. Update the Score
+            await github.graphql(`
+              mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $value: Float!) {
+                updateProjectV2ItemFieldValue(input: {
+                  projectId: $projectId
+                  itemId: $itemId
+                  fieldId: $fieldId
+                  value: { number: $value }
+                }) {
+                  projectV2Item { id }
+                }
+              }
+            `, { projectId, itemId, fieldId: puieFieldId, value: score });
+
+            console.log(`Successfully updated PUIE to: ${score}`);
