@@ -17,7 +17,7 @@ using BenchmarkDotNet.Diagnosers;
 /// allowing for performance analysis and optimization if needed.
 /// </summary>
 [MemoryDiagnoser]
-public class OtherPolylineBenchmark
+public class StationsAroundPolyline
 {
     private OSRMRouter _router = null!;
     private List<Station> _stations = null!;
