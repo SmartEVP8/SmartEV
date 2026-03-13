@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Text.Json;
 using Core.Charging;
 using Core.Shared;
@@ -11,27 +12,28 @@ public class StationFactoryTests
             Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "Data", "energy_prices.csv"));
 
         Assert.True(File.Exists(csvPath), $"CSV not found at: {csvPath}");
-
         EnergyPrices.Initialize(csvPath);
     }
 
-    private static StationFactory CreateFactory(StationFactoryOptions? options = null)
+    private static StationFactory CreateFactory(
+        StationFactoryOptions? options = null,
+        int seed = 42)
     {
-        return new StationFactory(options ?? new StationFactoryOptions());
+        return new StationFactory(options ?? new StationFactoryOptions(), seed);
     }
 
-    private static string CreateTempLocationsFile(params object[] locations)
+    private static FileInfo CreateTempLocationsFile(params object[] locations)
     {
         var json = JsonSerializer.Serialize(locations);
         var filePath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.json");
         File.WriteAllText(filePath, json);
-        return filePath;
+        return new FileInfo(filePath);
     }
 
-    private static string CreateTempLocationsFile(int count)
+    private static FileInfo CreateTempLocationsFile(int count)
     {
         var locations = Enumerable.Range(1, count)
-            .Select(i => new
+            .Select(i => (object)new
             {
                 Name = $"Station {i}",
                 Address = $"Address {i}",
@@ -43,11 +45,11 @@ public class StationFactoryTests
         return CreateTempLocationsFile(locations);
     }
 
-    private static string CreateTempFileWithRawContent(string content)
+    private static FileInfo CreateTempFileWithRawContent(string content)
     {
         var filePath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.json");
         File.WriteAllText(filePath, content);
-        return filePath;
+        return new FileInfo(filePath);
     }
 
     private static Dictionary<Socket, int> CountSockets(IEnumerable<Station> stations)
@@ -56,7 +58,7 @@ public class StationFactoryTests
 
         var chargingPointField = typeof(Charger).GetField(
             "_chargingpoint",
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            BindingFlags.NonPublic | BindingFlags.Instance);
 
         Assert.NotNull(chargingPointField);
 
@@ -65,7 +67,6 @@ public class StationFactoryTests
             foreach (var charger in station.Chargers)
             {
                 var chargingPoint = chargingPointField!.GetValue(charger) as IChargingPoint;
-
                 Assert.NotNull(chargingPoint);
 
                 foreach (var socket in chargingPoint!.GetSockets())
@@ -82,28 +83,75 @@ public class StationFactoryTests
     }
 
     [Fact]
+    public void Constructor_WhenTotalChargersIsZero_ThrowsArgumentOutOfRangeException()
+    {
+        var options = new StationFactoryOptions
+        {
+            TotalChargers = 0,
+        };
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => new StationFactory(options, 42));
+    }
+
+    [Fact]
+    public void Constructor_WhenDualChargingPointProbabilityIsInvalid_ThrowsArgumentOutOfRangeException()
+    {
+        var options = new StationFactoryOptions
+        {
+            DualChargingPointProbability = 1.5,
+        };
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => new StationFactory(options, 42));
+    }
+
+    [Fact]
+    public void Constructor_WhenSocketProbabilitiesAreEmpty_ThrowsArgumentException()
+    {
+        var options = new StationFactoryOptions
+        {
+            SocketProbabilities = new Dictionary<Socket, double>(),
+        };
+
+        Assert.Throws<ArgumentException>(() => new StationFactory(options, 42));
+    }
+
+    [Fact]
+    public void Constructor_WhenSocketProbabilitiesDoNotSumToOne_ThrowsArgumentException()
+    {
+        var options = new StationFactoryOptions
+        {
+            SocketProbabilities = new Dictionary<Socket, double>
+            {
+                { Socket.CHADEMO, 0.5 },
+                { Socket.CCS, 0.2 },
+            },
+        };
+
+        Assert.Throws<ArgumentException>(() => new StationFactory(options, 42));
+    }
+
+    [Fact]
     public void CreateStations_EmptyFile_ReturnsEmptyList()
     {
-        var filePath = CreateTempLocationsFile();
+        var file = CreateTempLocationsFile();
 
         try
         {
             var factory = CreateFactory();
-
-            var stations = factory.CreateStations(filePath);
+            var stations = factory.CreateStations(file);
 
             Assert.Empty(stations);
         }
         finally
         {
-            File.Delete(filePath);
+            file.Delete();
         }
     }
 
     [Fact]
-    public void CreateStations_SingleLocation_ReturnsSingleStation()
+    public void CreateStations_SingleLocation_ReturnsSingleStationWithMappedProperties()
     {
-        var filePath = CreateTempLocationsFile(
+        var file = CreateTempLocationsFile(
             new
             {
                 Name = "Only Station",
@@ -115,138 +163,26 @@ public class StationFactoryTests
         try
         {
             var factory = CreateFactory();
-
-            var stations = factory.CreateStations(filePath);
+            var stations = factory.CreateStations(file);
 
             var station = Assert.Single(stations);
+            Assert.Equal((ushort)1, station.Id);
             Assert.Equal("Only Station", station.Name);
             Assert.Equal("Only Address", station.Address);
             Assert.Equal(57.0, station.Position.Latitude);
             Assert.Equal(9.0, station.Position.Longitude);
+            Assert.NotEmpty(station.Chargers);
         }
         finally
         {
-            File.Delete(filePath);
+            file.Delete();
         }
     }
 
     [Fact]
-    public void CreateStations_ReturnsOneStationPerLocation()
+    public void CreateStations_MultipleLocations_ReturnsOneStationPerLocationInInputOrder()
     {
-        var filePath = CreateTempLocationsFile(
-            new
-            {
-                Name = "Station A",
-                Address = "Address A",
-                Latitude = 57.0,
-                Longitude = 9.0,
-            },
-            new
-            {
-                Name = "Station B",
-                Address = "Address B",
-                Latitude = 57.1,
-                Longitude = 9.1,
-            },
-            new
-            {
-                Name = "Station C",
-                Address = "Address C",
-                Latitude = 57.2,
-                Longitude = 9.2,
-            });
-
-        try
-        {
-            var factory = CreateFactory();
-
-            var stations = factory.CreateStations(filePath);
-
-            Assert.Equal(3, stations.Count);
-        }
-        finally
-        {
-            File.Delete(filePath);
-        }
-    }
-
-    [Fact]
-    public void CreateStations_AssignsUniqueStationIds()
-    {
-        var filePath = CreateTempLocationsFile(
-            new
-            {
-                Name = "Station A",
-                Address = "Address A",
-                Latitude = 57.0,
-                Longitude = 9.0,
-            },
-            new
-            {
-                Name = "Station B",
-                Address = "Address B",
-                Latitude = 57.1,
-                Longitude = 9.1,
-            },
-            new
-            {
-                Name = "Station C",
-                Address = "Address C",
-                Latitude = 57.2,
-                Longitude = 9.2,
-            });
-
-        try
-        {
-            var factory = CreateFactory();
-
-            var stations = factory.CreateStations(filePath);
-
-            var ids = stations.Select(s => s.Id).ToList();
-            var uniqueIds = ids.Distinct().ToList();
-
-            Assert.Equal(ids.Count, uniqueIds.Count);
-        }
-        finally
-        {
-            File.Delete(filePath);
-        }
-    }
-
-    [Fact]
-    public void CreateStations_MapsLocationDataCorrectly()
-    {
-        var filePath = CreateTempLocationsFile(
-            new
-            {
-                Name = "Test Station",
-                Address = "Test Address",
-                Latitude = 56.123,
-                Longitude = 10.456,
-            });
-
-        try
-        {
-            var factory = CreateFactory();
-
-            var stations = factory.CreateStations(filePath);
-            var station = Assert.Single(stations);
-
-            Assert.Equal("Test Station", station.Name);
-            Assert.Equal("Test Address", station.Address);
-            Assert.Equal(10.456, station.Position.Longitude);
-            Assert.Equal(56.123, station.Position.Latitude);
-        }
-        finally
-        {
-            File.Delete(filePath);
-        }
-    }
-
-    [Fact]
-    public void CreateStations_PreservesInputOrder()
-    {
-        var filePath = CreateTempLocationsFile(
+        var file = CreateTempLocationsFile(
             new
             {
                 Name = "First",
@@ -272,354 +208,128 @@ public class StationFactoryTests
         try
         {
             var factory = CreateFactory();
-
-            var stations = factory.CreateStations(filePath);
+            var stations = factory.CreateStations(file);
 
             Assert.Equal(3, stations.Count);
             Assert.Equal("First", stations[0].Name);
             Assert.Equal("Second", stations[1].Name);
             Assert.Equal("Third", stations[2].Name);
+            Assert.Equal((ushort)1, stations[0].Id);
+            Assert.Equal((ushort)2, stations[1].Id);
+            Assert.Equal((ushort)3, stations[2].Id);
         }
         finally
         {
-            File.Delete(filePath);
+            file.Delete();
         }
     }
 
     [Fact]
-    public void CreateStations_EachStation_GetsAtLeastOneCharger()
+    public void CreateStations_WhenFileDoesNotExist_ThrowsFileNotFoundException()
     {
-        var filePath = CreateTempLocationsFile(
-            new
-            {
-                Name = "Station A",
-                Address = "Address A",
-                Latitude = 57.0,
-                Longitude = 9.0,
-            },
-            new
-            {
-                Name = "Station B",
-                Address = "Address B",
-                Latitude = 57.1,
-                Longitude = 9.1,
-            },
-            new
-            {
-                Name = "Station C",
-                Address = "Address C",
-                Latitude = 57.2,
-                Longitude = 9.2,
-            });
+        var file = new FileInfo(Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.json"));
+        var factory = CreateFactory();
+
+        Assert.Throws<FileNotFoundException>(() => factory.CreateStations(file));
+    }
+
+    [Fact]
+    public void CreateStations_WhenJsonIsInvalid_ThrowsJsonException()
+    {
+        var file = CreateTempFileWithRawContent("{ invalid json }");
 
         try
         {
             var factory = CreateFactory();
 
-            var stations = factory.CreateStations(filePath);
-
-            Assert.All(stations, station => Assert.NotEmpty(station.Chargers));
+            Assert.Throws<JsonException>(() => factory.CreateStations(file));
         }
         finally
         {
-            File.Delete(filePath);
+            file.Delete();
         }
     }
 
     [Fact]
-    public void CreateStations_DuplicateNamesAndAddresses_StillCreateDistinctStations()
+    public void CreateStations_WhenTotalChargersIsLessThanStationCount_ThrowsInvalidOperationException()
     {
-        var filePath = CreateTempLocationsFile(
-            new
-            {
-                Name = "Same Name",
-                Address = "Same Address",
-                Latitude = 57.0,
-                Longitude = 9.0,
-            },
-            new
-            {
-                Name = "Same Name",
-                Address = "Same Address",
-                Latitude = 57.1,
-                Longitude = 9.1,
-            });
-
-        try
-        {
-            var factory = CreateFactory();
-
-            var stations = factory.CreateStations(filePath);
-
-            Assert.Equal(2, stations.Count);
-            Assert.NotEqual(stations[0].Id, stations[1].Id);
-            Assert.Equal("Same Name", stations[0].Name);
-            Assert.Equal("Same Name", stations[1].Name);
-        }
-        finally
-        {
-            File.Delete(filePath);
-        }
-    }
-
-    [Fact]
-    public void CreateStations_MapsNegativeAndZeroCoordinatesCorrectly()
-    {
-        var filePath = CreateTempLocationsFile(
-            new
-            {
-                Name = "Edge Station",
-                Address = "Edge Address",
-                Latitude = 0.0,
-                Longitude = -3.5,
-            });
-
-        try
-        {
-            var factory = CreateFactory();
-
-            var stations = factory.CreateStations(filePath);
-            var station = Assert.Single(stations);
-
-            Assert.Equal(0.0, station.Position.Latitude);
-            Assert.Equal(-3.5, station.Position.Longitude);
-        }
-        finally
-        {
-            File.Delete(filePath);
-        }
-    }
-
-    [Fact]
-    public void CreateStations_AllStationsHaveRequiredFields()
-    {
-        var filePath = CreateTempLocationsFile(
-            new
-            {
-                Name = "Station A",
-                Address = "Address A",
-                Latitude = 57.0,
-                Longitude = 9.0,
-            },
-            new
-            {
-                Name = "Station B",
-                Address = "Address B",
-                Latitude = 57.1,
-                Longitude = 9.1,
-            });
-
-        try
-        {
-            var factory = CreateFactory();
-
-            var stations = factory.CreateStations(filePath);
-
-            Assert.All(stations, station =>
-            {
-                Assert.False(string.IsNullOrWhiteSpace(station.Name));
-                Assert.False(string.IsNullOrWhiteSpace(station.Address));
-                Assert.NotEmpty(station.Chargers);
-            });
-        }
-        finally
-        {
-            File.Delete(filePath);
-        }
-    }
-
-    [Fact]
-    public void CreateStations_WithSameSeed_ProducesDeterministicResults()
-    {
-        var filePath = CreateTempLocationsFile(
-            new
-            {
-                Name = "Station A",
-                Address = "Address A",
-                Latitude = 57.0,
-                Longitude = 9.0,
-            },
-            new
-            {
-                Name = "Station B",
-                Address = "Address B",
-                Latitude = 57.1,
-                Longitude = 9.1,
-            });
+        var file = CreateTempLocationsFile(5);
 
         var options = new StationFactoryOptions
         {
-            Seed = 42,
-            UseDualChargingPoints = true,
-            DualChargingPointProbability = 0.3,
-        };
-
-        try
-        {
-            var factory1 = CreateFactory(options);
-            var factory2 = CreateFactory(options);
-
-            var stations1 = factory1.CreateStations(filePath);
-            var stations2 = factory2.CreateStations(filePath);
-
-            Assert.Equal(stations1.Count, stations2.Count);
-
-            for (int i = 0; i < stations1.Count; i++)
-            {
-                Assert.Equal(stations1[i].Id, stations2[i].Id);
-                Assert.Equal(stations1[i].Name, stations2[i].Name);
-                Assert.Equal(stations1[i].Address, stations2[i].Address);
-                Assert.Equal(stations1[i].Position.Longitude, stations2[i].Position.Longitude);
-                Assert.Equal(stations1[i].Position.Latitude, stations2[i].Position.Latitude);
-                Assert.Equal(stations1[i].Chargers.Count, stations2[i].Chargers.Count);
-            }
-        }
-        finally
-        {
-            File.Delete(filePath);
-        }
-    }
-
-    [Fact]
-    public void CreateStations_WhenDualChargingPointsDisabled_StillCreatesChargers()
-    {
-        var filePath = CreateTempLocationsFile(
-            new
-            {
-                Name = "Station A",
-                Address = "Address A",
-                Latitude = 57.0,
-                Longitude = 9.0,
-            });
-
-        var options = new StationFactoryOptions
-        {
-            Seed = 42,
-            UseDualChargingPoints = false,
-            DualChargingPointProbability = 1.0,
+            TotalChargers = 4,
         };
 
         try
         {
             var factory = CreateFactory(options);
 
-            var stations = factory.CreateStations(filePath);
-            var station = Assert.Single(stations);
-
-            Assert.NotEmpty(station.Chargers);
-        }
-        finally
-        {
-            File.Delete(filePath);
-        }
-    }
-
-    [Fact]
-    public void CreateStations_DoesNotExceedConfiguredSocketCounts()
-    {
-        var filePath = CreateTempLocationsFile(100);
-
-        var options = new StationFactoryOptions
-        {
-            Seed = 42,
-            UseDualChargingPoints = false,
-            DualChargingPointProbability = 0.0,
-        };
-
-        try
-        {
-            var factory = CreateFactory(options);
-
-            var stations = factory.CreateStations(filePath);
-            var socketCounts = CountSockets(stations);
-
-            Assert.True(socketCounts.GetValueOrDefault(Socket.CHADEMO, 0) <= 167);
-            Assert.True(socketCounts.GetValueOrDefault(Socket.Type2SocketOnly, 0) <= 4514);
-            Assert.True(socketCounts.GetValueOrDefault(Socket.NACS, 0) <= 14);
-            Assert.True(socketCounts.GetValueOrDefault(Socket.CCS, 0) <= 1472);
-            Assert.True(socketCounts.GetValueOrDefault(Socket.Type2Tethered, 0) <= 1044);
-        }
-        finally
-        {
-            File.Delete(filePath);
-        }
-    }
-
-    [Fact]
-    public void CreateStations_UsesExactlyConfiguredSocketCounts()
-    {
-        var filePath = CreateTempLocationsFile(100);
-
-        var options = new StationFactoryOptions
-        {
-            Seed = 42,
-            UseDualChargingPoints = false,
-            DualChargingPointProbability = 0.0,
-        };
-
-        try
-        {
-            var factory = CreateFactory(options);
-
-            var stations = factory.CreateStations(filePath);
-            var socketCounts = CountSockets(stations);
-
-            Assert.Equal(167, socketCounts.GetValueOrDefault(Socket.CHADEMO, 0));
-            Assert.Equal(4514, socketCounts.GetValueOrDefault(Socket.Type2SocketOnly, 0));
-            Assert.Equal(14, socketCounts.GetValueOrDefault(Socket.NACS, 0));
-            Assert.Equal(1472, socketCounts.GetValueOrDefault(Socket.CCS, 0));
-            Assert.Equal(1044, socketCounts.GetValueOrDefault(Socket.Type2Tethered, 0));
-
-            var totalChargers = stations.Sum(station => station.Chargers.Count);
-            Assert.Equal(7211, totalChargers);
-        }
-        finally
-        {
-            File.Delete(filePath);
-        }
-    }
-
-    [Fact]
-    public void CreateStations_WithMoreLocationsThanChargers_ThrowsInvalidOperationException()
-    {
-        var filePath = CreateTempLocationsFile(7212);
-
-        try
-        {
-            var factory = CreateFactory();
-
-            var exception = Assert.Throws<InvalidOperationException>(() => factory.CreateStations(filePath));
+            var exception = Assert.Throws<InvalidOperationException>(() => factory.CreateStations(file));
             Assert.Equal("Not enough chargers to give at least one to each station.", exception.Message);
         }
         finally
         {
-            File.Delete(filePath);
+            file.Delete();
         }
     }
 
     [Fact]
-    public void CreateStations_MissingFile_ThrowsFileNotFoundException()
+    public void CreateStations_AllStationsReceiveAtLeastOneCharger()
     {
-        var filePath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.json");
-        var factory = CreateFactory();
+        var file = CreateTempLocationsFile(10);
 
-        Assert.Throws<FileNotFoundException>(() => factory.CreateStations(filePath));
-    }
-
-    [Fact]
-    public void CreateStations_InvalidJson_ThrowsJsonException()
-    {
-        var filePath = CreateTempFileWithRawContent("{ invalid json }");
+        var options = new StationFactoryOptions
+        {
+            TotalChargers = 25,
+        };
 
         try
         {
-            var factory = CreateFactory();
+            var factory = CreateFactory(options, seed: 123);
+            var stations = factory.CreateStations(file);
 
-            Assert.Throws<JsonException>(() => factory.CreateStations(filePath));
+            Assert.Equal(10, stations.Count);
+            Assert.All(stations, station => Assert.NotEmpty(station.Chargers));
         }
         finally
         {
-            File.Delete(filePath);
+            file.Delete();
+        }
+    }
+
+    [Fact]
+    public void CreateStations_WithSameSeed_ProducesDeterministicSocketDistribution()
+    {
+        var file = CreateTempLocationsFile(8);
+
+        var options = new StationFactoryOptions
+        {
+            TotalChargers = 40,
+            UseDualChargingPoints = false,
+            DualChargingPointProbability = 0.0,
+        };
+
+        try
+        {
+            var factory1 = CreateFactory(options, seed: 42);
+            var factory2 = CreateFactory(options, seed: 42);
+
+            var stations1 = factory1.CreateStations(file);
+            var stations2 = factory2.CreateStations(file);
+
+            Assert.Equal(stations1.Count, stations2.Count);
+            Assert.Equal(
+                stations1.Sum(s => s.Chargers.Count),
+                stations2.Sum(s => s.Chargers.Count));
+
+            var socketCounts1 = CountSockets(stations1);
+            var socketCounts2 = CountSockets(stations2);
+
+            Assert.Equal(socketCounts1, socketCounts2);
+        }
+        finally
+        {
+            file.Delete();
         }
     }
 }

@@ -1,4 +1,5 @@
 namespace Engine.StationFactory;
+using Core.Shared;
 
 /// <summary>
 /// Options controlling deterministic station generation behaviour.
