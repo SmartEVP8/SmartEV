@@ -15,7 +15,17 @@ public class StationFactoryOptions
     /// Gets the probability that a generated charging point is dual,
     /// when dual charging points are enabled.
     /// </summary>
-    public double DualChargingPointProbability { get; init; } = 0.3;
+    public double DualChargingPointProbability { get; init; } = 0.8;
+
+    /// <summary>
+    /// Gets a value indicating whether chargers that support multiple socket types may be generated.
+    /// </summary> 
+    public bool AllowMultiSocketChargers { get; init; } = true;
+
+    /// <summary>
+    /// Gets the probability that a generated charger supports more than one socket type.
+    /// </summary>
+    public double MultiSocketChargerProbability { get; init; } = 0.2;
 
     /// <summary>
     /// Gets the total number of chargers to be distributed across generated stations.
@@ -31,7 +41,7 @@ public class StationFactoryOptions
     public Dictionary<Socket, double> SocketProbabilities { get; init; } = new()
     {
         { Socket.CHADEMO, 0.023 },
-        { Socket.CCS, 0.204 },
+        { Socket.CCS2, 0.204 },
         { Socket.Type2SocketOnly, 0.626 },
         { Socket.Type2Tethered, 0.144 },
         { Socket.NACS, 0.0019 }

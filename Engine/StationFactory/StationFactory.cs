@@ -58,6 +58,12 @@ public class StationFactory
                 nameof(options));
         }
 
+        if (options.MultiSocketChargerProbability < 0 || options.MultiSocketChargerProbability > 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(options.MultiSocketChargerProbability),
+                "MultiSocketChargerProbability must be between 0 and 1.");
+        }
+
         _options = options;
         _random = new Random(seed);
     }
@@ -164,28 +170,92 @@ public class StationFactory
     }
 
     /// <summary>
-    /// Creates either a single or dual charging point using the same socket type on both sides.
+    /// Creates a charging point with one or two connectors based on the configured probabilities.
+    /// The primary connector is determined by the provided socket type, while a secondary connector (if created) is randomly selected from the remaining socket types.
     /// </summary>
-    /// <param name="socket">
-    /// The socket type to use for the charging point.
-    /// </param>
-    /// <returns>
-    /// The created charging point.
-    /// </returns>
-    private IChargingPoint CreateChargingPoint(Socket socket)
+    /// <param name="primarySocket"></param>
+    /// <returns></returns>
+    private IChargingPoint CreateChargingPoint(Socket primarySocket)
     {
-        bool isDual = _options.UseDualChargingPoints &&
-                      _random.NextDouble() < _options.DualChargingPointProbability;
+        var connectors = CreateConnectorSet(primarySocket);
 
-        var connectors = new List<Connector> { new Connector(socket) };
-
-        if (!isDual)
+        if (!ShouldCreateDualChargingPoint())
         {
             return new SingleChargingPoint(connectors);
         }
 
-        var mirroredConnectors = new List<Connector> { new Connector(socket) };
-        return new DualChargingPoint(connectors, mirroredConnectors);
+        return new DualChargingPoint(connectors, CopyConnectors(connectors));
+    }
+
+    /// <summary>
+    /// Creates a set of connectors for a charging point based on the primary socket type and the configured probability for multi-socket chargers.
+    /// The primary connector is always included, while a secondary connector is added based on the probabilities and available socket types.
+    /// If multi-socket chargers are disabled or if there are no other socket types available, only the primary connector will be included.
+    /// </summary>
+    /// <param name="primarySocket"></param>
+    /// <returns>
+    /// A list of connectors for the charging point.
+    /// </returns>
+    private List<Connector> CreateConnectorSet(Socket primarySocket)
+    {
+        var connectors = new List<Connector> { new Connector(primarySocket) };
+
+        if (!ShouldCreateMultiSocketCharger())
+        {
+            return connectors;
+        }
+
+        var availableSockets = _options.SocketProbabilities.Keys
+            .Where(socket => socket != primarySocket)
+            .ToList();
+
+        if (availableSockets.Count == 0)
+        {
+            return connectors;
+        }
+
+        var secondarySocket = availableSockets[_random.Next(availableSockets.Count)];
+        connectors.Add(new Connector(secondarySocket));
+
+        return connectors;
+    }
+
+    /// <summary>
+    /// Determines whether to create a dual charging point based on the configured options and probabilities.
+    /// A dual charging point allows two vehicles to charge simultaneously at the same station, which can increase station utilization and reduce wait times for drivers.
+    /// <summary>
+    private bool ShouldCreateDualChargingPoint()
+    {
+        return _options.UseDualChargingPoints &&
+            _random.NextDouble() < _options.DualChargingPointProbability;
+    }
+
+    /// <summary>
+    /// Determines whether to create a multi-socket charger based on the configured options and probabilities.
+    /// A multi-socket charger supports more than one socket type, which can increase the versatility
+    /// </summary>
+    /// <returns>
+    /// True if a multi-socket charger should be created; otherwise, false.
+    /// </returns>
+    private bool ShouldCreateMultiSocketCharger()
+    {
+        return _options.AllowMultiSocketChargers &&
+            _random.NextDouble() < _options.MultiSocketChargerProbability;
+    }
+
+    /// <summary>
+    /// Creates a deep copy of a list of connectors to be used for the second charging point in a dual charging point configuration.
+    /// This ensures that the two charging points have separate connector instances, allowing them to be used
+    /// </summary>
+    /// <param name="connectors"></param>
+    /// <returns>
+    /// A new list of connectors that are copies of the original connectors.
+    /// </returns>
+    private static List<Connector> CopyConnectors(IEnumerable<Connector> connectors)
+    {
+        return connectors
+            .Select(connector => new Connector(connector.GetSocket()))
+            .ToList();
     }
 
     /// <summary>

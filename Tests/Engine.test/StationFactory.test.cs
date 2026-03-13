@@ -53,20 +53,11 @@ public class StationFactoryTests
     {
         var counts = new Dictionary<Socket, int>();
 
-        var chargingPointField = typeof(Charger).GetField(
-            "_chargingpoint",
-            BindingFlags.NonPublic | BindingFlags.Instance);
-
-        Assert.NotNull(chargingPointField);
-
         foreach (var station in stations)
         {
             foreach (var charger in station.Chargers)
             {
-                var chargingPoint = chargingPointField!.GetValue(charger) as IChargingPoint;
-                Assert.NotNull(chargingPoint);
-
-                foreach (var socket in chargingPoint!.GetSockets())
+                foreach (var socket in charger.ChargingPoint.GetSockets())
                 {
                     if (!counts.TryAdd(socket, 1))
                     {
@@ -120,7 +111,7 @@ public class StationFactoryTests
             SocketProbabilities = new Dictionary<Socket, double>
             {
                 { Socket.CHADEMO, 0.5 },
-                { Socket.CCS, 0.2 },
+                { Socket.CCS2, 0.2 },
             },
         };
 
@@ -323,6 +314,111 @@ public class StationFactoryTests
             var socketCounts2 = CountSockets(stations2);
 
             Assert.Equal(socketCounts1, socketCounts2);
+        }
+        finally
+        {
+            file.Delete();
+        }
+    }
+
+    [Fact]
+    public void CreateStations_WithMultiSocketChargers_ProducesSomeChargersWithMultipleSockets()
+    {
+        var file = CreateTempLocationsFile(10);
+
+        var options = new StationFactoryOptions
+        {
+            TotalChargers = 50,
+            AllowMultiSocketChargers = true,
+            MultiSocketChargerProbability = 0.5,
+        };
+
+        try
+        {
+            var factory = CreateFactory(options, seed: 123);
+            var stations = factory.CreateStations(file);
+
+            Assert.Equal(10, stations.Count);
+            Assert.All(stations, station => Assert.NotEmpty(station.Chargers));
+
+            var hasMultiSocketCharger = stations
+                .SelectMany(station => station.Chargers)
+                .Any(charger => charger.ChargingPoint.GetSockets().Count > 1);
+
+            Assert.True(hasMultiSocketCharger, "Expected at least one charger to have multiple sockets.");
+        }
+        finally
+        {
+            file.Delete();
+        }
+    }
+
+    [Fact]
+    public void CreateStations_WhenMultiSocketProbabilityIsOne_AllChargersBecomeMultiSocket()
+    {
+        var file = CreateTempLocationsFile(6);
+
+        var options = new StationFactoryOptions
+        {
+            TotalChargers = 18,
+            AllowMultiSocketChargers = true,
+            MultiSocketChargerProbability = 1.0,
+            UseDualChargingPoints = false,
+            DualChargingPointProbability = 0.0,
+            SocketProbabilities = new Dictionary<Socket, double>
+            {
+                { Socket.CHADEMO, 0.5 },
+                { Socket.CCS2, 0.5 },
+            },
+        };
+
+        try
+        {
+            var factory = CreateFactory(options, seed: 123);
+            var stations = factory.CreateStations(file);
+
+            var chargers = stations.SelectMany(station => station.Chargers).ToList();
+
+            Assert.NotEmpty(chargers);
+            Assert.All(chargers, charger =>
+                Assert.True(
+                    charger.ChargingPoint.GetSockets().Count > 1,
+                    "Expected every charger to have more than one socket when multi-socket probability is 1.0."));
+        }
+        finally
+        {
+            file.Delete();
+        }
+    }
+
+    [Fact]
+    public void CreateStations_WhenOnlyOneSocketTypeExists_DoesNotCreateMultiSocketChargers()
+    {
+        var file = CreateTempLocationsFile(6);
+
+        var options = new StationFactoryOptions
+        {
+            TotalChargers = 18,
+            AllowMultiSocketChargers = true,
+            MultiSocketChargerProbability = 1.0,
+            UseDualChargingPoints = false,
+            DualChargingPointProbability = 0.0,
+            SocketProbabilities = new Dictionary<Socket, double>
+            {
+                { Socket.CCS2, 1.0 },
+            },
+        };
+
+        try
+        {
+            var factory = CreateFactory(options, seed: 123);
+            var stations = factory.CreateStations(file);
+
+            var chargers = stations.SelectMany(station => station.Chargers).ToList();
+
+            Assert.NotEmpty(chargers);
+            Assert.All(chargers, charger =>
+                Assert.Single(charger.ChargingPoint.GetSockets()));
         }
         finally
         {
