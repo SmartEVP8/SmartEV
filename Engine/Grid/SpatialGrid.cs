@@ -4,6 +4,9 @@ using Core.Charging;
 using Core.Shared;
 using Engine.GeoMath;
 
+/// <summary>
+/// The SpatialGrid class is a spatial index that allows for efficient querying of stations based on their geographic location.
+/// </summary>
 public class SpatialGrid
 {
     private readonly Dictionary<RowCol, List<ushort>> _cells = [];
@@ -12,6 +15,14 @@ public class SpatialGrid
     private readonly double _latSize;
     private readonly double _lonSize;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SpatialGrid"/> class.
+    /// Initializes the spatial grid with the given spawnable grid and stations.
+    /// The spawnable grid defines the bounds and cell sizes of the spatial grid, while the stations are used to populate the cells with station ids.
+    /// </summary>
+    /// <param name="spawnable">The spawnable grid defines the bounds and cell sizes of the spatial grid. It is used to determine which cells are spawnable and to initialize the grid structure.</param>
+    /// <param name="stations">Used as points to be queried for.</param>
+    /// <exception cref="Exception">Thrown if a station is located outside the bounds of the grid defined by the spawnable parameter.</exception>
     public SpatialGrid(SpawnGrid spawnable, IEnumerable<Station> stations)
     {
         _min = spawnable.Min;
@@ -34,100 +45,58 @@ public class SpatialGrid
             }
             else
             {
-                throw new Exception($"Station {station.GetId()} at position {station.Position} is outside the grid bounds.");
+                throw new Exception($"Station {station.GetId()} at position {station.Position.Latitude}, {station.Position.Longitude} is outside the grid bounds.");
             }
         }
     }
 
     /// <summary>
-    /// Given a position, return the list of station ids that are in the same cell as that position.
+    /// Given a polyline (a list of waypoints) and a radius, return the list of station ids that are within the radius of any point along the polyline.
     /// </summary>
-    /// <param name="pos">The position of interest.</param>
-    /// <returns>A list of uints of station id's.</returns>
-    public IReadOnlyList<ushort> GetStations(Position pos)
-    {
-        var key = ToRowCol(pos.Latitude, pos.Longitude);
-        return _cells.TryGetValue(key, out var list) ? list : [];
-    }
-
-    /// <summary>
-    /// Given two positions representing a bounding box, return the list of stations ids that are within it.
-    /// </summary>
-    /// <param name="minPos">Left-bottom corner of the bounding box.</param>
-    /// <param name="maxPos">Right-top corner of the bounding box.</param>
-    /// <returns>A list of uints of station id's.</returns>
-    public IReadOnlyList<ushort> GetStations(Position minPos, Position maxPos, Position wp1, Position wp2, double radius)
-    {
-        var minLat = Math.Min(minPos.Latitude, maxPos.Latitude);
-        var maxLat = Math.Max(minPos.Latitude, maxPos.Latitude);
-        var minLon = Math.Min(minPos.Longitude, maxPos.Longitude);
-        var maxLon = Math.Max(minPos.Longitude, maxPos.Longitude);
-
-        var minRowCol = ToRowCol(minLat, minLon);
-        var maxRowCol = ToRowCol(maxLat, maxLon);
-
-        var result = new HashSet<ushort>();
-
-        for (var row = minRowCol.Row; row <= maxRowCol.Row; row++)
-        {
-            for (var col = minRowCol.Col; col <= maxRowCol.Col; col++)
-            {
-                var key = new RowCol(row, col);
-                if (_cells.TryGetValue(key, out var list))
-                {
-                    foreach (var stationId in list)
-                    {
-                        if (_stationPositions.TryGetValue(stationId, out var stationPos))
-                        {
-                            if (GeoMath.IsInRadius(stationPos, wp1, wp2, radius))
-                                result.Add(stationId);
-                        }
-                    }
-                }
-            }
-        }
-
-        return [.. result];
-    }
-
-    private RowCol ToRowCol(double lat, double lon) => new(
-        (int)Math.Floor((lat - _min.Latitude) / _latSize),
-        (int)Math.Floor((lon - _min.Longitude) / _lonSize)
-    );
-
+    /// <param name="path">The polyline / list of waypoints.</param>
+    /// <param name="radius">Radius to search around the polyline.</param>
+    /// <returns>A lits of uints of stations id's.</returns>
     public List<ushort> GetStationsAlongPolyline(
     Paths path,
     double radius)
     {
-        var midLat = path.Waypoints.Average(w => w.Latitude);
-        var latKmPerDeg = 111.32;
-        var lonKmPerDeg = 111.32 * Math.Cos(midLat * Math.PI / 180.0);
-
-        var radiusInLatDeg = radius / latKmPerDeg;
-        var radiusInLonDeg = radius / lonKmPerDeg;
-
+        var radiusInLatDeg = radius / GeoMath.KmPerLatitudeDegree;
+        var radiusInLonDeg = radius / GeoMath.KmPerLongtitudeDegree;
         var seen = new HashSet<ushort>();
 
         for (var i = 0; i < path.Waypoints.Count - 1; i++)
         {
-            var wp = path.Waypoints[i];
+            var wp1 = path.Waypoints[i];
             var wp2 = path.Waypoints[i + 1];
             var minPos = new Position(
-                Math.Min(wp.Longitude, wp2.Longitude) - radiusInLonDeg,
-                Math.Min(wp.Latitude, wp2.Latitude) - radiusInLatDeg);
+                Math.Min(wp1.Longitude, wp2.Longitude) - radiusInLonDeg,
+                Math.Min(wp1.Latitude, wp2.Latitude) - radiusInLatDeg);
             var maxPos = new Position(
-                Math.Max(wp.Longitude, wp2.Longitude) + radiusInLonDeg,
-                Math.Max(wp.Latitude, wp2.Latitude) + radiusInLatDeg);
+                Math.Max(wp1.Longitude, wp2.Longitude) + radiusInLonDeg,
+                Math.Max(wp1.Latitude, wp2.Latitude) + radiusInLatDeg);
 
-            CollectSegment(minPos, maxPos, wp, wp2, radius, seen);
+            CollectSegment(minPos, maxPos, wp1, wp2, radius, seen);
         }
 
         return [.. seen];
     }
 
+    /// <summary>
+    /// Converts a latitude and longitude to a row and column index in the grid.
+    /// </summary>
+    private RowCol ToRowCol(double lat, double lon) => new(
+            (int)Math.Floor((lat - _min.Latitude) / _latSize),
+            (int)Math.Floor((lon - _min.Longitude) / _lonSize)
+        );
+
+    /// <summary>
+    /// Collects station ids for stations that are within the radius of the line segment defined by wp1 and wp2.
+    /// </summary>
     private void CollectSegment(
-        Position minPos, Position maxPos,
-        Position wp1, Position wp2,
+        Position minPos,
+        Position maxPos,
+        Position wp1,
+        Position wp2,
         double radius,
         HashSet<ushort> result)
     {
@@ -138,27 +107,28 @@ public class SpatialGrid
         {
             for (var col = minRowCol.Col; col <= maxRowCol.Col; col++)
             {
-                if (_cells.TryGetValue(new RowCol(row, col), out var list))
+                if (!_cells.TryGetValue(new RowCol(row, col), out var list))
+                    continue;
+
+                foreach (var stationId in list)
                 {
-                    foreach (var stationId in list)
-                    {
-                        if (!result.Contains(stationId))
-                        {
-                            if (_stationPositions.TryGetValue(stationId, out var pos))
-                            {
-                                if (GeoMath.IsInRadius(pos, wp1, wp2, radius))
-                                    result.Add(stationId);
-                            }
-                        }
-                    }
+                    if (result.Contains(stationId))
+                        continue;
+
+                    if (!_stationPositions.TryGetValue(stationId, out var pos))
+                        continue;
+
+                    if (GeoMath.IsInRadius(pos, wp1, wp2, radius))
+                        result.Add(stationId);
                 }
             }
         }
     }
-}
 
-readonly struct RowCol(int row, int col)
-{
-    public int Row { get; } = row;
-    public int Col { get; } = col;
+    private readonly struct RowCol(int row, int col)
+    {
+        public int Row { get; } = row;
+
+        public int Col { get; } = col;
+    }
 }
