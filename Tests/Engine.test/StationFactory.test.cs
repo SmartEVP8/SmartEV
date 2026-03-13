@@ -8,10 +8,7 @@ public class StationFactoryTests
 {
     public StationFactoryTests()
     {
-        var csvPath = Path.Combine(AppContext.BaseDirectory, "energy_prices.csv");
-
-        Assert.True(File.Exists(csvPath), $"CSV not found at: {csvPath}");
-
+        var csvPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "energy_prices.csv");
         EnergyPrices.Initialize(csvPath);
     }
 
