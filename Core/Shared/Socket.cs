@@ -7,12 +7,11 @@ namespace Core.Shared;
 public enum Socket : byte
 {
     CHADEMO,
-    CCS,
+    CCS2,
     Type2,
     Tesla_ModelSX,
     Tesla_Model3
 }
-
 
 public static class SocketExtensions
 {
@@ -27,7 +26,7 @@ public static class SocketExtensions
         return socket switch
         {
             Socket.CHADEMO => "CHAdeMO",
-            Socket.CCS => "CCS",
+            Socket.CCS2 => "CCS2",
             Socket.Type2 => "Type 2",
             Socket.Tesla_ModelSX => "Tesla Model S/X",
             Socket.Tesla_Model3 => "Tesla Model 3/Y",
@@ -47,7 +46,7 @@ public static class SocketExtensions
         return socket switch
         {
             Socket.CHADEMO => 50,
-            Socket.CCS => 350,
+            Socket.CCS2 => 350,
             Socket.Type2 => 22,
             Socket.Tesla_ModelSX => 250,
             Socket.Tesla_Model3 => 250,

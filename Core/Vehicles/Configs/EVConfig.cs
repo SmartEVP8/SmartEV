@@ -1,15 +1,33 @@
 namespace Core.Vehicles.Configs;
 
 /// <summary>
-/// Configuration for EVs. 
+/// Configuration for an EV model, used to instantiate <see cref="Core.Vehicles.EV"/> instances.
 /// </summary>
-/// <param name="batteryDistribution">A battery configuration with a weight.</param>
-/// <param name="prefsConfig">A config for preferences.</param>
-public class EVConfig(IReadOnlyList<WeightedBatteryConfig> batteryDistribution, PrefsConfig prefsConfig)
+public readonly struct EVConfig(string model, float spawnChance, string category, BatteryConfig batteryConfig, ushort efficiency)
 {
-    /// <summary>Gets the battery configuration.</summary>
-    public IReadOnlyList<WeightedBatteryConfig> BatteryDistribution { get; } = batteryDistribution;
+    /// <summary>
+    /// The make and model of the car.
+    /// </summary>
+    public readonly string Model = model;
 
-    /// <summary>Gets the preference configuration.</summary>
-    public PrefsConfig PrefsConfig { get; } = prefsConfig;
+    /// <summary>
+    /// The chance to spawn the specific car.
+    /// </summary>
+    /// <remarks>Based on the on-the-road share that the specific car represents in Denmark.</remarks>
+    public readonly float SpawnChance = spawnChance;
+
+    /// <summary>
+    /// The car category the car is part of.
+    /// </summary>
+    public readonly string Category = category;
+
+    /// <summary>
+    /// The battery configuration from <see cref="Core.Vehicles.Configs.BatteryConfig"/> describing capacity, charge rate, and socket type.
+    /// </summary>
+    public readonly BatteryConfig BatteryConfig = batteryConfig;
+
+    /// <summary>
+    /// The energy consumption of this model in Wh/km.
+    /// </summary>
+    public readonly ushort Efficiency = efficiency;
 }

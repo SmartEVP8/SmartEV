@@ -6,10 +6,11 @@ using Core.Vehicles.Configs;
 /// <summary>
 /// Factory for creating EVs, supporting for single or batch creation.
 /// </summary>
-/// <param name="config">The Configuration aggregate used to define EV properties.</param>
 /// <param name="random">An instance of Random.</param>
-public class EVFactory(EVConfig config, Random random)
+public class EVFactory(Random random)
 {
+    private readonly EVConfig[] _models = EVModels.Models;
+    private readonly Random _random = random;
     private uint _nextId = 1;
 
     /// <summary>
@@ -18,20 +19,16 @@ public class EVFactory(EVConfig config, Random random)
     /// <returns>An EV conforming to the supplied configs.</returns>
     public EV Create()
     {
-        var batteryConfig = SampleBatteryConfig();
+        var config = SampleConfigBySpawnChance();
+        var batteryConfig = config.BatteryConfig;
+        var maxCapacity = batteryConfig.MaxCapacityKWh;
+        var chargeRate = batteryConfig.ChargeRateKW;
+        var currCharge = maxCapacity * NextFloatInRange(0.2f, 1f);
+        var priceSensPref = _random.NextSingle();
 
-        var capacity = batteryConfig.MinCapacityKWh
-            + ((batteryConfig.MaxCapacityKWh - batteryConfig.MinCapacityKWh) * random.NextSingle());
+        var battery = new Battery(maxCapacity, chargeRate, currCharge, batteryConfig.Socket);
 
-        var chargeRate = batteryConfig.MinChargeRateKW
-            + ((batteryConfig.MaxChargeRateKW - batteryConfig.MinChargeRateKW) * random.NextSingle());
-
-        var battery = new Battery((ushort)capacity, (ushort)chargeRate, capacity, batteryConfig.Socket);
-
-        var priceSensitivity = config.PrefsConfig.MinPriceSensitivity
-            + ((config.PrefsConfig.MaxPriceSensitivity - config.PrefsConfig.MinPriceSensitivity) * random.NextSingle());
-
-        var preferences = new Preferences(priceSensitivity);
+        var preferences = new Preferences(priceSensPref);
 
         return new EV(_nextId++, battery, preferences);
     }
@@ -40,27 +37,37 @@ public class EVFactory(EVConfig config, Random random)
     /// Used for batch creation of EVs.
     /// </summary>
     /// <param name="amount">The amount of EVs to create.</param>
-    /// <returns>A list of EVs.</returns>
-    public List<EV> CreateFleet(int amount)
+    /// <returns>An array of EVs.</returns>
+    public EV[] CreateFleet(int amount)
     {
-        var fleet = new List<EV>(amount);
+        var fleet = new EV[amount];
         for (var i = 0; i < amount; i++)
-            fleet.Add(Create());
+            fleet[i] = Create();
         return fleet;
     }
 
-    private BatteryConfig SampleBatteryConfig()
+    /// <summary>
+    /// Scale the value to be between min and max.
+    /// </summary>
+    /// <param name="min">Minimum value to sample from.</param>
+    /// <param name="max">Maximum value to sample from.</param>
+    private float NextFloatInRange(float min, float max) => min + ((max - min) * _random.NextSingle());
+
+    /// <summary>
+    /// Samples a random (see cref="Core.Vehicles.Configs.EVConfig").
+    /// </summary>
+    private EVConfig SampleConfigBySpawnChance()
     {
-        var totalWeight = config.BatteryDistribution.Sum(e => e.Weight);
-        var target = random.NextDouble() * totalWeight;
-        var cumulative = 0.0;
-        foreach (var entry in config.BatteryDistribution)
+        var target = _random.NextSingle() * 100;
+        var cumulative = 0f;
+
+        foreach (var model in _models)
         {
-            cumulative += entry.Weight;
+            cumulative += model.SpawnChance;
             if (target <= cumulative)
-                return entry.Config;
+                return model;
         }
 
-        return config.BatteryDistribution[^1].Config;
+        return _models[^1];
     }
 }
