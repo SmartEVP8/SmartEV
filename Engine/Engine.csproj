@@ -7,7 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-    <None Include="..\Data\energy_prices.csv" Link="data\energy_prices.csv">
+    <None Include="..\Data\energy_prices.csv">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <PackageReference Include="Parquet.Net" />
