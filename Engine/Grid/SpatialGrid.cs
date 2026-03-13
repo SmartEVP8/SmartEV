@@ -44,46 +44,6 @@ public class SpatialGrid
         return _cells.TryGetValue(key, out var list) ? list : [];
     }
 
-    /// <summary>
-    /// Given two positions representing a bounding box, return the list of stations ids that are within it.
-    /// </summary>
-    /// <param name="minPos">Left-bottom corner of the bounding box.</param>
-    /// <param name="maxPos">Right-top corner of the bounding box.</param>
-    /// <returns>A list of uints of station id's.</returns>
-    public IReadOnlyList<ushort> GetStations(Position minPos, Position maxPos, Position wp1, Position wp2, double radius)
-    {
-        var minLat = Math.Min(minPos.Latitude, maxPos.Latitude);
-        var maxLat = Math.Max(minPos.Latitude, maxPos.Latitude);
-        var minLon = Math.Min(minPos.Longitude, maxPos.Longitude);
-        var maxLon = Math.Max(minPos.Longitude, maxPos.Longitude);
-
-        var minRowCol = ToRowCol(minLat, minLon);
-        var maxRowCol = ToRowCol(maxLat, maxLon);
-
-        var result = new HashSet<ushort>();
-
-        for (var row = minRowCol.Row; row <= maxRowCol.Row; row++)
-        {
-            for (var col = minRowCol.Col; col <= maxRowCol.Col; col++)
-            {
-                var key = new RowCol(row, col);
-                if (_cells.TryGetValue(key, out var list))
-                {
-                    foreach (var stationId in list)
-                    {
-                        if (_stationPositions.TryGetValue(stationId, out var stationPos))
-                        {
-                            if (GeoMath.IsInRadius(stationPos, wp1, wp2, radius))
-                                result.Add(stationId);
-                        }
-                    }
-                }
-            }
-        }
-
-        return [.. result];
-    }
-
     private RowCol ToRowCol(double lat, double lon) => new(
         (int)Math.Floor((lat - _min.Latitude) / _latSize),
         (int)Math.Floor((lon - _min.Longitude) / _lonSize)
@@ -136,12 +96,12 @@ public class SpatialGrid
                 {
                     foreach (var stationId in list)
                     {
-                        if (!result.Contains(stationId))
+                        if (_stationPositions.TryGetValue(stationId, out var pos))
                         {
-                            if (_stationPositions.TryGetValue(stationId, out var pos))
+                            if (GeoMath.IsInRadius(pos, wp1, wp2, radius))
                             {
-                                if (GeoMath.IsInRadius(pos, wp1, wp2, radius))
-                                    result.Add(stationId);
+                                result.Add(stationId);
+                                break;
                             }
                         }
                     }
