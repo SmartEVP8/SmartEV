@@ -6,7 +6,7 @@ using Core.Shared;
 
 /// <summary>
 /// Factory for creating stations from a JSON file containing charging location data.
-/// Socket distribution is based on predefined dataset counts rather than random selection.
+/// Socket distribution is based on configurable socket probabilities.
 /// Generation is deterministic for a given seed.
 /// </summary>
 public class StationFactory
@@ -15,34 +15,68 @@ public class StationFactory
     private readonly Random _random;
 
     /// <summary>
-    /// Initializes a new instance of the StationFactory class with the specified options.
+    /// Initializes a new instance of the StationFactory class with the specified options and random seed.
     /// </summary>
     /// <param name="options">
     /// The options for configuring the station factory.
     /// </param>
-    /// <remarks>
-    /// The seed in the options ensures that the same stations are generated for the same input file and seed.
-    /// </remarks>
-    public StationFactory(StationFactoryOptions options)
+    /// <param name="seed">
+    /// Seed used to initialise the random generator to ensure deterministic generation.
+    /// </param>
+    public StationFactory(StationFactoryOptions options, int seed)
     {
+        ArgumentNullException.ThrowIfNull(options);
+
+        if (options.TotalChargers <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(options.TotalChargers),
+                "TotalChargers must be greater than zero.");
+        }
+
+        if (options.DualChargingPointProbability < 0 || options.DualChargingPointProbability > 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(options.DualChargingPointProbability),
+                "DualChargingPointProbability must be between 0 and 1.");
+        }
+
+        if (options.SocketProbabilities.Count == 0)
+        {
+            throw new ArgumentException("SocketProbabilities must contain at least one socket type.",
+                nameof(options));
+        }
+
+        if (options.SocketProbabilities.Values.Any(p => p < 0))
+        {
+            throw new ArgumentException("Socket probabilities cannot be negative.",
+                nameof(options));
+        }
+
+        double totalProbability = options.SocketProbabilities.Values.Sum();
+        if (Math.Abs(totalProbability - 1.0) > 0.01)
+        {
+            throw new ArgumentException("Socket probabilities must sum approximately to 1.0.",
+                nameof(options));
+        }
+
         _options = options;
-        _random = new Random(_options.Seed);
+        _random = new Random(seed);
     }
 
     /// <summary>
     /// Creates a list of stations by reading charging location data from a JSON file.
-    /// The generated chargers are distributed to match the dataset socket counts.
-    /// For the same input file and seed, the generated stations will always be identical.
     /// </summary>
-    /// <param name="filePath">
-    /// Path to the JSON file containing charging location data.
+    /// <param name="file">
+    /// The JSON file containing charging location data.
     /// </param>
     /// <returns>
     /// A list of created stations.
     /// </returns>
-    public List<Station> CreateStations(string filePath)
+    public List<Station> CreateStations(FileInfo file)
     {
-        var json = File.ReadAllText(filePath);
+        if (!file.Exists)
+            throw new FileNotFoundException("Charging location file not found.", file.FullName);
+
+        var json = File.ReadAllText(file.FullName);
 
         var locations = JsonSerializer.Deserialize<List<ChargingLocationDTO>>(json)
             ?? new List<ChargingLocationDTO>();
@@ -55,7 +89,7 @@ public class StationFactory
         var socketPool = CreateSocketPool();
         Shuffle(socketPool);
 
-        var chargerCountsPerStation = DistributeChargersAcrossStations(locations.Count, socketPool.Count);
+        var chargerCountsPerStation = DistributeChargersAcrossStations(locations.Count, _options.TotalChargers);
 
         var stations = new List<Station>(locations.Count);
         ushort nextStationId = 1;
@@ -155,20 +189,37 @@ public class StationFactory
     }
 
     /// <summary>
-    /// Creates the full socket pool based on dataset counts.
+    /// Creates the full socket pool based on configured socket probabilities.
+    /// The total number of sockets created matches <see cref="StationFactoryOptions.TotalChargers"/>.
     /// </summary>
     /// <returns>
-    /// A list containing the full socket distribution.
+    /// A list containing the generated socket distribution.
     /// </returns>
-    private static List<Socket> CreateSocketPool()
+    private List<Socket> CreateSocketPool()
     {
-        var pool = new List<Socket>();
+        var pool = new List<Socket>(_options.TotalChargers);
+        var probabilities = _options.SocketProbabilities.ToList();
 
-        AddSockets(pool, Socket.CHADEMO, 167);
-        AddSockets(pool, Socket.Type2SocketOnly, 4514);
-        AddSockets(pool, Socket.NACS, 14);
-        AddSockets(pool, Socket.CCS, 1472);
-        AddSockets(pool, Socket.Type2Tethered, 1044);
+        int assignedCount = 0;
+
+        for (int i = 0; i < probabilities.Count; i++)
+        {
+            var (socket, probability) = probabilities[i];
+
+            int count;
+
+            if (i == probabilities.Count - 1)
+            {
+                count = _options.TotalChargers - assignedCount;
+            }
+            else
+            {
+                count = (int)Math.Round(probability * _options.TotalChargers);
+                assignedCount += count;
+            }
+
+            AddSockets(pool, socket, count);
+        }
 
         return pool;
     }
