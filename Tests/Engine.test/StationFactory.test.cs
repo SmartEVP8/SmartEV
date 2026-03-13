@@ -8,7 +8,7 @@ public class StationFactoryTests
 {
     public StationFactoryTests()
     {
-        var csvPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "energy_prices.csv");
+        var csvPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "data", "energy_prices.csv");
         EnergyPrices.Initialize(csvPath);
     }
 
