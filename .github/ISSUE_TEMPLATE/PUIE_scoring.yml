@@ -1,24 +1,3 @@
 name: New Issue with PUIE
 description: Submit an issue with Impact, Urgency, and Effort scores.
-body:
-  - type: input
-    id: impact
-    attributes:
-      label: "impact Score"
-      description: "How much value does this add? (e.g., 1-10)"
-    validations:
-      required: true
-  - type: input
-    id: urgency
-    attributes:
-      label: "Urgency Score"
-      description: "How sure are we about the impact? (e.g., 1-10)"
-    validations:
-      required: true
-  - type: input
-    id: effort
-    attributes:
-      label: "Effort Score"
-      description: "How much work is this? (e.g., 1-10)"
-    validations:
-      required: true
+labels: ["importance", "urgency", "effort"]
