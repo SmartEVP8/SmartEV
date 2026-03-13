@@ -1,4 +1,4 @@
-namespace Core.Benchmark;
+namespace Engine.Benchmark;
 
 using System.Collections.Generic;
 using System.Linq;

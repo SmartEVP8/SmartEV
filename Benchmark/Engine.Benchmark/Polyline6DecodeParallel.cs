@@ -1,29 +1,11 @@
-namespace Core.Benchmark;
+namespace Engine.Benchmark;
 
 using BenchmarkDotNet.Attributes;
 using Engine.Utils;
 using System.Threading.Tasks;
 
 [MemoryDiagnoser]
-public class Polyline6DecodeTests
-{
-    private const string _polyline = "_p~iF~ps|U_ulLnnqC_mqNvxq`@";
-    [Params(10000)]
-    public int TotalDecodes;
-
-    [Benchmark(Baseline = true)]
-    public void SequentialDecode()
-    {
-        for (int i = 0; i < TotalDecodes; i++)
-        {
-            Polyline6ToPoints.DecodePolyline(_polyline);
-        }
-    }
-}
-
-
-[MemoryDiagnoser]
-public class Polyline6DecodeParallelTests
+public class Polyline6DecodeParallel
 {
     private const string _polyline = "_p~iF~ps|U_ulLnnqC_mqNvxq`@";
 
@@ -57,3 +39,4 @@ public class Polyline6DecodeParallelTests
             });
     }
 }
+
