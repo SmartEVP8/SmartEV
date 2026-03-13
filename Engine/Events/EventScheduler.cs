@@ -1,4 +1,4 @@
-using Core.Events;
+namespace Engine.Events;
 
 public class EventScheduler
 {

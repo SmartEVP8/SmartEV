@@ -1,5 +1,7 @@
+namespace Engine.Grid;
+
 using Core.Shared;
-using Core.Spawning;
+using Engine.Spawning;
 
 internal class GravityGrid(List<List<GravityCell>> cells)
 {

@@ -1,4 +1,5 @@
-namespace Core.Events;
+namespace Engine.Events;
+
 
 public readonly record struct ReservationRequest(uint EVId, ushort StationId, int Time) : IEvent;
 

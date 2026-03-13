@@ -1,8 +1,8 @@
 namespace Engine;
 
-using Core.Routing;
-using Core.Spawning;
 using Engine.Grid;
+using Engine.Routing;
+using Engine.Spawning;
 
 /// <summary>
 /// JourneyPipeline computes the sampling distributions for source and destination points

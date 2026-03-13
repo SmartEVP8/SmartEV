@@ -1,4 +1,4 @@
-namespace Core.Spawning;
+namespace Engine.Spawning;
 
 /// <summary>
 /// Implements Vose's Alias Method for efficient sampling from a discrete probability distribution.

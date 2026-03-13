@@ -1,4 +1,4 @@
-namespace Core.DayCycles;
+namespace Engine.DayCycles;
 
 /// <summary>
 /// This class provides congestion values for each hour of each day of the week.

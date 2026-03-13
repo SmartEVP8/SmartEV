@@ -1,4 +1,4 @@
-namespace Core.Routing;
+namespace Engine.Routing;
 
 /// <summary>
 /// Defines an interface for a matrix router that can compute distances and durations between multiple source and destination points.

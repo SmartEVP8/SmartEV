@@ -25,7 +25,7 @@ public class Station(ushort id,
     /// <summary>The current KWh price at the station.</summary>
     public float Price = price;
     private readonly Random _random = random;
-    private readonly ushort id = id;
+    private readonly ushort _id = id;
     private readonly string _name = name;
     private readonly string _address = address;
     public readonly Position Position = position;

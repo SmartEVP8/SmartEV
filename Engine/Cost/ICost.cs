@@ -1,4 +1,4 @@
-namespace Core.Cost;
+namespace Engine.Cost;
 
 public interface ICost
 {

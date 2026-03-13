@@ -2,7 +2,7 @@ namespace Headless.Benchmark;
 
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
-using Core.Routing;
+using Engine.Routing;
 
 public class OSRMRouterBenchmark
 {

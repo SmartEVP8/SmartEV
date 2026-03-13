@@ -1,4 +1,4 @@
-namespace Core.Spawning;
+namespace Engine.Spawning;
 
 using Core.Shared;
 

@@ -1,6 +1,6 @@
 namespace DayCyclesTests;
 
-using static Core.DayCycles.CarsOnRoad;
+using static Engine.DayCycles.CarsOnRoad;
 using System;
 using Xunit;
 
@@ -22,12 +22,12 @@ public class CarsOnRoadTests
     /// <param name="hour">The hour of the day to test (0-23).</param>
     /// <param name="expected">The expected number of EVs on the road.</param>
     [Theory]
-    [InlineData(DayOfWeek.Tuesday,    7, BaselineCars + ((PeakCars - BaselineCars) * 100 / 100))]
-    [InlineData(DayOfWeek.Sunday,     0, BaselineCars + ((PeakCars - BaselineCars) * 3 / 100))]
-    [InlineData(DayOfWeek.Monday,     6, BaselineCars + ((PeakCars - BaselineCars) * 88 / 100))]
-    [InlineData(DayOfWeek.Friday,    13, BaselineCars + ((PeakCars - BaselineCars) * 60 / 100))]
-    [InlineData(DayOfWeek.Saturday,  12, BaselineCars + ((PeakCars - BaselineCars) * 32 / 100))]
-    [InlineData(DayOfWeek.Wednesday,  2, BaselineCars + ((PeakCars - BaselineCars) * 3 / 100))]
+    [InlineData(DayOfWeek.Tuesday, 7, BaselineCars + ((PeakCars - BaselineCars) * 100 / 100))]
+    [InlineData(DayOfWeek.Sunday, 0, BaselineCars + ((PeakCars - BaselineCars) * 3 / 100))]
+    [InlineData(DayOfWeek.Monday, 6, BaselineCars + ((PeakCars - BaselineCars) * 88 / 100))]
+    [InlineData(DayOfWeek.Friday, 13, BaselineCars + ((PeakCars - BaselineCars) * 60 / 100))]
+    [InlineData(DayOfWeek.Saturday, 12, BaselineCars + ((PeakCars - BaselineCars) * 32 / 100))]
+    [InlineData(DayOfWeek.Wednesday, 2, BaselineCars + ((PeakCars - BaselineCars) * 3 / 100))]
     public void ReturnsExpectedEVCount(DayOfWeek day, int hour, double expected)
     {
         var result = GetEVsOnRoad(day, hour);

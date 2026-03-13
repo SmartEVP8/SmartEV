@@ -1,4 +1,4 @@
-namespace Core.Events;
+namespace Engine.Events;
 
 public interface IEvent
 {

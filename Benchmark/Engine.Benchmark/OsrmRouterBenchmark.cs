@@ -1,11 +1,11 @@
-namespace Core.Benchmark;
+namespace Engine.Benchmark;
 
 using System.Collections.Generic;
 using System.Linq;
 using BenchmarkDotNet.Attributes;
 using Core.Charging;
 using Core.Shared;
-using Core.Routing;
+using Engine.Routing;
 
 /// <summary>
 /// Benchmark suite for OSRM router performance testing.
@@ -13,7 +13,7 @@ using Core.Routing;
 [MemoryDiagnoser]
 public class OsrmRouterBenchmark
 {
-    private Core.Routing.OSRMRouter _router = null!;
+    private OSRMRouter _router = null!;
     private int[] _stationIndices = null!;
     private (double Lon, double Lat)[] _evCoordinates = null!;
     private double[] _evCoordsFlat = null!;
@@ -40,11 +40,10 @@ public class OsrmRouterBenchmark
                 chargers: [],
                 price: 3.0f,
                 random: new Random(i)));
-
         }
 
         _router.InitStations(stations);
-        _stationIndices = Enumerable.Range(0, 50).ToArray();
+        _stationIndices = [.. Enumerable.Range(0, 50)];
 
         _evCoordinates = new (double Lon, double Lat)[1000];
         _evCoordsFlat = new double[1000 * 2];
