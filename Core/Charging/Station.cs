@@ -31,6 +31,11 @@ public class Station(ushort id,
     public readonly Position Position = position;
     private readonly List<Charger>? _chargers = chargers;
 
+    public ushort Id => _id;
+    public string Name => _name;
+    public string Address => _address;
+    public IReadOnlyList<Charger> Chargers => _chargers ?? [];
+
     /// <summary>
     /// Calculates the price of a specific station.
     /// </summary>
