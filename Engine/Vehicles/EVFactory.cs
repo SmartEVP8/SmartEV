@@ -39,17 +39,11 @@ public class EVFactory(Random random)
     /// <param name="fleet">The destination buffer to fill with EVs.</param>
     public void PopulateFleet(Span<EV> fleet)
     {
-        var maxIndex = 0;
-        for (var i = fleet.Length - 1; i >= 0; i--) 
-        {
-            if (fleet[i].Id != 0) 
-            {
-                maxIndex = i;
-                break;
-            }
-        }
+        var insertIndex = 0;
+        while (insertIndex < fleet.Length && fleet[insertIndex] is not null)
+            insertIndex++;
 
-        for (var i = maxIndex + 1; i < fleet.Length; i++)
+        for (var i = insertIndex; i < fleet.Length; i++)
             fleet[i] = Create();
     }
 

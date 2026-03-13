@@ -1,5 +1,3 @@
-using Core.Shared;
-using Core.Vehicles.Configs;
 using Engine.Vehicles;
 
 /// <summary>
@@ -7,20 +5,6 @@ using Engine.Vehicles;
 /// </summary>
 public class EVFactoryTest
 {
-    /// <summary>
-    /// Initialization of an EVFactory.
-    /// </summary>
-    /// <param name="seed">The seed used to create EVs.</param>
-    /// <returns>An EVFactory.</returns>
-    private static EVFactory MakeFactory(int seed = 42) => new (
-        new EVConfig(
-            [
-                new WeightedBatteryConfig(new BatteryConfig(7, 40, 77, Socket.CCS), weight: 1.0),
-                new WeightedBatteryConfig(new BatteryConfig(3, 20, 50, Socket.Type2), weight: 1.0),
-            ],
-            new PrefsConfig(0f, 1f)),
-        new Random(seed));
-
     /// <summary>
     /// Verifies that the create function correctly assigns incrementing ids.
     /// </summary>
@@ -35,50 +19,80 @@ public class EVFactoryTest
     }
 
     /// <summary>
-    /// Verifies that the price sensitivity stays within the configured min/max range.
+    /// Verifies that the price sensitivity stays within [0, 1).
     /// </summary>
-    /// <param name="min">The configured minimum price sensitivity.</param>
-    /// <param name="max">The configured maximum price sensitivity.</param>
-    [Theory]
-    [InlineData(0.5f, 0.8f)]
-    [InlineData(0.1f, 0.3f)]
-    public void Create_PriceSensitivityWithinConfiguredRange(float min, float max)
+    [Fact]
+    public void Create_PriceSensitivityWithinUnitRange()
     {
-        var factory = new EVFactory(
-            new EVConfig(
-                [new WeightedBatteryConfig(new BatteryConfig(7, 40, 77, Socket.CCS), weight: 1.0)],
-                new PrefsConfig(min, max)),
-            new Random(42));
+        var factory = MakeFactory();
 
         for (var i = 0; i < 20; i++)
         {
             var ev = factory.Create();
-            Assert.InRange(ev.Preferences.PriceSensitivity, min, max);
+            Assert.InRange(ev.Preferences.PriceSensitivity, 0f, 1f);
         }
     }
 
     /// <summary>
-    /// Verifies that the CreateFleet function correctly returns the specified amount of EVs.
+    /// Verifies that PopulateFleet fills an empty buffer.
     /// </summary>
-    /// <param name="amount">The amount of EVs to generate.</param>
-    [Theory]
-    [InlineData(1)]
-    [InlineData(10)]
-    [InlineData(100)]
-    public void CreateFleet_ReturnsCorrectAmount(int amount)
+    [Fact]
+    public void PopulateFleet_FillsEmptyBuffer()
     {
-        var fleet = MakeFactory().CreateFleet(amount);
-        Assert.Equal(amount, fleet.Count);
+        var fleet = new Core.Vehicles.EV[10];
+
+        MakeFactory().PopulateFleet(fleet);
+
+        Assert.All(fleet, ev => Assert.NotNull(ev));
+        Assert.Equal(1u, fleet[0].Id);
+        Assert.Equal(10u, fleet[9].Id);
     }
 
     /// <summary>
-    /// Verifies that EVs generated from CreateFleet correctly have incrementing IDs.
+    /// Verifies that PopulateFleet appends after existing EVs in the buffer.
     /// </summary>
     [Fact]
-    public void CreateFleet_AllEVsHaveUniqueIds()
+    public void PopulateFleet_AppendsAfterExistingEntries()
     {
-        var fleet = MakeFactory().CreateFleet(50);
+        var factory = MakeFactory();
+        var fleet = new Core.Vehicles.EV[12];
+
+        for (var i = 0; i < 5; i++)
+            fleet[i] = factory.Create();
+
+        factory.PopulateFleet(fleet);
+
+        Assert.Equal(1u, fleet[0].Id);
+        Assert.Equal(5u, fleet[4].Id);
+        Assert.Equal(6u, fleet[5].Id);
+        Assert.Equal(12u, fleet[11].Id);
+
         var ids = fleet.Select(ev => ev.Id).ToHashSet();
-        Assert.Equal(fleet.Count, ids.Count);
+        Assert.Equal(fleet.Length, ids.Count);
     }
+
+    /// <summary>
+    /// Verifies that PopulateFleet leaves a fully populated buffer unchanged.
+    /// </summary>
+    [Fact]
+    public void PopulateFleet_DoesNotChangeFullBuffer()
+    {
+        var factory = MakeFactory();
+        var fleet = new Core.Vehicles.EV[6];
+        factory.PopulateFleet(fleet);
+
+        var before = fleet.Select(ev => ev.Id).ToArray();
+
+        factory.PopulateFleet(fleet);
+
+        var after = fleet.Select(ev => ev.Id).ToArray();
+        Assert.Equal(before, after);
+    }
+
+    /// <summary>
+    /// Initialization of an EVFactory.
+    /// </summary>
+    /// <param name="seed">The seed used to create EVs.</param>
+    /// <returns>An EVFactory.</returns>
+    private static EVFactory MakeFactory(int seed = 42) => new(new Random(seed));
 }
