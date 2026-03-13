@@ -34,16 +34,23 @@ public class EVFactory(Random random)
     }
 
     /// <summary>
-    /// Used for batch creation of EVs.
+    /// Populates an existing buffer with newly created EVs.
     /// </summary>
-    /// <param name="amount">The amount of EVs to create.</param>
-    /// <returns>An array of EVs.</returns>
-    public EV[] CreateFleet(int amount)
+    /// <param name="fleet">The destination buffer to fill with EVs.</param>
+    public void PopulateFleet(Span<EV> fleet)
     {
-        var fleet = new EV[amount];
-        for (var i = 0; i < amount; i++)
+        var maxIndex = 0;
+        for (var i = fleet.Length - 1; i >= 0; i--) 
+        {
+            if (fleet[i].Id != 0) 
+            {
+                maxIndex = i;
+                break;
+            }
+        }
+
+        for (var i = maxIndex + 1; i < fleet.Length; i++)
             fleet[i] = Create();
-        return fleet;
     }
 
     /// <summary>
