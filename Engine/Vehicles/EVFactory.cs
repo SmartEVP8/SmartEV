@@ -2,6 +2,7 @@ namespace Engine.Vehicles;
 
 using Core.Vehicles;
 using Core.Vehicles.Configs;
+using Engine.Spawning;
 
 /// <summary>
 /// Factory for creating EVs, supporting for single or batch creation.
@@ -11,7 +12,7 @@ public class EVFactory(Random random)
 {
     private readonly EVConfig[] _models = EVModels.Models;
     private readonly Random _random = random;
-    private uint _nextId = 1;
+    private readonly AliasSampler _sampler = new([.. EVModels.Models.Select(m => m.SpawnChance)]);
 
     /// <summary>
     /// Used to create a single EV.
@@ -19,7 +20,7 @@ public class EVFactory(Random random)
     /// <returns>An EV conforming to the supplied configs.</returns>
     public EV Create()
     {
-        var config = SampleConfigBySpawnChance();
+        var config = _models[_sampler.Sample(_random)];
         var batteryConfig = config.BatteryConfig;
         var maxCapacity = batteryConfig.MaxCapacityKWh;
         var chargeRate = batteryConfig.ChargeRateKW;
@@ -27,24 +28,9 @@ public class EVFactory(Random random)
         var priceSensPref = _random.NextSingle();
 
         var battery = new Battery(maxCapacity, chargeRate, currCharge, batteryConfig.Socket);
-
         var preferences = new Preferences(priceSensPref);
 
-        return new EV(_nextId++, battery, preferences);
-    }
-
-    /// <summary>
-    /// Populates an existing buffer with newly created EVs.
-    /// </summary>
-    /// <param name="fleet">The destination buffer to fill with EVs.</param>
-    public void PopulateFleet(Span<EV> fleet)
-    {
-        var insertIndex = 0;
-        while (insertIndex < fleet.Length && fleet[insertIndex] is not null)
-            insertIndex++;
-
-        for (var i = insertIndex; i < fleet.Length; i++)
-            fleet[i] = Create();
+        return new EV(battery, preferences);
     }
 
     /// <summary>
@@ -53,22 +39,4 @@ public class EVFactory(Random random)
     /// <param name="min">Minimum value to sample from.</param>
     /// <param name="max">Maximum value to sample from.</param>
     private float NextFloatInRange(float min, float max) => min + ((max - min) * _random.NextSingle());
-
-    /// <summary>
-    /// Samples a random (see cref="Core.Vehicles.Configs.EVConfig").
-    /// </summary>
-    private EVConfig SampleConfigBySpawnChance()
-    {
-        var target = _random.NextSingle() * 100;
-        var cumulative = 0f;
-
-        foreach (var model in _models)
-        {
-            cumulative += model.SpawnChance;
-            if (target <= cumulative)
-                return model;
-        }
-
-        return _models[^1];
-    }
 }
