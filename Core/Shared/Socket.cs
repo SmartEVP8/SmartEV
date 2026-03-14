@@ -7,12 +7,11 @@ namespace Core.Shared;
 public enum Socket : byte
 {
     CHADEMO,
-    CCS,
-    Type2,
-    Tesla_ModelSX,
-    Tesla_Model3
+    CCS2,
+    Type2SocketOnly,
+    Type2Tethered,
+    NACS
 }
-
 
 public static class SocketExtensions
 {
@@ -27,10 +26,10 @@ public static class SocketExtensions
         return socket switch
         {
             Socket.CHADEMO => "CHAdeMO",
-            Socket.CCS => "CCS",
-            Socket.Type2 => "Type 2",
-            Socket.Tesla_ModelSX => "Tesla Model S/X",
-            Socket.Tesla_Model3 => "Tesla Model 3/Y",
+            Socket.CCS2 => "CCS2",
+            Socket.Type2SocketOnly => "Type 2 (Socket Only)",
+            Socket.Type2Tethered => "Type 2 (Tethered Connector)",
+            Socket.NACS => "NACS / Tesla Supercharger",
             _ => throw new ArgumentOutOfRangeException(nameof(socket), socket, null)
         };
     }
@@ -46,11 +45,11 @@ public static class SocketExtensions
         // These numbers are placeholders for now
         return socket switch
         {
-            Socket.CHADEMO => 50,
-            Socket.CCS => 350,
-            Socket.Type2 => 22,
-            Socket.Tesla_ModelSX => 250,
-            Socket.Tesla_Model3 => 250,
+            Socket.CHADEMO => 150,
+            Socket.CCS2 => 400,
+            Socket.Type2SocketOnly => 43,
+            Socket.Type2Tethered => 43,
+            Socket.NACS => 120,
             _ => throw new ArgumentOutOfRangeException(nameof(socket), socket, null)
         };
     }

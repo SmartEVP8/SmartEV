@@ -47,10 +47,8 @@ public static class Polygooner
 
     /// <summary>
     /// Determines if a point (lat, lon) is inside a polygon using the ray casting algorithm.
-    ///
     /// The idea: cast an imaginary ray rightward from the test point and count how many
-    /// polygon edges it crosses. Odd crossings = inside, even crossings = outside.
-    ///
+    /// <paramref name="polygon"/> edges it crosses. Odd crossings = inside, even crossings = outside.
     /// This works because to get from inside a shape to outside, you must cross its boundary.
     /// </summary>
     private static bool PointInPolygon(List<Position> polygon, double lon, double lat)
