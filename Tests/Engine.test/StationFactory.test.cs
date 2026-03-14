@@ -13,10 +13,7 @@ public class StationFactoryTests
 
     private static StationFactory CreateFactory(
         StationFactoryOptions? options = null,
-        int seed = 42)
-    {
-        return new StationFactory(options ?? new StationFactoryOptions(), seed);
-    }
+        int seed = 42) => new(options ?? new StationFactoryOptions(), seed);
 
     private static FileInfo CreateTempLocationsFile(params object[] locations)
     {
@@ -96,7 +93,7 @@ public class StationFactoryTests
     {
         var options = new StationFactoryOptions
         {
-            SocketProbabilities = new Dictionary<Socket, double>(),
+            SocketProbabilities = [],
         };
 
         Assert.Throws<ArgumentException>(() => new StationFactory(options, 42));
@@ -342,7 +339,7 @@ public class StationFactoryTests
 
             var hasMultiSocketCharger = stations
                 .SelectMany(station => station.Chargers)
-                .Any(charger => charger.ChargingPoint.GetSockets().Count > 1);
+                .Any(charger => charger.ChargingPoint.GetSockets().Length > 1);
 
             Assert.True(hasMultiSocketCharger, "Expected at least one charger to have multiple sockets.");
         }
@@ -381,7 +378,7 @@ public class StationFactoryTests
             Assert.NotEmpty(chargers);
             Assert.All(chargers, charger =>
                 Assert.True(
-                    charger.ChargingPoint.GetSockets().Count > 1,
+                    charger.ChargingPoint.GetSockets().Length > 1,
                     "Expected every charger to have more than one socket when multi-socket probability is 1.0."));
         }
         finally

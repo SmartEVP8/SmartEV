@@ -2,6 +2,7 @@ namespace Engine.StationFactory;
 
 using System.Text.Json;
 using Core.Charging;
+using Core.Charging.ChargingModel.Chargepoint;
 using Core.Shared;
 
 /// <summary>
@@ -15,7 +16,7 @@ public class StationFactory
     private readonly Random _random;
 
     /// <summary>
-    /// Initializes a new instance of the StationFactory class with the specified options and random seed.
+    /// Initializes a new instance of the <see cref="StationFactory"/> class with the specified options and random seed.
     /// </summary>
     /// <param name="options">
     /// The options for configuring the station factory.
@@ -29,38 +30,44 @@ public class StationFactory
 
         if (options.TotalChargers <= 0)
         {
-            throw new ArgumentOutOfRangeException(nameof(options.TotalChargers),
+            throw new ArgumentOutOfRangeException(
+                nameof(options.TotalChargers),
                 "TotalChargers must be greater than zero.");
         }
 
         if (options.DualChargingPointProbability < 0 || options.DualChargingPointProbability > 1)
         {
-            throw new ArgumentOutOfRangeException(nameof(options.DualChargingPointProbability),
+            throw new ArgumentOutOfRangeException(
+                nameof(options.DualChargingPointProbability),
                 "DualChargingPointProbability must be between 0 and 1.");
         }
 
         if (options.SocketProbabilities.Count == 0)
         {
-            throw new ArgumentException("SocketProbabilities must contain at least one socket type.",
+            throw new ArgumentException(
+                "SocketProbabilities must contain at least one socket type.",
                 nameof(options));
         }
 
         if (options.SocketProbabilities.Values.Any(p => p < 0))
         {
-            throw new ArgumentException("Socket probabilities cannot be negative.",
+            throw new ArgumentException(
+                "Socket probabilities cannot be negative.",
                 nameof(options));
         }
 
-        double totalProbability = options.SocketProbabilities.Values.Sum();
+        var totalProbability = options.SocketProbabilities.Values.Sum();
         if (Math.Abs(totalProbability - 1.0) > 0.01)
         {
-            throw new ArgumentException("Socket probabilities must sum approximately to 1.0.",
+            throw new ArgumentException(
+                "Socket probabilities must sum approximately to 1.0.",
                 nameof(options));
         }
 
         if (options.MultiSocketChargerProbability < 0 || options.MultiSocketChargerProbability > 1)
         {
-            throw new ArgumentOutOfRangeException(nameof(options.MultiSocketChargerProbability),
+            throw new ArgumentOutOfRangeException(
+                nameof(options.MultiSocketChargerProbability),
                 "MultiSocketChargerProbability must be between 0 and 1.");
         }
 
@@ -85,11 +92,11 @@ public class StationFactory
         var json = File.ReadAllText(file.FullName);
 
         var locations = JsonSerializer.Deserialize<List<StationLocationDTO>>(json)
-            ?? new List<StationLocationDTO>();
+            ?? [];
 
         if (locations.Count == 0)
         {
-            return new List<Station>();
+            return [];
         }
 
         var socketPool = CreateSocketPool();
@@ -99,14 +106,14 @@ public class StationFactory
 
         var stations = new List<Station>(locations.Count);
         ushort nextStationId = 1;
-        int socketIndex = 0;
+        var socketIndex = 0;
 
-        for (int i = 0; i < locations.Count; i++)
+        for (var i = 0; i < locations.Count; i++)
         {
-            int chargerCount = chargerCountsPerStation[i];
+            var chargerCount = chargerCountsPerStation[i];
             var chargers = new List<Charger>(chargerCount);
 
-            for (int chargerId = 1; chargerId <= chargerCount; chargerId++)
+            for (var chargerId = 1; chargerId <= chargerCount; chargerId++)
             {
                 var socket = socketPool[socketIndex++];
                 chargers.Add(CreateCharger(chargerId, socket));
@@ -145,8 +152,7 @@ public class StationFactory
             position,
             chargers,
             price,
-            _random
-        );
+            _random);
     }
 
     /// <summary>
@@ -164,7 +170,7 @@ public class StationFactory
     private Charger CreateCharger(int chargerId, Socket socket)
     {
         int maxPowerKW = socket.PowerKW();
-        IChargingPoint chargingPoint = CreateChargingPoint(socket);
+        var chargingPoint = CreateChargingPoint(socket);
 
         return new Charger(chargerId, maxPowerKW, chargingPoint);
     }
@@ -184,7 +190,8 @@ public class StationFactory
             return new SingleChargingPoint(connectors);
         }
 
-        return new DualChargingPoint(connectors, CopyConnectors(connectors));
+
+        return new DualChargingPoint(connectors, connectors.Copy());
     }
 
     /// <summary>
@@ -196,13 +203,13 @@ public class StationFactory
     /// <returns>
     /// A list of connectors for the charging point.
     /// </returns>
-    private List<Connector> CreateConnectorSet(Socket primarySocket)
+    private Connectors CreateConnectorSet(Socket primarySocket)
     {
-        var connectors = new List<Connector> { new Connector(primarySocket) };
+        var connectors = new List<Connector> { new(primarySocket) };
 
         if (!ShouldCreateMultiSocketCharger())
         {
-            return connectors;
+            return new Connectors(connectors);
         }
 
         var availableSockets = _options.SocketProbabilities.Keys
@@ -211,13 +218,13 @@ public class StationFactory
 
         if (availableSockets.Count == 0)
         {
-            return connectors;
+            return new Connectors(connectors);
         }
 
         var secondarySocket = availableSockets[_random.Next(availableSockets.Count)];
         connectors.Add(new Connector(secondarySocket));
 
-        return connectors;
+        return new Connectors(connectors);
     }
 
     /// <summary>
@@ -232,7 +239,7 @@ public class StationFactory
 
     /// <summary>
     /// Determines whether to create a multi-socket charger based on the configured options and probabilities.
-    /// A multi-socket charger supports more than one socket type, which can increase the versatility
+    /// A multi-socket charger supports more than one socket type, which can increase the versatility.
     /// </summary>
     /// <returns>
     /// True if a multi-socket charger should be created; otherwise, false.
@@ -241,21 +248,6 @@ public class StationFactory
     {
         return _options.AllowMultiSocketChargers &&
             _random.NextDouble() < _options.MultiSocketChargerProbability;
-    }
-
-    /// <summary>
-    /// Creates a deep copy of a list of connectors to be used for the second charging point in a dual charging point configuration.
-    /// This ensures that the two charging points have separate connector instances, allowing them to be used
-    /// </summary>
-    /// <param name="connectors"></param>
-    /// <returns>
-    /// A new list of connectors that are copies of the original connectors.
-    /// </returns>
-    private static List<Connector> CopyConnectors(IEnumerable<Connector> connectors)
-    {
-        return connectors
-            .Select(connector => new Connector(connector.GetSocket()))
-            .ToList();
     }
 
     /// <summary>
@@ -270,9 +262,9 @@ public class StationFactory
         var pool = new List<Socket>(_options.TotalChargers);
         var probabilities = _options.SocketProbabilities.ToList();
 
-        int assignedCount = 0;
+        var assignedCount = 0;
 
-        for (int i = 0; i < probabilities.Count; i++)
+        for (var i = 0; i < probabilities.Count; i++)
         {
             var (socket, probability) = probabilities[i];
 
@@ -308,7 +300,7 @@ public class StationFactory
     /// </param>
     private static void AddSockets(List<Socket> pool, Socket socket, int count)
     {
-        for (int i = 0; i < count; i++)
+        for (var i = 0; i < count; i++)
         {
             pool.Add(socket);
         }
@@ -341,11 +333,11 @@ public class StationFactory
         }
 
         var result = Enumerable.Repeat(1, stationCount).ToList();
-        int remaining = totalChargers - stationCount;
+        var remaining = totalChargers - stationCount;
 
         while (remaining > 0)
         {
-            int stationIndex = _random.Next(stationCount);
+            var stationIndex = _random.Next(stationCount);
             result[stationIndex]++;
             remaining--;
         }
@@ -371,9 +363,9 @@ public class StationFactory
     /// </param>
     private void Shuffle<T>(IList<T> list)
     {
-        for (int i = list.Count - 1; i > 0; i--)
+        for (var i = list.Count - 1; i > 0; i--)
         {
-            int j = _random.Next(i + 1);
+            var j = _random.Next(i + 1);
             (list[i], list[j]) = (list[j], list[i]);
         }
     }

@@ -28,4 +28,6 @@ public struct Connectors(IEnumerable<Connector> connectors)
     public bool Supports(Socket socket) => _connectors.Any(c => c.GetSocket() == socket);
 
     public readonly Connector GetConnectorFor(Socket socket) => _connectors.First(c => c.GetSocket() == socket);
+
+    public readonly Connectors Copy() => new([.. _connectors.Select(c => new Connector(c.GetSocket()))]);
 }
