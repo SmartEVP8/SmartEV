@@ -4,6 +4,7 @@
     <AllowMissingPrunePackageData>true</AllowMissingPrunePackageData>
     <OsrmDataPath>$(MSBuildThisFileDirectory)\data\osrm\output.osrm</OsrmDataPath>
     <GridPath>$(MSBuildThisFileDirectory)\data\denmark.polygon.json</GridPath>
+    <CityDataPath>$(MSBuildThisFileDirectory)\data\CityInfo.csv</CityDataPath>
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="BenchmarkDotNet" Version="0.15.8" />
@@ -20,5 +21,6 @@
     <PackageVersion Include="OpenApiUi" Version="1.1.0" />
     <RuntimeHostConfigurationOption Include="OsrmDataPath" Value="$(OsrmDataPath)" Trim="true" />
     <RuntimeHostConfigurationOption Include="GridPath" Value="$(GridPath)" Trim="false" />
+    <RuntimeHostConfigurationOption Include="CityDataPath" Value="$(CityDataPath)" Trim="false" />
   </ItemGroup>
 </Project>
