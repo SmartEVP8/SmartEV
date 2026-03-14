@@ -2,8 +2,7 @@ namespace Engine.test.Spawning;
 
 using Core.Shared;
 using Core.Vehicles;
-using Engine.Spawning;
-
+using Engine.Vehicles;
 
 public class EVStoreTests
 {
