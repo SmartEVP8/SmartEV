@@ -3,14 +3,17 @@ namespace Core.Charging.ChargingModel.Chargepoint;
 using System.Collections.Immutable;
 using Core.Shared;
 
+/// <summary>
+/// Marker interface for all charging point types.
+/// Use <see cref="ISingleChargingPoint"/> or <see cref="IDualChargingPoint"/>
+/// </summary>
 public interface IChargingPoint
 {
     /// <summary>
-    /// Get a list of the compatible sockets for this charging point, no duplicates.
+    /// Returns the set of sockets supported by the charging point.
     /// </summary>
-    /// <returns>Get a list of the compatible sockets for the charging point, no duplicates.</returns>
+    /// <returns>
+    /// An immutable array containing the sockets supported by the charging point.
+    /// </returns>
     ImmutableArray<Socket> GetSockets();
-
-
-    (double PowerA, double PowerB) GetPowerDistribution(double maxKW, double socA, double? socB, IChargingCurve curveA, IChargingCurve? curveB);
 }

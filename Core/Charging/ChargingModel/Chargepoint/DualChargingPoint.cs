@@ -4,84 +4,78 @@ using System.Collections.Immutable;
 using Core.Shared;
 
 /// <summary>
-/// DualChargingPoint represents a charging point with two connectors, allowing for two electric vehicles to charge simultaneously. Each connector can be of a different type, providing flexibility for various vehicle models and charging standards. The DualChargingPoint is designed to optimize the use of charging infrastructure by enabling multiple vehicles to charge at the same time, which can be particularly beneficial in high-traffic areas or for stations with limited space.
+/// A charging point with two identical connector sets, allowing two vehicles to charge
+/// simultaneously. Both sides support the same socket types — the right side is always
+/// a copy of the left side's connector configuration.
+/// Power not consumed by one side (due to charging curve taper or car rate limit) is
+/// redistributed to the other, up to each connector's physical rated limit.
 /// </summary>
-public class DualChargingPoint(Connectors leftSide, Connectors rightSide) : IChargingPoint
+public class DualChargingPoint(Connectors connectors) : IDualChargingPoint
 {
-    private readonly ImmutableArray<Socket> _sockets = [.. leftSide.Sockets, .. rightSide.Sockets];
-    private Connectors _leftSide = leftSide;
-    private Connectors _rightSide = rightSide;
+    private readonly ImmutableArray<Socket> _sockets = [.. connectors.Sockets];
 
+    private Connectors _leftSide = connectors;
+    private Connectors _rightSide = connectors;
+
+    /// <inheritdoc/>
     public ImmutableArray<Socket> GetSockets() => _sockets;
 
+    /// <inheritdoc/>
     public (double PowerA, double PowerB) GetPowerDistribution(
-            double maxKW,
-            double socA,
-            double? socB,
-            IChargingCurve curveA,
-            IChargingCurve? curveB)
+        double maxKW,
+        double socA,
+        double socB,
+        double maxChargeRateKWA,
+        double maxChargeRateKWB)
     {
-        double leftMax = _leftSide.ActivePowerKW;
-        double rightMax = _rightSide.ActivePowerKW;
-
-        if (socB is null)
-        {
-            var cap = Math.Min(maxKW, leftMax);
-            return (cap * curveA.PowerFraction(socA), 0.0);
-        }
         var nominal = maxKW / 2.0;
-        var ceilA = Math.Min(nominal, leftMax) * curveA.PowerFraction(socA);
-        var ceilB = Math.Min(nominal, rightMax) * curveB!.PowerFraction(socB.Value);
+
+        var fractionA = ChargingCurve.PowerFraction(socA);
+        var fractionB = ChargingCurve.PowerFraction(socB);
+
+        // Physical cap = min(connector rating, car's own onboard charger limit)
+        var physicalCapA = Math.Min(_leftSide.ActivePowerKW, maxChargeRateKWA);
+        var physicalCapB = Math.Min(_rightSide.ActivePowerKW, maxChargeRateKWB);
+
+        var ceilA = Math.Min(nominal, physicalCapA) * fractionA;
+        var ceilB = Math.Min(nominal, physicalCapB) * fractionB;
+
         var surplusA = nominal - ceilA;
         var surplusB = nominal - ceilB;
 
-        var finalA = Math.Min(ceilA + Math.Max(0, surplusB), leftMax * curveA.PowerFraction(socA));
-        var finalB = Math.Min(ceilB + Math.Max(0, surplusA), rightMax * curveB!.PowerFraction(socB.Value));
+        var finalA = Math.Min(ceilA + Math.Max(0, surplusB), physicalCapA);
+        var finalB = Math.Min(ceilB + Math.Max(0, surplusA), physicalCapB);
 
         return (finalA, finalB);
     }
 
-    public bool CanConnect(Socket socket, out bool isLeft)
+    /// <inheritdoc/>
+    public ChargingSide? CanConnect(Socket socket)
     {
-        if (_leftSide.IsFree && _leftSide.Supports(socket))
-        {
-            isLeft = true;
-            return true;
-        }
-        if (_rightSide.IsFree && _rightSide.Supports(socket))
-        {
-            isLeft = false;
-            return true;
-        }
-        isLeft = false;
-        return false;
+        if (_leftSide.IsFree && _leftSide.Supports(socket)) return ChargingSide.Left;
+        if (_rightSide.IsFree && _rightSide.Supports(socket)) return ChargingSide.Right;
+        return null;
     }
 
-    public bool TryConnect(Socket socket, out bool isLeft)
+    /// <inheritdoc/>
+    public ChargingSide? TryConnect(Socket socket)
     {
-        if (_leftSide.IsFree && _leftSide.Supports(socket))
-        {
-            var connector = _leftSide.GetConnectorFor(socket);
-            _leftSide.Activate(connector);
-            isLeft = true;
-            return true;
-        }
-        if (_rightSide.IsFree && _rightSide.Supports(socket))
-        {
-            var connector = _rightSide.GetConnectorFor(socket);
-            _rightSide.Activate(connector);
-            isLeft = false;
-            return true;
-        }
-        isLeft = false;
-        return false;
+        if (TryActivate(ref _leftSide, socket)) return ChargingSide.Left;
+        if (TryActivate(ref _rightSide, socket)) return ChargingSide.Right;
+        return null;
     }
 
-    public void Disconnect(bool isLeft)
+    /// <inheritdoc/>
+    public void Disconnect(ChargingSide side)
     {
-        if (isLeft) _leftSide.Deactivate();
+        if (side == ChargingSide.Left) _leftSide.Deactivate();
         else _rightSide.Deactivate();
     }
+
+    private static bool TryActivate(ref Connectors connectors, Socket socket)
+    {
+        if (!connectors.IsFree || !connectors.Supports(socket)) return false;
+        connectors.Activate(connectors.GetConnectorFor(socket));
+        return true;
+    }
 }
-
-
