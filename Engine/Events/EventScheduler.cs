@@ -3,6 +3,7 @@ namespace Engine.Events;
 public class EventScheduler
 {
     private readonly PriorityQueue<IEvent, (uint, uint)> _eventPriorityQueue = new();
+    private readonly HashSet<IEvent> _canceledEvents = new();
     private uint _currentTime = 0;
     private uint _evSequeenceId = 0;
 
@@ -20,9 +21,19 @@ public class EventScheduler
 
         _eventPriorityQueue.TryDequeue(out var e, out var priority);
         _currentTime = priority.Item1;
-        return e;
+        if (e is not CancelRequest && !_canceledEvents.Contains(e))
+        {
+            return e;
+        }
+
+        _canceledEvents.Remove(e);
+        return GetNextEvent();
     }
 
     public uint GetCurrentTime() => _currentTime;
-}
 
+    public void CancelEvent(IEvent e)
+    {
+        _canceledEvents.Add(e);
+    }
+}
