@@ -3,6 +3,7 @@ namespace Engine.Events;
 public class EventScheduler
 {
     private readonly PriorityQueue<IEvent, (uint, uint)> _eventPriorityQueue = new();
+    private readonly HashSet<IEvent> _canceledEvents = new();
     private uint _currentTime = 0;
     private uint _evSequeenceId = 0;
 
@@ -14,11 +15,10 @@ public class EventScheduler
     }
 
     /// <summary>
-    /// Returns the next event in the priority queue, and updates the current time to the timestamp of that event.
-    /// If the event is a reservation request that has been canceled, it will be skipped and the next event will be returned instead.
-    /// If there are no more events in the queue, null will be returned.
+    /// Returns the next event in the priority queue, or null if there are no more events.
+    /// If the event has been cancelled, it will be skipped and the next event will be returned instead.
     /// </summary>
-    /// <returns>The next non-cancelled event in the queue.</returns>
+    /// <returns>The next event in the queue to get resolved.</returns>
     public IEvent? GetNextEvent()
     {
         if (_eventPriorityQueue.Count == 0)
@@ -26,19 +26,26 @@ public class EventScheduler
 
         _eventPriorityQueue.TryDequeue(out var e, out var priority);
         _currentTime = priority.Item1;
-        if (e is not CancelRequest && !_canceledEvents.Contains(e))
+        if (!_canceledEvents.Contains(e))
         {
-            return GetNextEvent();
+            return e;
         }
 
-        return e;
+        _canceledEvents.Remove(e);
+        return GetNextEvent();
     }
 
     public uint GetCurrentTime() => _currentTime;
 
-    public void CancelEvent(IEvent e)
+    /// <summary>
+    /// Cancels a reservation request by adding it to the set of canceled events.
+    /// When the event is dequeued, it will be skipped.
+    /// </summary>
+    /// <param name="request">The CancelRequest for a given event.</param>
+    public void CancelEvent(CancelRequest request)
     {
+        var (e, _) = _eventPriorityQueue.UnorderedItems.FirstOrDefault(e =>
+            e.Element is ReservationRequest r && r.EVId == request.EVId && r.StationId == request.StationId);
         _canceledEvents.Add(e);
     }
-
 }
