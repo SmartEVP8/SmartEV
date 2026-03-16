@@ -15,7 +15,7 @@ public class Journey(Time departure, Time duration, Paths path)
     /// <param name="currentTime">The current time.</param>
     /// <returns>The position of the car.</returns>
     /// <exception cref="ArgumentException">Thrown when the current time is before the journey starts or after it has completed.</exception>
-    public Position CurrentPosition(int currentTime)
+    public Position CurrentPosition(Time currentTime)
     {
         Time completedTime = Departure + Duration;
         if (currentTime > completedTime)
