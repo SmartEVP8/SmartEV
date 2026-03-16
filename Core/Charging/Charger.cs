@@ -11,19 +11,26 @@ namespace Core.Charging;
 public readonly struct Charger(int id, int maxPowerKW, IChargingPoint chargingPoint)
 {
     private readonly int _id = id;
+
     private readonly int _maxPowerKW = maxPowerKW;
-    private readonly IChargingPoint _chargingpoint = chargingPoint;
+
+    private readonly IChargingPoint _chargingPoint = chargingPoint;
+
+    /// <summary>A queue of EVs waiting to charge at this charger.</summary>
+    /// <remarks>Points to the index of the EV in the list of EVs.</remarks>
+    private readonly Queue<int> _queue = new();
+
+    /// <summary>Gets the unique identifier for this charger.</summary>
+    public int Id => _id;
+
+    /// <summary>Gets the maximum power output of this charger.</summary>
+    public int MaxPowerKW => _maxPowerKW;
 
     /// <summary>
-    /// Exposes selected charger fields as read-only properties.
+    /// Gets the charging point associated with this charger, which represents the physical location(s) where electric vehicles can be connected for charging.
     /// </summary>
-    /// <remarks>
-    /// These properties provide controlled access to the charger’s identifier,
-    /// maximum power, and charging point so that other components and unit tests
-    /// can inspect charger configuration without relying on reflection or direct
-    /// access to private fields.
-    /// </remarks>
-    public int Id => _id;
-    public int MaxPowerKW => _maxPowerKW;
-    public IChargingPoint ChargingPoint => _chargingpoint;
+    public IChargingPoint ChargingPoint => _chargingPoint;
+
+    /// <summary>Gets the queue of EVs waiting at the charger.</summary>
+    public Queue<int> Queue => _queue;
 }
