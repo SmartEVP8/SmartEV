@@ -21,7 +21,7 @@ public class EventScheduler
 
         _eventPriorityQueue.TryDequeue(out var e, out var priority);
         _currentTime = priority.Item1;
-        if (e is not CancelRequest && !_canceledEvents.Contains(e))
+        if (!_canceledEvents.Contains(e))
         {
             return e;
         }
@@ -32,8 +32,10 @@ public class EventScheduler
 
     public uint GetCurrentTime() => _currentTime;
 
-    public void CancelEvent(IEvent e)
+    public void CancelEvent(CancelRequest request)
     {
+        var (e, _) = _eventPriorityQueue.UnorderedItems.FirstOrDefault(e =>
+            e.Element is ReservationRequest r && r.EVId == request.EVId && r.StationId == request.StationId);
         _canceledEvents.Add(e);
     }
 }
