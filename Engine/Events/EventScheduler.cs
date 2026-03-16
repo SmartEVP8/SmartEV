@@ -3,7 +3,7 @@ namespace Engine.Events;
 public class EventScheduler
 {
     private readonly PriorityQueue<IEvent, (uint, uint)> _eventPriorityQueue = new();
-    private readonly HashSet<IEvent> _canceledEvents = new();
+    private readonly HashSet<(uint, ushort)> _canceledEvents = new();
     private uint _currentTime = 0;
     private uint _evSequeenceId = 0;
 
@@ -26,13 +26,13 @@ public class EventScheduler
 
         _eventPriorityQueue.TryDequeue(out var e, out var priority);
         _currentTime = priority.Item1;
-        if (!_canceledEvents.Contains(e))
+        if (e is ReservationRequest request && _canceledEvents.Contains((request.EVId, request.StationId)))
         {
-            return e;
-        }
+            _canceledEvents.Remove((request.EVId, request.StationId));
+            return GetNextEvent();
 
-        _canceledEvents.Remove(e);
-        return GetNextEvent();
+        }
+        return e;
     }
 
     public uint GetCurrentTime() => _currentTime;
@@ -44,8 +44,7 @@ public class EventScheduler
     /// <param name="request">The CancelRequest for a given event.</param>
     public void CancelEvent(CancelRequest request)
     {
-        var (e, _) = _eventPriorityQueue.UnorderedItems.FirstOrDefault(e =>
-            e.Element is ReservationRequest r && r.EVId == request.EVId && r.StationId == request.StationId);
+        var e = (request.EVId, request.StationId);
         _canceledEvents.Add(e);
     }
 }
