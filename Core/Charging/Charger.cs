@@ -10,13 +10,19 @@ namespace Core.Charging;
 /// <param name="chargingPoint">The charging point represents one or two physical locations where an electric vehicle can be connected.</param>
 public readonly struct Charger(int id, int maxPowerKW, IChargingPoint chargingPoint)
 {
-    private int Id { get; } = id;
+    public int Id { get; } = id;
 
-    private int MaxPowerKW { get; } = maxPowerKW;
+    /// <summary>
+    /// The maximum power that a Charger can distribute between <paramref name="chargingPoint"/>.
+    /// </summary>
+    public int MaxPowerKW { get; } = maxPowerKW;
 
-    private IChargingPoint ChargingPoint { get; } = chargingPoint;
+    /// <summary>
+    /// The charging point represents one or two physical locations where an EV can be connected.
+    /// </summary>
+    public IChargingPoint ChargingPoint { get; } = chargingPoint;
 
     /// <summary>A queue of EVs waiting to charge at this charger.</summary>
     /// <remarks>Points to the index of the EV in the list of EVs.</remarks>
-    private Queue<int> Queue { get; } = new();
+    public Queue<int> Queue { get; } = new();
 }
