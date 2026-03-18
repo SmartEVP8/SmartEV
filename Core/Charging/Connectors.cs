@@ -43,7 +43,7 @@ public struct Connectors(IEnumerable<Connector> connectors)
     /// <summary>
     /// Gets a read-only list of the socket types supported by the connectors in this set. The list contains distinct socket types, even if multiple connectors support the same type.
     /// </summary>
-    public readonly IReadOnlyList<Socket> Sockets => [.. _connectors.Select(c => c.GetSocket()).Distinct()];
+    public readonly IReadOnlyList<Socket> Sockets => [.. _connectors.Select(c => c.Socket).Distinct()];
 
     /// <summary>
     /// Gets a value indicating whether no connector is currently active.
@@ -55,7 +55,7 @@ public struct Connectors(IEnumerable<Connector> connectors)
     /// </summary>
     /// <param name="socket">The socket type to check for support.</param>
     /// <returns>True if a connector supporting the socket type exists; otherwise, false.</returns>
-    public readonly bool Supports(Socket socket) => _connectors.Any(c => c.GetSocket() == socket);
+    public readonly bool Supports(Socket socket) => _connectors.Any(c => c.Socket == socket);
 
     /// <summary>
     /// Gets the connector that supports the specified socket type.
@@ -63,11 +63,11 @@ public struct Connectors(IEnumerable<Connector> connectors)
     /// <param name="socket">The socket type to retrieve the connector for.</param>
     /// <returns>The connector supporting the specified socket type.</returns>
     /// <exception cref="InvalidOperationException">Thrown when no connector supports the specified socket type.</exception>
-    public readonly Connector GetConnectorFor(Socket socket) => _connectors.First(c => c.GetSocket() == socket);
+    public readonly Connector GetConnectorFor(Socket socket) => _connectors.First(c => c.Socket == socket);
 
     /// <summary>
     /// Creates a shallow copy of this connector set with new Connector instances for each socket type.
     /// </summary>
     /// <returns>A new Connectors instance containing copies of the connectors in this set.</returns>
-    public readonly Connectors Copy() => new([.. _connectors.Select(c => new Connector(c.GetSocket()))]);
+    public readonly Connectors Copy() => new([.. _connectors.Select(c => new Connector(c.Socket))]);
 }

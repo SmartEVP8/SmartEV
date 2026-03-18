@@ -9,15 +9,12 @@ using Core.Shared;
 public readonly struct Connector(Socket socket)
 {
     /// <summary>
-    /// Gets the total number of PowerKW capable of being delivered by this connector type.
+    /// Gets the socket type of the connection.
     /// </summary>
-    public readonly ushort PowerKW => Socket.PowerKW();
+    public Socket Socket { get; } = socket;
 
     /// <summary>
-    /// Gets the Socket type of the connection.
+    /// Gets the maximum power in kilowatts capable of being delivered by this connector type.
     /// </summary>
-    /// <returns>The socket type.</returns>
-    public readonly Socket GetSocket() => Socket;
-
-    private Socket Socket { get; } = socket;
+    public ushort PowerKW => Socket.PowerKW();
 }

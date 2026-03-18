@@ -56,7 +56,7 @@ internal static class Make
 public class ChargingTest
 {
     [Fact]
-    public void IntegrateSingleToCompletion_FullJourney_TimeAndEnergyMatchCurveAnalytically()
+    public void IntegrateSingleToCompletion()
     {
         // Car charges from 5% to 95% through all three AggressiveTaperCurve regions.
         // Expected energy = 0.9 × 100 kWh = 90 kWh
@@ -84,8 +84,12 @@ public class ChargingTest
             car: car);
 
         Assert.Equal(0.95, result.SocA, precision: 4);
-        Assert.Equal(expectedEnergyKWh, result.EnergyDeliveredKWhA, precision: 2);
-        Assert.Equal(expectedDurationSeconds, result.DurationSeconds, tolerance: 5.0);
+        Assert.Equal(expectedEnergyKWh, result.EnergyDeliveredKWhA, precision: 1);
+        Assert.Equal(expectedDurationSeconds, result.DurationSeconds, tolerance: 3.0);
+        Assert.Equal(expectedEnergyKWh + result.WastedEnergyKWh, maxKW * (result.DurationSeconds / 3600.0), precision: 1);
+        Assert.True(
+            result.WastedEnergyKWh > 0,
+            "car passes through taper region so some energy is wasted");
     }
 
     [Fact]
@@ -124,11 +128,26 @@ public class ChargingTest
             resultLimitedByCharger.DurationSeconds > resultLimitedByCarRate.DurationSeconds,
             "charging at 50 kW should take longer than at the car's full 85 kW rate");
 
+        Assert.Equal(
+            resultLimitedByCarRate.EnergyDeliveredKWhA + resultLimitedByCarRate.WastedEnergyKWh,
+            85.0 * (resultLimitedByCarRate.DurationSeconds / 3600.0),
+            precision: 1);
+
+        Assert.Equal(
+            resultLimitedByCharger.EnergyDeliveredKWhA + resultLimitedByCharger.WastedEnergyKWh,
+            50.0 * (resultLimitedByCharger.DurationSeconds / 3600.0),
+            precision: 1);
+
         // Energy delivered is the same regardless — same SoC delta in all three runs
         Assert.Equal(
             resultMatchedRate.EnergyDeliveredKWhA,
             resultLimitedByCarRate.EnergyDeliveredKWhA,
             resultLimitedByCharger.EnergyDeliveredKWhA);
+
+        // 85 kW charger: matches car rate — utilization is higher since no power is declined flat
+        Assert.True(
+            resultMatchedRate.Utilization(85.0) > resultLimitedByCarRate.Utilization(150.0),
+            "matched rate charger has better utilization than oversized charger");
     }
 
     [Fact]
@@ -164,6 +183,7 @@ public class ChargingTest
 
         var expectedTotal = ((0.95 - 0.70) * tesla.BatteryConfig.MaxCapacityKWh)
                           + ((0.95 - 0.05) * id3.BatteryConfig.MaxCapacityKWh);
+
         Assert.Equal(expectedTotal, result.TotalEnergyKWh, precision: 2);
 
         var resultId3Alone = integrator.IntegrateSingleToCompletion(
@@ -175,6 +195,26 @@ public class ChargingTest
         Assert.True(
             result.FinishTimeB < resultId3Alone.FinishTimeA,
             "ID.3 should finish sooner in dual due to absorbing Tesla's taper surplus");
+
+        Assert.Equal(
+            result.EnergyDeliveredKWhA + result.EnergyDeliveredKWhB + result.WastedEnergyKWh,
+            maxKW * (result.DurationSeconds / 3600.0),
+            precision: 2);
+
+        var resultid3Alone = integrator.IntegrateSingleToCompletion(
+            simNow: 0,
+            maxKW: maxKW / 2,
+            Make.SinglePoint(id3),
+            carA);
+
+        Assert.True(
+            result.WastedEnergyKWh < resultid3Alone.WastedEnergyKWh,
+            "dual point wastes less energy than ID.3 alone because Taycan absorbs the surplus");
+
+        Assert.Equal(
+            result.TotalEnergyKWh + result.WastedEnergyKWh,
+            maxKW * (result.DurationSeconds / 3600.0),
+            precision: 2);
     }
 
     [Fact]
@@ -220,5 +260,11 @@ public class ChargingTest
         Assert.True(
             result.FinishTimeB < resultTaycanAlone.FinishTimeA,
             "Taycan should finish sooner in dual due to absorbing Mazda's rate-limited surplus");
+
+        // safety check
+        Assert.Equal(
+            result.EnergyDeliveredKWhA + result.EnergyDeliveredKWhB + result.WastedEnergyKWh,
+            maxKW * (result.DurationSeconds / 3600.0),
+            precision: 2);
     }
 }

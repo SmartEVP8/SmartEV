@@ -15,14 +15,15 @@ public record ConnectedCar(
 
 /// <summary>
 /// Returned by all integrator methods.
+/// </summary>
 /// <param name="SocA">SoC each car reached at the end of the run.</param>
 /// <param name="SocB">SoC each car reached at the end of the run.</param>
 /// <param name="FinishTimeA">Simulation timestamp (seconds) when that car hit TargetSoC.</param>
 /// <param name="FinishTimeB">Simulation timestamp (seconds) when that car hit TargetSoC.</param>
 /// <param name="EnergyDeliveredKWhA">Exact energy delivered to each car during this run.</param>
 /// <param name="EnergyDeliveredKWhB">Exact energy delivered to each car during this run.</param>
+/// <param name="WastedEnergyKWh">Energy the charger could have delivered but no car absorbed.</param>
 /// <param name="DurationSeconds">Wall time covered by this integration run.</param>
-/// </summary>
 public record IntegrationResult(
     double SocA,
     double SocB,
@@ -30,18 +31,19 @@ public record IntegrationResult(
     uint? FinishTimeB,
     double EnergyDeliveredKWhA,
     double EnergyDeliveredKWhB,
+    double WastedEnergyKWh,
     double DurationSeconds)
 {
     /// <summary>
-    /// Gets the total energy delivered to both cars during this run. Useful for utilization calculations.
+    /// Gets the total energy delivered to both cars during this run.
     /// </summary>
-    public double TotalEnergyKWh => EnergyDeliveredKWhA + EnergyDeliveredKWhB;
+    public double TotalEnergyKWh { get; } = EnergyDeliveredKWhA + EnergyDeliveredKWhB;
 
     /// <summary>
     /// Returns the utilization of the charger.
     /// </summary>
-    /// <param name="maxKW">The maximum power output in kilowatts.</param>
-    /// <returns>The utilization of the charging.</returns>
+    /// <param name="maxKW">The maximum power output of the charger in kilowatts.</param>
+    /// <returns>The utilization as a value between 0.0 and 1.0.</returns>
     public double Utilization(double maxKW)
     {
         if (DurationSeconds <= 0) return 0.0;
@@ -53,7 +55,7 @@ public record IntegrationResult(
 /// <summary>
 /// Performs time integration of charging sessions, given a charging point and connected cars.
 /// </summary>
-/// <param name="stepSeconds">The time step in seconds to use for the integration. Smaller steps yield more accurate results but take longer to compute.</param>
+/// <param name="stepSeconds">The time step in seconds. Smaller steps yield more accurate results.</param>
 public sealed class ChargingIntegrator(uint stepSeconds)
 {
     private readonly uint _stepSeconds = stepSeconds;
@@ -100,9 +102,9 @@ public sealed class ChargingIntegrator(uint stepSeconds)
         var soc = car.CurrentSoC;
         double? finishTime = null;
         var energy = 0.0;
+        var wastedEnergy = 0.0;
         uint t = 0;
 
-        // Effective max is the lower of the charger limit and the car's onboard rate
         var effectiveMaxKW = Math.Min(maxKW, car.MaxChargeRateKW);
 
         while (true)
@@ -126,12 +128,14 @@ public sealed class ChargingIntegrator(uint stepSeconds)
                 if (delta >= remaining)
                 {
                     energy += remaining;
+                    wastedEnergy += delta - remaining;
                     soc = car.TargetSoC;
                     finishTime = simNow + t;
                 }
                 else
                 {
                     energy += delta;
+                    wastedEnergy += (effectiveMaxKW * stepHours) - delta;
                     soc += delta / car.CapacityKWh;
                 }
             }
@@ -146,6 +150,7 @@ public sealed class ChargingIntegrator(uint stepSeconds)
             FinishTimeB: null,
             EnergyDeliveredKWhA: energy,
             EnergyDeliveredKWhB: 0.0,
+            WastedEnergyKWh: wastedEnergy,
             DurationSeconds: t);
     }
 
@@ -163,6 +168,7 @@ public sealed class ChargingIntegrator(uint stepSeconds)
         double? finishB = null;
         var energyA = 0.0;
         var energyB = 0.0;
+        var wastedEnergy = 0.0;
         uint t = 0;
 
         while (true)
@@ -185,6 +191,9 @@ public sealed class ChargingIntegrator(uint stepSeconds)
                 carA.MaxChargeRateKW,
                 carB.MaxChargeRateKW);
 
+            var deliveredA = 0.0;
+            var deliveredB = 0.0;
+
             if (!aFinished)
             {
                 var delta = powerA * stepHours;
@@ -192,12 +201,14 @@ public sealed class ChargingIntegrator(uint stepSeconds)
 
                 if (delta >= remaining)
                 {
+                    deliveredA = remaining;
                     energyA += remaining;
                     socA = carA.TargetSoC;
                     finishA = simNow + t;
                 }
                 else
                 {
+                    deliveredA = delta;
                     energyA += delta;
                     socA += delta / carA.CapacityKWh;
                 }
@@ -210,16 +221,20 @@ public sealed class ChargingIntegrator(uint stepSeconds)
 
                 if (delta >= remaining)
                 {
+                    deliveredB = remaining;
                     energyB += remaining;
                     socB = carB.TargetSoC;
                     finishB = simNow + t;
                 }
                 else
                 {
+                    deliveredB = delta;
                     energyB += delta;
                     socB += delta / carB.CapacityKWh;
                 }
             }
+
+            wastedEnergy += (maxKW * stepHours) - (deliveredA + deliveredB);
 
             t += step;
         }
@@ -231,6 +246,7 @@ public sealed class ChargingIntegrator(uint stepSeconds)
             FinishTimeB: finishB.HasValue ? (uint)finishB.Value : null,
             EnergyDeliveredKWhA: energyA,
             EnergyDeliveredKWhB: energyB,
+            WastedEnergyKWh: wastedEnergy,
             DurationSeconds: t);
     }
 }
