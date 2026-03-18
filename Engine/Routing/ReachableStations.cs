@@ -18,7 +18,7 @@ public class ReachableStations
     {
         var evConfig = ev.GetConfig();
         var evBattery = ev.GetBattery();
-        var reach = evBattery.CurrentCharge * 1000 / evConfig.Efficiency;
+        var reach = (double)evBattery.CurrentCharge / (double)(evConfig.Efficiency / 1000);
         return [.. nearbyStations.Where(id =>
         {
             var station = stations.First(s => s.GetId() == id);
