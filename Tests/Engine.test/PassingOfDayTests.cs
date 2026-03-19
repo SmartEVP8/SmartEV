@@ -1,4 +1,4 @@
-namespace DayCyclesTests;
+namespace Engine.test;
 
 using static Engine.DayCycles.CarsOnRoad;
 using System;

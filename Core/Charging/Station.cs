@@ -17,11 +17,10 @@ public class Station(ushort id,
                 string name,
                 string address,
                 Position position,
-                List<Charger>? chargers,
+                List<ChargerBase>? chargers,
                 float price,
                 Random random)
 {
-
     /// <summary>The current KWh price at the station.</summary>
     public float Price = price;
     private readonly Random _random = random;
@@ -29,12 +28,12 @@ public class Station(ushort id,
     private readonly string _name = name;
     private readonly string _address = address;
     public readonly Position Position = position;
-    private readonly List<Charger>? _chargers = chargers;
+    private readonly List<ChargerBase>? _chargers = chargers;
 
     public ushort Id => _id;
     public string Name => _name;
     public string Address => _address;
-    public IReadOnlyList<Charger> Chargers => _chargers ?? [];
+    public IReadOnlyList<ChargerBase> Chargers => _chargers ?? [];
 
     /// <summary>
     /// Calculates the price of a specific station.

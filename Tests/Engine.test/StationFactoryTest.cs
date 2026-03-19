@@ -1,11 +1,13 @@
+namespace Engine.test;
+
 using System.Text.Json;
 using Core.Charging;
 using Core.Shared;
 using Engine.StationFactory;
 
-public class StationFactoryTests
+public class StationFactoryTest
 {
-    public StationFactoryTests()
+    public StationFactoryTest()
     {
         var csvPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "data", "energy_prices.csv");
         EnergyPrices.Initialize(csvPath);
@@ -13,10 +15,7 @@ public class StationFactoryTests
 
     private static StationFactory CreateFactory(
         StationFactoryOptions? options = null,
-        int seed = 42)
-    {
-        return new StationFactory(options ?? new StationFactoryOptions(), seed);
-    }
+        int seed = 42) => new(options ?? new StationFactoryOptions(), seed);
 
     private static FileInfo CreateTempLocationsFile(params object[] locations)
     {
@@ -56,7 +55,7 @@ public class StationFactoryTests
         {
             foreach (var charger in station.Chargers)
             {
-                foreach (var socket in charger.ChargingPoint.GetSockets())
+                foreach (var socket in charger.GetSockets())
                 {
                     if (!counts.TryAdd(socket, 1))
                     {
@@ -96,7 +95,7 @@ public class StationFactoryTests
     {
         var options = new StationFactoryOptions
         {
-            SocketProbabilities = new Dictionary<Socket, double>(),
+            SocketProbabilities = [],
         };
 
         Assert.Throws<ArgumentException>(() => new StationFactory(options, 42));
@@ -342,7 +341,7 @@ public class StationFactoryTests
 
             var hasMultiSocketCharger = stations
                 .SelectMany(station => station.Chargers)
-                .Any(charger => charger.ChargingPoint.GetSockets().Count > 1);
+                .Any(charger => charger.GetSockets().Length > 1);
 
             Assert.True(hasMultiSocketCharger, "Expected at least one charger to have multiple sockets.");
         }
@@ -381,7 +380,7 @@ public class StationFactoryTests
             Assert.NotEmpty(chargers);
             Assert.All(chargers, charger =>
                 Assert.True(
-                    charger.ChargingPoint.GetSockets().Count > 1,
+                    charger.GetSockets().Length > 1,
                     "Expected every charger to have more than one socket when multi-socket probability is 1.0."));
         }
         finally
@@ -417,7 +416,7 @@ public class StationFactoryTests
 
             Assert.NotEmpty(chargers);
             Assert.All(chargers, charger =>
-                Assert.Single(charger.ChargingPoint.GetSockets()));
+                Assert.Single(charger.GetSockets()));
         }
         finally
         {
