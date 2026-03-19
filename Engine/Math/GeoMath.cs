@@ -95,27 +95,41 @@ public static class GeoMath
     /// <param name="position">The position to check the distance to.</param>
     /// <param name="radius">The radius in kilometers that defines how close the point must be to the path to be considered "in radius".</param>
     /// <returns>Returns the distance from the start of the path to the point if it's within the radius of the path, otherwise returns -1.</returns>
-    public static double DistancesThroughPath(Paths path, Position position, double radius)
+    public static double DistancesThroughPath(
+    Paths path, Position position, double radius)
     {
-        var totalDistance = 0.0;
-        var clostestWaypointIndex = -1;
+        var matchIndex = -1;
+        var radiusDeg = radius / KmPerLatitudeDegree;
+
         for (var i = 0; i < path.Waypoints.Count - 1; i++)
         {
-            if (IsInRadius(position, path.Waypoints[i], path.Waypoints[i + 1], radius))
+            var wp1 = path.Waypoints[i];
+            var wp2 = path.Waypoints[i + 1];
+
+            // Cheap bounding box pre-check before the full IsInRadius
+            var minLat = Math.Min(wp1.Latitude, wp2.Latitude) - radiusDeg;
+            var maxLat = Math.Max(wp1.Latitude, wp2.Latitude) + radiusDeg;
+            if (position.Latitude < minLat || position.Latitude > maxLat)
+                continue;
+
+            if (IsInRadius(position, wp1, wp2, radius))
             {
-                clostestWaypointIndex = i;
+                matchIndex = i;
                 break;
             }
-
-            totalDistance += EquirectangularDistance(path.Waypoints[i], path.Waypoints[i + 1]);
         }
 
-        if (clostestWaypointIndex == -1) return -1; // Not in radius of path
+        if (matchIndex == -1) return -1;
 
-        // Missing a bit of accuracy by not finding the exact point on the path where the station is closest, but this is good enough for our purposes and much faster to compute.
-        totalDistance += EquirectangularDistance(position, path.Waypoints[clostestWaypointIndex]);
+        var totalDistance = 0.0;
+        for (var i = 0; i < matchIndex; i++)
+        {
+            totalDistance += EquirectangularDistance(
+                path.Waypoints[i], path.Waypoints[i + 1]);
+        }
 
-        return totalDistance;
+        return totalDistance + EquirectangularDistance(
+            position, path.Waypoints[matchIndex]);
     }
 
     /// <summary>
