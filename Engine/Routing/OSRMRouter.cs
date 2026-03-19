@@ -46,6 +46,13 @@ public unsafe partial class OSRMRouter : IDisposable, IMatrixRouter
         double destLat);
 
     [LibraryImport(_lib)]
+    private static partial IntPtr ComputeSrcToDestWithStops(
+        IntPtr osrm,
+        [In] double[] coords,
+        int numCoords
+    );
+
+    [LibraryImport(_lib)]
     private static partial void PointsToPoints(
         IntPtr osrm,
         [In] double[] srcCoords,
@@ -118,14 +125,33 @@ public unsafe partial class OSRMRouter : IDisposable, IMatrixRouter
     /// <summary>
     /// Queries the duration and polyline route from an electric vehicle to a single destination.
     /// </summary>
-    /// <param name="evLon">The longitude coordinate of the electric vehicle.</param>
-    /// <param name="evLat">The latitude coordinate of the electric vehicle.</param>
-    /// <param name="destLon">The longitude coordinate of the destination.</param>
-    /// <param name="destLat">The latitude coordinate of the destination.</param>
+    /// <param name="coords">An array of coordinates representing the route, where the first element is the source and the last element is the destination. Intermediate elements represent stops.</param>
     /// <returns>A tuple containing the duration and polyline string for the route.</returns>
-    public (float duration, string polyline) QuerySingleDestination(double evLon, double evLat, double destLon, double destLat)
+    public (float duration, string polyline) QueryDestination(Tuple<double, double>[] coords)
     {
-        var resultPtr = ComputeSrcToDest(_osrm, evLon, evLat, destLon, destLat);
+        nint resultPtr;
+        if (coords.Length < 2)
+            throw new ArgumentException("At least two coordinates are required for a source and destination.");
+        if (coords.Length == 2) 
+        {
+            resultPtr = ComputeSrcToDest(_osrm, coords[0].Item1, coords[0].Item2, coords[1].Item1, coords[1].Item2);
+        }
+        else if (coords.Length > 2)
+        {
+            var flatCoords = new double[coords.Length * 2];
+            for (var i = 0; i < coords.Length; i++)
+            {
+                flatCoords[i * 2] = coords[i].Item1;
+                flatCoords[(i * 2) + 1] = coords[i].Item2; 
+            }
+
+            resultPtr = ComputeSrcToDestWithStops(_osrm, flatCoords, coords.Length);
+        }
+        else
+        {
+            resultPtr = IntPtr.Zero;
+        }
+
         if (resultPtr == IntPtr.Zero)
             return (-1, string.Empty);
 
