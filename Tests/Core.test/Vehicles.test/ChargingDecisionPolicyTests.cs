@@ -1,7 +1,6 @@
 namespace Core.Tests.Vehicles;
 
 using Core.Vehicles;
-using Xunit;
 
 public class ChargingDecisionPolicyTests
 {
