@@ -1,3 +1,5 @@
+using Engine.Vehicles;
+using Core.Vehicles.Configs;
 namespace Headless;
 
 using Engine.Cost;
@@ -67,4 +69,5 @@ public static class Program
         provider.GetRequiredService<SpatialGrid>();
         provider.GetRequiredService<JourneyPipeline>();
     }
+
 }
