@@ -25,6 +25,16 @@ public static class Init
             return new OSRMRouter(settings.OsrmPath);
         });
 
+        services.AddSingleton<IJourneySamplerProvider>(sp =>
+        {
+            var settings = sp.GetRequiredService<EngineSettings>();
+            var router = sp.GetRequiredService<IOSRMRouter>();
+            var spawnGrid = InitSpawnGrid(settings.PolygonPath);
+            var cities = InitCities(settings.CitiesPath);
+            var journeyPipeline = new JourneyPipeline(spawnGrid, cities, router);
+            return new JourneySamplerProvider(journeyPipeline);
+        });
+
         services.AddSingleton<ICostStore>(sp =>
         {
             var settings = sp.GetRequiredService<EngineSettings>();
@@ -42,8 +52,10 @@ public static class Init
         services.AddSingleton(sp =>
         {
             var settings = sp.GetRequiredService<EngineSettings>();
+            var journeySamplerProvider = sp.GetRequiredService<IJourneySamplerProvider>();
+            var router = sp.GetRequiredService<IOSRMRouter>();
             var random = settings.Seed;
-            return new EVFactory(random);
+            return new EVFactory(random, journeySamplerProvider, router);
         });
 
         services.AddSingleton(sp =>
@@ -57,18 +69,10 @@ public static class Init
         {
             var settings = sp.GetRequiredService<EngineSettings>();
             var energyPrices = sp.GetRequiredService<EnergyPrices>();
+            var spawnGrid = InitSpawnGrid(settings.PolygonPath);
             var stationFactory = new StationFactory(settings.StationFactoryOptions, settings.Seed, energyPrices);
             var stations = stationFactory.CreateStations(settings.StationsPath);
-            return new SpatialGrid(InitSpawnGrid(settings.PolygonPath), stations);
-        });
-
-        services.AddSingleton(sp =>
-        {
-            var settings = sp.GetRequiredService<EngineSettings>();
-            var router = sp.GetRequiredService<IOSRMRouter>();
-            var spawnGrid = InitSpawnGrid(settings.PolygonPath);
-            var cities = InitCities(settings.CitiesPath);
-            return new JourneyPipeline(spawnGrid, cities, router);
+            return new SpatialGrid(spawnGrid, stations);
         });
     }
 

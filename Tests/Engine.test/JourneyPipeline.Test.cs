@@ -1,16 +1,15 @@
+namespace Engine.test;
+
 using Core.Shared;
-using Engine;
 using Engine.Grid;
 using Engine.Routing;
 using Engine.Spawning;
 
 public class JourneyPipelineTests
 {
-    private class StubRouter : IMatrixRouter
+    private class StubRouter(float[] distances) : IMatrixRouter
     {
-        private readonly float[] _distances;
-
-        public StubRouter(float[] distances) => _distances = distances;
+        private readonly float[] _distances = distances;
 
         public (float[], float[]) QueryPointsToPoints(double[] origins, double[] destinations)
             => ([], _distances);
@@ -34,14 +33,13 @@ public class JourneyPipelineTests
     }
 
     [Fact]
-    public void Compute_NoSpawnableCells_ReturnsNull()
+    public void Compute_NoSpawnableCells_ReturnsThrows()
     {
         var grid = MakeGrid(spawnableCount: 0);
         var cities = new List<City> { MakeCity("X", pop: 5000) };
 
-        var pipeline = new JourneyPipeline(grid, cities, new StubRouter([]));
 
-        Assert.Null(pipeline.Compute(scaler: 1.0f));
+        Assert.Throws<InvalidOperationException>(() => new JourneyPipeline(grid, cities, new StubRouter([])));
     }
 
     [Fact]

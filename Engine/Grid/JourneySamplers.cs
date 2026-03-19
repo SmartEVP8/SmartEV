@@ -23,14 +23,6 @@ public class JourneySamplers(
     private readonly double _halfLat = halfLat;
     private readonly double _halfLon = halfLon;
 
-    private Position SampleInCell(Random random, int cellIndex)
-    {
-        var center = _cellCenters[cellIndex];
-        var lat = center.Latitude + (((random.NextDouble() * 2) - 1) * _halfLat);
-        var lon = center.Longitude + (((random.NextDouble() * 2) - 1) * _halfLon);
-        return new Position(lon, lat);
-    }
-
     public (Position Source, Position Destination) SampleSourceToDest(Random random)
     {
         var sourceIndex = _sourceSampler.Sample(random);
@@ -40,5 +32,12 @@ public class JourneySamplers(
         var dest = _cityCenters[destIndex];
         return (source, dest);
     }
-}
 
+    private Position SampleInCell(Random random, int cellIndex)
+    {
+        var center = _cellCenters[cellIndex];
+        var lat = center.Latitude + (((random.NextDouble() * 2) - 1) * _halfLat);
+        var lon = center.Longitude + (((random.NextDouble() * 2) - 1) * _halfLon);
+        return new Position(lon, lat);
+    }
+}

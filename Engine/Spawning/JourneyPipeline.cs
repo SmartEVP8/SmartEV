@@ -1,8 +1,7 @@
-namespace Engine;
+namespace Engine.Spawning;
 
 using Engine.Grid;
 using Engine.Routing;
-using Engine.Spawning;
 
 /// <summary>
 /// JourneyPipeline computes the sampling distributions for source and destination points
@@ -30,14 +29,11 @@ public class JourneyPipeline
     /// A higher scaler increases the weight of larger cities, while a lower scaler reduces it.
     /// </param>
     /// <returns>Simulation samplers for source and destinations. If no cells are spawnable returns null.</returns>
-    public JourneySamplers? Compute(float scaler)
+    public JourneySamplers Compute(float scaler)
     {
         var cells = _grid.Cells
             .SelectMany(g => g)
             .ToList();
-
-        if (cells.Count == 0)
-            return null;
 
         var sourceWeights = cells
             .Select(c => c.CityInfo.Sum(ci => GravityWeight(ci, scaler)))
@@ -98,6 +94,11 @@ public class JourneyPipeline
             }
 
             newGrid[rowIndex] = cellData;
+        }
+
+        if (!newGrid.Any(row => row.Count > 0))
+        {
+            throw new InvalidOperationException("No spawnable cells with city info");
         }
 
         var cityCenters = cities.Select(c => c.Position).ToArray();

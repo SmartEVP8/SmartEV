@@ -1,9 +1,11 @@
 namespace Engine.Benchmark;
 
 using BenchmarkDotNet.Attributes;
+using Engine.Events;
 using Engine.Grid;
 using Engine.Parsers;
 using Engine.Routing;
+using Engine.Spawning;
 using Engine.Vehicles;
 
 /// <summary>
@@ -12,6 +14,7 @@ using Engine.Vehicles;
 [MemoryDiagnoser]
 public class EVPopulatorBenchMark
 {
+    private const int _count = 10000;
     private EVPopulator _eVPopulator = null!;
 
     /// <summary>
@@ -28,15 +31,19 @@ public class EVPopulatorBenchMark
                     ?? throw new InvalidOperationException("GridPath not set in project.");
 
 
-        var router = new OSRMRouter(osrmPath);
+        var router = new OSRMRouter(new FileInfo(osrmPath));
         var cities = CityParser.Parse(new FileInfo(cityPath));
         var polygons = PolygonParser.Parse(File.ReadAllText(polygonPath));
         var grid = Polygooner.GenerateGrid(0.1, polygons);
         var jp = new JourneyPipeline(grid, cities, router);
-        var samplers = jp.Compute(1.0f) ?? throw new InvalidOperationException("Journey samplers could not be computed.");
-        _eVPopulator = new(new Random(1), 10000, samplers, router);
+
+        var evFactory = new EVFactory(new Random(1), new JourneySamplerProvider(jp), router);
+        var evStore = new EVStore(_count);
+        var eventScheduler = new EventScheduler();
+
+        _eVPopulator = new(evFactory, evStore, eventScheduler);
     }
 
     [Benchmark]
-    public void CreateEVs() => _eVPopulator.CreateEVs(10000);
+    public void CreateEVs() => _eVPopulator.CreateEVs(_count, 1);
 }
