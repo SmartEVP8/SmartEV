@@ -1,17 +1,19 @@
 namespace Core.Charging.ChargingModel;
 
 using Core.Charging.ChargingModel.Chargepoint;
+using Core.Shared;
 
 /// <summary>
-/// A car currently connected to a connector with everything needed
+/// An EV currently connected to a connector with everything needed
 /// to plan or update its charging session.
 /// </summary>
-public record ConnectedCar(
-    int CarId,
+public record ConnectedEV(
+    uint EVId,
     double CurrentSoC,
     double TargetSoC,
     double CapacityKWh,
-    double MaxChargeRateKW);
+    double MaxChargeRateKW,
+    Socket Socket);
 
 /// <summary>
 /// Returned by all integrator methods.
@@ -24,6 +26,8 @@ public record ConnectedCar(
 /// <param name="EnergyDeliveredKWhB">Exact energy delivered to each car during this run.</param>
 /// <param name="WastedEnergyKWh">Energy the charger could have delivered but no car absorbed.</param>
 /// <param name="DurationSeconds">Wall time covered by this integration run.</param>
+/// <param name="BSoCWhenAFinish">SoC of B at the moment A finished (or final SocB if A never finished first).</param>
+/// <param name="ASoCWhenBFinish">SoC of A at the moment B finished (or final SocA if B never finished first).</param>
 public record IntegrationResult(
     double SocA,
     double SocB,
@@ -32,7 +36,10 @@ public record IntegrationResult(
     double EnergyDeliveredKWhA,
     double EnergyDeliveredKWhB,
     double WastedEnergyKWh,
-    double DurationSeconds)
+    double DurationSeconds,
+    double ASoCWhenBFinish,
+    double BSoCWhenAFinish
+    )
 {
     /// <summary>
     /// Gets the total energy delivered to both cars during this run.
@@ -63,53 +70,53 @@ public sealed class ChargingIntegrator(uint stepSeconds)
     /// <summary>
     /// Integrates the charging session of a single car until it reaches its target SoC.
     /// </summary>
-    /// <param name="simNow">The current simulation time.</param>
-    /// <param name="maxKW">The maximum power output in kilowatts.</param>
-    /// <param name="point">The charging point.</param>
-    /// <param name="car">The connected car.</param>
-    /// <returns>The integration result.</returns>
+    /// <param name="simNow">The current simulation time in seconds.</param>
+    /// <param name="maxKW">The maximum power output of the charger in kilowatts.</param>
+    /// <param name="point">The single charging point to use for integration.</param>
+    /// <param name="ev">The connected EV to integrate for.</param>
+    /// <returns>An IntegrationResult containing the details of the integration run.</returns>
     public IntegrationResult IntegrateSingleToCompletion(
         uint simNow,
         double maxKW,
         ISingleChargingPoint point,
-        ConnectedCar car)
-        => IntegrateSingle(simNow, maxKW, point, car, runUntilSeconds: null);
+        ConnectedEV ev)
+        => IntegrateSingle(simNow, maxKW, point, ev, runUntilSeconds: null);
 
     /// <summary>
     /// Integrates the charging sessions of two cars until both reach their target SoC.
     /// </summary>
-    /// <param name="simNow">The current simulation time.</param>
-    /// <param name="maxKW">The maximum power output in kilowatts.</param>
-    /// <param name="point">The charging point.</param>
-    /// <param name="carA">The first connected car.</param>
-    /// <param name="carB">The second connected car.</param>
-    /// <returns>The integration result.</returns>
+    /// <param name="simNow">The current simulation time in seconds.</param>
+    /// <param name="maxKW">The maximum power output of the charger in kilowatts.</param>
+    /// <param name="point">The dual charging point to use for integration.</param>
+    /// <param name="evA">The first connected EV to integrate for.</param>
+    /// <param name="evB">The second connected EV to integrate for.</param>
+    /// <returns>An IntegrationResult containing the details of the integration run.</returns>
     public IntegrationResult IntegrateDualToCompletion(
         uint simNow,
         double maxKW,
         IDualChargingPoint point,
-        ConnectedCar carA,
-        ConnectedCar carB)
-        => IntegrateDual(simNow, maxKW, point, carA, carB, runUntilSeconds: null);
+        ConnectedEV evA,
+        ConnectedEV evB)
+        => IntegrateDual(simNow, maxKW, point, evA, evB, runUntilSeconds: null);
 
     private IntegrationResult IntegrateSingle(
         uint simNow,
         double maxKW,
         ISingleChargingPoint point,
-        ConnectedCar car,
+        ConnectedEV ev,
         uint? runUntilSeconds)
     {
-        var soc = car.CurrentSoC;
+        var soc = ev.CurrentSoC;
         double? finishTime = null;
         var energy = 0.0;
         var wastedEnergy = 0.0;
         uint t = 0;
 
-        var effectiveMaxKW = Math.Min(maxKW, car.MaxChargeRateKW);
+        var effectiveMaxKW = Math.Min(maxKW, ev.MaxChargeRateKW);
 
         while (true)
         {
-            var finished = finishTime.HasValue || soc >= car.TargetSoC;
+            var finished = finishTime.HasValue || soc >= ev.TargetSoC;
 
             if (runUntilSeconds.HasValue && t >= runUntilSeconds.Value) break;
             if (!runUntilSeconds.HasValue && finished) break;
@@ -123,20 +130,20 @@ public sealed class ChargingIntegrator(uint stepSeconds)
             {
                 var power = point.GetPowerOutput(effectiveMaxKW, soc);
                 var delta = power * stepHours;
-                var remaining = (car.TargetSoC - soc) * car.CapacityKWh;
+                var remaining = (ev.TargetSoC - soc) * ev.CapacityKWh;
 
                 if (delta >= remaining)
                 {
                     energy += remaining;
                     wastedEnergy += delta - remaining;
-                    soc = car.TargetSoC;
+                    soc = ev.TargetSoC;
                     finishTime = simNow + t;
                 }
                 else
                 {
                     energy += delta;
                     wastedEnergy += (effectiveMaxKW * stepHours) - delta;
-                    soc += delta / car.CapacityKWh;
+                    soc += delta / ev.CapacityKWh;
                 }
             }
 
@@ -151,30 +158,34 @@ public sealed class ChargingIntegrator(uint stepSeconds)
             EnergyDeliveredKWhA: energy,
             EnergyDeliveredKWhB: 0.0,
             WastedEnergyKWh: wastedEnergy,
-            DurationSeconds: t);
+            DurationSeconds: t,
+            BSoCWhenAFinish: 0.0,
+            ASoCWhenBFinish: 0.0);
     }
 
     private IntegrationResult IntegrateDual(
         uint simNow,
         double maxKW,
         IDualChargingPoint point,
-        ConnectedCar carA,
-        ConnectedCar carB,
+        ConnectedEV evA,
+        ConnectedEV evB,
         uint? runUntilSeconds)
     {
-        var socA = carA.CurrentSoC;
-        var socB = carB.CurrentSoC;
+        var socA = evA.CurrentSoC;
+        var socB = evB.CurrentSoC;
         double? finishA = null;
         double? finishB = null;
         var energyA = 0.0;
         var energyB = 0.0;
         var wastedEnergy = 0.0;
+        double? bSoCWhenAFinish = null;
+        double? aSoCWhenBFinish = null;
         uint t = 0;
 
         while (true)
         {
-            var aFinished = finishA.HasValue || socA >= carA.TargetSoC;
-            var bFinished = finishB.HasValue || socB >= carB.TargetSoC;
+            var aFinished = finishA.HasValue || socA >= evA.TargetSoC;
+            var bFinished = finishB.HasValue || socB >= evB.TargetSoC;
 
             if (runUntilSeconds.HasValue && t >= runUntilSeconds.Value) break;
             if (!runUntilSeconds.HasValue && aFinished && bFinished) break;
@@ -186,10 +197,10 @@ public sealed class ChargingIntegrator(uint stepSeconds)
 
             var (powerA, powerB) = point.GetPowerDistribution(
                 maxKW,
-                aFinished ? carA.TargetSoC : socA,
-                bFinished ? carB.TargetSoC : socB,
-                carA.MaxChargeRateKW,
-                carB.MaxChargeRateKW);
+                aFinished ? evA.TargetSoC : socA,
+                bFinished ? evB.TargetSoC : socB,
+                evA.MaxChargeRateKW,
+                evB.MaxChargeRateKW);
 
             var deliveredA = 0.0;
             var deliveredB = 0.0;
@@ -197,40 +208,42 @@ public sealed class ChargingIntegrator(uint stepSeconds)
             if (!aFinished)
             {
                 var delta = powerA * stepHours;
-                var remaining = (carA.TargetSoC - socA) * carA.CapacityKWh;
+                var remaining = (evA.TargetSoC - socA) * evA.CapacityKWh;
 
                 if (delta >= remaining)
                 {
                     deliveredA = remaining;
                     energyA += remaining;
-                    socA = carA.TargetSoC;
+                    socA = evA.TargetSoC;
                     finishA = simNow + t;
+                    bSoCWhenAFinish = socB;
                 }
                 else
                 {
                     deliveredA = delta;
                     energyA += delta;
-                    socA += delta / carA.CapacityKWh;
+                    socA += delta / evA.CapacityKWh;
                 }
             }
 
             if (!bFinished)
             {
                 var delta = powerB * stepHours;
-                var remaining = (carB.TargetSoC - socB) * carB.CapacityKWh;
+                var remaining = (evB.TargetSoC - socB) * evB.CapacityKWh;
 
                 if (delta >= remaining)
                 {
                     deliveredB = remaining;
                     energyB += remaining;
-                    socB = carB.TargetSoC;
+                    socB = evB.TargetSoC;
                     finishB = simNow + t;
+                    aSoCWhenBFinish = socA;
                 }
                 else
                 {
                     deliveredB = delta;
                     energyB += delta;
-                    socB += delta / carB.CapacityKWh;
+                    socB += delta / evB.CapacityKWh;
                 }
             }
 
@@ -247,6 +260,8 @@ public sealed class ChargingIntegrator(uint stepSeconds)
             EnergyDeliveredKWhA: energyA,
             EnergyDeliveredKWhB: energyB,
             WastedEnergyKWh: wastedEnergy,
-            DurationSeconds: t);
+            DurationSeconds: t,
+            BSoCWhenAFinish: bSoCWhenAFinish ?? socB,
+            ASoCWhenBFinish: aSoCWhenBFinish ?? socA);
     }
 }

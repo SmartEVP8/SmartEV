@@ -14,8 +14,8 @@ public class DualChargingPoint(Connectors connectors) : IDualChargingPoint
 {
     private readonly ImmutableArray<Socket> _sockets = [.. connectors.Sockets];
 
-    private Connectors _leftSide = connectors;
-    private Connectors _rightSide = connectors;
+    private Connectors _leftSide = connectors.Copy();
+    private Connectors _rightSide = connectors.Copy();
 
     /// <inheritdoc/>
     public ImmutableArray<Socket> GetSockets() => _sockets;
