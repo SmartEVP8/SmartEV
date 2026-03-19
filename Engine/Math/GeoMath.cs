@@ -62,30 +62,7 @@ public static class GeoMath
         return dist.LengthSq <= radiusScaled * radiusScaled;
     }
 
-    /// <summary>
-    /// Calculates the Haversine distance between two positions on the Earth's surface.
-    /// https://www.ancientportsantiques.com/wp-content/uploads/Documents/ETUDESarchivees/MedNavigationRoutes/MedNav/TrigoSpherique.pdf#page=1.
-    /// </summary>
-    /// <param name="a">1st Postion.</param>
-    /// <param name="b">2nd Postion.</param>
-    /// <returns>Returns the distance between the 2 positions in km.</returns>
 
-    /* public static double HaversineDistance(Position a, Position b)
-     {
-         var dLat = ToRad(b.Latitude - a.Latitude);
-         var dLon = ToRad(b.Longitude - a.Longitude);
-         var lat1 = ToRad(a.Latitude);
-         var lat2 = ToRad(b.Latitude);
-
-         var sinDLat = Math.Sin(dLat / 2);
-         var sinDLon = Math.Sin(dLon / 2);
-
-         var h = (sinDLat * sinDLat) +
-                 (Math.Cos(lat1) * Math.Cos(lat2) * sinDLon * sinDLon);
-
-         return 6371.0 * 2 * Math.Atan2(Math.Sqrt(h), Math.Sqrt(1 - h));
-     }
-     */
 
     /// <summary>
     /// Calculates the distance from the start of the path to the point, following the path's waypoints,
@@ -150,6 +127,31 @@ public static class GeoMath
 
         return EarthRadiusKm * Math.Sqrt((x * x) + (y * y));
     }
+
+    /// <summary>
+    /// Calculates the Haversine distance between two positions on the Earth's surface.
+    /// https://www.ancientportsantiques.com/wp-content/uploads/Documents/ETUDESarchivees/MedNavigationRoutes/MedNav/TrigoSpherique.pdf#page=1.
+    /// </summary>
+    /// <param name="a">1st Postion.</param>
+    /// <param name="b">2nd Postion.</param>
+    /// <returns>Returns the distance between the 2 positions in km.</returns>
+
+    /* public static double HaversineDistance(Position a, Position b)
+     {
+         var dLat = ToRad(b.Latitude - a.Latitude);
+         var dLon = ToRad(b.Longitude - a.Longitude);
+         var lat1 = ToRad(a.Latitude);
+         var lat2 = ToRad(b.Latitude);
+
+         var sinDLat = Math.Sin(dLat / 2);
+         var sinDLon = Math.Sin(dLon / 2);
+
+         var h = (sinDLat * sinDLat) +
+                 (Math.Cos(lat1) * Math.Cos(lat2) * sinDLon * sinDLon);
+
+         return 6371.0 * 2 * Math.Atan2(Math.Sqrt(h), Math.Sqrt(1 - h));
+     }
+     */
 
     /// <summary>
     /// Calculates the bearing from one position to another.

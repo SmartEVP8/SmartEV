@@ -11,8 +11,9 @@ public class ReachableStations
     /// </summary>
     /// <param name="path">The direct route to the EV's destination.</param>
     /// <param name="ev">The EV looking for a Station to charge at.</param>
-    /// <param name="stations">The full list of stations.</param>
+    /// <param name="stations">The full Dictionary of stations, that hasnt been altered at all.</param>
     /// <param name="nearbyStations">The list of station ids provided by the spatial grid.</param>
+    /// <param name="radius">The same radius used in finding stations in the Spatial Grid.</param>
     /// <returns>Returns a list of ids of stations within reach of the EV.</returns>
     public static List<ushort> FindReachableStations(Paths path, EV ev, Dictionary<ushort, Station> stations, List<ushort> nearbyStations, double radius)
     {
