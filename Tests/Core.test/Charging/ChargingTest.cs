@@ -14,7 +14,8 @@ internal static class Make
                CurrentSoC: currentSoC,
                TargetSoC: targetSoC,
                CapacityKWh: model.BatteryConfig.MaxCapacityKWh,
-               MaxChargeRateKW: model.BatteryConfig.ChargeRateKW);
+               MaxChargeRateKW: model.BatteryConfig.ChargeRateKW,
+               Socket: model.BatteryConfig.Socket);
 
     public static ConnectedCar Car(
         double currentSoC,
@@ -25,7 +26,8 @@ internal static class Make
                CurrentSoC: currentSoC,
                TargetSoC: targetSoC,
                CapacityKWh: capacityKWh,
-               MaxChargeRateKW: maxChargeRateKW);
+               MaxChargeRateKW: maxChargeRateKW,
+               Socket: Socket.CCS2);
 
     public static SingleChargingPoint SinglePoint(EVConfig model)
     {

@@ -30,8 +30,13 @@ public class EventScheduler
         {
             _canceledEvents.Remove((request.EVId, request.StationId));
             return GetNextEvent();
-
         }
+
+        if (e is EndCharging endCharging && _canceledEndChargingEVIds.Remove(endCharging.EVId))
+        {
+            return GetNextEvent();
+        }
+
         return e;
     }
 
@@ -47,4 +52,8 @@ public class EventScheduler
         var e = (request.EVId, request.StationId);
         _canceledEvents.Add(e);
     }
+    private readonly HashSet<uint> _canceledEndChargingEVIds = new();
+
+    public void CancelEndCharging(uint evId)
+        => _canceledEndChargingEVIds.Add(evId);
 }
