@@ -123,9 +123,7 @@ public class StationFactoryTest
         try
         {
             var factory = CreateFactory();
-            var stations = factory.CreateStations(file);
-
-            Assert.Empty(stations);
+            Assert.Throws<InvalidOperationException>(() => factory.CreateStations(file));
         }
         finally
         {
