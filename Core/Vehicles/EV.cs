@@ -7,10 +7,9 @@ public class EV(uint id, Battery battery, Preferences preferences, EVConfig conf
 {
     public readonly uint Id = id;
     public readonly Preferences Preferences = preferences;
-    private Battery _battery = battery;
-    private EVConfig _config = config;
 
-    public EVConfig GetConfig() => _config;
+    public Battery Battery { get; } = battery;
 
-    public Battery GetBattery() => _battery;
+    public EVConfig Config { get; } = config;
+
 }

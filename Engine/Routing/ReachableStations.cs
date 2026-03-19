@@ -16,23 +16,13 @@ public class ReachableStations
     /// <returns>Returns a list of ids of stations within reach of the EV.</returns>
     public static List<ushort> FindReachableStations(Paths path, EV ev, List<Station> stations, List<ushort> nearbyStations, double radius)
     {
-        var evConfig = ev.GetConfig();
-        var evBattery = ev.GetBattery();
+        var evConfig = ev.Config;
+        var evBattery = ev.Battery;
         var reach = (double)evBattery.CurrentCharge / ((double)evConfig.Efficiency / 1000);
-        for (var i = 0; i < nearbyStations.Count; i++)
-        {
-            var station = stations.First(s => s.GetId() == nearbyStations[i]);
-            var distanceToStation = GeoMath.DistancesThroughPath(path, station.Position, radius);
-            if (distanceToStation > -1 && distanceToStation <= reach)
+        return nearbyStations.Where(id =>
             {
-                continue;
-            }
-            else
-            {
-                nearbyStations.RemoveAt(i);
-                i--;
-            }
-        }
-        return nearbyStations;
+                var dist = GeoMath.DistancesThroughPath(path, stations[id].Position, radius);
+                return dist > -1 && dist <= reach;
+            }).ToList();
     }
 }

@@ -106,7 +106,6 @@ public static class GeoMath
             var wp1 = path.Waypoints[i];
             var wp2 = path.Waypoints[i + 1];
 
-            // Cheap bounding box pre-check before the full IsInRadius
             var minLat = Math.Min(wp1.Latitude, wp2.Latitude) - radiusDeg;
             var maxLat = Math.Max(wp1.Latitude, wp2.Latitude) + radiusDeg;
             if (position.Latitude < minLat || position.Latitude > maxLat)
@@ -142,9 +141,9 @@ public static class GeoMath
     /// <returns>The distance between two points.</returns>
     public static double EquirectangularDistance(Position a, Position b)
     {
-        var lat1 = ToRad(a.Latitude);
-        var lat2 = ToRad(b.Latitude);
-        var dLon = ToRad(b.Longitude - a.Longitude);
+        var lat1 = a.Latitude * DegToRad;
+        var lat2 = b.Latitude * DegToRad;
+        var dLon = (b.Longitude - a.Longitude) * DegToRad;
 
         var x = dLon * Math.Cos((lat1 + lat2) / 2);
         var y = lat2 - lat1;
@@ -205,5 +204,5 @@ public static class GeoMath
     //     return along >= 0 && along <= segmentLength && perp <= radius;
     // }
 
-    private static double ToRad(double degrees) => degrees * DegToRad;
+    // private static double ToRad(double degrees) => degrees * DegToRad;
 }
