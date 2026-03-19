@@ -1,6 +1,5 @@
 namespace Core.Vehicles;
 
-
 /// <summary>
 /// Provides a method to calculate the urgency of charging based on the state of charge (SoC) of the battery.
 /// </summary>
