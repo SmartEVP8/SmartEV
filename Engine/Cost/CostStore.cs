@@ -1,17 +1,10 @@
 namespace Engine.Cost;
 
-public record CostWeights(
-    float PriceSensitivity = 0,
-    float PathDeviation = 0,
-    float ExpectedQueueSize = 0
-// ...
-);
-
 /// <summary>
 /// Initializes a new instance of the <see cref="CostStore"/> class.
 /// </summary>
 /// <param name="initialState">The inital weight configuration.</param>
-public class CostStore(CostWeights initialState)
+public class CostStore(CostWeights initialState) : ICostStore
 {
     private readonly Lock _lock = new();
     private long _lastSeq = -1;
