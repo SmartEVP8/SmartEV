@@ -14,19 +14,19 @@ public class StationFactory
 {
     private readonly StationFactoryOptions _options;
     private readonly Random _random;
+    private readonly EnergyPrices _energyPrices;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="StationFactory"/> class with the specified options and random seed.
-    /// Validates the options to ensure they are within acceptable ranges and that probabilities sum to 1.
-    /// Throws exceptions if any validation checks fail.
     /// </summary>
     /// <param name="options">The configuration options for station generation.</param>
-    /// <param name="seed">The seed for random number generation to ensure deterministic output.</param>
+    /// <param name="random">The seed for random number generation to ensure deterministic output.</param>
+    /// <param name="energyPrices">Dynamic energy prices based on time of day.</param>
     /// <exception cref="ArgumentNullException">Thrown if options is null.</exception>
     /// <exception cref="ArgumentOutOfRangeException">Thrown if TotalChargers is not greater than zero, or if probabilities are not between 0 and 1.</exception>
     /// <exception cref="ArgumentException">Thrown if SocketProbabilities is empty, contains negative probabilities, or does not sum to approximately 1.</exception>
     /// <exception cref="InvalidOperationException">Thrown if there are not enough chargers to assign at least one to each station.</exception>
-    public StationFactory(StationFactoryOptions options, int seed)
+    public StationFactory(StationFactoryOptions options, Random random, EnergyPrices energyPrices)
     {
         ArgumentNullException.ThrowIfNull(options);
 
@@ -71,7 +71,8 @@ public class StationFactory
         }
 
         _options = options;
-        _random = new Random(seed);
+        _random = random;
+        _energyPrices = energyPrices;
     }
 
     /// <summary>
@@ -89,10 +90,13 @@ public class StationFactory
             throw new FileNotFoundException("Station location file not found.", file.FullName);
 
         var json = File.ReadAllText(file.FullName);
-        var locations = JsonSerializer.Deserialize<List<StationLocationDTO>>(json) ?? [];
+        var locations = JsonSerializer.Deserialize<List<StationLocationDTO>>(json, new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true,
+        }) ?? throw new InvalidOperationException("JSON file was empty or null.");
 
         if (locations.Count == 0)
-            return [];
+            throw new InvalidOperationException("Station locations JSON file was empty.");
 
         var socketPool = CreateSocketPool();
         Shuffle(socketPool);
@@ -138,7 +142,6 @@ public class StationFactory
     private Station CreateStation(ushort id, StationLocationDTO location, List<ChargerBase> chargers)
     {
         var position = new Position(location.Longitude, location.Latitude);
-        var price = EnergyPrices.GetHourPrice(DayOfWeek.Monday, 12);
 
         return new Station(
             id,
@@ -146,8 +149,8 @@ public class StationFactory
             location.Address ?? string.Empty,
             position,
             chargers,
-            price,
-            _random);
+            _random,
+            _energyPrices);
     }
 
     /// <summary>

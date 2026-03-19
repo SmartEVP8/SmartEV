@@ -16,13 +16,15 @@ public static class Polygooner
         var diffLat = max.Latitude - min.Latitude;
         var diffLon = max.Longitude - min.Longitude;
 
-        // Scale longitude size to account for latitude compression in denmark
         var midLat = (min.Latitude + max.Latitude) / 2.0;
         var lonScale = Math.Cos(midLat * Math.PI / 180.0);
         var lonSize = size / lonScale;
 
         var latSteps = (int)Math.Ceiling(diffLat / size);
         var lonSteps = (int)Math.Ceiling(diffLon / lonSize);
+
+        var halfLat = size / 2.0;
+        var halfLon = lonSize / 2.0;
 
         var gridCells = new List<List<GridCell>>(latSteps);
 
@@ -35,7 +37,14 @@ public static class Polygooner
                 var centerLat = min.Latitude + ((i + 0.5) * size);
                 var centerLon = min.Longitude + ((j + 0.5) * lonSize);
                 var centerPos = new Position(centerLon, centerLat);
-                var spawnable = polygons.Any(polygon => PointInPolygon(polygon, centerLon, centerLat));
+
+                var spawnable = polygons.Any(polygon =>
+                    PointInPolygon(polygon, centerLon, centerLat) ||
+                    PointInPolygon(polygon, centerLon - halfLon, centerLat - halfLat) ||
+                    PointInPolygon(polygon, centerLon + halfLon, centerLat - halfLat) ||
+                    PointInPolygon(polygon, centerLon - halfLon, centerLat + halfLat) ||
+                    PointInPolygon(polygon, centerLon + halfLon, centerLat + halfLat));
+
                 row.Add(new GridCell(spawnable, centerPos));
             }
 

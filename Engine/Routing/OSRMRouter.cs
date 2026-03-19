@@ -6,7 +6,7 @@ using Core.Charging;
 /// <summary>
 /// Provides routing and station query functionality using the OSRM (Open Source Routing Machine) wrapper library.
 /// </summary>
-public unsafe partial class OSRMRouter : IDisposable, IMatrixRouter
+public unsafe partial class OSRMRouter : IOSRMRouter
 {
     private const string _lib = "osrm_wrapper";
 
@@ -67,9 +67,9 @@ public unsafe partial class OSRMRouter : IDisposable, IMatrixRouter
     /// </summary>
     /// <param name="mapPath">The path to the OSRM map data file.</param>
     /// <exception cref="InvalidOperationException">Thrown when OSRM initialization fails.</exception>
-    public OSRMRouter(string mapPath)
+    public OSRMRouter(FileInfo mapPath)
     {
-        _osrm = InitializeOSRM(mapPath);
+        _osrm = InitializeOSRM(mapPath.ToString());
         if (_osrm == IntPtr.Zero)
             throw new Exception("OSRM initialization failed.");
     }

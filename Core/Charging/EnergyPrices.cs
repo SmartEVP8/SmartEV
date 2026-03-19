@@ -11,27 +11,23 @@ using System.Globalization;
 /// based on an interpolation between day-ahead spot prices from energidataservice.dk <see href="https://energidataservice.dk/tso-electricity/DayAheadPrices"/>
 /// and elbiil.dk <see href="https://www.elbiil.dk/opladning/opladning-paa-farten"/>.
 /// </remarks>
-public static class EnergyPrices
+/// <remarks>
+/// Initializes a new instance of the <see cref="EnergyPrices"/> class.
+/// Initializes the energy price table by reading the csv file and coverting to (Day, Hour, Price).
+/// </remarks>
+/// <param name="csvPath">The path to the csv containing the pricing data.</param>
+public class EnergyPrices(FileInfo csvPath)
 {
     /// <summary>
     /// Array of energy price for each hour.
     /// </summary>
-    private static ImmutableArray<(DayOfWeek Day, int Hour, float Price)> _energyPriceTable;
-
-    /// <summary>
-    /// Initializes the energy price table by reading the csv file and coverting to (Day, Hour, Price).
-    /// </summary>
-    /// <param name="csvPath">The path to the csv containing the pricing data.</param>
-    public static void Initialize(string csvPath)
-    {
-        _energyPriceTable = [.. File.ReadAllLines(csvPath)
+    private readonly ImmutableArray<(DayOfWeek Day, int Hour, float Price)> _energyPriceTable = [.. File.ReadAllLines(csvPath.ToString())
             .Skip(1)
             .Select(line => line.Split(','))
             .Select(parts => (
                 Day: Enum.Parse<DayOfWeek>(parts[0]),
                 Hour: int.Parse(parts[1]),
                 Price: float.Parse(parts[2], CultureInfo.InvariantCulture)))];
-    }
 
     /// <summary>
     /// Gets the prices from the supplied hour.
@@ -39,7 +35,7 @@ public static class EnergyPrices
     /// <param name="day">The day being queried.</param>
     /// <param name="hour">The hour being queried.</param>
     /// <returns>The integer price at a given hour.</returns>
-    public static float GetHourPrice(DayOfWeek day, int hour)
+    public float GetHourPrice(DayOfWeek day, int hour)
     {
         if (!Enum.IsDefined(day))
             throw new ArgumentOutOfRangeException(nameof(day), "Invalid day of week.");
@@ -54,7 +50,7 @@ public static class EnergyPrices
     /// </summary>
     /// <param name="day">The day being queried.</param>
     /// <returns>A dictionary with (hour, price) tuples.</returns>
-    public static Dictionary<int, float> GetDayPrice(DayOfWeek day)
+    public Dictionary<int, float> GetDayPrice(DayOfWeek day)
     {
         if (!Enum.IsDefined(day))
             throw new ArgumentOutOfRangeException(nameof(day), "Invalid day of week.");

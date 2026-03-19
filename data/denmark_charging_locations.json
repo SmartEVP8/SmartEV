@@ -3080,14 +3080,6 @@
     "longitude": 10.6719
   },
   {
-    "name": "OK Marstal, SuperBrugsen",
-    "address": "Skovgyden 26",
-    "town": "Marstal",
-    "postcode": "5960 ",
-    "latitude": 54.8564,
-    "longitude": 10.51703
-  },
-  {
     "name": "Mejerivej",
     "address": "Mejerivej",
     "town": null,
@@ -3102,22 +3094,6 @@
     "postcode": "8600",
     "latitude": 56.18534019581901,
     "longitude": 9.578983430658468
-  },
-  {
-    "name": "L\u00f8jnantv\u00e6nget 5",
-    "address": "L\u00f8jnantv\u00e6nget 5",
-    "town": "RUDK\u00d8BING",
-    "postcode": "5900",
-    "latitude": 60.460247,
-    "longitude": 2.087555
-  },
-  {
-    "name": "t53_0415_016",
-    "address": "ABB Terra 53",
-    "town": "VESTERVIG",
-    "postcode": "7770",
-    "latitude": 57.82196,
-    "longitude": 12.579944
   },
   {
     "name": "Jeckels Hotel",
@@ -3630,14 +3606,6 @@
     "postcode": "9700",
     "latitude": 57.262817,
     "longitude": 9.955105
-  },
-  {
-    "name": "ACE0146654",
-    "address": "Gammel Kirkevej 8",
-    "town": "L\u00c6S\u00d8",
-    "postcode": "9940",
-    "latitude": 57.257403,
-    "longitude": 11.006379
   },
   {
     "name": "Norlys Br\u00f8nderslev",
@@ -13472,36 +13440,12 @@
     "longitude": 10.701268
   },
   {
-    "name": "Industrivej",
-    "address": "Industrivej 1A",
-    "town": "R\u00d8NNE",
-    "postcode": "3700",
-    "latitude": 55.096381,
-    "longitude": 14.718331
-  },
-  {
     "name": "Lyngvejen 7",
     "address": "Lyngvejen 7",
     "town": "R\u00d8M\u00d8",
     "postcode": "6792",
     "latitude": 55.096163,
     "longitude": 8.548081
-  },
-  {
-    "name": "Kraftvej",
-    "address": "Kraftvej 2",
-    "town": "R\u00d8NNE",
-    "postcode": "3700",
-    "latitude": 55.0941,
-    "longitude": 14.696763
-  },
-  {
-    "name": "Skansevej",
-    "address": "Skansevej 2",
-    "town": "R\u00d8NNE",
-    "postcode": "3700",
-    "latitude": 55.092643,
-    "longitude": 14.696945
   },
   {
     "name": "Engvej, R\u00f8m\u00f8",
@@ -13550,14 +13494,6 @@
     "postcode": "6261",
     "latitude": 55.077498,
     "longitude": 8.657891
-  },
-  {
-    "name": "Brovangen 2",
-    "address": "Brovangen 2",
-    "town": "AAKIRKEBY",
-    "postcode": "3720",
-    "latitude": 55.076867,
-    "longitude": 14.915392
   },
   {
     "name": "ACE0099045",
@@ -13670,14 +13606,6 @@
     "postcode": "6240",
     "latitude": 55.057497,
     "longitude": 8.9526
-  },
-  {
-    "name": "ACE0123482",
-    "address": "V\u00e6rftsvej 4",
-    "town": "NEX\u00d8",
-    "postcode": "3730",
-    "latitude": 55.057409,
-    "longitude": 15.133317
   },
   {
     "name": "Bredebro Filialskole",
@@ -14400,14 +14328,6 @@
     "longitude": 10.299555840790617
   },
   {
-    "name": "Skodsborg Strandvej 139 Kurhotel Skodsborg",
-    "address": "Skodsborg Strandvej 139",
-    "town": "SKODSBORG",
-    "postcode": "2942",
-    "latitude": 60.821972,
-    "longitude": -0.796417
-  },
-  {
     "name": "Circle K N\u00f8rresundby",
     "address": "L\u00f8vbakken 2",
     "town": "N\u00d8RRESUNDBY",
@@ -14678,14 +14598,6 @@
     "postcode": "7870",
     "latitude": 56.763438,
     "longitude": 8.863369
-  },
-  {
-    "name": "COMPANY NAME-SITE V\u00e6lg ladepunkt og se pris",
-    "address": "Dirch Passers All\u00e9 76",
-    "town": "FREDERIKSBERG",
-    "postcode": "2000",
-    "latitude": 56.468766,
-    "longitude": 11.86693
   },
   {
     "name": "Circle K \u00c5rhusvej, Randers",
@@ -15056,14 +14968,6 @@
     "longitude": 11.364317
   },
   {
-    "name": "Circle K R\u00f8nne",
-    "address": "Zahrtmannsvej 99",
-    "town": "R\u00d8NNE",
-    "postcode": "3700",
-    "latitude": 55.097626,
-    "longitude": 14.7122884
-  },
-  {
     "name": "Langebjergvej",
     "address": "Langebjergvej 1",
     "town": "BORRE",
@@ -15200,14 +15104,6 @@
     "longitude": 9.70438
   },
   {
-    "name": "Ullasvej 8",
-    "address": "Ullasvej 8",
-    "town": "R\u00f8nne",
-    "postcode": "3700",
-    "latitude": 55.091872,
-    "longitude": 14.708688
-  },
-  {
     "name": "Circle K, Viborg",
     "address": "Indre Ringvej 2",
     "town": "Viborg",
@@ -15278,14 +15174,6 @@
     "postcode": "6792",
     "latitude": 55.085995,
     "longitude": 8.569386
-  },
-  {
-    "name": "PAY-AS-YOU-GO - ANNEU+0026#039;S BUTIK",
-    "address": "Dirch Passers All\u00e9 76",
-    "town": "Frederiksberg",
-    "postcode": "2000",
-    "latitude": 60.460247,
-    "longitude": 2.187555
   },
   {
     "name": "Langerak",
