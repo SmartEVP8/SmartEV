@@ -38,16 +38,33 @@ public class SpatialGrid
         foreach (var station in stations)
         {
             _stationPositions[station.Key] = station.Value.Position;
-            var key = ToRowCol(station.Value.Position.Latitude, station.Value.Position.Longitude);
-            if (_cells.TryGetValue(key, out var list))
+            var key = ToRowCol(station.Value.Position.Latitude, station.Valye.Position.Longitude);
+
+            if (!_cells.TryGetValue(key, out var list))
+                key = FindNearestSpawnableCell(key) ?? throw new Exception($"Station {station.Value.Position.Latitude}, {station.Value.Position.Longitude} has no nearby spawnable cell.");
+
+            _cells[key].Add(station.Key);
+        }
+    }
+
+
+
+    private RowCol? FindNearestSpawnableCell(RowCol origin)
+    {
+        for (var radius = 1; radius <= 1; radius++)
+        {
+            for (var dr = -radius; dr <= radius; dr++)
             {
-                list.Add(station.Key);
-            }
-            else
-            {
-                throw new Exception($"Station {station.Key} at position {station.Value.Position.Latitude}, {station.Value.Position.Longitude} is outside the grid bounds.");
+                for (var dc = -radius; dc <= radius; dc++)
+                {
+                    if (Math.Abs(dr) != radius && Math.Abs(dc) != radius) continue;
+                    var candidate = new RowCol(origin.Row + dr, origin.Col + dc);
+                    if (_cells.ContainsKey(candidate)) return candidate;
+                }
             }
         }
+
+        return null;
     }
 
     /// <summary>

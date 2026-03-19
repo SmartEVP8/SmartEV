@@ -10,9 +10,12 @@ public enum Socket : byte
     CCS2,
     Type2SocketOnly,
     Type2Tethered,
-    NACS
+    NACS,
 }
 
+/// <summary>
+/// Provides extension methods for the Socket enum to convert socket types to human-readable strings and retrieve associated power output values.
+/// </summary>
 public static class SocketExtensions
 {
     /// <summary>

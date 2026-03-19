@@ -38,8 +38,9 @@ public class StationsAroundPolyline
             ?? throw new InvalidOperationException("OsrmDataPath not set in project.");
         var gridPath = AppContext.GetData("GridPath") as string
             ?? throw new InvalidOperationException("GridPath not set in project.");
-
-        _router = new OSRMRouter(path);
+        var csvPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "data", "energy_prices.csv");
+        var _energyPrices = new EnergyPrices(new FileInfo(csvPath));
+        _router = new OSRMRouter(new FileInfo(path));
         var route = _router.QuerySingleDestination(9.935932, 57.046707, 12.5683, 55.6761);
         var polyline = route.polyline;
         _path = Polyline6ToPoints.DecodePolyline(polyline);
@@ -52,7 +53,7 @@ public class StationsAroundPolyline
         {
             var lat = 55.95 + (rand.NextDouble() * 1);
             var lon = 8.36 + (rand.NextDouble() * 1.7);
-            _stations.Add((ushort)i, new Station((ushort)i, $"Station{i}", $"Address{i}", new Position(lon, lat), null, 50f, rand));
+            _stations.Add((ushort)i, new Station((ushort)i, string.Empty, string.Empty, new Position(lon, lat), null, rand, _energyPrices));
         }
 
         var polygons = PolygonParser.Parse(File.ReadAllText(gridPath));
