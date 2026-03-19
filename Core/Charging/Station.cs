@@ -11,30 +11,23 @@ using System;
 /// <param name="address">The physical address of the station, e.g. 'Logistikparken 12'.</param>
 /// <param name="position">Longitude/Latitude of the station.</param>
 /// <param name="chargers">A list of the chargers attached to the station.</param>
-/// <param name="price">The KWh price of charging at the station.</param>
 /// <param name="random">An injected instance of Math.Random.</param>
+/// <param name="energyPrices">EnergyPrices based on time of day.</param>
 public class Station(ushort id,
                 string name,
                 string address,
                 Position position,
-                List<Charger>? chargers,
-                float price,
-                Random random)
+                List<ChargerBase>? chargers,
+                Random random,
+                EnergyPrices energyPrices)
 {
-
-    /// <summary>The current KWh price at the station.</summary>
-    public float Price = price;
-    private readonly Random _random = random;
-    private readonly ushort _id = id;
-    private readonly string _name = name;
-    private readonly string _address = address;
     public readonly Position Position = position;
-    private readonly List<Charger>? _chargers = chargers;
+    private readonly List<ChargerBase>? _chargers = chargers;
 
-    public ushort Id => _id;
-    public string Name => _name;
-    public string Address => _address;
-    public IReadOnlyList<Charger> Chargers => _chargers ?? [];
+    public ushort Id => id;
+    public string Name => name;
+    public string Address => address;
+    public IReadOnlyList<ChargerBase> Chargers => _chargers ?? [];
 
     /// <summary>
     /// Calculates the price of a specific station.
@@ -44,13 +37,11 @@ public class Station(ushort id,
     /// The new price is randomly generated in the range [3.0, 5.0].
     /// Call this periodically to simulate dynamic pricing.
     /// </remarks>
-    public void CalculatePrice(DayOfWeek day = DayOfWeek.Monday, int hour = 12)
+    public float CalculatePrice(DayOfWeek day, int hour)
     {
-        var basePrice = EnergyPrices.GetHourPrice(day, hour);
-        var deviation = 0.10f + (_random.NextSingle() * 0.10f); // 10–20%
-        var sign = _random.Next(2) == 0 ? 1.0f : -1.0f;
-        Price = basePrice * (1.0f + (sign * deviation));
+        var basePrice = energyPrices.GetHourPrice(day, hour);
+        var deviation = 0.10f + (random.NextSingle() * 0.10f); // 10–20%
+        var sign = random.Next(2) == 0 ? 1.0f : -1.0f;
+        return basePrice * (1.0f + (sign * deviation));
     }
-
-    public ushort GetId() => id;
 }

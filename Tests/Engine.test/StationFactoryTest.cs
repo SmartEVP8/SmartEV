@@ -1,21 +1,19 @@
+namespace Engine.test;
+
 using System.Text.Json;
 using Core.Charging;
 using Core.Shared;
 using Engine.StationFactory;
 
-public class StationFactoryTests
+public class StationFactoryTest
 {
-    public StationFactoryTests()
-    {
-        var csvPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "data", "energy_prices.csv");
-        EnergyPrices.Initialize(csvPath);
-    }
 
-    private static StationFactory CreateFactory(
-        StationFactoryOptions? options = null,
-        int seed = 42)
+    private static readonly EnergyPrices _energyPrices = new(new FileInfo(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "data", "energy_prices.csv")));
+
+    private static StationFactory CreateFactory(StationFactoryOptions? options = null, Random? random = null)
     {
-        return new StationFactory(options ?? new StationFactoryOptions(), seed);
+        random ??= new Random();
+        return new StationFactory(options ?? new StationFactoryOptions(), random, _energyPrices);
     }
 
     private static FileInfo CreateTempLocationsFile(params object[] locations)
@@ -56,7 +54,7 @@ public class StationFactoryTests
         {
             foreach (var charger in station.Chargers)
             {
-                foreach (var socket in charger.ChargingPoint.GetSockets())
+                foreach (var socket in charger.GetSockets())
                 {
                     if (!counts.TryAdd(socket, 1))
                     {
@@ -77,7 +75,7 @@ public class StationFactoryTests
             TotalChargers = 0,
         };
 
-        Assert.Throws<ArgumentOutOfRangeException>(() => new StationFactory(options, 42));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new StationFactory(options, new Random(), _energyPrices));
     }
 
     [Fact]
@@ -88,7 +86,7 @@ public class StationFactoryTests
             DualChargingPointProbability = 1.5,
         };
 
-        Assert.Throws<ArgumentOutOfRangeException>(() => new StationFactory(options, 42));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new StationFactory(options, new Random(), _energyPrices));
     }
 
     [Fact]
@@ -96,10 +94,10 @@ public class StationFactoryTests
     {
         var options = new StationFactoryOptions
         {
-            SocketProbabilities = new Dictionary<Socket, double>(),
+            SocketProbabilities = [],
         };
 
-        Assert.Throws<ArgumentException>(() => new StationFactory(options, 42));
+        Assert.Throws<ArgumentException>(() => new StationFactory(options, new Random(), _energyPrices));
     }
 
     [Fact]
@@ -114,7 +112,7 @@ public class StationFactoryTests
             },
         };
 
-        Assert.Throws<ArgumentException>(() => new StationFactory(options, 42));
+        Assert.Throws<ArgumentException>(() => new StationFactory(options, new Random(), _energyPrices));
     }
 
     [Fact]
@@ -125,9 +123,7 @@ public class StationFactoryTests
         try
         {
             var factory = CreateFactory();
-            var stations = factory.CreateStations(file);
-
-            Assert.Empty(stations);
+            Assert.Throws<InvalidOperationException>(() => factory.CreateStations(file));
         }
         finally
         {
@@ -272,7 +268,7 @@ public class StationFactoryTests
 
         try
         {
-            var factory = CreateFactory(options, seed: 123);
+            var factory = CreateFactory(options, new Random());
             var stations = factory.CreateStations(file);
 
             Assert.Equal(10, stations.Count);
@@ -298,8 +294,9 @@ public class StationFactoryTests
 
         try
         {
-            var factory1 = CreateFactory(options, seed: 42);
-            var factory2 = CreateFactory(options, seed: 42);
+            const int seed = 0;
+            var factory1 = CreateFactory(options, new Random(seed));
+            var factory2 = CreateFactory(options, new Random(seed));
 
             var stations1 = factory1.CreateStations(file);
             var stations2 = factory2.CreateStations(file);
@@ -334,7 +331,7 @@ public class StationFactoryTests
 
         try
         {
-            var factory = CreateFactory(options, seed: 123);
+            var factory = CreateFactory(options, new Random());
             var stations = factory.CreateStations(file);
 
             Assert.Equal(10, stations.Count);
@@ -342,7 +339,7 @@ public class StationFactoryTests
 
             var hasMultiSocketCharger = stations
                 .SelectMany(station => station.Chargers)
-                .Any(charger => charger.ChargingPoint.GetSockets().Count > 1);
+                .Any(charger => charger.GetSockets().Length > 1);
 
             Assert.True(hasMultiSocketCharger, "Expected at least one charger to have multiple sockets.");
         }
@@ -373,7 +370,7 @@ public class StationFactoryTests
 
         try
         {
-            var factory = CreateFactory(options, seed: 123);
+            var factory = CreateFactory(options, new Random());
             var stations = factory.CreateStations(file);
 
             var chargers = stations.SelectMany(station => station.Chargers).ToList();
@@ -381,7 +378,7 @@ public class StationFactoryTests
             Assert.NotEmpty(chargers);
             Assert.All(chargers, charger =>
                 Assert.True(
-                    charger.ChargingPoint.GetSockets().Count > 1,
+                    charger.GetSockets().Length > 1,
                     "Expected every charger to have more than one socket when multi-socket probability is 1.0."));
         }
         finally
@@ -410,14 +407,14 @@ public class StationFactoryTests
 
         try
         {
-            var factory = CreateFactory(options, seed: 123);
+            var factory = CreateFactory(options, new Random());
             var stations = factory.CreateStations(file);
 
             var chargers = stations.SelectMany(station => station.Chargers).ToList();
 
             Assert.NotEmpty(chargers);
             Assert.All(chargers, charger =>
-                Assert.Single(charger.ChargingPoint.GetSockets()));
+                Assert.Single(charger.GetSockets()));
         }
         finally
         {

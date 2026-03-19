@@ -18,7 +18,7 @@ public class OSRMRouterBenchmark
     {
         var path = AppContext.GetData("OsrmDataPath") as string
                         ?? throw new InvalidOperationException("OsrmDataPath not set in project.");
-        router = new OSRMRouter(path);
+        router = new OSRMRouter(new FileInfo(path));
     }
 
     [Benchmark]
