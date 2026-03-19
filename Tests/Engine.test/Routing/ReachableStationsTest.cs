@@ -19,11 +19,12 @@ public class ReachableStationsTests
         var preferences = new Preferences(0.5f, 0.9f);
         var evConfig = new EVConfig("TestModel", 1f, "TestCategory", new BatteryConfig(50, 100, Socket.CCS2), 150);
         var ev = new EV(1, battery, preferences, evConfig);
+        var energyPrices = new EnergyPrices(new FileInfo("data/energy_prices.csv"));
         var stations = new Dictionary<ushort, Station>
         {
-            { 1, new Station(1, "Station A", "Address A", new Position(0.5, 0.5), null, 0.5f, new Random()) },
-            { 2, new Station(2, "Station B", "Address B", new Position(2.0, 2.0), null, 0.5f, new Random()) },
-            { 3, new Station(3, "Station C", "Address C", new Position(0.1, 0.1), null, 0.5f, new Random()) },
+            { 1, new Station(1, "Station A", "Address A", new Position(0.5, 0.5), null, new Random(), energyPrices) },
+            { 2, new Station(2, "Station B", "Address B", new Position(2.0, 2.0), null, new Random(), energyPrices) },
+            { 3, new Station(3, "Station C", "Address C", new Position(0.1, 0.1), null, new Random(), energyPrices) },
         };
 
         var nearbyStations = new List<ushort> { 1, 2, 3 };

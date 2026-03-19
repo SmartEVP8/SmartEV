@@ -38,7 +38,7 @@ public class SpatialGrid
         foreach (var station in stations)
         {
             _stationPositions[station.Key] = station.Value.Position;
-            var key = ToRowCol(station.Value.Position.Latitude, station.Valye.Position.Longitude);
+            var key = ToRowCol(station.Value.Position.Latitude, station.Value.Position.Longitude);
 
             if (!_cells.TryGetValue(key, out var list))
                 key = FindNearestSpawnableCell(key) ?? throw new Exception($"Station {station.Value.Position.Latitude}, {station.Value.Position.Longitude} has no nearby spawnable cell.");
