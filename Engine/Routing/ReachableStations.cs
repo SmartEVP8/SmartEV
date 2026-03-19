@@ -14,7 +14,7 @@ public class ReachableStations
     /// <param name="stations">The full list of stations.</param>
     /// <param name="nearbyStations">The list of station ids provided by the spatial grid.</param>
     /// <returns>Returns a list of ids of stations within reach of the EV.</returns>
-    public static List<ushort> FindReachableStations(Paths path, EV ev, List<Station> stations, List<ushort> nearbyStations, double radius)
+    public static List<ushort> FindReachableStations(Paths path, EV ev, Dictionary<ushort, Station> stations, List<ushort> nearbyStations, double radius)
     {
         var evConfig = ev.Config;
         var evBattery = ev.Battery;

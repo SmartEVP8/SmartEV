@@ -9,7 +9,7 @@ public class SpatialGridTests
 {
     private static readonly Random _random = new();
 
-    public SpatialGrid BuildSpatialGrid(IEnumerable<Station> stations)
+    public SpatialGrid BuildSpatialGrid(Dictionary<ushort, Station> stations)
     {
         var path = AppContext.GetData("GridPath") as string
                     ?? throw new InvalidOperationException("OsrmDataPath not set in project.");
@@ -27,7 +27,7 @@ public class SpatialGridTests
         var station2 = new Station(2, string.Empty, string.Empty, new Position(10.5, 56.5), null, 0, _random);
         var station3 = new Station(3, string.Empty, string.Empty, new Position(10.3, 56.5), null, 0, _random);
 
-        var sg = BuildSpatialGrid([station1, station2, station3]);
+        var sg = BuildSpatialGrid(new Dictionary<ushort, Station> { { station1.GetId(), station1 }, { station2.GetId(), station2 }, { station3.GetId(), station3 } });
 
         var path = new Paths([new Position(10.0, 56.0), new Position(10.5, 56.5)]);
         var result = sg.GetStationsAlongPolyline(path, 20);
@@ -43,7 +43,7 @@ public class SpatialGridTests
     {
         var nearby = new Station(1, string.Empty, string.Empty, new Position(10.2, 56.15), null, 0, _random);
         var farAway = new Station(2, string.Empty, string.Empty, new Position(12.5, 55.6), null, 0, _random);
-        var sg = BuildSpatialGrid([nearby, farAway]);
+        var sg = BuildSpatialGrid(new Dictionary<ushort, Station> { { nearby.GetId(), nearby }, { farAway.GetId(), farAway } });
         var path = new Paths([new Position(10.0, 56.15), new Position(10.5, 56.15)]);
         var result = sg.GetStationsAlongPolyline(path, 15);
         Assert.Contains(result, s => s == nearby.GetId());
@@ -54,7 +54,7 @@ public class SpatialGridTests
     public void GetStationsAlongPolyline_StationPerpendicularToSegment_IsFound()
     {
         var station = new Station(1, string.Empty, string.Empty, new Position(10.2, 56.15), null, 0, _random);
-        var sg = BuildSpatialGrid([station]);
+        var sg = BuildSpatialGrid(new Dictionary<ushort, Station> { { station.GetId(), station } });
         var path = new Paths([new Position(10.0, 56.15), new Position(10.5, 56.15)]);
         var result = sg.GetStationsAlongPolyline(path, 15);
         Assert.Contains(result, s => s == station.GetId());
@@ -64,7 +64,7 @@ public class SpatialGridTests
     public void GetStationsAlongPolyline_NoDuplicates_WhenStationNearMultipleSegments()
     {
         var station = new Station(1, string.Empty, string.Empty, new Position(10.2, 56.15), null, 0, _random);
-        var sg = BuildSpatialGrid([station]);
+        var sg = BuildSpatialGrid(new Dictionary<ushort, Station> { { station.GetId(), station } });
         var path = new Paths([
             new Position(10.0, 56.15),
             new Position(10.2, 56.15),

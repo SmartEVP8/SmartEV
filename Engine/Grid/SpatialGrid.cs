@@ -23,7 +23,7 @@ public class SpatialGrid
     /// <param name="spawnable">The spawnable grid defines the bounds and cell sizes of the spatial grid. It is used to determine which cells are spawnable and to initialize the grid structure.</param>
     /// <param name="stations">Used as points to be queried for.</param>
     /// <exception cref="Exception">Thrown if a station is located outside the bounds of the grid defined by the spawnable parameter.</exception>
-    public SpatialGrid(SpawnGrid spawnable, IEnumerable<Station> stations)
+    public SpatialGrid(SpawnGrid spawnable, Dictionary<ushort, Station> stations)
     {
         _min = spawnable.Min;
         _latSize = spawnable.LatSize;
@@ -37,15 +37,15 @@ public class SpatialGrid
 
         foreach (var station in stations)
         {
-            _stationPositions[station.GetId()] = station.Position;
-            var key = ToRowCol(station.Position.Latitude, station.Position.Longitude);
+            _stationPositions[station.Key] = station.Value.Position;
+            var key = ToRowCol(station.Value.Position.Latitude, station.Value.Position.Longitude);
             if (_cells.TryGetValue(key, out var list))
             {
-                list.Add(station.GetId());
+                list.Add(station.Key);
             }
             else
             {
-                throw new Exception($"Station {station.GetId()} at position {station.Position.Latitude}, {station.Position.Longitude} is outside the grid bounds.");
+                throw new Exception($"Station {station.Key} at position {station.Value.Position.Latitude}, {station.Value.Position.Longitude} is outside the grid bounds.");
             }
         }
     }

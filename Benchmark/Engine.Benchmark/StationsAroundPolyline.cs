@@ -22,7 +22,7 @@ using Core.Vehicles.Configs;
 public class StationsAroundPolyline
 {
     private OSRMRouter _router = null!;
-    private List<Station> _stations = null!;
+    private Dictionary<ushort, Station> _stations = null!;
     private SpatialGrid _spatialGrid = null!;
     private Paths _path = null!;
     private EV _ev = null!;
@@ -52,7 +52,7 @@ public class StationsAroundPolyline
         {
             var lat = 55.95 + (rand.NextDouble() * 1);
             var lon = 8.36 + (rand.NextDouble() * 1.7);
-            _stations.Add(new Station((ushort)i, $"Station{i}", $"Address{i}", new Position(lon, lat), null, 50f, rand));
+            _stations.Add((ushort)i, new Station((ushort)i, $"Station{i}", $"Address{i}", new Position(lon, lat), null, 50f, rand));
         }
 
         var polygons = PolygonParser.Parse(File.ReadAllText(gridPath));
