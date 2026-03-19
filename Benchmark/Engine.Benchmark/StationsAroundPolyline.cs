@@ -8,6 +8,8 @@ using Core.Shared;
 using BenchmarkDotNet.Diagnosers;
 using Engine.Routing;
 using Engine.Utils;
+using Core.Vehicles;
+using Core.Vehicles.Configs;
 
 /// <summary>
 /// This benchmark class is designed to evaluate the performance of the PolylineBuffer.StationsInPolyline method,
@@ -23,6 +25,7 @@ public class StationsAroundPolyline
     private List<Station> _stations = null!;
     private SpatialGrid _spatialGrid = null!;
     private Paths _path = null!;
+    private EV _ev = null!;
 
     /// <summary>
     /// Initializes the benchmark setup with stations and EV coordinates.
@@ -40,6 +43,8 @@ public class StationsAroundPolyline
         var route = _router.QuerySingleDestination(9.935932, 57.046707, 12.5683, 55.6761);
         var polyline = route.polyline;
         _path = Polyline6ToPoints.DecodePolyline(polyline);
+
+        _ev = new EV(0, new Battery(100, 100, 15, Socket.CCS2), new Preferences(1f, 0.1f), new EVConfig("TestModel", 1f, "TestCategory", new BatteryConfig(50, 100, Socket.CCS2), 150));
 
         _stations = [];
         var rand = new Random(321);
@@ -59,5 +64,10 @@ public class StationsAroundPolyline
     public void Cleanup() => _router?.Dispose();
 
     [Benchmark]
-    public void BenchmarkStationsInPolyline() => _ = _spatialGrid.GetStationsAlongPolyline(_path, 10);
+    public void BenchmarkStationsInPolyline()
+    {
+        var stationNearBy = _spatialGrid.GetStationsAlongPolyline(_path, 10);
+        _ = ReachableStations.FindReachableStations(_path, _ev, _stations, stationNearBy, 10);
+    }
+
 }

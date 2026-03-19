@@ -15,7 +15,7 @@ public class ReachableStationsTests
             new Position(0, 0),
             new Position(1, 1),
         ]);
-        var battery = new Battery(100, 50, 15, Socket.CCS2);
+        var battery = new Battery(100, 50, 50, Socket.CCS2);
         var preferences = new Preferences(0.5f, 0.9f);
         var evConfig = new EVConfig("TestModel", 1f, "TestCategory", new BatteryConfig(50, 100, Socket.CCS2), 150);
         var ev = new EV(1, battery, preferences, evConfig);
@@ -27,7 +27,7 @@ public class ReachableStationsTests
         };
 
         var nearbyStations = new List<ushort> { 1, 2, 3 };
-        var reachableStations = ReachableStations.FindReachableStations(path, ev, stations, nearbyStations);
+        var reachableStations = ReachableStations.FindReachableStations(path, ev, stations, nearbyStations, 50);
 
         Assert.Contains((ushort)1, reachableStations);
         Assert.DoesNotContain((ushort)2, reachableStations);

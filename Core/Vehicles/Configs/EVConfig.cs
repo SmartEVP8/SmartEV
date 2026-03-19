@@ -29,5 +29,5 @@ public readonly struct EVConfig(string model, float spawnChance, string category
     /// <summary>
     /// The energy consumption of this model in Wh/km.
     /// </summary>
-    public readonly float Efficiency = efficiency;
+    public readonly ushort Efficiency = efficiency;
 }

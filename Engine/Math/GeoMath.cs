@@ -20,6 +20,16 @@ public static class GeoMath
     public static readonly double KmPerLongtitudeDegree = 111.32 * Math.Cos(56.0 * Math.PI / 180.0);
 
     /// <summary>
+    /// Conversion factor from degrees to radians, used in distance and bearing calculations.
+    /// </summary>
+    private const double DegToRad = Math.PI / 180.0;
+
+    /// <summary>
+    /// The average radius of the Earth in kilometers, used in distance calculations.
+    /// </summary>
+    private const double EarthRadiusKm = 6371.0;
+
+    /// <summary>
     /// Uses point line-segment distance to check if a point is within a certain radius of a line segment defined by two waypoints.
     /// Implemented as shown in https://www.youtube.com/watch?v=egmZJU-1zPU .
     /// </summary>
@@ -59,21 +69,73 @@ public static class GeoMath
     /// <param name="a">1st Postion.</param>
     /// <param name="b">2nd Postion.</param>
     /// <returns>Returns the distance between the 2 positions in km.</returns>
-    private const double DegToRad = Math.PI / 180.0;
-    public static double HaversineDistance(Position a, Position b)
+
+    /* public static double HaversineDistance(Position a, Position b)
+     {
+         var dLat = ToRad(b.Latitude - a.Latitude);
+         var dLon = ToRad(b.Longitude - a.Longitude);
+         var lat1 = ToRad(a.Latitude);
+         var lat2 = ToRad(b.Latitude);
+
+         var sinDLat = Math.Sin(dLat / 2);
+         var sinDLon = Math.Sin(dLon / 2);
+
+         var h = (sinDLat * sinDLat) +
+                 (Math.Cos(lat1) * Math.Cos(lat2) * sinDLon * sinDLon);
+
+         return 6371.0 * 2 * Math.Atan2(Math.Sqrt(h), Math.Sqrt(1 - h));
+     }
+     */
+
+    /// <summary>
+    /// Calculates the distance from the start of the path to the point, following the path's waypoints,
+    /// and checking if the point is within a certain radius of the path.
+    /// </summary>
+    /// <param name="path">The path to check the distance along.</param>
+    /// <param name="position">The position to check the distance to.</param>
+    /// <param name="radius">The radius in kilometers that defines how close the point must be to the path to be considered "in radius".</param>
+    /// <returns>Returns the distance from the start of the path to the point if it's within the radius of the path, otherwise returns -1.</returns>
+    public static double DistancesThroughPath(Paths path, Position position, double radius)
     {
-        var dLat = ToRad(b.Latitude - a.Latitude);
-        var dLon = ToRad(b.Longitude - a.Longitude);
+        var totalDistance = 0.0;
+        var clostestWaypointIndex = -1;
+        for (var i = 0; i < path.Waypoints.Count - 1; i++)
+        {
+            if (IsInRadius(position, path.Waypoints[i], path.Waypoints[i + 1], radius))
+            {
+                clostestWaypointIndex = i;
+                break;
+            }
+
+            totalDistance += EquirectangularDistance(path.Waypoints[i], path.Waypoints[i + 1]);
+        }
+
+        if (clostestWaypointIndex == -1) return -1; // Not in radius of path
+
+        // Missing a bit of accuracy by not finding the exact point on the path where the station is closest, but this is good enough for our purposes and much faster to compute.
+        totalDistance += EquirectangularDistance(position, path.Waypoints[clostestWaypointIndex]);
+
+        return totalDistance;
+    }
+
+    /// <summary>
+    /// Calculates the distance between two positions using the equirectangular approximation,
+    /// which is faster than the Haversine formula and sufficiently accurate for small distances.
+    /// https://www.ancientportsantiques.com/wp-content/uploads/Documents/ETUDESarchivees/MedNavigationRoutes/MedNav/TrigoSpherique.pdf#page=2.
+    /// </summary>
+    /// <param name="a"></param>
+    /// <param name="b"></param>
+    /// <returns>The distance between two points.</returns>
+    public static double EquirectangularDistance(Position a, Position b)
+    {
         var lat1 = ToRad(a.Latitude);
         var lat2 = ToRad(b.Latitude);
+        var dLon = ToRad(b.Longitude - a.Longitude);
 
-        var sinDLat = Math.Sin(dLat / 2);
-        var sinDLon = Math.Sin(dLon / 2);
+        var x = dLon * Math.Cos((lat1 + lat2) / 2);
+        var y = lat2 - lat1;
 
-        var h = (sinDLat * sinDLat) +
-                (Math.Cos(lat1) * Math.Cos(lat2) * sinDLon * sinDLon);
-
-        return 6371.0 * 2 * Math.Atan2(Math.Sqrt(h), Math.Sqrt(1 - h));
+        return EarthRadiusKm * Math.Sqrt((x * x) + (y * y));
     }
 
     /// <summary>

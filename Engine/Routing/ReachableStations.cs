@@ -14,16 +14,25 @@ public class ReachableStations
     /// <param name="stations">The full list of stations.</param>
     /// <param name="nearbyStations">The list of station ids provided by the spatial grid.</param>
     /// <returns>Returns a list of ids of stations within reach of the EV.</returns>
-    public static List<ushort> FindReachableStations(Paths path, EV ev, List<Station> stations, List<ushort> nearbyStations)
+    public static List<ushort> FindReachableStations(Paths path, EV ev, List<Station> stations, List<ushort> nearbyStations, double radius)
     {
         var evConfig = ev.GetConfig();
         var evBattery = ev.GetBattery();
-        var reach = (double)evBattery.CurrentCharge / (double)(evConfig.Efficiency / 1000);
-        return [.. nearbyStations.Where(id =>
+        var reach = (double)evBattery.CurrentCharge / ((double)evConfig.Efficiency / 1000);
+        for (var i = 0; i < nearbyStations.Count; i++)
         {
-            var station = stations.First(s => s.GetId() == id);
-            var distanceToStation = GeoMath.HaversineDistance(path.Waypoints[0], station.Position);
-            return distanceToStation <= reach;
-        })];
+            var station = stations.First(s => s.GetId() == nearbyStations[i]);
+            var distanceToStation = GeoMath.DistancesThroughPath(path, station.Position, radius);
+            if (distanceToStation > -1 && distanceToStation <= reach)
+            {
+                continue;
+            }
+            else
+            {
+                nearbyStations.RemoveAt(i);
+                i--;
+            }
+        }
+        return nearbyStations;
     }
 }
