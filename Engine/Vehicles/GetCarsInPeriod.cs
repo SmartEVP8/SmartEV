@@ -4,11 +4,6 @@ using Engine.DayCycles;
 using System;
 
 /// <summary>
-/// The number of EVs to spawn and the period in seconds over which to spawn them.
-/// </summary>
-public record AmountOfCarsInPeriod(int Amount, uint SpawningFrequency);
-
-/// <summary>
 /// This class provides the amount of cars on the road and the period in seconds for which 
 /// the amount of cars is calculated.
 /// </summary>
@@ -24,13 +19,13 @@ public class CarsInPeriod
     ///                              on the road, to avoid overpopulating the system. </param>
     /// <param name="SpawningFrequency"> The frequency to spawn cars in, in seconds. </param>
     /// <returns> A SpawnInstruction containing the amount of cars to spawn and the period. </returns>
-    public static AmountOfCarsInPeriod GetCarsInPeriod(DayOfWeek day, int hourOfDay, double SpawnFraction, uint SpawningFrequency)
+    public int GetCarsInPeriod(DayOfWeek day, int hourOfDay, double SpawnFraction, uint SpawningFrequency)
     {
         var periodsPerHour = 60.0 * 60.0 / SpawningFrequency;
         var fractionPerPeriod = SpawnFraction / periodsPerHour;
 
         var amount = (int)(CarsOnRoad.GetEVsOnRoad(day, hourOfDay) * fractionPerPeriod);
 
-        return new AmountOfCarsInPeriod(amount, SpawningFrequency);
+        return amount;
     }
 }
