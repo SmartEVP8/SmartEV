@@ -113,8 +113,8 @@ public static class GeoMath
     /// which is faster than the Haversine formula and sufficiently accurate for small distances.
     /// https://www.ancientportsantiques.com/wp-content/uploads/Documents/ETUDESarchivees/MedNavigationRoutes/MedNav/TrigoSpherique.pdf#page=2.
     /// </summary>
-    /// <param name="a"></param>
-    /// <param name="b"></param>
+    /// <param name="a">Position of the first location.</param>
+    /// <param name="b">Position of the second location.</param>
     /// <returns>The distance between two points.</returns>
     public static double EquirectangularDistance(Position a, Position b)
     {
