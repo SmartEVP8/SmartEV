@@ -1,5 +1,7 @@
 namespace Engine.Metrics;
 
+using Engine.Metrics.Snapshots;
+
 /// <summary>
 /// <para>Entry point for all metric recording during a simulation run.</para>
 /// <para>

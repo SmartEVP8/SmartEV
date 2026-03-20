@@ -1,6 +1,7 @@
 namespace Core.Charging.ChargingModel;
 
 using Core.Charging.ChargingModel.Chargepoint;
+using Core.Shared;
 
 /// <summary>
 /// A car currently connected to a connector with everything needed
@@ -11,7 +12,8 @@ public record ConnectedCar(
     double CurrentSoC,
     double TargetSoC,
     double CapacityKWh,
-    double MaxChargeRateKW);
+    double MaxChargeRateKW,
+    Socket Socket);
 
 /// <summary>
 /// Returned by all integrator methods.
