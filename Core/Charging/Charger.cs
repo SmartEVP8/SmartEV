@@ -1,28 +1,55 @@
 namespace Core.Charging;
 
+using Core.Charging.ChargingModel.Chargepoint;
+using Core.Shared;
+using System.Collections.Immutable;
+
 /// <summary>
-/// A Charger represents a single charging unit within a charging station.
-/// Each charger has a unique identifier, a maximum power output in kilowatts (kW), and a list of charging points that it can support.
-/// The charger is responsible for delivering electricity to the connected electric vehicles through its charging points, and the maximum power output determines how quickly the vehicles can be charged.
+/// Charger that can support charging one vehicle at a time.
 /// </summary>
-/// <param name="id">Unique identifer for the charger.</param>
-/// <param name="maxPowerKW">The maximum power that a Charger can distribute between <paramref name="chargingPoint"/>.</param>
-/// <param name="chargingPoint">The charging point represents one or two physical locations where an electric vehicle can be connected.</param>
-public readonly struct Charger(int id, int maxPowerKW, IChargingPoint chargingPoint)
+/// <param name="id">The id of the charger.</param>
+/// <param name="maxPowerKW">The maximum power output in kilowatts.</param>
+/// <param name="chargingPoint">The charging point instance.</param>
+public sealed class SingleCharger(int id, int maxPowerKW, ISingleChargingPoint chargingPoint)
+    : ChargerBase(id, maxPowerKW)
 {
-    public int Id { get; } = id;
+    /// <summary>
+    /// Gets the charging point.
+    /// </summary>
+    public ISingleChargingPoint ChargingPoint { get; } = chargingPoint;
 
     /// <summary>
-    /// The maximum power that a Charger can distribute between <paramref name="chargingPoint"/>.
+    /// Gets the sockets available at the given charger.
     /// </summary>
-    public int MaxPowerKW { get; } = maxPowerKW;
+    /// <returns> An immutable array of sockets available at the charger. </returns>
+    public override ImmutableArray<Socket> GetSockets() => ChargingPoint.GetSockets();
+
+    /// <summary>Gets a queue of EVs waiting to charge at this charger.</summary>
+    /// <remarks>Points to the index of the EV in the list of EVs.</remarks>
+    public Queue<int> Queue { get; } = new();
+}
+
+/// <summary>
+/// Charger than can support charging one or two EV's simultaneously.
+/// </summary>
+/// <param name="id">The id of the charger.</param>
+/// <param name="maxPowerKW">The maximum power output in kilowatts.</param>
+/// <param name="chargingPoint">The charging point instance.</param>
+public sealed class DualCharger(int id, int maxPowerKW, IDualChargingPoint chargingPoint)
+    : ChargerBase(id, maxPowerKW)
+{
+    /// <summary>
+    /// Gets the charging point.
+    /// </summary>
+    public IDualChargingPoint ChargingPoint { get; } = chargingPoint;
 
     /// <summary>
-    /// The charging point represents one or two physical locations where an EV can be connected.
+    /// Gets the sockets available at the given charger.
     /// </summary>
-    public IChargingPoint ChargingPoint { get; } = chargingPoint;
+    /// <returns> An immutable array of sockets available at the charger. </returns>
+    public override ImmutableArray<Socket> GetSockets() => ChargingPoint.GetSockets();
 
-    /// <summary>A queue of EVs waiting to charge at this charger.</summary>
+    /// <summary>Gets a queue of EVs waiting to charge at this charger.</summary>
     /// <remarks>Points to the index of the EV in the list of EVs.</remarks>
     public Queue<int> Queue { get; } = new();
 }
