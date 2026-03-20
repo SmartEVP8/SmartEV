@@ -28,11 +28,12 @@ public class EVFactory(Random random, IJourneySamplerProvider samplersProvider, 
         var chargeRate = batteryConfig.ChargeRateKW;
         var currCharge = maxCapacity * NextFloatInRange(0.2f, 1f);
         var priceSensPref = random.NextSingle();
+        var minAcceptableCharge = NextFloatInRange(0.05f, 0.4f);
 
         var battery = new Battery(maxCapacity, chargeRate, currCharge, batteryConfig.Socket);
-        var preferences = new Preferences(priceSensPref);
+        var preferences = new Preferences(priceSensPref, minAcceptableCharge);
         var journey = CreateJourney(departure);
-        return new EV(battery, preferences, journey);
+        return new EV(battery, preferences, journey, config.Efficiency);
     }
 
     private Journey CreateJourney(Time departure)

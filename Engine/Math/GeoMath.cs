@@ -20,6 +20,16 @@ public static class GeoMath
     public static readonly double KmPerLongtitudeDegree = 111.32 * Math.Cos(56.0 * Math.PI / 180.0);
 
     /// <summary>
+    /// Conversion factor from degrees to radians, used in distance and bearing calculations.
+    /// </summary>
+    private const double DegToRad = Math.PI / 180.0;
+
+    /// <summary>
+    /// The average radius of the Earth in kilometers, used in distance calculations.
+    /// </summary>
+    private const double EarthRadiusKm = 6371.0;
+
+    /// <summary>
     /// Uses point line-segment distance to check if a point is within a certain radius of a line segment defined by two waypoints.
     /// Implemented as shown in https://www.youtube.com/watch?v=egmZJU-1zPU .
     /// </summary>
@@ -52,6 +62,72 @@ public static class GeoMath
         return dist.LengthSq <= radiusScaled * radiusScaled;
     }
 
+
+
+    /// <summary>
+    /// Calculates the distance from the start of the path to the point, following the path's waypoints,
+    /// and checking if the point is within a certain radius of the path.
+    /// </summary>
+    /// <param name="path">The path to check the distance along.</param>
+    /// <param name="position">The position to check the distance to.</param>
+    /// <param name="radius">The radius in kilometers that defines how close the point must be to the path to be considered "in radius".</param>
+    /// <returns>Returns the distance from the start of the path to the point if it's within the radius of the path, otherwise returns -1.</returns>
+    public static double DistancesThroughPath(
+    Paths path, Position position, double radius)
+    {
+        var matchIndex = -1;
+        var radiusDeg = radius / KmPerLatitudeDegree;
+
+        for (var i = 0; i < path.Waypoints.Count - 1; i++)
+        {
+            var wp1 = path.Waypoints[i];
+            var wp2 = path.Waypoints[i + 1];
+
+            var minLat = Math.Min(wp1.Latitude, wp2.Latitude) - radiusDeg;
+            var maxLat = Math.Max(wp1.Latitude, wp2.Latitude) + radiusDeg;
+            if (position.Latitude < minLat || position.Latitude > maxLat)
+                continue;
+
+            if (IsInRadius(position, wp1, wp2, radius))
+            {
+                matchIndex = i;
+                break;
+            }
+        }
+
+        if (matchIndex == -1) return -1;
+
+        var totalDistance = 0.0;
+        for (var i = 0; i < matchIndex; i++)
+        {
+            totalDistance += EquirectangularDistance(
+                path.Waypoints[i], path.Waypoints[i + 1]);
+        }
+
+        return totalDistance + EquirectangularDistance(
+            position, path.Waypoints[matchIndex]);
+    }
+
+    /// <summary>
+    /// Calculates the distance between two positions using the equirectangular approximation,
+    /// which is faster than the Haversine formula and sufficiently accurate for small distances.
+    /// https://www.ancientportsantiques.com/wp-content/uploads/Documents/ETUDESarchivees/MedNavigationRoutes/MedNav/TrigoSpherique.pdf#page=2.
+    /// </summary>
+    /// <param name="a">Position of the first location.</param>
+    /// <param name="b">Position of the second location.</param>
+    /// <returns>The distance between two points.</returns>
+    public static double EquirectangularDistance(Position a, Position b)
+    {
+        var lat1 = a.Latitude * DegToRad;
+        var lat2 = b.Latitude * DegToRad;
+        var dLon = (b.Longitude - a.Longitude) * DegToRad;
+
+        var x = dLon * Math.Cos((lat1 + lat2) / 2);
+        var y = lat2 - lat1;
+
+        return EarthRadiusKm * Math.Sqrt((x * x) + (y * y));
+    }
+
     /// <summary>
     /// Calculates the Haversine distance between two positions on the Earth's surface.
     /// https://www.ancientportsantiques.com/wp-content/uploads/Documents/ETUDESarchivees/MedNavigationRoutes/MedNav/TrigoSpherique.pdf#page=1.
@@ -59,22 +135,23 @@ public static class GeoMath
     /// <param name="a">1st Postion.</param>
     /// <param name="b">2nd Postion.</param>
     /// <returns>Returns the distance between the 2 positions in km.</returns>
-    // private const double DegToRad = Math.PI / 180.0;
-    // public static double HaversineDistance(Position a, Position b)
-    // {
-    //     var dLat = ToRad(b.Latitude - a.Latitude);
-    //     var dLon = ToRad(b.Longitude - a.Longitude);
-    //     var lat1 = ToRad(a.Latitude);
-    //     var lat2 = ToRad(b.Latitude);
-    //
-    //     var sinDLat = Math.Sin(dLat / 2);
-    //     var sinDLon = Math.Sin(dLon / 2);
-    //
-    //     var h = (sinDLat * sinDLat) +
-    //             (Math.Cos(lat1) * Math.Cos(lat2) * sinDLon * sinDLon);
-    //
-    //     return 6371.0 * 2 * Math.Atan2(Math.Sqrt(h), Math.Sqrt(1 - h));
-    // }
+
+    /* public static double HaversineDistance(Position a, Position b)
+     {
+         var dLat = ToRad(b.Latitude - a.Latitude);
+         var dLon = ToRad(b.Longitude - a.Longitude);
+         var lat1 = ToRad(a.Latitude);
+         var lat2 = ToRad(b.Latitude);
+
+         var sinDLat = Math.Sin(dLat / 2);
+         var sinDLon = Math.Sin(dLon / 2);
+
+         var h = (sinDLat * sinDLat) +
+                 (Math.Cos(lat1) * Math.Cos(lat2) * sinDLon * sinDLon);
+
+         return 6371.0 * 2 * Math.Atan2(Math.Sqrt(h), Math.Sqrt(1 - h));
+     }
+     */
 
     /// <summary>
     /// Calculates the bearing from one position to another.
