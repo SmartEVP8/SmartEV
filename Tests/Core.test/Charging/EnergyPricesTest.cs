@@ -5,14 +5,8 @@ using Core.Charging;
 /// </summary>
 public class EnergyPricesTest
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="EnergyPricesTest"/> class.
-    /// </summary>
-    public EnergyPricesTest()
-    {
-        var csvPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "data", "energy_prices.csv");
-        EnergyPrices.Initialize(csvPath);
-    }
+
+    private readonly EnergyPrices _energyPrices = new(new FileInfo(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "data", "energy_prices.csv")));
 
     /// <summary>
     /// Verifies that <see cref="EnergyPrices.GetHourPrice"/> returns the correct price for a given hour.
@@ -26,7 +20,7 @@ public class EnergyPricesTest
     [InlineData(DayOfWeek.Saturday, 23, 3.009931f)]
     public void GetHourPrice_ReturnsExpectedPrice(DayOfWeek day, int hour, float expected)
     {
-        var result = EnergyPrices.GetHourPrice(day, hour);
+        var result = _energyPrices.GetHourPrice(day, hour);
 
         Assert.Equal(expected, result);
     }
@@ -41,16 +35,13 @@ public class EnergyPricesTest
     [InlineData(DayOfWeek.Monday, 24)]
     [InlineData(DayOfWeek.Monday, 100)]
     public void GetHourPrice_InvalidHour_ThrowsArgumentOutOfRangeException(DayOfWeek day, int hour) =>
-        Assert.Throws<ArgumentOutOfRangeException>(() => EnergyPrices.GetHourPrice(day, hour));
+        Assert.Throws<ArgumentOutOfRangeException>(() => _energyPrices.GetHourPrice(day, hour));
 
     /// <summary>
     /// Verifies that <see cref="EnergyPrices.GetHourPrice"/> correctly handles values outside the range of the DayOfWeek enum.
     /// </summary>
     [Fact]
-    public void GetHourPrice_InvalidDay_ThrowsArgumentOutOfRangeException()
-    {
-        Assert.Throws<ArgumentOutOfRangeException>(() => EnergyPrices.GetHourPrice((DayOfWeek)99, 0));
-    }
+    public void GetHourPrice_InvalidDay_ThrowsArgumentOutOfRangeException() => _ = Assert.Throws<ArgumentOutOfRangeException>(() => _energyPrices.GetHourPrice((DayOfWeek)99, 0));
 
     /// <summary>
     /// Verifies that <see cref="EnergyPrices.GetDayPrice"/> returns exactly 24 entries containing all hours 0-23.
@@ -58,7 +49,7 @@ public class EnergyPricesTest
     [Fact]
     public void GetDayPrice_ValidDay_Returns24EntriesWithAllHours()
     {
-        var result = EnergyPrices.GetDayPrice(DayOfWeek.Monday);
+        var result = _energyPrices.GetDayPrice(DayOfWeek.Monday);
         Assert.Equal(24, result.Count);
         for (var hour = 0; hour <= 23; hour++)
             Assert.True(result.ContainsKey(hour), $"Missing hour {hour}");
@@ -70,7 +61,7 @@ public class EnergyPricesTest
     [Fact]
     public void GetDayPrice_ValidDay_ReturnsCorrectPrice()
     {
-        var result = EnergyPrices.GetDayPrice(DayOfWeek.Monday);
+        var result = _energyPrices.GetDayPrice(DayOfWeek.Monday);
         Assert.Equal(2.745128f, result[0]);
     }
 
@@ -79,5 +70,5 @@ public class EnergyPricesTest
     /// </summary>
     [Fact]
     public void GetDayPrice_InvalidDay_ThrowsArgumentOutOfRangeException() =>
-        Assert.Throws<ArgumentOutOfRangeException>(() => EnergyPrices.GetDayPrice((DayOfWeek)99));
+        Assert.Throws<ArgumentOutOfRangeException>(() => _energyPrices.GetDayPrice((DayOfWeek)99));
 }

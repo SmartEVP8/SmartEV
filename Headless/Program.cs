@@ -1,58 +1,71 @@
 namespace Headless;
 
-using Core.Charging;
-using Core.Shared;
-using Engine.Parsers;
+using Engine.Cost;
+using Engine.Init;
+using Engine.Metrics;
+using Engine.StationFactory;
+using Microsoft.Extensions.DependencyInjection;
+using Engine;
+using Engine.Events;
 using Engine.Grid;
 using Engine.Routing;
-using Engine.Utils;
+using Engine.Vehicles;
 
 public static class Program
 {
     public static async Task Main()
     {
-        //Start a timer for the entire program
-        var router = new OSRMRouter("../data/osrm/output.osrm");
-
-        var route = router.QuerySingleDestination(9.935932, 57.046707, 10.2000, 56.1500);
-        var polyline = route.polyline;
-        var path = Polyline6ToPoints.DecodePolyline(polyline);
-
-        var stations = new List<Station>
+        var dataPath = new DirectoryInfo("../data/");
+        var services = new ServiceCollection();
+        var settings = new EngineSettings
         {
-            new Station(1, "Station1", "Address1", new Position(10.0, 56.5), null, 50f, new Random()),
-            new Station(2, "Station2", "Address2", new Position(10.5, 56.0), null, 50f, new Random()),
-            new Station(3, "Station3", "Address3", new Position(9.5, 56.0), null, 50f, new Random()),
-            new Station(4, "Station4", "Address4", new Position(10.0, 55.5), null, 50f, new Random()),
-            new Station(5, "Station5", "Address5", new Position(9.0, 56.0), null, 50f, new Random()),
-            new Station(6, "Station6", "Address6", new Position(10.0, 56.0), null, 50f, new Random()),
-            new Station(7, "Station7", "Address7", new Position(10.2, 56.2), null, 50f, new Random()),
-            new Station(8, "Station8", "Address8", new Position(10.3, 56.3), null, 50f, new Random()),
-            new Station(9, "Station9", "Address9", new Position(10.4, 56.4), null, 50f, new Random()),
-            new Station(10, "Station10", "Address10", new Position(10.5, 56.5), null, 50f, new Random()),
-            new Station(11, "Station11", "Address11", new Position(10.6, 56.6), null, 50f, new Random()),
-            new Station(12, "Station12", "Address12", new Position(10.7, 56.7), null, 50f, new Random()),
-            new Station(13, "Station13", "Address13", new Position(10.8, 56.8), null, 50f, new Random()),
-            new Station(14, "Station14", "Address14", new Position(10.9, 56.9), null, 50f, new Random()),
-            new Station(15, "Station15", "Address15", new Position(11.0, 57.0), null, 50f, new Random()),
-            new Station(16, "Station16", "Address16", new Position(9.5, 56.5), null, 50f, new Random()),
-            new Station(17, "Station17", "Address17", new Position(9.0, 56.5), null, 50f, new Random()),
-            new Station(18, "Station18", "Address18", new Position(9.5, 57.0), null, 50f, new Random()),
-            new Station(19, "Station19", "Address19", new Position(9.0, 57.0), null,    50f, new Random()),
-            new Station(20, "Station20", "Address20", new Position(9.0, 56.0), null, 50f, new Random()),
-            new Station(21, "Station21", "Address21", new Position(10.0, 57.0), null, 50f, new Random()),
-            new Station(22, "Station22", "Address22", new Position(10.5, 57.0), null, 50f, new Random()),
+            CostConfig = new CostWeights
+            {
+                ExpectedQueueSize = 1,
+                PathDeviation = 1,
+                PriceSensitivity = 1,
+            },
+
+            RunId = Guid.NewGuid(),
+
+            MetricsConfig = new MetricsConfig
+            {
+                BufferSize = 5000,
+                OutputDirectory = new DirectoryInfo("Perkuet"),
+                RecordCarSnapshots = true,
+                RecordDeadlines = true,
+                RecordStationSnapshots = true,
+            },
+
+            Seed = new Random(42),
+
+            StationFactoryOptions = new StationFactoryOptions
+            {
+                UseDualChargingPoints = true,
+                AllowMultiSocketChargers = true,
+                DualChargingPointProbability = 0.5,
+                MultiSocketChargerProbability = 1,
+                TotalChargers = 10000,
+            },
+
+            EnergyPricesPath = new FileInfo(Path.Combine(dataPath.FullName, "energy_prices.csv")),
+            OsrmPath = new FileInfo(Path.Combine(dataPath.FullName, "osrm/output.osrm")),
+            CitiesPath = new FileInfo(Path.Combine(dataPath.FullName, "CityInfo.csv")),
+            GridPath = new FileInfo(Path.Combine(dataPath.FullName, "denmark_charging_locations.json")),
+            StationsPath = new FileInfo(Path.Combine(dataPath.FullName, "denmark_charging_locations.json")),
+            PolygonPath = new FileInfo(Path.Combine(dataPath.FullName, "denmark.polygon.json")),
         };
-        var polygons = PolygonParser.Parse(File.ReadAllText("../data/denmark.polygon.json"));
-        var grid = Polygooner.GenerateGrid(0.1, polygons);
-        var spatialGrid = new SpatialGrid(grid, stations);
 
-        var nearbyStations = spatialGrid.GetStationsAlongPolyline(path, 50);
-        Console.WriteLine(nearbyStations.Count());
-        foreach (var stationId in nearbyStations)
-        {
-            var station = stations.First(s => s.GetId() == stationId);
-            Console.WriteLine($"Station {station.GetId()} at position {station.Position.Latitude}, {station.Position.Longitude}");
-        }
+        services.AddSingleton(settings);
+        Init.InitEngine(services);
+        var provider = services.BuildServiceProvider();
+        provider.GetRequiredService<EventScheduler>();
+        provider.GetRequiredService<IOSRMRouter>();
+        provider.GetRequiredService<ICostStore>();
+        provider.GetRequiredService<MetricsService>();
+        provider.GetRequiredService<EVFactory>();
+        provider.GetRequiredService<SpatialGrid>();
+        provider.GetRequiredService<JourneyPipeline>();
     }
+
 }

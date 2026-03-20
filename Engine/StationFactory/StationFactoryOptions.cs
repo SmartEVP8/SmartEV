@@ -1,4 +1,5 @@
 namespace Engine.StationFactory;
+
 using Core.Shared;
 
 /// <summary>
@@ -33,7 +34,6 @@ public class StationFactoryOptions
     /// </summary>
     public int TotalChargers { get; init; } = 10000;
 
-
     /// <summary>
     /// Gets a dictionary mapping each socket type to its probability of occurrence in the generated stations.
     /// The probabilities should sum to 1.0 across all socket types.
@@ -44,6 +44,6 @@ public class StationFactoryOptions
         { Socket.CCS2, 0.204 },
         { Socket.Type2SocketOnly, 0.626 },
         { Socket.Type2Tethered, 0.144 },
-        { Socket.NACS, 0.0019 }
+        { Socket.NACS, 0.0019 },
     };
 }

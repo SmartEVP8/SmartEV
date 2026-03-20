@@ -26,11 +26,13 @@ public class EVFactory(Random random)
         var currCharge = maxCapacity * NextFloatInRange(0.2f, 1f);
         var priceSensPref = _random.NextSingle();
 
+        var minAcceptableCharge = NextFloatInRange(0.05f, 0.4f);
+
         var battery = new Battery(maxCapacity, chargeRate, currCharge, batteryConfig.Socket);
 
-        var preferences = new Preferences(priceSensPref);
+        var preferences = new Preferences(priceSensPref, minAcceptableCharge);
 
-        return new EV(_nextId++, battery, preferences);
+        return new EV(_nextId++, battery, preferences, config);
     }
 
     /// <summary>

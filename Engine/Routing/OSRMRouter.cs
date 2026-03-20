@@ -77,9 +77,9 @@ public unsafe partial class OSRMRouter : IDisposable, IMatrixRouter, IDestinatio
     /// </summary>
     /// <param name="mapPath">The path to the OSRM map data file.</param>
     /// <exception cref="InvalidOperationException">Thrown when OSRM initialization fails.</exception>
-    public OSRMRouter(string mapPath)
+    public OSRMRouter(FileInfo mapPath)
     {
-        _osrm = InitializeOSRM(mapPath);
+        _osrm = InitializeOSRM(mapPath.ToString());
         if (_osrm == IntPtr.Zero)
             throw new Exception("OSRM initialization failed.");
     }
