@@ -19,7 +19,7 @@ public class ReachableStations
     {
         var evConfig = ev.Config;
         var evBattery = ev.Battery;
-        var reach = (double)evBattery.CurrentCharge / ((double)evConfig.Efficiency / 1000);
+        var reach = (double)evBattery.StateOfCharge / ((double)evConfig.Efficiency / 1000);
         return nearbyStations.Where(id =>
             {
                 var dist = GeoMath.DistancesThroughPath(path, stations[id].Position, radius);
