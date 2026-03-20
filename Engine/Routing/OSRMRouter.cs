@@ -25,7 +25,8 @@ public unsafe partial class OSRMRouter : IDisposable, IMatrixRouter
     private static partial void RegisterStations(
         IntPtr osrm,
         [In] double[] coords,
-        int numStations);
+        int numStations
+    );
 
     [LibraryImport(_lib)]
     private static partial void ComputeTableIndexed(
@@ -35,7 +36,8 @@ public unsafe partial class OSRMRouter : IDisposable, IMatrixRouter
         [In] int[] indices,
         int numIndices,
         float* outDurations,
-        float* outDistances);
+        float* outDistances
+    );
 
     [LibraryImport(_lib)]
     private static partial IntPtr ComputeSrcToDest(
@@ -60,7 +62,8 @@ public unsafe partial class OSRMRouter : IDisposable, IMatrixRouter
         [In] double[] dstCoords,
         int numDsts,
         float* outDurations,
-        float* outDistances);
+        float* outDistances
+    );
 
     [StructLayout(LayoutKind.Sequential)]
     private struct RouteResult
@@ -105,7 +108,10 @@ public unsafe partial class OSRMRouter : IDisposable, IMatrixRouter
     /// <param name="evLat">The latitude coordinate of the electric vehicle.</param>
     /// <param name="indices">An array of station indices to query.</param>
     /// <returns>A tuple containing arrays of durations and distances to each station.</returns>
-    public (float[] durations, float[] distances) QueryStations(double evLon, double evLat, int[] indices)
+    public (float[] durations, float[] distances) QueryStations(
+        double evLon,
+        double evLat,
+        int[] indices)
     {
         if (indices.Length == 0)
             return ([], []);
@@ -127,14 +133,22 @@ public unsafe partial class OSRMRouter : IDisposable, IMatrixRouter
     /// </summary>
     /// <param name="coords">An array of coordinates representing the route, where the first element is the source and the last element is the destination. Intermediate elements represent stops.</param>
     /// <returns>A tuple containing the duration and polyline string for the route.</returns>
-    public (float duration, string polyline) QueryDestination(Tuple<double, double>[] coords)
+    public (float duration, string polyline) QueryDestination((double, double)[] coords)
     {
         nint resultPtr;
         if (coords.Length < 2)
-            throw new ArgumentException("At least two coordinates are required for a source and destination.");
-        if (coords.Length == 2) 
         {
-            resultPtr = ComputeSrcToDest(_osrm, coords[0].Item1, coords[0].Item2, coords[1].Item1, coords[1].Item2);
+            throw new ArgumentException("At least two coordinates are required for a source and destination.");
+        }
+
+        if (coords.Length == 2)
+        {
+            resultPtr = ComputeSrcToDest(
+                _osrm,
+                coords[0].Item1,
+                coords[0].Item2,
+                coords[1].Item1,
+                coords[1].Item2);
         }
         else if (coords.Length > 2)
         {
@@ -142,7 +156,7 @@ public unsafe partial class OSRMRouter : IDisposable, IMatrixRouter
             for (var i = 0; i < coords.Length; i++)
             {
                 flatCoords[i * 2] = coords[i].Item1;
-                flatCoords[(i * 2) + 1] = coords[i].Item2; 
+                flatCoords[(i * 2) + 1] = coords[i].Item2;
             }
 
             resultPtr = ComputeSrcToDestWithStops(_osrm, flatCoords, coords.Length);
@@ -171,8 +185,8 @@ public unsafe partial class OSRMRouter : IDisposable, IMatrixRouter
     /// <param name="dstCoords">Array of destination coordinates in [lon, lat, lon, lat, ...] format.</param>
     /// <returns>A tuple containing matrices of durations and distances between all source and destination pairs.</returns>
     public (float[] durations, float[] distances) QueryPointsToPoints(
-    double[] srcCoords,
-    double[] dstCoords)
+        double[] srcCoords,
+        double[] dstCoords)
     {
         var numSrcs = srcCoords.Length / 2;
         var numDsts = dstCoords.Length / 2;
