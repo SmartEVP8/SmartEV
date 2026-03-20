@@ -25,6 +25,7 @@ public class EVFactory(Random random)
         var chargeRate = batteryConfig.ChargeRateKW;
         var currCharge = maxCapacity * NextFloatInRange(0.2f, 1f);
         var priceSensPref = _random.NextSingle();
+
         var minAcceptableCharge = NextFloatInRange(0.05f, 0.4f);
 
         var battery = new Battery(maxCapacity, chargeRate, currCharge, batteryConfig.Socket);
