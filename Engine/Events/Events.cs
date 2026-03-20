@@ -1,4 +1,8 @@
 namespace Engine.Events;
+
+using Core.Charging;
+using Engine.Metrics;
+
 // ----------- DOMAIN EVENTS ----------- //
 
 // Functionality: 
@@ -47,14 +51,12 @@ public readonly record struct ArriveAtDestination(uint EVId, int Time) : IEvent;
 //  - Spawn an EV .
 //  - Sample once from urgency to see if it needs to find a charger immediately.
 
-// Snapshot
-// Functionality:
-//  - Iterate over stations to collect metrics.
-// Metrics:
-//  - Record utilisation of station
-//  - Record average queue size
-//  - Record average price
-//  - Record number of active chargers in percentages% 
+public readonly record struct SnapshotEvent(
+    IReadOnlyList<Station> Stations,
+    MetricsService Metrics,
+    EventScheduler Scheduler,
+    Func<ChargerBase, double> GetDeliveredKW
+) : IEvent;
 
 // Check urgency
 // Functionality:
