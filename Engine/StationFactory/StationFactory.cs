@@ -84,7 +84,7 @@ public class StationFactory
     /// </summary>
     /// <param name="file"> The file containing the station location data. </param>
     /// <returns> Returns a list of created stations. </returns>
-    public List<Station> CreateStations(FileInfo file)
+    public Dictionary<ushort, Station> CreateStations(FileInfo file)
     {
         if (!file.Exists)
             throw new FileNotFoundException("Station location file not found.", file.FullName);
@@ -103,7 +103,7 @@ public class StationFactory
 
         var chargerCountsPerStation = DistributeChargersAcrossStations(locations.Count, _options.TotalChargers);
 
-        var stations = new List<Station>(locations.Count);
+        var stations = new Dictionary<ushort, Station>(locations.Count);
         ushort nextStationId = 1;
         var socketIndex = 0;
 
@@ -118,7 +118,7 @@ public class StationFactory
                 chargers.Add(CreateCharger(chargerId, socket));
             }
 
-            stations.Add(CreateStation(nextStationId++, locations[i], chargers));
+            stations.Add(nextStationId, CreateStation(nextStationId++, locations[i], chargers));
         }
 
         return stations;

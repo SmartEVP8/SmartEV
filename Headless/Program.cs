@@ -67,4 +67,5 @@ public static class Program
         provider.GetRequiredService<SpatialGrid>();
         provider.GetRequiredService<JourneyPipeline>();
     }
+
 }

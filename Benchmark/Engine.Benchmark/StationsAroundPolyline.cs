@@ -8,6 +8,8 @@ using Core.Shared;
 using BenchmarkDotNet.Diagnosers;
 using Engine.Routing;
 using Engine.Utils;
+using Core.Vehicles;
+using Core.Vehicles.Configs;
 
 /// <summary>
 /// This benchmark class is designed to evaluate the performance of the PolylineBuffer.StationsInPolyline method,
@@ -20,9 +22,10 @@ using Engine.Utils;
 public class StationsAroundPolyline
 {
     private OSRMRouter _router = null!;
-    private List<Station> _stations = null!;
+    private Dictionary<ushort, Station> _stations = null!;
     private SpatialGrid _spatialGrid = null!;
     private Paths _path = null!;
+    private EV _ev = null!;
 
     /// <summary>
     /// Initializes the benchmark setup with stations and EV coordinates.
@@ -35,12 +38,15 @@ public class StationsAroundPolyline
             ?? throw new InvalidOperationException("OsrmDataPath not set in project.");
         var gridPath = AppContext.GetData("GridPath") as string
             ?? throw new InvalidOperationException("GridPath not set in project.");
-        var csvPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "data", "energy_prices.csv");
+        var csvPath = AppContext.GetData("CSVPath") as string
+            ?? throw new InvalidOperationException("CSVPath not set in project.");
         var _energyPrices = new EnergyPrices(new FileInfo(csvPath));
         _router = new OSRMRouter(new FileInfo(path));
         var route = _router.QuerySingleDestination(9.935932, 57.046707, 12.5683, 55.6761);
         var polyline = route.polyline;
         _path = Polyline6ToPoints.DecodePolyline(polyline);
+
+        _ev = new EV(0, new Battery(100, 100, 15, Socket.CCS2), new Preferences(1f, 0.1f), new EVConfig("TestModel", 1f, "TestCategory", new BatteryConfig(50, 100, Socket.CCS2), 150));
 
         _stations = [];
         var rand = new Random(321);
@@ -48,7 +54,7 @@ public class StationsAroundPolyline
         {
             var lat = 55.95 + (rand.NextDouble() * 1);
             var lon = 8.36 + (rand.NextDouble() * 1.7);
-            _stations.Add(new Station((ushort)i, string.Empty, string.Empty, new Position(lon, lat), null, rand, _energyPrices));
+            _stations.Add((ushort)i, new Station((ushort)i, string.Empty, string.Empty, new Position(lon, lat), null, rand, _energyPrices));
         }
 
         var polygons = PolygonParser.Parse(File.ReadAllText(gridPath));
@@ -60,5 +66,10 @@ public class StationsAroundPolyline
     public void Cleanup() => _router?.Dispose();
 
     [Benchmark]
-    public void BenchmarkStationsInPolyline() => _ = _spatialGrid.GetStationsAlongPolyline(_path, 10);
+    public void BenchmarkStationsInPolyline()
+    {
+        var stationNearBy = _spatialGrid.GetStationsAlongPolyline(_path, 10);
+        _ = ReachableStations.FindReachableStations(_path, _ev, _stations, stationNearBy, 10);
+    }
+
 }

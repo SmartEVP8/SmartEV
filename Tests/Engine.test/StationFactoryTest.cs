@@ -46,13 +46,13 @@ public class StationFactoryTest
         return new FileInfo(filePath);
     }
 
-    private static Dictionary<Socket, int> CountSockets(IEnumerable<Station> stations)
+    private static Dictionary<Socket, int> CountSockets(Dictionary<ushort, Station> stations)
     {
         var counts = new Dictionary<Socket, int>();
 
         foreach (var station in stations)
         {
-            foreach (var charger in station.Chargers)
+            foreach (var charger in station.Value.Chargers)
             {
                 foreach (var socket in charger.GetSockets())
                 {
@@ -149,12 +149,12 @@ public class StationFactoryTest
             var stations = factory.CreateStations(file);
 
             var station = Assert.Single(stations);
-            Assert.Equal((ushort)1, station.Id);
-            Assert.Equal("Only Station", station.Name);
-            Assert.Equal("Only Address", station.Address);
-            Assert.Equal(57.0, station.Position.Latitude);
-            Assert.Equal(9.0, station.Position.Longitude);
-            Assert.NotEmpty(station.Chargers);
+            Assert.Equal((ushort)1, station.Key);
+            Assert.Equal("Only Station", station.Value.Name);
+            Assert.Equal("Only Address", station.Value.Address);
+            Assert.Equal(57.0, station.Value.Position.Latitude);
+            Assert.Equal(9.0, station.Value.Position.Longitude);
+            Assert.NotEmpty(station.Value.Chargers);
         }
         finally
         {
@@ -194,12 +194,12 @@ public class StationFactoryTest
             var stations = factory.CreateStations(file);
 
             Assert.Equal(3, stations.Count);
-            Assert.Equal("First", stations[0].Name);
-            Assert.Equal("Second", stations[1].Name);
-            Assert.Equal("Third", stations[2].Name);
-            Assert.Equal((ushort)1, stations[0].Id);
-            Assert.Equal((ushort)2, stations[1].Id);
-            Assert.Equal((ushort)3, stations[2].Id);
+            Assert.Equal("First", stations[1].Name);
+            Assert.Equal("Second", stations[2].Name);
+            Assert.Equal("Third", stations[3].Name);
+            Assert.Equal((ushort)1, stations[1].Id);
+            Assert.Equal((ushort)2, stations[2].Id);
+            Assert.Equal((ushort)3, stations[3].Id);
         }
         finally
         {
@@ -272,7 +272,7 @@ public class StationFactoryTest
             var stations = factory.CreateStations(file);
 
             Assert.Equal(10, stations.Count);
-            Assert.All(stations, station => Assert.NotEmpty(station.Chargers));
+            Assert.All(stations, station => Assert.NotEmpty(station.Value.Chargers));
         }
         finally
         {
@@ -303,8 +303,8 @@ public class StationFactoryTest
 
             Assert.Equal(stations1.Count, stations2.Count);
             Assert.Equal(
-                stations1.Sum(s => s.Chargers.Count),
-                stations2.Sum(s => s.Chargers.Count));
+                stations1.Sum(s => s.Value.Chargers.Count),
+                stations2.Sum(s => s.Value.Chargers.Count));
 
             var socketCounts1 = CountSockets(stations1);
             var socketCounts2 = CountSockets(stations2);
@@ -335,10 +335,10 @@ public class StationFactoryTest
             var stations = factory.CreateStations(file);
 
             Assert.Equal(10, stations.Count);
-            Assert.All(stations, station => Assert.NotEmpty(station.Chargers));
+            Assert.All(stations, station => Assert.NotEmpty(station.Value.Chargers));
 
             var hasMultiSocketCharger = stations
-                .SelectMany(station => station.Chargers)
+                .SelectMany(station => station.Value.Chargers)
                 .Any(charger => charger.GetSockets().Length > 1);
 
             Assert.True(hasMultiSocketCharger, "Expected at least one charger to have multiple sockets.");
@@ -373,7 +373,7 @@ public class StationFactoryTest
             var factory = CreateFactory(options, new Random());
             var stations = factory.CreateStations(file);
 
-            var chargers = stations.SelectMany(station => station.Chargers).ToList();
+            var chargers = stations.SelectMany(station => station.Value.Chargers).ToList();
 
             Assert.NotEmpty(chargers);
             Assert.All(chargers, charger =>
@@ -410,7 +410,7 @@ public class StationFactoryTest
             var factory = CreateFactory(options, new Random());
             var stations = factory.CreateStations(file);
 
-            var chargers = stations.SelectMany(station => station.Chargers).ToList();
+            var chargers = stations.SelectMany(station => station.Value.Chargers).ToList();
 
             Assert.NotEmpty(chargers);
             Assert.All(chargers, charger =>
