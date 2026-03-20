@@ -21,6 +21,7 @@ public sealed class MetricsService : IAsyncDisposable
     private readonly IMetricWriter<DeadlineMetric>? _deadlines;
 
     private readonly IMetricWriter<SnapshotMetric>? _snapshots;
+    
     /// <summary>
     /// Initializes a new instance of the <see cref="MetricsService"/> class.
     /// Creates writers for each enabled metric type based on the provided config.
@@ -53,8 +54,9 @@ public sealed class MetricsService : IAsyncDisposable
     /// <param name="metric">The deadline metric to record.</param>
     public void RecordDeadline(DeadlineMetric metric) => _deadlines?.Record(metric);
 
+    /// <summary>Records a station snapshot metric. No-op if station snapshots are disabled in config.</summary>
+    /// <param name="metric">The station snapshot metric to record.</param>
     public void RecordSnapshot(SnapshotMetric metric) => _snapshots?.Record(metric);
-
 
     /// <summary>
     /// Signals all writers to stop, drains their channels, and flushes remaining
