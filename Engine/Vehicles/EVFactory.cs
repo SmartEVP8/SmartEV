@@ -29,7 +29,6 @@ public class EVFactory(Random random, IJourneySamplerProvider samplersProvider, 
         var currCharge = maxCapacity * NextFloatInRange(0.2f, 1f);
         var priceSensPref = random.NextSingle();
         var minAcceptableCharge = NextFloatInRange(0.05f, 0.4f);
-
         var battery = new Battery(maxCapacity, chargeRate, currCharge, batteryConfig.Socket);
         var preferences = new Preferences(priceSensPref, minAcceptableCharge);
         var journey = CreateJourney(departure);
