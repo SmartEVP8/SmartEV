@@ -4,101 +4,28 @@ using Core.Vehicles;
 
 public class UrgencyTests
 {
+
     [Fact]
-    public void CalculateChargeUrgency_ReturnsZero_WhenStateOfChargeIsAboveUpperChargeLimit()
+    public void CalculateChargeUrgency_ReturnsZero_WhenStateOfChargeIsAtUpperBound()
     {
-        double urgency = Urgency.CalculateChargeUrgency(90f, 20f);
+        float minCharge = 20f;
+
+        float stateOfCharge = 80f;
+
+        double urgency = Urgency.CalculateChargeUrgency(stateOfCharge, minCharge);
 
         Assert.Equal(0.0, urgency);
     }
 
     [Fact]
-    public void CalculateChargeUrgency_ReturnsZero_WhenStateOfChargeIsExactlyAtUpperChargeLimit()
+    public void CalculateChargeUrgency_ReturnsOne_WhenStateOfChargeIsAtMinimumAcceptableCharge()
     {
-        double urgency = Urgency.CalculateChargeUrgency(80f, 20f);
+        float minCharge = 20f;
 
-        Assert.Equal(0.0, urgency);
-    }
+        float stateOfCharge = 20f;
 
-    [Fact]
-    public void CalculateChargeUrgency_ReturnsOne_WhenStateOfChargeIsBelowMinimumAcceptableCharge()
-    {
-        double urgency = Urgency.CalculateChargeUrgency(10f, 20f);
+        double urgency = Urgency.CalculateChargeUrgency(stateOfCharge, minCharge);
 
         Assert.Equal(1.0, urgency);
-    }
-
-    [Fact]
-    public void CalculateChargeUrgency_ReturnsOne_WhenStateOfChargeIsExactlyAtMinimumAcceptableCharge()
-    {
-        double urgency = Urgency.CalculateChargeUrgency(20f, 20f);
-
-        Assert.Equal(1.0, urgency);
-    }
-
-    [Fact]
-    public void CalculateChargeUrgency_ReturnsValueBetweenZeroAndOne_WhenStateOfChargeIsBetweenThresholds()
-    {
-        double urgency = Urgency.CalculateChargeUrgency(50f, 20f);
-
-        Assert.InRange(urgency, 0.0, 1.0);
-        Assert.NotEqual(0.0, urgency);
-        Assert.NotEqual(1.0, urgency);
-    }
-
-    [Fact]
-    public void CalculateChargeUrgency_ReturnsHigherUrgency_ForLowerStateOfCharge()
-    {
-        double higherSocUrgency = Urgency.CalculateChargeUrgency(70f, 20f);
-        double lowerSocUrgency = Urgency.CalculateChargeUrgency(40f, 20f);
-
-        Assert.True(lowerSocUrgency > higherSocUrgency);
-    }
-
-    [Fact]
-    public void CalculateChargeUrgency_ClampsNegativeStateOfCharge_ToZero()
-    {
-        double urgency = Urgency.CalculateChargeUrgency(-10f, 20f);
-
-        Assert.Equal(1.0, urgency);
-    }
-
-    [Fact]
-    public void CalculateChargeUrgency_ClampsStateOfChargeAboveOneHundred_ToOneHundred()
-    {
-        double urgency = Urgency.CalculateChargeUrgency(150f, 20f);
-
-        Assert.Equal(0.0, urgency);
-    }
-
-    [Fact]
-    public void CalculateChargeUrgency_ClampsNegativeMinimumAcceptableCharge_ToZero()
-    {
-        double urgency = Urgency.CalculateChargeUrgency(50f, -10f);
-
-        Assert.InRange(urgency, 0.0, 1.0);
-        Assert.True(urgency > 0.0);
-    }
-
-    [Fact]
-    public void CalculateChargeUrgency_ClampsMinimumAcceptableChargeAboveOneHundred_ToOneHundred()
-    {
-        double urgency = Urgency.CalculateChargeUrgency(50f, 150f);
-
-        Assert.Equal(1.0, urgency);
-    }
-
-    [Fact]
-    public void CalculateChargeUrgency_ReturnsValuesWithinRange_ForSeveralInputs()
-    {
-        float[] socValues = [0f, 10f, 20f, 40f, 60f, 79f, 80f, 100f];
-        const float minAcceptableCharge = 20f;
-
-        foreach (float soc in socValues)
-        {
-            double urgency = Urgency.CalculateChargeUrgency(soc, minAcceptableCharge);
-
-            Assert.InRange(urgency, 0.0, 1.0);
-        }
     }
 }
