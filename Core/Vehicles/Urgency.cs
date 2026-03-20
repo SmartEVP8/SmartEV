@@ -14,12 +14,8 @@ public static class Urgency
     /// Calculates the urgency of charging based on the state of charge (SoC) of the battery 
     /// and a minimum acceptable charge level.
     /// </summary>
-    /// <param name="stateOfCharge">
-    /// The state of charge (SoC) of the battery, expressed as a percentage.
-    /// </param>
-    /// <param name="minAcceptableCharge">
-    /// The minimum acceptable charge level, expressed as a percentage.
-    /// </param>
+    /// <param name="stateOfCharge">The state of charge (SoC) of the battery, expressed as a percentage.</param>
+    /// <param name="minAcceptableCharge">The minimum acceptable charge level, expressed as a percentage.</param>
     /// <returns>
     /// The urgency of charging, where a higher value indicates a more urgent need for charging.
     /// </returns>
@@ -57,12 +53,8 @@ public static class Urgency
     /// <summary>
     /// Determines whether the search for a charging station should be stopped based on the remaining distance
     /// </summary>
-    /// <param name="remainingDistanceKm">
-    /// The remaining distance on the route, expressed in kilometers.
-    /// </param>
-    /// <param name="stopSearchDistanceKm">
-    /// The distance at which the search for a charging station should be stopped, expressed in kilometers.
-    /// </param>
+    /// <param name="remainingDistanceKm">The remaining distance on the route, expressed in kilometers.</param>
+    /// <param name="stopSearchDistanceKm">The distance at which the search for a charging station should be stopped, expressed in kilometers.</param>
     /// <returns>
     /// True if the search for a charging station should be stopped; otherwise, false.
     /// </returns>
