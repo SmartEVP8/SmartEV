@@ -6,7 +6,7 @@ using Core.Charging;
 /// <summary>
 /// Provides routing and station query functionality using the OSRM (Open Source Routing Machine) wrapper library.
 /// </summary>
-public unsafe partial class OSRMRouter : IOSRMRouter
+public unsafe partial class OSRMRouter : IDisposable, IMatrixRouter, IPointToPointRouter, IOSRMRouter
 {
     private const string _lib = "osrm_wrapper";
 

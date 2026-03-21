@@ -1,3 +1,5 @@
+using Core.Shared;
+
 namespace Engine.Routing;
 
 /// <summary>
@@ -13,4 +15,8 @@ public interface IMatrixRouter
     /// <param name="dstCoords"> Destination coordinates.</param>
     /// <returns>Array of distances from each cell to each city, indexed as [cityIndex + (cityCount * cellIndex)].</returns>
     public (float[] durations, float[] distances) QueryPointsToPoints(double[] srcCoords, double[] dstCoords);
+
+
+    (float[] durations, float[] distances) QueryPointsToPoints(IEnumerable<Position> sources, IEnumerable<Position> destinations)
+        => QueryPointsToPoints(sources.ToFlatArray(), destinations.ToFlatArray());
 }

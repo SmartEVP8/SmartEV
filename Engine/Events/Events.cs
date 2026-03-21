@@ -1,13 +1,12 @@
 namespace Engine.Events;
 
-public readonly record struct ReservationRequest(uint EVId, ushort StationId, int Time) : IEvent;
+using Core.Shared;
 
-public readonly record struct CancelRequest(uint EVId, ushort StationId, int Time) : IEvent;
+public abstract record Event(Time Time);
 
-public readonly record struct ArriveAtStation(uint EVId, ushort StationId, int Time) : IEvent;
-
-public readonly record struct StartCharging(uint EVId, int ChargerId, int Time) : IEvent;
-
-public readonly record struct EndCharging(uint EVId, int ChargerId, int Time) : IEvent;
-
-public readonly record struct ArriveAtDestination(uint EVId, int Time) : IEvent;
+public record ReservationRequest(uint EVId, ushort StationId, Time Time) : Event(Time);
+public record CancelRequest(uint EVId, ushort StationId, Time Time) : Event(Time);
+public record ArriveAtStation(uint EVId, ushort StationId, Time Time) : Event(Time);
+public record StartCharging(uint EVId, int ChargerId, Time Time) : Event(Time);
+public record EndCharging(uint EVId, int ChargerId, Time Time) : Event(Time);
+public record ArriveAtDestination(uint EVId, Time Time) : Event(Time);

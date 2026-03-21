@@ -1,15 +1,11 @@
 namespace Core.Vehicles;
 
-using Core.Shared;
-using Core.Vehicles.Configs;
+using Core.Routing;
 
-public class EV(uint id, Battery battery, Preferences preferences, EVConfig config)
+public struct EV(Battery battery, Preferences preferences, Journey journey, ushort efficiency)
 {
-    public readonly uint Id = id;
     public readonly Preferences Preferences = preferences;
-
     public Battery Battery { get; } = battery;
-
-    public EVConfig Config { get; } = config;
-
+    public ushort Efficiency { get; } = efficiency;
+    private Journey _journey = journey;
 }

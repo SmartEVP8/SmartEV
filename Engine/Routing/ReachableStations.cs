@@ -17,9 +17,8 @@ public class ReachableStations
     /// <returns>Returns a list of ids of stations within reach of the EV.</returns>
     public static List<ushort> FindReachableStations(Paths path, EV ev, Dictionary<ushort, Station> stations, List<ushort> nearbyStations, double radius)
     {
-        var evConfig = ev.Config;
         var evBattery = ev.Battery;
-        var reach = (double)evBattery.StateOfCharge / ((double)evConfig.Efficiency / 1000);
+        var reach = (double)evBattery.StateOfCharge / ((double)ev.Efficiency / 1000);
         return nearbyStations.Where(id =>
             {
                 var dist = GeoMath.DistancesThroughPath(path, stations[id].Position, radius);
