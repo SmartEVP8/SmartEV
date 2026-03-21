@@ -10,6 +10,7 @@ using Core.Charging;
 /// </summary>
 public class SnapshotEventHandler(
     Time rescheduleTime,
+    DateTimeOffset startTime,
     IReadOnlyList<Station> stations,
     MetricsService metrics,
     EventScheduler scheduler,
@@ -25,14 +26,18 @@ public class SnapshotEventHandler(
     /// <param name="currentTime">The current simulation time in seconds.</param>
     public void Handle(SnapshotEvent e)
     {
-        var wallTime = DateTimeOffset.FromUnixTimeSeconds(e.Time);
+        var currentTime = startTime.AddSeconds(e.Time.T);
+        var day = currentTime.DayOfWeek;
+        var hour = currentTime.Hour;
 
         foreach (var station in stations)
         {
             var metric = SnapshotMetric.Collect(
                 station, (uint)e.Time,
-                wallTime.DayOfWeek, wallTime.Hour,
-                getDeliveredKW);
+                currentTime.DayOfWeek, 
+                currentTime.Hour,
+                getDeliveredKW
+                );
             metrics.RecordSnapshot(metric);
         }
 

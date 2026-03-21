@@ -2,6 +2,7 @@ namespace Engine.Metrics;
 
 using Core.Charging;
 using System;
+using Core.Shared;
 
 /// <summary>
 /// A point-in-time snapshot of a single station's metrics.
@@ -12,7 +13,7 @@ public record SnapshotMetric
     /// <summary>
     /// Gets the simulation timestamp (seconds) when this snapshot was taken.
     /// </summary>
-    required public uint SimTime { get; init; }
+    required public Time SimTime { get; init; }
 
     /// <summary>
     /// Gets the station this snapshot was taken from.
@@ -64,7 +65,7 @@ public record SnapshotMetric
     /// <returns>A <see cref="SnapshotMetric"/> containing the collected metrics for the station.</returns>
     public static SnapshotMetric Collect(
         Station station,
-        uint simTime,
+        Time simTime,
         DayOfWeek day,
         int hour,
         Func<ChargerBase, double> getDeliveredKW)

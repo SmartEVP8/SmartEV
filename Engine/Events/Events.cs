@@ -53,6 +53,7 @@ public record ArriveAtDestination(uint EVId, Time Time) : Event(Time);
 //  - Sample once from urgency to see if it needs to find a charger immediately.
 
 public record SnapshotEvent(Time Time) : Event(Time);
+
 // Check urgency
 // Functionality:
 //  - Method that checks the urgency for an interval that is based on some car SoC, like every 10% or so.

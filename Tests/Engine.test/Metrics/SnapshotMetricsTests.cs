@@ -2,6 +2,7 @@ namespace Engine.test.Metrics;
 
 using System;
 using Core.Charging;
+using Core.Shared;
 using Engine.Metrics;
 using Xunit;
 
@@ -39,10 +40,10 @@ public class SnapshotMetricTests
     [Fact]
     public void NoChargers_StationIdAndSimTimeArePreserved()
     {
-        var metric = SnapshotMetric.Collect(_emptyStation, simTime: 3600, DayOfWeek.Monday, 0, _ => 0);
-
+        var metric = SnapshotMetric.Collect(_emptyStation, simTime: (Time)3600u, DayOfWeek.Monday, 0, _ => 0);
+    
         Assert.Equal((ushort)1, metric.StationId);
-        Assert.Equal(3600u, metric.SimTime);
+        Assert.Equal((Time)3600u, metric.SimTime);
     }
 
     [Fact]
@@ -80,9 +81,13 @@ public class SnapshotMetricTests
     [Fact]
     public void MultipleChargers_TotalKWIsCorrect()
     {
-        var metric = SnapshotMetric.Collect(_singleChargerStation, 0, DayOfWeek.Monday, 0,
+        var metric = SnapshotMetric.Collect(
+            _singleChargerStation,
+            0,
+            DayOfWeek.Monday,
+            0,
             charger => charger.Id == 1 ? 100 : 0);
-
+    
         Assert.Equal(100f, metric.TotalDeliveredKW);
         Assert.Equal(200f, metric.TotalMaxKW);
     }
