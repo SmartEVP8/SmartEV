@@ -2,7 +2,7 @@ namespace Engine.Routing;
 
 using Core.Charging;
 
-public interface IOSRMRouter : IMatrixRouter, IDisposable
+public interface IOSRMRouter : IMatrixRouter, IDisposable, IPointToPointRouter
 {
     void InitStations(List<Station> stations);
 

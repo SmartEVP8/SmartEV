@@ -1,10 +1,11 @@
 namespace Testing;
 
 using Core.Shared;
-using Core.Vehicles.Configs;
 using Core.Vehicles;
 using Core.Charging;
 using Engine.Routing;
+using Core.Routing;
+
 public class ReachableStationsTests
 {
     [Fact]
@@ -17,8 +18,13 @@ public class ReachableStationsTests
         ]);
         var battery = new Battery(100, 50, 50, Socket.CCS2);
         var preferences = new Preferences(0.5f, 0.9f);
-        var evConfig = new EVConfig("TestModel", 1f, "TestCategory", new BatteryConfig(50, 100, Socket.CCS2), 150);
-        var ev = new EV(1, battery, preferences, evConfig);
+        var journey = new Journey(0, 0, new Paths(
+        [
+            new(1, 1),
+            new(1, 2),
+        ]));
+        ushort efficiency = 150;
+        var ev = new EV(battery, preferences, journey, efficiency);
         var energyPrices = new EnergyPrices(new FileInfo("data/energy_prices.csv"));
         var stations = new Dictionary<ushort, Station>
         {

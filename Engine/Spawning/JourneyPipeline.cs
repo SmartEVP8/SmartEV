@@ -1,8 +1,7 @@
-namespace Engine;
+namespace Engine.Spawning;
 
 using Engine.Grid;
 using Engine.Routing;
-using Engine.Spawning;
 
 /// <summary>
 /// JourneyPipeline computes the sampling distributions for source and destination points
@@ -30,14 +29,11 @@ public class JourneyPipeline
     /// A higher scaler increases the weight of larger cities, while a lower scaler reduces it.
     /// </param>
     /// <returns>Simulation samplers for source and destinations. If no cells are spawnable returns null.</returns>
-    public SimulationSamplers? Compute(float scaler)
+    public JourneySamplers Compute(float scaler)
     {
         var cells = _grid.Cells
             .SelectMany(g => g)
             .ToList();
-
-        if (cells.Count == 0)
-            return null;
 
         var sourceWeights = cells
             .Select(c => c.CityInfo.Sum(ci => GravityWeight(ci, scaler)))
@@ -48,7 +44,13 @@ public class JourneyPipeline
                 [.. c.CityInfo.Select(ci => GravityWeight(ci, scaler))]))
             .ToArray();
 
-        return new SimulationSamplers(new AliasSampler(sourceWeights), destinationSamplers);
+        return new JourneySamplers(
+            new AliasSampler(sourceWeights),
+            destinationSamplers,
+            _grid.CellCenters,
+            _grid.CityCenters,
+            _grid.HalfLat,
+            _grid.HalfLon);
     }
 
     private static float GravityWeight(CityInfo city, float scaler)
@@ -94,7 +96,14 @@ public class JourneyPipeline
             newGrid[rowIndex] = cellData;
         }
 
-        return new GravityGrid([.. newGrid]);
+        if (!newGrid.Any(row => row.Count > 0))
+        {
+            throw new InvalidOperationException("No spawnable cells with city info");
+        }
+
+        var cityCenters = cities.Select(c => c.Position).ToArray();
+
+        return new GravityGrid([.. newGrid], cityCenters, grid.LatSize / 2, grid.LonSize / 2);
     }
 
     /// <summary>

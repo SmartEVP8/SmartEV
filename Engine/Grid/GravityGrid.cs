@@ -1,11 +1,16 @@
 namespace Engine.Grid;
 
 using Core.Shared;
-using Engine.Spawning;
 
-internal class GravityGrid(List<List<GravityCell>> cells)
+internal class GravityGrid(List<List<GravityCell>> cells, Position[] cityCenters, double halfLat, double halfLon)
 {
     public readonly List<List<GravityCell>> Cells = cells;
+    public readonly double HalfLat = halfLat;
+    public readonly double HalfLon = halfLon;
+    public readonly Position[] CityCenters = cityCenters;
+    public readonly Position[] CellCenters = [.. cells
+            .SelectMany(g => g)
+            .Select(c => c.Centerpoint)];
 }
 
 internal class GravityCell(Position centerPoint, List<CityInfo> cityInfo)
@@ -14,15 +19,9 @@ internal class GravityCell(Position centerPoint, List<CityInfo> cityInfo)
     public readonly List<CityInfo> CityInfo = cityInfo;
 }
 
-internal struct CityInfo(string cityName, float distToCity, float population)
+internal readonly struct CityInfo(string cityName, float distToCity, float population)
 {
     public readonly string CityName = cityName;
     public readonly float DistToCity = distToCity;
     public readonly float Population = population;
-}
-
-public class SimulationSamplers(AliasSampler source, AliasSampler[] destinations)
-{
-    public readonly AliasSampler SourceSampler = source;
-    public readonly AliasSampler[] DestinationSamplers = destinations;
 }
