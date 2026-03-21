@@ -2,7 +2,7 @@ namespace Engine.Routing;
 
 using Core.Charging;
 
-public interface IOSRMRouter : IMatrixRouter, IDisposable
+public interface IOSRMRouter : IDisposable, IMatrixRouter, IDestinationRouter
 {
     void InitStations(List<Station> stations);
 
@@ -16,6 +16,9 @@ public interface IOSRMRouter : IMatrixRouter, IDisposable
         double evLat,
         double destLon,
         double destLat);
+
+    (float duration, string polyline) QueryDestination(
+        double[] coords);
 
     (float[] durations, float[] distances) QueryPointsToPoints(
         double[] srcCoords,

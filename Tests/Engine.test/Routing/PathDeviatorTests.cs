@@ -16,7 +16,7 @@ public class PathDeviatorTests
         }
 
         public (float duration, string polyline) QueryDestination(double[] coords)
-        => (_duration, _polyline);
+            => (_duration, _polyline);
     }
 
     private static Paths SimplePath() => new([new Position(0.0, 0.0), new Position(1.0, 1.0)]);

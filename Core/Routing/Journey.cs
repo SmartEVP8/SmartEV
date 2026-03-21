@@ -13,12 +13,7 @@ public class Journey(Time departure, Time originalDuration, Paths path)
     public readonly Time Departure = departure;
     public readonly Time OriginalDuration = originalDuration;
     public Paths Path = path;
-
-    /// <summary>
-    /// Gets the running sum of deviations for this journey. 
-    /// Can be updated as the journey progresses using the UpdateRunningSumDeviation method.
-    /// </summary>
-    public float RunningSumDeviation { get; private set; } = 0;
+    private float _runningSumDeviation;
 
     /// <summary>
     /// Calucates the EV's current position. Assumes the speed is always the same.
@@ -45,10 +40,8 @@ public class Journey(Time departure, Time originalDuration, Paths path)
                     p.Second,
                     Length: Math.Sqrt(
                         Math.Pow(p.Second.Latitude - p.First.Latitude, 2)
-                            + Math.Pow(p.Second.Longitude - p.First.Longitude, 2)
-                    )
-                )
-            )
+                            + Math.Pow(p.Second.Longitude - p.First.Longitude, 2))
+                ))
             .ToList();
 
         var totalLength = segments.Sum(s => s.Length);
@@ -78,7 +71,13 @@ public class Journey(Time departure, Time originalDuration, Paths path)
     /// <returns>The elapsed time.</returns>
     public Time TimeElapsed(Time currentTime) => currentTime - Departure;
 
+    /// <summary>
+    /// Gets the running sum of deviations for this journey. 
+    /// Can be updated as the journey progresses using the UpdateRunningSumDeviation method.
+    /// </summary>
+    public float RunningSumDeviation => _runningSumDeviation;
+
     /// <summary> Updates the running sum deviation for this journey.</summary>
     /// <param name="deviation">The new deviation to set.</param>
-    public void UpdateRunningSumDeviation(float deviation) => this.RunningSumDeviation = deviation;
+    public void UpdateRunningSumDeviation(float deviation) => _runningSumDeviation = deviation;
 }

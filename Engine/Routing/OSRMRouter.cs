@@ -6,7 +6,7 @@ using Core.Charging;
 /// <summary>
 /// Provides routing and station query functionality using the OSRM (Open Source Routing Machine) wrapper library.
 /// </summary>
-public unsafe partial class OSRMRouter : IDisposable, IMatrixRouter, IDestinationRouter
+public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
 {
     private const string _lib = "osrm_wrapper";
 
@@ -130,6 +130,21 @@ public unsafe partial class OSRMRouter : IDisposable, IMatrixRouter, IDestinatio
 
     /// <summary>
     /// Queries the duration and polyline route from an electric vehicle to a single destination.
+    /// </summary>
+    /// <param name="evLon">The longitude coordinate of the electric vehicle.</param>
+    /// <param name="evLat">The latitude coordinate of the electric vehicle.</param>
+    /// <param name="destLon">The longitude coordinate of the destination.</param>
+    /// <param name="destLat">The latitude coordinate of the destination.</param>
+    /// <returns>A tuple containing the duration and polyline string for the route.</returns>
+    public (float duration, string polyline) QuerySingleDestination(
+        double evLon,
+        double evLat,
+        double destLon,
+        double destLat)
+        => QueryDestination([evLon, evLat, destLon, destLat]);
+
+    /// <summary>
+    /// Queries the duration and polyline route from an electric vehicle to a destination, potentially with stops in between.
     /// </summary>
     /// <param name="coords">An array of coordinates representing the route, where the first element is the source and the last element is the destination. Intermediate elements represent stops.</param>
     /// <returns>A tuple containing the duration and polyline string for the route.</returns>
