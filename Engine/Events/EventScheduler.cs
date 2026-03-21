@@ -2,13 +2,14 @@ namespace Engine.Events;
 
 public class EventScheduler
 {
-    private readonly PriorityQueue<IEvent, (uint, uint)> _eventPriorityQueue = new();
+    private readonly PriorityQueue<Event, (uint, uint)> _eventPriorityQueue = new();
     private readonly HashSet<(uint, ushort)> _canceledEvents = new();
     private uint _currentTime = 0;
     private uint _evSequeenceId = 0;
 
-    public void ScheduleEvent(IEvent e, uint timestamp)
+    public void ScheduleEvent(Event e)
     {
+        var timestamp = e.Time;
         if (timestamp < _currentTime)
             throw new ArgumentOutOfRangeException($"Event timestamp {timestamp} is in the past (current time: {_currentTime})");
         _eventPriorityQueue.Enqueue(e, (timestamp, _evSequeenceId++));
@@ -19,7 +20,7 @@ public class EventScheduler
     /// If the event has been cancelled, it will be skipped and the next event will be returned instead.
     /// </summary>
     /// <returns>The next event in the queue to get resolved.</returns>
-    public IEvent? GetNextEvent()
+    public Event? GetNextEvent()
     {
         if (_eventPriorityQueue.Count == 0)
             return null;
@@ -30,8 +31,8 @@ public class EventScheduler
         {
             _canceledEvents.Remove((request.EVId, request.StationId));
             return GetNextEvent();
-
         }
+
         return e;
     }
 

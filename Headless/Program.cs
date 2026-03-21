@@ -1,15 +1,15 @@
 namespace Headless;
 
 using Engine.Cost;
-using Engine.Init;
-using Engine.Metrics;
-using Engine.StationFactory;
-using Microsoft.Extensions.DependencyInjection;
-using Engine;
 using Engine.Events;
 using Engine.Grid;
+using Engine.Init;
+using Engine.Metrics;
 using Engine.Routing;
+using Engine.Spawning;
+using Engine.StationFactory;
 using Engine.Vehicles;
+using Microsoft.Extensions.DependencyInjection;
 
 public static class Program
 {
@@ -65,7 +65,7 @@ public static class Program
         provider.GetRequiredService<MetricsService>();
         provider.GetRequiredService<EVFactory>();
         provider.GetRequiredService<SpatialGrid>();
-        provider.GetRequiredService<JourneyPipeline>();
+        provider.GetRequiredService<IJourneySamplerProvider>();
     }
 
 }

@@ -31,7 +31,6 @@ public class Journey(Time departure, Time originalDuration, Paths path)
 
         var percentageCompleted = (double)(currentTime - Departure) / (double)OriginalDuration;
 
-        // TODO: might need a different distance but i think its fine.
         var segments = Path
             .Waypoints.Zip(Path.Waypoints.Skip(1))
             .Select(p =>
