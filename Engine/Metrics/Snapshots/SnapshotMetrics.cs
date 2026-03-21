@@ -15,24 +15,39 @@ public record SnapshotMetric
     required public uint SimTime { get; init; }
 
     /// <summary>
-    /// Gets station this snapshot was taken from.
+    /// Gets the station this snapshot was taken from.
     /// </summary>
     required public ushort StationId { get; init; }
 
     /// <summary>
-    /// Gets the average charger utilisation across all chargers at the station (0.0–1.0).
-    /// Utilisation per charger = actual power delivered / max power capacity.
+    /// Gets the total power delivered across all chargers in kW.
     /// </summary>
-    required public float Utilisation { get; init; }
+    required public float TotalDeliveredKW { get; init; }
 
-    /// <summary> Gets the average number of EVs queued per charger at snapshot time.</summary>
-    required public float AvgQueueSize { get; init; }
+    /// <summary>
+    /// Gets the total maximum power capacity across all chargers in kW.
+    /// </summary>
+    required public float TotalMaxKW { get; init; }
 
-    /// <summary> Gets the station's energy price in DKK/kWh at snapshot time.</summary>
-    required public float AvgPrice { get; init; }
+    /// <summary>
+    /// Gets the total number of EVs queued across all chargers at snapshot time.
+    /// </summary>
+    required public int TotalQueueSize { get; init; }
 
-    /// <summary> Gets percentage of chargers with at least one active connector (0–100).</summary>
-    required public float ActiveChargersPct { get; init; }
+    /// <summary>
+    /// Gets the station's energy price in DKK/kWh at snapshot time.
+    /// </summary>
+    required public float Price { get; init; }
+
+    /// <summary>
+    /// Gets the number of chargers with at least one EV queued.
+    /// </summary>
+    required public int ActiveChargers { get; init; }
+
+    /// <summary>
+    /// Gets the total number of chargers at the station.
+    /// </summary>
+    required public int TotalChargers { get; init; }
 
     /// <summary>
     /// Collects a snapshot from a station at the given simulation time.
@@ -62,23 +77,24 @@ public record SnapshotMetric
             {
                 SimTime = simTime,
                 StationId = station.Id,
-                Utilisation = 0f,
-                AvgQueueSize = 0f,
-                AvgPrice = 0f,
-                ActiveChargersPct = 0f,
+                TotalDeliveredKW = 0f,
+                TotalMaxKW = 0f,
+                TotalQueueSize = 0,
+                Price = 0f,
+                ActiveChargers = 0,
+                TotalChargers = 0,
             };
         }
 
-        var totalUtilisation = 0f;
-        var totalQueued = 0;
-        var activeCount = 0;
+        var totalDeliveredKW = 0f;
+        var totalMaxKW = 0f;
+        var totalQueueSize = 0;
+        var activeChargers = 0;
 
         foreach (var charger in chargers)
         {
-            var delivered = getDeliveredKW(charger);
-            totalUtilisation += charger.MaxPowerKW > 0
-                ? (float)(delivered / charger.MaxPowerKW)
-                : 0f;
+            totalDeliveredKW += (float)getDeliveredKW(charger);
+            totalMaxKW += charger.MaxPowerKW;
 
             var queue = charger switch
             {
@@ -89,8 +105,8 @@ public record SnapshotMetric
 
             if (queue is not null)
             {
-                totalQueued += queue.Count;
-                if (queue.Count > 0) activeCount++;
+                totalQueueSize += queue.Count;
+                if (queue.Count > 0) activeChargers++;
             }
         }
 
@@ -98,10 +114,12 @@ public record SnapshotMetric
         {
             SimTime = simTime,
             StationId = station.Id,
-            Utilisation = totalUtilisation / chargers.Count,
-            AvgQueueSize = (float)totalQueued / chargers.Count,
-            AvgPrice = station.CalculatePrice(day, hour),
-            ActiveChargersPct = (float)activeCount / chargers.Count * 100f,
+            TotalDeliveredKW = totalDeliveredKW,
+            TotalMaxKW = totalMaxKW,
+            TotalQueueSize = totalQueueSize,
+            Price = station.CalculatePrice(day, hour),
+            ActiveChargers = activeChargers,
+            TotalChargers = chargers.Count,
         };
     }
 }

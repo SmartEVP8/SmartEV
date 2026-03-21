@@ -15,117 +15,153 @@ public class SnapshotMetricTests
 
     public SnapshotMetricTests()
     {
-        _chargerA = ChargingTestFixtures.MakeSingleCharger(id: 1, maxPowerKW: 100);
-        _chargerB = ChargingTestFixtures.MakeSingleCharger(id: 2, maxPowerKW: 100);
+        _chargerA = SnapshotMetricsHelper.MakeSingleCharger(id: 1, maxPowerKW: 100);
+        _chargerB = SnapshotMetricsHelper.MakeSingleCharger(id: 2, maxPowerKW: 100);
 
-        _emptyStation = ChargingTestFixtures.MakeStation([]);
-        _singleChargerStation = ChargingTestFixtures.MakeStation([_chargerA, _chargerB]);
-        _dualChargerStation = ChargingTestFixtures.MakeStation([ChargingTestFixtures.MakeDualCharger(id: 1, maxPowerKW: 300)]);
+        _emptyStation = SnapshotMetricsHelper.MakeStation([]);
+        _singleChargerStation = SnapshotMetricsHelper.MakeStation([_chargerA, _chargerB]);
+        _dualChargerStation = SnapshotMetricsHelper.MakeStation([SnapshotMetricsHelper.MakeDualCharger(id: 1, maxPowerKW: 300)]);
     }
 
     [Fact]
-    public void Collect_MaxUtilisation_WhenMaxDistribution()
+    public void NoChargers_ReturnsAllZeros()
     {
-        var charger = ChargingTestFixtures.MakeSingleCharger(id: 1, maxPowerKW: 150);
-        var station = ChargingTestFixtures.MakeStation([charger]);
+        var metric = SnapshotMetric.Collect(_emptyStation, 0, DayOfWeek.Monday, 0, _ => 0);
+
+        Assert.Equal(0f, metric.TotalDeliveredKW);
+        Assert.Equal(0f, metric.TotalMaxKW);
+        Assert.Equal(0, metric.TotalQueueSize);
+        Assert.Equal(0f, metric.Price);
+        Assert.Equal(0, metric.ActiveChargers);
+        Assert.Equal(0, metric.TotalChargers);
+    }
+
+    [Fact]
+    public void NoChargers_StationIdAndSimTimeArePreserved()
+    {
+        var metric = SnapshotMetric.Collect(_emptyStation, simTime: 3600, DayOfWeek.Monday, 0, _ => 0);
+
+        Assert.Equal((ushort)1, metric.StationId);
+        Assert.Equal(3600u, metric.SimTime);
+    }
+
+    [Fact]
+    public void FullDelivery_TotalDeliveredKWEqualsMaxKW()
+    {
+        var charger = SnapshotMetricsHelper.MakeSingleCharger(id: 1, maxPowerKW: 150);
+        var station = SnapshotMetricsHelper.MakeStation([charger]);
 
         var metric = SnapshotMetric.Collect(station, 0, DayOfWeek.Monday, 0, _ => 150);
 
-        Assert.Equal(1f, metric.Utilisation, precision: 3);
+        Assert.Equal(150f, metric.TotalDeliveredKW);
+        Assert.Equal(150f, metric.TotalMaxKW);
     }
 
     [Fact]
-    public void Collect_PartialDelivery_UtilisationIsCorrect()
+    public void PartialDelivery_TotalDeliveredKWIsCorrect()
     {
-        var charger = ChargingTestFixtures.MakeSingleCharger(id: 1, maxPowerKW: 300);
-        var station = ChargingTestFixtures.MakeStation([charger]);
+        var charger = SnapshotMetricsHelper.MakeSingleCharger(id: 1, maxPowerKW: 300);
+        var station = SnapshotMetricsHelper.MakeStation([charger]);
 
         var metric = SnapshotMetric.Collect(station, 0, DayOfWeek.Monday, 0, _ => 200);
 
-        Assert.Equal(0.667f, metric.Utilisation, precision: 2);
+        Assert.Equal(200f, metric.TotalDeliveredKW);
+        Assert.Equal(300f, metric.TotalMaxKW);
     }
 
     [Fact]
-    public void Collect_NoDelivery_UtilisationIsZero()
+    public void NoDelivery_TotalDeliveredKWIsZero()
     {
         var metric = SnapshotMetric.Collect(_singleChargerStation, 0, DayOfWeek.Monday, 0, _ => 0);
 
-        Assert.Equal(0f, metric.Utilisation);
+        Assert.Equal(0f, metric.TotalDeliveredKW);
     }
 
     [Fact]
-    public void Collect_MultipleChargers_UtilisationIsAveraged()
+    public void MultipleChargers_TotalKWIsCorrect()
     {
-        var metric = SnapshotMetric.Collect(_singleChargerStation, 0, DayOfWeek.Monday, 0, charger => charger.Id == 1 ? 100 : 0);
+        var metric = SnapshotMetric.Collect(_singleChargerStation, 0, DayOfWeek.Monday, 0,
+            charger => charger.Id == 1 ? 100 : 0);
 
-        Assert.Equal(0.5f, metric.Utilisation, precision: 3);
+        Assert.Equal(100f, metric.TotalDeliveredKW);
+        Assert.Equal(200f, metric.TotalMaxKW);
     }
 
     [Fact]
-    public void Collect_EmptyQueues_AvgQueueSizeIsZero()
+    public void TotalChargers_IsCorrect()
     {
         var metric = SnapshotMetric.Collect(_singleChargerStation, 0, DayOfWeek.Monday, 0, _ => 0);
 
-        Assert.Equal(0f, metric.AvgQueueSize);
+        Assert.Equal(2, metric.TotalChargers);
     }
 
     [Fact]
-    public void Collect_AvgQueueSizeIsCorrect()
+    public void EmptyQueues_TotalQueueSizeIsZero()
     {
-        var chargerA = ChargingTestFixtures.MakeSingleCharger(id: 1);
-        var chargerB = ChargingTestFixtures.MakeSingleCharger(id: 2);
+        var metric = SnapshotMetric.Collect(_singleChargerStation, 0, DayOfWeek.Monday, 0, _ => 0);
+
+        Assert.Equal(0, metric.TotalQueueSize);
+    }
+
+    [Fact]
+    public void WithQueuedEVs_TotalQueueSizeIsCorrect()
+    {
+        var chargerA = SnapshotMetricsHelper.MakeSingleCharger(id: 1);
+        var chargerB = SnapshotMetricsHelper.MakeSingleCharger(id: 2);
         chargerA.Queue.Enqueue(10);
         chargerA.Queue.Enqueue(11);
-
-        var station = ChargingTestFixtures.MakeStation([chargerA, chargerB]);
+        
+        var station = SnapshotMetricsHelper.MakeStation([chargerA, chargerB]);
 
         var metric = SnapshotMetric.Collect(station, 0, DayOfWeek.Monday, 0, _ => 0);
 
-        Assert.Equal(1f, metric.AvgQueueSize, precision: 3);
+        Assert.Equal(2, metric.TotalQueueSize);
     }
 
     [Theory]
-    [InlineData(0, 0, 0f)]
-    [InlineData(1, 0, 50f)]
-    [InlineData(1, 1, 100f)]
-    public void Collect_ActiveChargersPct_IsCorrect(int enqueuedOnA, int enqueuedOnB, float expectedPct)
+    [InlineData(0, 0, 0)]
+    [InlineData(1, 0, 1)]
+    [InlineData(1, 1, 2)]
+    public void ActiveChargers_IsCorrect(int enqueuedOnA, int enqueuedOnB, int expectedActive)
     {
-        var chargerA = ChargingTestFixtures.MakeSingleCharger(id: 1);
-        var chargerB = ChargingTestFixtures.MakeSingleCharger(id: 2);
+        var chargerA = SnapshotMetricsHelper.MakeSingleCharger(id: 1);
+        var chargerB = SnapshotMetricsHelper.MakeSingleCharger(id: 2);
         for (var i = 0; i < enqueuedOnA; i++) chargerA.Queue.Enqueue(i);
         for (var i = 0; i < enqueuedOnB; i++) chargerB.Queue.Enqueue(i);
-        var station = ChargingTestFixtures.MakeStation([chargerA, chargerB]);
+        var station = SnapshotMetricsHelper.MakeStation([chargerA, chargerB]);
 
         var metric = SnapshotMetric.Collect(station, 0, DayOfWeek.Monday, 0, _ => 0);
 
-        Assert.Equal(expectedPct, metric.ActiveChargersPct, precision: 2);
+        Assert.Equal(expectedActive, metric.ActiveChargers);
     }
 
     [Fact]
-    public void Collect_DualCharger_UtilisationIsCorrect()
+    public void DualCharger_TotalKWIsCorrect()
     {
         var metric = SnapshotMetric.Collect(_dualChargerStation, 0, DayOfWeek.Monday, 0, _ => 150);
 
-        Assert.Equal(0.5f, metric.Utilisation, precision: 3);
+        Assert.Equal(150f, metric.TotalDeliveredKW);
+        Assert.Equal(300f, metric.TotalMaxKW);
     }
 
     [Fact]
-    public void Collect_DualChargerWithQueue_IsCountedAsActive()
+    public void DualChargerWithQueue_IsCountedAsActive()
     {
-        var charger = ChargingTestFixtures.MakeDualCharger(id: 1);
+        var charger = SnapshotMetricsHelper.MakeDualCharger(id: 1);
         charger.Queue.Enqueue(99);
-        var station = ChargingTestFixtures.MakeStation([charger]);
+        var station = SnapshotMetricsHelper.MakeStation([charger]);
 
         var metric = SnapshotMetric.Collect(station, 0, DayOfWeek.Monday, 0, _ => 0);
 
-        Assert.Equal(100f, metric.ActiveChargersPct, precision: 2);
+        Assert.Equal(1, metric.ActiveChargers);
     }
 
     [Fact]
-    public void Collect_AvgPrice_IsWithinExpectedRange()
+    public void Price_IsWithinExpectedRange()
     {
+        // Base price is 3.00, deviation is ±10–20%, so valid range is [2.40, 3.60]
         var metric = SnapshotMetric.Collect(_singleChargerStation, 0, DayOfWeek.Monday, 6, _ => 0);
 
-        Assert.InRange(metric.AvgPrice, 2.40f, 3.60f);
+        Assert.InRange(metric.Price, 2.40f, 3.60f);
     }
 }

@@ -7,7 +7,7 @@ using Core.Charging;
 using Core.Charging.ChargingModel.Chargepoint;
 using Core.Shared;
 
-internal static class ChargingTestFixtures
+internal static class SnapshotMetricsHelper
 {
     internal static EnergyPrices MakeEnergyPrices()
     {
