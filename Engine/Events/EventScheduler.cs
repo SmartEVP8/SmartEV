@@ -1,10 +1,9 @@
-using Core.Vehicles;
 namespace Engine.Events;
 
 public class EventScheduler
 {
     private readonly PriorityQueue<Event, (uint, uint)> _eventPriorityQueue = new();
-    private readonly HashSet<(uint, string)> _canceledEvents = new();
+    private readonly List<uint> _canceledEvents = new();
     private uint _currentTime = 0;
     private uint _evSequeenceId = 0;
 
@@ -28,11 +27,9 @@ public class EventScheduler
 
         _eventPriorityQueue.TryDequeue(out var e, out var priority);
         _currentTime = priority.Item1;
-        var eventType = e.GetType().ToString();
-        var evId = GetEventEVId(e);
-        if (_canceledEvents.Contains((evId, eventType)) && evId != uint.MaxValue)
+        if (e is CancelableEvent cancelableEvent && _canceledEvents.Contains(cancelableEvent.EVId))
         {
-            _canceledEvents.Remove((evId, eventType));
+            _canceledEvents.Remove(cancelableEvent.EVId);
             return GetNextEvent();
         }
 
@@ -42,26 +39,14 @@ public class EventScheduler
     public uint GetCurrentTime() => _currentTime;
 
     /// <summary>
-    /// Cancels an event by adding it to the set of canceled events.
+    /// Cancels a CancelableEvent by adding it to the set of canceled events.
     /// When the event is dequeued, it will be skipped.
     /// </summary>
-    /// <param name="request">The event that needs to be cancelled.</param>
-    public void CancelEvent(Event request)
+    /// <param name="evID">The evID from which a CancelableEvent should be cancelled bu.</param>
+    public void CancelEvent(uint evID)
     {
-        var evId = GetEventEVId(request);
-        if (evId == uint.MaxValue) return;
-        var e = (evId, request.GetType().ToString());
-        _canceledEvents.Add(e);
+        if (_canceledEvents.Contains(evID))
+            throw new ArgumentException($"Event with EVId {evID} is already cancelled.");
+        _canceledEvents.Add(evID);
     }
-
-    private static uint GetEventEVId(Event e) => e switch
-    {
-        ReservationRequest r => r.EVId,
-        CancelRequest c => c.EVId,
-        ArriveAtStation a => a.EVId,
-        StartCharging s => s.EVId,
-        EndCharging l => l.EVId,
-        ArriveAtDestination d => d.EVId,
-        _ => uint.MaxValue,
-    };
 }
