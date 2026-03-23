@@ -3,7 +3,7 @@ namespace Engine.Events;
 public class EventScheduler
 {
     private readonly PriorityQueue<Event, (uint, uint)> _eventPriorityQueue = new();
-    private readonly List<uint> _canceledEvents = new();
+    private readonly HashSet<uint> _canceledEvents = [];
     private uint _currentTime = 0;
     private uint _evSequeenceId = 0;
 
@@ -43,10 +43,14 @@ public class EventScheduler
     /// When the event is dequeued, it will be skipped.
     /// </summary>
     /// <param name="evID">The evID from which a CancelableEvent should be cancelled bu.</param>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when attempting to cancel an event for an EV that already has a pending
+    /// cancellation, violating the invariant that an EV can only have one cancelable event at a time.
+    /// </exception>
     public void CancelEvent(uint evID)
     {
         if (_canceledEvents.Contains(evID))
-            throw new ArgumentException($"Event with EVId {evID} is already cancelled.");
+            throw new InvalidOperationException($"Event with EVId {evID} is already cancelled.");
         _canceledEvents.Add(evID);
     }
 }
