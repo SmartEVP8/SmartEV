@@ -69,6 +69,9 @@ public class StationService
     /// <summary>
     /// Initializes a new instance of the <see cref="StationService"/> class.
     /// </summary>
+    /// <param name="stations">The collection of stations to manage.</param>
+    /// <param name="integrator">The charging integrator to use for simulating charging sessions.</param>
+    /// <param name="scheduler">The event scheduler to use for scheduling future events.</param>
     public StationService(
         IEnumerable<Station> stations,
         ChargingIntegrator integrator,
@@ -89,6 +92,8 @@ public class StationService
     /// <summary>
     /// Returns the charger state for the given charger id, or null if not found.
     /// </summary>
+    /// <param name="chargerId">The id of the charger.</param>
+    /// <returns>The charger state for the given charger id, or null if not found.</returns>
     public ChargerState? GetChargerState(int chargerId)
         => _chargerIndex.TryGetValue(chargerId, out var state) ? state : null;
 
@@ -104,6 +109,8 @@ public class StationService
     /// Called when an EV arrives at a station.
     /// Finds the best compatible charger, joins its queue, and starts charging only if a side is free.
     /// </summary>
+    /// <param name="e">The arrival event.</param>
+    /// <param name="ev">The connected EV.</param>
     public void HandleArrivalAtStation(ArriveAtStation e, ConnectedEV ev)
     {
         if (!_stationChargers.TryGetValue(e.StationId, out var chargers))
@@ -129,6 +136,7 @@ public class StationService
     /// Called when a charging session ends for a specific EV.
     /// Uses the internally stored IntegrationResult to update remaining car SoC.
     /// </summary>
+    /// <param name="e">The EndCharging event containing the EVId, ChargerId, and Time of the event.</param>
     public void HandleEndCharging(EndCharging e)
     {
         if (!_chargerIndex.TryGetValue(e.ChargerId, out var state))
@@ -186,6 +194,7 @@ public class StationService
                         }
                     }
                 }
+
                 break;
         }
 
@@ -196,6 +205,8 @@ public class StationService
     /// Connects queued cars to free sides, runs the integrator, stores the result,
     /// and schedules EndCharging events.
     /// </summary>
+    /// <param name="state">The charger state.</param>
+    /// <param name="simNow">The current simulation time.</param>
     private void StartCharging(ChargerState state, uint simNow)
     {
         switch (state.Charger)
@@ -264,12 +275,10 @@ public class StationService
                     state.LastResult = dualResult;
 
                     if (state.SessionA is not null)
-                        _scheduler.ScheduleEvent(
-                            new EndCharging(state.SessionA.EVId, dual.Id, dualResult.FinishTimeA!.Value));
+                        _scheduler.ScheduleEvent(new EndCharging(state.SessionA.EVId, dual.Id, dualResult.FinishTimeA!.Value));
 
                     if (state.SessionB is not null)
-                        _scheduler.ScheduleEvent(
-                            new EndCharging(state.SessionB.EVId, dual.Id, dualResult.FinishTimeB!.Value));
+                        _scheduler.ScheduleEvent(new EndCharging(state.SessionB.EVId, dual.Id, dualResult.FinishTimeB!.Value));
 
                     break;
                 }
