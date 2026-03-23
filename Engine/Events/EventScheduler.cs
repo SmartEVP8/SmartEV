@@ -3,12 +3,12 @@ namespace Engine.Events;
 public class EventScheduler(Dictionary<IMiddlewareEvent, Action<IMiddlewareEvent>> preProcessors)
 {
     private readonly PriorityQueue<Event, (uint, uint)> _eventPriorityQueue = new();
-    private readonly HashSet<(uint, ushort)> _canceledEvents = [];
 
     /// <summary>
     /// Optional event handlers that can perform actions on scheduleEvent.
     /// </summary>
     private readonly Dictionary<IMiddlewareEvent, Action<IMiddlewareEvent>> _preProcessors = preProcessors;
+    private readonly HashSet<int> _canceledEvents = [];
     private uint _currentTime = 0;
     private uint _evSequeenceId = 0;
 
@@ -42,9 +42,9 @@ public class EventScheduler(Dictionary<IMiddlewareEvent, Action<IMiddlewareEvent
 
         _eventPriorityQueue.TryDequeue(out var e, out var priority);
         _currentTime = priority.Item1;
-        if (e is ReservationRequest request && _canceledEvents.Contains((request.EVId, request.StationId)))
+        if (e is CancelableEvent cancelableEvent && _canceledEvents.Contains(cancelableEvent.EVId))
         {
-            _canceledEvents.Remove((request.EVId, request.StationId));
+            _canceledEvents.Remove(cancelableEvent.EVId);
             return GetNextEvent();
         }
 
@@ -60,13 +60,18 @@ public class EventScheduler(Dictionary<IMiddlewareEvent, Action<IMiddlewareEvent
     public uint CurrentTime => _currentTime;
 
     /// <summary>
-    /// Cancels a reservation request by adding it to the set of canceled events.
+    /// Cancels a CancelableEvent by adding it to the set of canceled events.
     /// When the event is dequeued, it will be skipped.
     /// </summary>
-    /// <param name="request">The CancelRequest for a given event.</param>
-    public void CancelEvent(CancelRequest request)
+    /// <param name="evID">The evID from which a CancelableEvent should be cancelled bu.</param>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when attempting to cancel an event for an EV that already has a pending
+    /// cancellation, violating the invariant that an EV can only have one cancelable event at a time.
+    /// </exception>
+    public void CancelEvent(int evID)
     {
-        var e = (request.EVId, request.StationId);
-        _canceledEvents.Add(e);
+        if (_canceledEvents.Contains(evID))
+            throw new InvalidOperationException($"Event with EVId {evID} is already cancelled.");
+        _canceledEvents.Add(evID);
     }
 }
