@@ -70,45 +70,17 @@ public record SnapshotMetric
         int hour,
         Func<ChargerBase, double> getDeliveredKW)
     {
-        var chargers = station.Chargers;
-
-        if (chargers.Count == 0)
-        {
-            return new SnapshotMetric
-            {
-                SimTime = simTime,
-                StationId = station.Id,
-                TotalDeliveredKW = 0f,
-                TotalMaxKW = 0f,
-                TotalQueueSize = 0,
-                Price = 0f,
-                ActiveChargers = 0,
-                TotalChargers = 0,
-            };
-        }
-
         var totalDeliveredKW = 0f;
         var totalMaxKW = 0f;
         var totalQueueSize = 0;
         var activeChargers = 0;
 
-        foreach (var charger in chargers)
+        foreach (var charger in station.Chargers)
         {
             totalDeliveredKW += (float)getDeliveredKW(charger);
             totalMaxKW += charger.MaxPowerKW;
-
-            var queue = charger switch
-            {
-                SingleCharger singleCharger => singleCharger.Queue,
-                DualCharger dualCharger => dualCharger.Queue,
-                _ => null
-            };
-
-            if (queue is not null)
-            {
-                totalQueueSize += queue.Count;
-                if (queue.Count > 0) activeChargers++;
-            }
+            totalQueueSize += charger.Queue.Count;
+            if (charger.Queue.Count > 0) activeChargers++;
         }
 
         return new SnapshotMetric
@@ -120,7 +92,7 @@ public record SnapshotMetric
             TotalQueueSize = totalQueueSize,
             Price = station.CalculatePrice(day, hour),
             ActiveChargers = activeChargers,
-            TotalChargers = chargers.Count,
+            TotalChargers = station.Chargers.Count,
         };
     }
 }
