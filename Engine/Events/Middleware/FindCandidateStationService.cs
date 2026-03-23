@@ -6,6 +6,11 @@ using Engine.Routing;
 using Engine.Utils;
 using Engine.Vehicles;
 
+/// <summary>Service responsible for pre-computing the candidate stations for an EV and caching the results for later retrieval.</summary>
+/// <param name="router">Router used to compute paths from the EV's position to candidate stations and the destination.</param>
+/// <param name="stations">Stations to choose from.</param>
+/// <param name="spatialGrid">Used for pruning of <paramref name="stations"/>.</param>
+/// <param name="evStore">Gives access to EV's.</param>
 public class FindCandidateStationService(
     IOSRMRouter router,
     Dictionary<ushort, Station> stations,
@@ -20,7 +25,7 @@ public class FindCandidateStationService(
     /// Computes the calculation of the path calculations from an EV's position to its relevant stations.
     /// </summary>
     /// <exception cref="SkillissueException">If the passed MiddlewareEvent is not a FindCandidateStations.</exception>
-    /// <returns>😎.</returns>
+    /// <returns>An action that computes the candidate stations for an EV and caches the results for later retrieval.</returns>
     public Action<IMiddlewareEvent> PreComputeCandidateStation()
     {
         return e =>
@@ -52,11 +57,14 @@ public class FindCandidateStationService(
     /// <summary>Gets the pre-computed candidate stations. Awaits result if it's not yet ready.</summary>
     /// <param name="evId">The EV's id.</param>
     /// <returns>The pre-computed candidate stations.</returns>
+    /// <exception cref="SkillissueException">If you try and get a cached candidate which was never precomputed.</exception>
     public async Task<Dictionary<ushort, float>> ComputeCandidateStationFromCache(int evId)
     {
-        var (stationIds, task) = _evStationPaths[evId];
+        if (!_evStationPaths.TryGetValue(evId, out var query))
+            throw new SkillissueException($"No pre-computed station query found for EV {evId}. Ensure PreComputeCandidateStation is called first.");
+
+        var (stationIds, task) = query;
         var (durations, _) = await task;
         return stationIds.Zip(durations).ToDictionary(x => x.First, x => x.Second);
     }
 }
-
