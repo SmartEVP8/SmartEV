@@ -12,7 +12,7 @@ public interface IMiddlewareEvent
 {
 }
 
-public record FindCandidateStations(uint EVId, Time Time) : Event(Time), IMiddlewareEvent;
+public record FindCandidateStations(int EVId, Time Time) : Event(Time), IMiddlewareEvent;
 public record ReservationRequest(int EVId, ushort StationId, Time Time) : Event(Time);
 public record CancelRequest(int EVId, ushort StationId, Time Time) : Event(Time);
 public record ArriveAtStation(int EVId, ushort StationId, Time Time) : CancelableEvent(EVId, Time);

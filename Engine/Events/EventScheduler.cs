@@ -1,13 +1,13 @@
 namespace Engine.Events;
 
-public class EventScheduler(Dictionary<IMiddlewareEvent, Action<IMiddlewareEvent>> preProcessors)
+public class EventScheduler(Dictionary<Type, Action<IMiddlewareEvent>> preProcessors)
 {
     private readonly PriorityQueue<Event, (uint, uint)> _eventPriorityQueue = new();
 
     /// <summary>
     /// Optional event handlers that can perform actions on scheduleEvent.
     /// </summary>
-    private readonly Dictionary<IMiddlewareEvent, Action<IMiddlewareEvent>> _preProcessors = preProcessors;
+    private readonly Dictionary<Type, Action<IMiddlewareEvent>> _preProcessors = preProcessors;
     private readonly HashSet<int> _canceledEvents = [];
     private uint _currentTime = 0;
     private uint _evSequeenceId = 0;
@@ -24,7 +24,7 @@ public class EventScheduler(Dictionary<IMiddlewareEvent, Action<IMiddlewareEvent
         if (timestamp < _currentTime)
             throw new ArgumentOutOfRangeException($"Event timestamp {timestamp} is in the past (current time: {_currentTime})");
 
-        if (e is IMiddlewareEvent me && _preProcessors.TryGetValue(me, out var handler))
+        if (e is IMiddlewareEvent me && _preProcessors.TryGetValue(me.GetType(), out var handler))
             handler.Invoke(me);
 
         _eventPriorityQueue.Enqueue(e, (timestamp, _evSequeenceId++));
@@ -51,12 +51,8 @@ public class EventScheduler(Dictionary<IMiddlewareEvent, Action<IMiddlewareEvent
         return e;
     }
 
-    /// <summary>
-    /// Gets the current timestamp of the event scheduler.
-    /// </summary>
-    /// <remark>
-    /// The time is monotonically increasing.
-    /// </remark
+    /// <summary>Gets the current timestamp of the event scheduler.</summary>
+    /// <remark>The time is monotonically increasing.</remark
     public uint CurrentTime => _currentTime;
 
     /// <summary>
