@@ -38,7 +38,7 @@ public class EventSchedulerTest
         _scheduler.ScheduleEvent(request2, (uint)request2.Time);
         _scheduler.ScheduleEvent(request3, (uint)request3.Time);
 
-        _scheduler.CancelEvent(new CancelRequest(request2.EVId, request2.StationId, 123));
+        _scheduler.CancelEvent(new ReservationRequest(request2.EVId, request2.StationId, 123));
 
         Assert.Equal(request1, _scheduler.GetNextEvent());
         Assert.Equal(request3, _scheduler.GetNextEvent());
@@ -58,10 +58,31 @@ public class EventSchedulerTest
         _scheduler.ScheduleEvent(request3, (uint)request3.Time);
         _scheduler.ScheduleEvent(request4, (uint)request4.Time);
 
-        _scheduler.CancelEvent(new CancelRequest(request2.EVId, request2.StationId, 123));
+        _scheduler.CancelEvent(new ReservationRequest(request2.EVId, request2.StationId, 123));
 
         Assert.Equal(request1, _scheduler.GetNextEvent());
         Assert.Equal(request3, _scheduler.GetNextEvent());
+        Assert.Equal(request4, _scheduler.GetNextEvent());
+        Assert.Null(_scheduler.GetNextEvent());
+    }
+
+    [Fact]
+    public void CancelWithManyDifferentEventsTest()
+    {
+        var request1 = new ReservationRequest(2, 1, 10);
+        var request2 = new ArriveAtStation(2, 1, 20);
+        var request3 = new EndCharging(2, 1, 15);
+        var request4 = new ArriveAtDestination(2, 25);
+
+        _scheduler.ScheduleEvent(request1, (uint)request1.Time);
+        _scheduler.ScheduleEvent(request2, (uint)request2.Time);
+        _scheduler.ScheduleEvent(request3, (uint)request3.Time);
+        _scheduler.ScheduleEvent(request4, (uint)request4.Time);
+
+        _scheduler.CancelEvent(new EndCharging(request3.EVId, request3.ChargerId, 123));
+
+        Assert.Equal(request1, _scheduler.GetNextEvent());
+        Assert.Equal(request2, _scheduler.GetNextEvent());
         Assert.Equal(request4, _scheduler.GetNextEvent());
         Assert.Null(_scheduler.GetNextEvent());
     }
