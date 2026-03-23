@@ -21,6 +21,12 @@ public class Station(ushort id,
                 Random random,
                 EnergyPrices energyPrices)
 {
+    
+    /// <summary>
+    /// Gets or sets the total number of EVs expected to arrive at this station.
+    /// </summary>
+    public int ExpectedQueueSize { get; set; }
+    
     /// <summary>
     /// Gets the position of the station.
     /// </summary>
