@@ -25,4 +25,8 @@ public abstract class ChargerBase(int id, int maxPowerKW)
     /// </summary>
     /// <returns> An immutable array of sockets available at the charger. </returns>
     public abstract ImmutableArray<Socket> GetSockets();
+
+    /// <summary>Gets a queue of EVs waiting to charge at this charger.</summary>
+    /// <remarks>Points to the index of the EV in the list of EVs.</remarks>
+    public Queue<int> Queue { get; } = new();
 }

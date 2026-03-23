@@ -17,26 +17,47 @@ public class Station(ushort id,
                 string name,
                 string address,
                 Position position,
-                List<ChargerBase>? chargers,
+                List<ChargerBase> chargers,
                 Random random,
                 EnergyPrices energyPrices)
 {
-    public readonly Position Position = position;
-    private readonly List<ChargerBase>? _chargers = chargers;
+    /// <summary>
+    /// Gets the position of the station.
+    /// </summary>
+    public Position Position => position;
 
+    /// <summary>
+    /// Gets the id of the station.
+    /// </summary>
     public ushort Id => id;
+
+    /// <summary>
+    /// Gets the name of the station.
+    /// </summary>
     public string Name => name;
+
+    /// <summary>
+    /// Gets the address of the station.
+    /// </summary>
     public string Address => address;
-    public IReadOnlyList<ChargerBase> Chargers => _chargers ?? [];
+
+    /// <summary>
+    /// Gets the list of chargers on a station.
+    /// </summary>
+    public IReadOnlyList<ChargerBase> Chargers => _chargers;
+
+    private readonly List<ChargerBase> _chargers = chargers;
 
     /// <summary>
     /// Calculates the price of a specific station.
     /// </summary>
+    /// <param name="day">The day being queried.</param>
     /// <param name="hour">The hour being queried.</param>
     /// <remarks>
     /// The new price is randomly generated in the range [3.0, 5.0].
     /// Call this periodically to simulate dynamic pricing.
     /// </remarks>
+    /// <returns>The calculated price.</returns>
     public float CalculatePrice(DayOfWeek day, int hour)
     {
         var basePrice = energyPrices.GetHourPrice(day, hour);
