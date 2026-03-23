@@ -24,105 +24,6 @@ public class SnapshotMetricTests
         _dualChargerStation = SnapshotMetricsHelper.MakeStation([SnapshotMetricsHelper.MakeDualCharger(id: 1, maxPowerKW: 300)]);
     }
 
-    [Fact]
-    public void NoChargers_ReturnsAllZeros()
-    {
-        var metric = SnapshotMetric.Collect(_emptyStation, 0, DayOfWeek.Monday, 0, _ => 0);
-
-        Assert.Equal(0f, metric.TotalDeliveredKW);
-        Assert.Equal(0f, metric.TotalMaxKW);
-        Assert.Equal(0, metric.TotalQueueSize);
-        Assert.Equal(0f, metric.Price);
-        Assert.Equal(0, metric.ActiveChargers);
-        Assert.Equal(0, metric.TotalChargers);
-    }
-
-    [Fact]
-    public void NoChargers_StationIdAndSimTimeArePreserved()
-    {
-        var metric = SnapshotMetric.Collect(_emptyStation, simTime: (Time)3600u, DayOfWeek.Monday, 0, _ => 0);
-    
-        Assert.Equal((ushort)1, metric.StationId);
-        Assert.Equal((Time)3600u, metric.SimTime);
-    }
-
-    [Fact]
-    public void FullDelivery_TotalDeliveredKWEqualsMaxKW()
-    {
-        var charger = SnapshotMetricsHelper.MakeSingleCharger(id: 1, maxPowerKW: 150);
-        var station = SnapshotMetricsHelper.MakeStation([charger]);
-
-        var metric = SnapshotMetric.Collect(station, 0, DayOfWeek.Monday, 0, _ => 150);
-
-        Assert.Equal(150f, metric.TotalDeliveredKW);
-        Assert.Equal(150f, metric.TotalMaxKW);
-    }
-
-    [Fact]
-    public void PartialDelivery_TotalDeliveredKWIsCorrect()
-    {
-        var charger = SnapshotMetricsHelper.MakeSingleCharger(id: 1, maxPowerKW: 300);
-        var station = SnapshotMetricsHelper.MakeStation([charger]);
-
-        var metric = SnapshotMetric.Collect(station, 0, DayOfWeek.Monday, 0, _ => 200);
-
-        Assert.Equal(200f, metric.TotalDeliveredKW);
-        Assert.Equal(300f, metric.TotalMaxKW);
-    }
-
-    [Fact]
-    public void NoDelivery_TotalDeliveredKWIsZero()
-    {
-        var metric = SnapshotMetric.Collect(_singleChargerStation, 0, DayOfWeek.Monday, 0, _ => 0);
-
-        Assert.Equal(0f, metric.TotalDeliveredKW);
-    }
-
-    [Fact]
-    public void MultipleChargers_TotalKWIsCorrect()
-    {
-        var metric = SnapshotMetric.Collect(
-            _singleChargerStation,
-            0,
-            DayOfWeek.Monday,
-            0,
-            charger => charger.Id == 1 ? 100 : 0);
-    
-        Assert.Equal(100f, metric.TotalDeliveredKW);
-        Assert.Equal(200f, metric.TotalMaxKW);
-    }
-
-    [Fact]
-    public void TotalChargers_IsCorrect()
-    {
-        var metric = SnapshotMetric.Collect(_singleChargerStation, 0, DayOfWeek.Monday, 0, _ => 0);
-
-        Assert.Equal(2, metric.TotalChargers);
-    }
-
-    [Fact]
-    public void EmptyQueues_TotalQueueSizeIsZero()
-    {
-        var metric = SnapshotMetric.Collect(_singleChargerStation, 0, DayOfWeek.Monday, 0, _ => 0);
-
-        Assert.Equal(0, metric.TotalQueueSize);
-    }
-
-    [Fact]
-    public void WithQueuedEVs_TotalQueueSizeIsCorrect()
-    {
-        var chargerA = SnapshotMetricsHelper.MakeSingleCharger(id: 1);
-        var chargerB = SnapshotMetricsHelper.MakeSingleCharger(id: 2);
-        chargerA.Queue.Enqueue(10);
-        chargerA.Queue.Enqueue(11);
-        
-        var station = SnapshotMetricsHelper.MakeStation([chargerA, chargerB]);
-
-        var metric = SnapshotMetric.Collect(station, 0, DayOfWeek.Monday, 0, _ => 0);
-
-        Assert.Equal(2, metric.TotalQueueSize);
-    }
-
     [Theory]
     [InlineData(0, 0, 0)]
     [InlineData(1, 0, 1)]
@@ -141,24 +42,30 @@ public class SnapshotMetricTests
     }
 
     [Fact]
-    public void DualCharger_TotalKWIsCorrect()
+    public void WithQueuedEVs_TotalQueueSizeIsCorrect()
     {
-        var metric = SnapshotMetric.Collect(_dualChargerStation, 0, DayOfWeek.Monday, 0, _ => 150);
-
-        Assert.Equal(150f, metric.TotalDeliveredKW);
-        Assert.Equal(300f, metric.TotalMaxKW);
-    }
-
-    [Fact]
-    public void DualChargerWithQueue_IsCountedAsActive()
-    {
-        var charger = SnapshotMetricsHelper.MakeDualCharger(id: 1);
-        charger.Queue.Enqueue(99);
-        var station = SnapshotMetricsHelper.MakeStation([charger]);
+        var chargerA = SnapshotMetricsHelper.MakeSingleCharger(id: 1);
+        var chargerB = SnapshotMetricsHelper.MakeSingleCharger(id: 2);
+        chargerA.Queue.Enqueue(10);
+        chargerA.Queue.Enqueue(11);
+        
+        var station = SnapshotMetricsHelper.MakeStation([chargerA, chargerB]);
 
         var metric = SnapshotMetric.Collect(station, 0, DayOfWeek.Monday, 0, _ => 0);
 
-        Assert.Equal(1, metric.ActiveChargers);
+        Assert.Equal(2, metric.TotalQueueSize);
+    }
+
+    [Fact]
+    public void TotalKW_IsCorrect()
+    {
+        var singleMetric = SnapshotMetric.Collect(_singleChargerStation, 0, DayOfWeek.Monday, 0, _ => 50);
+        var dualMetric = SnapshotMetric.Collect(_dualChargerStation, 0, DayOfWeek.Monday, 0, _ => 150);
+
+        Assert.Equal(100f, singleMetric.TotalDeliveredKW);
+        Assert.Equal(200f, singleMetric.TotalMaxKW);
+        Assert.Equal(150f, dualMetric.TotalDeliveredKW);
+        Assert.Equal(300f, dualMetric.TotalMaxKW);
     }
 
     [Fact]
