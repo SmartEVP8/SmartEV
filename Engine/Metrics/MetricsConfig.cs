@@ -11,5 +11,5 @@ public sealed class MetricsConfig
     public bool RecordCarSnapshots { get; init; }
     public bool RecordStationSnapshots { get; init; }
     public bool RecordDeadlines { get; init; }
+    public bool RecordSingleStationSnapshot { get; init; }
 }
-

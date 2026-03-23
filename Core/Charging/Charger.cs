@@ -23,10 +23,6 @@ public sealed class SingleCharger(int id, int maxPowerKW, ISingleChargingPoint c
     /// </summary>
     /// <returns> An immutable array of sockets available at the charger. </returns>
     public override ImmutableArray<Socket> GetSockets() => ChargingPoint.GetSockets();
-
-    /// <summary>Gets a queue of EVs waiting to charge at this charger.</summary>
-    /// <remarks>Points to the index of the EV in the list of EVs.</remarks>
-    public Queue<int> Queue { get; } = new();
 }
 
 /// <summary>
@@ -48,8 +44,4 @@ public sealed class DualCharger(int id, int maxPowerKW, IDualChargingPoint charg
     /// </summary>
     /// <returns> An immutable array of sockets available at the charger. </returns>
     public override ImmutableArray<Socket> GetSockets() => ChargingPoint.GetSockets();
-
-    /// <summary>Gets a queue of EVs waiting to charge at this charger.</summary>
-    /// <remarks>Points to the index of the EV in the list of EVs.</remarks>
-    public Queue<int> Queue { get; } = new();
 }

@@ -20,6 +20,8 @@ public sealed class MetricsService : IAsyncDisposable
     private readonly IMetricWriter<StationSnapshotMetric>? _stations;
     private readonly IMetricWriter<DeadlineMetric>? _deadlines;
 
+    private readonly IMetricWriter<SnapshotMetric>? _snapshots;
+    
     /// <summary>
     /// Initializes a new instance of the <see cref="MetricsService"/> class.
     /// Creates writers for each enabled metric type based on the provided config.
@@ -36,6 +38,8 @@ public sealed class MetricsService : IAsyncDisposable
             _stations = new MetricWriter<StationSnapshotMetric>(config.BufferSize, files.GetMetricPath<StationSnapshotMetric>());
         if (config.RecordDeadlines)
             _deadlines = new MetricWriter<DeadlineMetric>(config.BufferSize, files.GetMetricPath<DeadlineMetric>());
+        if (config.RecordSingleStationSnapshot)
+            _snapshots = new MetricWriter<SnapshotMetric>(config.BufferSize, files.GetMetricPath<SnapshotMetric>());
     }
 
     /// <summary>Records a car snapshot. No-op if car snapshots are disabled in config.</summary>
@@ -49,6 +53,10 @@ public sealed class MetricsService : IAsyncDisposable
     /// <summary>Records a deadline metric. No-op if deadlines are disabled in config.</summary>
     /// <param name="metric">The deadline metric to record.</param>
     public void RecordDeadline(DeadlineMetric metric) => _deadlines?.Record(metric);
+
+    /// <summary>Records a station snapshot metric. No-op if station snapshots are disabled in config.</summary>
+    /// <param name="metric">The station snapshot metric to record.</param>
+    public void RecordSnapshot(SnapshotMetric metric) => _snapshots?.Record(metric);
 
     /// <summary>
     /// Signals all writers to stop, drains their channels, and flushes remaining
