@@ -3,7 +3,7 @@ namespace Engine.Events;
 public class EventScheduler
 {
     private readonly PriorityQueue<Event, (uint, uint)> _eventPriorityQueue = new();
-    private readonly HashSet<(uint, ushort)> _canceledEvents = new();
+    private readonly HashSet<(uint, string)> _canceledEvents = new();
     private uint _currentTime = 0;
     private uint _evSequeenceId = 0;
 
@@ -27,9 +27,10 @@ public class EventScheduler
 
         _eventPriorityQueue.TryDequeue(out var e, out var priority);
         _currentTime = priority.Item1;
-        if (e is ReservationRequest request && _canceledEvents.Contains((request.EVId, request.StationId)))
+        var eventType = e.GetType().ToString();
+        if (_canceledEvents.Contains((e.EVId, eventType)))
         {
-            _canceledEvents.Remove((request.EVId, request.StationId));
+            _canceledEvents.Remove((e.EVId, eventType));
             return GetNextEvent();
         }
 
@@ -39,13 +40,13 @@ public class EventScheduler
     public uint GetCurrentTime() => _currentTime;
 
     /// <summary>
-    /// Cancels a reservation request by adding it to the set of canceled events.
+    /// Cancels an event by adding it to the set of canceled events.
     /// When the event is dequeued, it will be skipped.
     /// </summary>
-    /// <param name="request">The CancelRequest for a given event.</param>
-    public void CancelEvent(CancelRequest request)
+    /// <param name="request">The event that needs to be cancelled.</param>
+    public void CancelEvent(Event request)
     {
-        var e = (request.EVId, request.StationId);
+        var e = (request.EVId, request.GetType().ToString());
         _canceledEvents.Add(e);
     }
 }
