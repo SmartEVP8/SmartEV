@@ -48,6 +48,9 @@ public static class Program
                 TotalChargers = 10000,
             },
 
+            // TODO: GET THE ACTUAL NUMBER
+            MaximumEVs = 600_000,
+
             EnergyPricesPath = new FileInfo(Path.Combine(dataPath.FullName, "energy_prices.csv")),
             OsrmPath = new FileInfo(Path.Combine(dataPath.FullName, "osrm/output.osrm")),
             CitiesPath = new FileInfo(Path.Combine(dataPath.FullName, "CityInfo.csv")),
@@ -67,5 +70,4 @@ public static class Program
         provider.GetRequiredService<SpatialGrid>();
         provider.GetRequiredService<IJourneySamplerProvider>();
     }
-
 }
