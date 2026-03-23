@@ -1,3 +1,4 @@
+using Core.Vehicles;
 namespace Engine.Events;
 
 public class EventScheduler
@@ -28,9 +29,10 @@ public class EventScheduler
         _eventPriorityQueue.TryDequeue(out var e, out var priority);
         _currentTime = priority.Item1;
         var eventType = e.GetType().ToString();
-        if (_canceledEvents.Contains((e.EVId, eventType)))
+        var evId = GetEventEVId(e);
+        if (_canceledEvents.Contains((evId, eventType)) && evId != uint.MaxValue)
         {
-            _canceledEvents.Remove((e.EVId, eventType));
+            _canceledEvents.Remove((evId, eventType));
             return GetNextEvent();
         }
 
@@ -46,7 +48,20 @@ public class EventScheduler
     /// <param name="request">The event that needs to be cancelled.</param>
     public void CancelEvent(Event request)
     {
-        var e = (request.EVId, request.GetType().ToString());
+        var evId = GetEventEVId(request);
+        if (evId == uint.MaxValue) return;
+        var e = (evId, request.GetType().ToString());
         _canceledEvents.Add(e);
     }
+
+    private static uint GetEventEVId(Event e) => e switch
+    {
+        ReservationRequest r => r.EVId,
+        CancelRequest c => c.EVId,
+        ArriveAtStation a => a.EVId,
+        StartCharging s => s.EVId,
+        EndCharging l => l.EVId,
+        ArriveAtDestination d => d.EVId,
+        _ => uint.MaxValue,
+    };
 }

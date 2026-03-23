@@ -3,7 +3,7 @@ namespace Engine.Vehicles;
 using Core.Shared;
 using Engine.Events;
 
-public record SpawnEV(uint EVId, Time Time) : Event(EVId, Time);
+public record SpawnEV(uint EVId, Time Time) : Event(Time);
 
 public class EVPopulator(EVFactory evFactory, EVStore evStore, EventScheduler eventScheduler)
 {
