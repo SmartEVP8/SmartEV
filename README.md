@@ -2,12 +2,12 @@
 1. Install dependencies
     - ``sudo apt install dotnet10 build-essential git cmake pkg-config libbz2-dev libxml2-dev libzip-dev libboost-all-dev lua5.2 liblua5.2-dev libtbb-dev``
     - ``git lfs install``
-2. In SmartEV/Core
+2. In SmartEV/
     - Run ``git lfs pull``
     - Run ``./prepare_osrm.sh``
 3. In the OSRM_Wrapper repo
     - Run ``cmake -S . -B build && cmake --build build -j4``
-    - Copy OSRM_Wrapper/build/libosrm_wrapper.so to SmartEV/native
+    - Copy OSRM_Wrapper/build/libosrm_wrapper.so to SmartEV/Core/native
 
 ## If changes are made in C++ project 
 1. In the OSRM_Wrapper repo
