@@ -36,7 +36,7 @@ public class StationServiceTests
     }
 
     [Fact]
-    public void ThreeEVs_SingleCharger_ThirdQueuesAndStartsAfterFirst()
+    public void ThreeEVs_SingleCharger_FirstStartsRemainingQueues()
     {
         // Single charger: first EV starts immediately, second and third queue.
         // After first finishes, second should start.
@@ -83,7 +83,6 @@ public class StationServiceTests
         var ev1End = AsEndCharging(scheduler.GetNextEvent());
         Assert.Equal(1, ev1End.EVId);
         Assert.Single(service.GetChargerState(1)!.Queue);
-        Assert.NotNull(scheduler.PeekNextEvent());
 
         service.HandleEndCharging(ev1End);
 
@@ -152,7 +151,7 @@ public class StationServiceTests
         return (service, scheduler);
     }
 
-    private static ConnectedEV MakeEV(uint evId, double currentSoC, double targetSoC, Socket socket = Socket.CCS2)
+    private static ConnectedEV MakeEV(int evId, double currentSoC, double targetSoC, Socket socket = Socket.CCS2)
     {
         var model = EVModels.Models.First(m => m.Model == "Volkswagen ID.3");
         return new ConnectedEV(

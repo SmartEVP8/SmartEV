@@ -3,8 +3,8 @@ namespace Engine.Services;
 using Core.Charging;
 using Core.Charging.ChargingModel;
 using Core.Charging.ChargingModel.Chargepoint;
-using Core.Vehicles;
 using Engine.Events;
+using Core.Shared;
 
 /// <summary>
 /// Tracks an active charging session at one side of a charger.
@@ -12,7 +12,7 @@ using Engine.Events;
 public record ChargingSession(
     int EVId,
     ConnectedEV EV,
-    uint StartTime,
+    Time StartTime,
     ChargingSide? Side); // null for single chargers
 
 /// <summary>
@@ -31,7 +31,7 @@ public class ChargerState(ChargerBase charger)
     public Queue<(int EVId, ConnectedEV EV)> Queue { get; } = new();
 
     /// <summary>
-    /// Gets or sets the active charging session at side A, or null if free.
+    /// Gets or sets the active charging session at side A, or null if free. Always used for single chargers.
     /// </summary>
     public ChargingSession? SessionA { get; set; }
 
@@ -61,7 +61,7 @@ public class ChargerState(ChargerBase charger)
 /// </summary>
 public class StationService
 {
-    private readonly Dictionary<ushort, List<ChargerState>> _stationChargers = [];
+    private readonly Dictionary<int, List<ChargerState>> _stationChargers = [];
     private readonly Dictionary<int, ChargerState> _chargerIndex = [];
     private readonly ChargingIntegrator _integrator;
     private readonly EventScheduler _scheduler;
@@ -73,7 +73,7 @@ public class StationService
     /// <param name="integrator">The charging integrator to use for simulating charging sessions.</param>
     /// <param name="scheduler">The event scheduler to use for scheduling future events.</param>
     public StationService(
-        IEnumerable<Station> stations,
+        ICollection<Station> stations,
         ChargingIntegrator integrator,
         EventScheduler scheduler)
     {
@@ -143,6 +143,7 @@ public class StationService
             return;
 
         var result = state.LastResult;
+        state.LastResult = null;
 
         switch (state.Charger)
         {
@@ -164,7 +165,7 @@ public class StationService
                         {
                             EV = state.SessionB.EV with { CurrentSoC = updatedSoC }
                         };
-                        _scheduler.CancelEndCharging(state.SessionB.EVId, state.LastResult!.FinishTimeB!.Value);
+                        _scheduler.CancelEvent(state.SessionB.EVId);
 
                         if (updatedSoC >= state.SessionB.EV.TargetSoC)
                         {
@@ -185,7 +186,7 @@ public class StationService
                         {
                             EV = state.SessionA.EV with { CurrentSoC = updatedSoC }
                         };
-                        _scheduler.CancelEndCharging(state.SessionA.EVId, state.LastResult!.FinishTimeA!.Value);
+                        _scheduler.CancelEvent(state.SessionA.EVId);
 
                         if (updatedSoC >= state.SessionA.EV.TargetSoC)
                         {
@@ -207,7 +208,7 @@ public class StationService
     /// </summary>
     /// <param name="state">The charger state.</param>
     /// <param name="simNow">The current simulation time.</param>
-    private void StartCharging(ChargerState state, uint simNow)
+    private void StartCharging(ChargerState state, Time simNow)
     {
         switch (state.Charger)
         {
@@ -257,9 +258,9 @@ public class StationService
                     if (!hadBothBefore && nowHasBoth && (wasAloneA || wasAloneB))
                     {
                         if (wasAloneA && oldFinishA is not null)
-                            _scheduler.CancelEndCharging(state.SessionA!.EVId, oldFinishA.Value);
+                            _scheduler.CancelEvent(state.SessionA!.EVId);
                         else if (wasAloneB && oldFinishB is not null)
-                            _scheduler.CancelEndCharging(state.SessionB!.EVId, oldFinishB.Value);
+                            _scheduler.CancelEvent(state.SessionB!.EVId);
                     }
 
                     if (state.SessionA is null && state.SessionB is null) break;

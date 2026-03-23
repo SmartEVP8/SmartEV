@@ -38,13 +38,11 @@ public record ArriveAtStation(int EVId, ushort StationId, Time Time) : Cancelabl
 //  - Record the time an EV spent charging
 public record EndCharging(int EVId, int ChargerId, Time Time) : CancelableEvent(EVId, Time);
 
-
 // Metrics:
 //  - Record if the EV missed its deadline.
 //  - Record how much the EV missed the deadline by.
 //  - Record the path deviation of an EVs actual journey compared to its original journey.
 public record ArriveAtDestination(int EVId, Time Time) : CancelableEvent(EVId, Time);
-
 
 // ---------- NON-DOMAIN EVENTS ---------- //
 

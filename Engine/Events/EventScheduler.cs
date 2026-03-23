@@ -1,5 +1,7 @@
 namespace Engine.Events;
 
+using Core.Shared;
+
 /// <summary>
 /// An EventScheduler responsbile for managing the scheduling and retrieval of events in the simulation. 
 /// </summary>
@@ -7,9 +9,8 @@ public class EventScheduler
 {
     private readonly PriorityQueue<Event, (uint, uint)> _eventPriorityQueue = new();
     private readonly HashSet<int> _canceledEvents = [];
-    private readonly Dictionary<int, uint> _canceledEndChargingEVIds = [];
-    private uint _currentTime = 0;
-    private uint _evSequeenceId = 0;
+    private Time _currentTime = 0;
+    private Time _evSequeenceId = 0;
 
     /// <summary>
     /// Schedules an event to be executed at a specific timestamp.
@@ -40,15 +41,6 @@ public class EventScheduler
             _canceledEvents.Remove(cancelableEvent.EVId);
             return GetNextEvent();
         }
-
-        if (e is EndCharging endCharging &&
-            _canceledEndChargingEVIds.TryGetValue(endCharging.EVId, out var cancelUntil) &&
-            endCharging.Time <= cancelUntil)
-        {
-            _canceledEndChargingEVIds.Remove(endCharging.EVId);
-            return GetNextEvent();
-        }
-
         return e;
     }
 
@@ -56,7 +48,7 @@ public class EventScheduler
     /// Gets the current simulation time in seconds.
     /// </summary>
     /// <returns>The current simulation time in seconds.</returns>
-    public uint GetCurrentTime() => _currentTime;
+    public Time GetCurrentTime() => _currentTime;
 
     /// <summary>
     /// Cancels a CancelableEvent by adding it to the set of canceled events.
@@ -72,24 +64,5 @@ public class EventScheduler
         if (_canceledEvents.Contains(evID))
             throw new InvalidOperationException($"Event with EVId {evID} is already cancelled.");
         _canceledEvents.Add(evID);
-    }
-
-    /// <summary>
-    /// Cancels a scheduled EndCharging event for a specific EVId up to a certain timestamp.
-    /// </summary>
-    /// <param name="evId">The ID of the EV for which to cancel the charging event.</param>
-    /// <param name="upToTimestamp">The timestamp up to which to cancel the event.</param>
-    public void CancelEndCharging(int evId, uint upToTimestamp)
-        => _canceledEndChargingEVIds[evId] = upToTimestamp;
-
-    /// <summary>
-    /// Peeks at the next event in the EventSheduler without removing it from the queue.
-    /// </summary>
-    /// <returns>The next event in the queue, or null if the queue is empty.</returns>
-    public Event? PeekNextEvent()
-    {
-        if (_eventPriorityQueue.Count == 0) return null;
-        _eventPriorityQueue.TryPeek(out var e, out _);
-        return e;
     }
 }
