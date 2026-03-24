@@ -28,7 +28,6 @@ public class SnapshotMetricTests
         Assert.Equal(expectedActive, metric.ActiveChargers);
     }
 
-
     private static EnergyPrices MakeEnergyPrices()
     {
         var lines = new List<string> { "Day,Hour,Price" };

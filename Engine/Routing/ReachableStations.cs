@@ -4,6 +4,10 @@ using Core.Shared;
 using Core.Vehicles;
 using Core.Charging;
 using Engine.GeoMath;
+
+/// <summary>
+/// Provides functionality to find reachable stations for an EV based on its current charge and the distance to nearby stations along a given path.
+/// </summary>
 public class ReachableStations
 {
     /// <summary>
@@ -19,10 +23,10 @@ public class ReachableStations
     {
         var evBattery = ev.Battery;
         var reach = (double)evBattery.StateOfCharge / ((double)ev.Efficiency / 1000);
-        return nearbyStations.Where(id =>
+        return [.. nearbyStations.Where(id =>
             {
                 var dist = GeoMath.DistancesThroughPath(path, stations[id].Position, radius);
                 return dist > -1 && dist <= reach;
-            }).ToList();
+            })];
     }
 }

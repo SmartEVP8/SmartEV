@@ -10,9 +10,21 @@ using Core.Shared;
 /// <param name="path">The path of the journey.</param>
 public class Journey(Time departure, Time originalDuration, Paths path)
 {
-    public readonly Time Departure = departure;
-    public readonly Time OriginalDuration = originalDuration;
-    public Paths Path = path;
+    /// <summary>
+    /// Gets the time the journey started.
+    /// </summary>
+    public Time Departure { get; } = departure;
+
+    /// <summary>
+    /// Gets the original duration of the journey.
+    /// </summary>
+    public Time OriginalDuration { get; } = originalDuration;
+
+    /// <summary>
+    /// Gets the path of the journey.
+    /// </summary>
+    public Paths Path { get; } = path;
+
     private float _runningSumDeviation;
 
     /// <summary>

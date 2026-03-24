@@ -56,16 +56,21 @@ public class EVStore(int totalAmountOfEvs)
     }
 
     /// <summary>
-    /// Attempts to rent multiple EV slots at once. If successful, the caller can use the returned indexes to access and modify the EVs in-place.
+    /// Attempts to rent multiple EV slots at once.
     /// </summary>
-    /// <param name="indexes"> A span that will be filled with the rented indexes. The caller should ensure that the span has enough capacity to hold the requested number of indexes.</param>
+    /// <param name="indexes">A span to be filled with the rented indexes.</param>
     /// <returns>Indicates if the rent was successful.</returns>
     /// <example>
+    /// <code><![CDATA[
     /// Span<uint> indexes = stackalloc uint[3];
     /// if (store.TryRentBulk(indexes))
     /// {
-    ///    for (int i = 0; i < indexes.Length; i++)
-    /// }.
+    ///     for (int i = 0; i < indexes.Length; i++)
+    ///     {
+    ///         // Your logic here
+    ///     }
+    /// }
+    /// ]]></code>
     /// </example>
     public bool TryRentBulk(Span<uint> indexes)
     {

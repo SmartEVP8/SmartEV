@@ -1,7 +1,6 @@
-using Engine.Metrics;
-using Xunit;
-
 namespace Engine.test.Metrics;
+
+using Engine.Metrics;
 
 public class MetricsFileManagerTests
 {
@@ -22,6 +21,5 @@ public class MetricsFileManagerTests
         var fp = mfm.GetMetricPath<TestType>();
         var expectedFp = Path.Combine(path, guid.ToString(), $"{typeof(TestType).Name}.parquet");
         Assert.Equal(expectedFp, fp.ToString());
-
     }
 }

@@ -41,6 +41,7 @@ public class EventScheduler
             _canceledEvents.Remove(cancelableEvent.EVId);
             return GetNextEvent();
         }
+
         return e;
     }
 

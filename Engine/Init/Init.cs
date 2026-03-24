@@ -16,8 +16,15 @@ using Engine.Vehicles;
 using Microsoft.Extensions.DependencyInjection;
 using System.Net.ServerSentEvents;
 
+/// <summary>
+/// Initializes the Engine by setting up all necessary services and configurations.
+/// </summary>
 public static class Init
 {
+    /// <summary>
+    /// Initializes the Engine with the required services and configurations.
+    /// </summary>
+    /// <param name="services">The service collection to initialize.</param>
     public static void InitEngine(IServiceCollection services)
     {
         services.AddSingleton<IOSRMRouter>(sp =>

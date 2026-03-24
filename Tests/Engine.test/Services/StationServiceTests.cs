@@ -20,7 +20,6 @@ public class StationServiceTests
 
     private readonly Time _time = 0;
 
-
     [Fact]
     public void TwoCars_DualCharger_BothReceiveCharge()
     {

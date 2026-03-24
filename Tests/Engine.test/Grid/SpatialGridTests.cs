@@ -20,13 +20,12 @@ public class SpatialGridTests
         return new SpatialGrid(grid, stations);
     }
 
-
     [Fact]
     public void GetStations_Along_Polyline()
     {
-        var station1 = new Station(1, string.Empty, string.Empty, new Position(10.0, 56.0), null, _random, _energyPrices);
-        var station2 = new Station(2, string.Empty, string.Empty, new Position(10.5, 56.5), null, _random, _energyPrices);
-        var station3 = new Station(3, string.Empty, string.Empty, new Position(10.3, 56.5), null, _random, _energyPrices);
+        var station1 = new Station(1, string.Empty, string.Empty, new Position(10.0, 56.0), chargers: [], _random, _energyPrices);
+        var station2 = new Station(2, string.Empty, string.Empty, new Position(10.5, 56.5), chargers: [], _random, _energyPrices);
+        var station3 = new Station(3, string.Empty, string.Empty, new Position(10.3, 56.5), chargers: [], _random, _energyPrices);
 
         var sg = BuildSpatialGrid(new Dictionary<ushort, Station> { { station1.Id, station1 }, { station2.Id, station2 }, { station3.Id, station3 } });
 
@@ -42,8 +41,8 @@ public class SpatialGridTests
     [Fact]
     public void GetStationsAlongPolyline_StationOutsideRadius_NotReturned()
     {
-        var nearby = new Station(1, string.Empty, string.Empty, new Position(10.2, 56.15), null, _random, _energyPrices);
-        var farAway = new Station(2, string.Empty, string.Empty, new Position(12.5, 55.6), null, _random, _energyPrices);
+        var nearby = new Station(1, string.Empty, string.Empty, new Position(10.2, 56.15), chargers: [], _random, _energyPrices);
+        var farAway = new Station(2, string.Empty, string.Empty, new Position(12.5, 55.6), chargers: [], _random, _energyPrices);
         var sg = BuildSpatialGrid(new Dictionary<ushort, Station> { { nearby.Id, nearby }, { farAway.Id, farAway } });
         var path = new Paths([new Position(10.0, 56.15), new Position(10.5, 56.15)]);
         var result = sg.GetStationsAlongPolyline(path, 15);
@@ -54,7 +53,7 @@ public class SpatialGridTests
     [Fact]
     public void GetStationsAlongPolyline_StationPerpendicularToSegment_IsFound()
     {
-        var station = new Station(1, string.Empty, string.Empty, new Position(10.2, 56.15), null, _random, _energyPrices);
+        var station = new Station(1, string.Empty, string.Empty, new Position(10.2, 56.15), chargers: [], _random, _energyPrices);
         var sg = BuildSpatialGrid(new Dictionary<ushort, Station> { { station.Id, station } });
         var path = new Paths([new Position(10.0, 56.15), new Position(10.5, 56.15)]);
         var result = sg.GetStationsAlongPolyline(path, 15);
@@ -64,7 +63,7 @@ public class SpatialGridTests
     [Fact]
     public void GetStationsAlongPolyline_NoDuplicates_WhenStationNearMultipleSegments()
     {
-        var station = new Station(1, string.Empty, string.Empty, new Position(10.2, 56.15), null, _random, _energyPrices);
+        var station = new Station(1, string.Empty, string.Empty, new Position(10.2, 56.15), chargers: [], _random, _energyPrices);
         var sg = BuildSpatialGrid(new Dictionary<ushort, Station> { { station.Id, station } });
         var path = new Paths([
             new Position(10.0, 56.15),

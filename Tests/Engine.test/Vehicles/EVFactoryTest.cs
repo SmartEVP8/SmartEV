@@ -51,8 +51,4 @@ public class EVFactoryTest
     {
         public (float duration, string polyline) QuerySingleDestination(double evLon, double evLat, double destLon, double destLat) => (10, "_p~iF~ps|U_ulLnnqC_mqNvxq`@");
     }
-
-
-
-
 }

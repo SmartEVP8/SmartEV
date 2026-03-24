@@ -23,7 +23,6 @@ public class SnapshotEventHandler(
     /// </summary>
     /// <param name="e">The snapshot event containing the station list, metrics service,
     /// scheduler, and power delivery.</param>
-    /// <param name="currentTime">The current simulation time in seconds.</param>
     public void Handle(SnapshotEvent e)
     {
         var currentTime = startTime.AddSeconds(e.Time.T);
@@ -33,11 +32,11 @@ public class SnapshotEventHandler(
         foreach (var station in stations)
         {
             var metric = SnapshotMetric.Collect(
-                station, (uint)e.Time,
-                currentTime.DayOfWeek, 
+                station,
+                e.Time,
+                currentTime.DayOfWeek,
                 currentTime.Hour,
-                getDeliveredKW
-                );
+                getDeliveredKW);
             metrics.RecordSnapshot(metric);
         }
 

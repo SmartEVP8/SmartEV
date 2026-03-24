@@ -1,8 +1,7 @@
+namespace Engine.test.Metrics;
+
 using Engine.Metrics;
 using Parquet.Serialization;
-using Xunit;
-
-namespace Engine.test.Metrics;
 
 public class MetricWriterTests
 {
@@ -19,10 +18,11 @@ public class MetricWriterTests
         try
         {
             var writer = new MetricWriter<TestMetric>(COUNT, new FileInfo(path));
-            for (int i = 0; i < COUNT; i++)
+            for (var i = 0; i < COUNT; i++)
             {
                 writer.Record(new TestMetric());
             }
+
             await writer.DisposeAsync();
             var results = await ParquetSerializer.DeserializeAsync<TestMetric>(path);
             Assert.Single(results);
@@ -42,10 +42,11 @@ public class MetricWriterTests
         try
         {
             var writer = new MetricWriter<TestMetric>(CAPACITY, new FileInfo(path));
-            for (int i = 0; i < COUNT; i++)
+            for (var i = 0; i < COUNT; i++)
             {
                 writer.Record(new TestMetric());
             }
+
             await writer.DisposeAsync();
             var results = await ParquetSerializer.DeserializeAsync<TestMetric>(path);
             Assert.Equal(COUNT, results.Count);

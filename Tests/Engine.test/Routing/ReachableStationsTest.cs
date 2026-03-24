@@ -28,9 +28,9 @@ public class ReachableStationsTests
         var energyPrices = new EnergyPrices(new FileInfo("data/energy_prices.csv"));
         var stations = new Dictionary<ushort, Station>
         {
-            { 1, new Station(1, "Station A", "Address A", new Position(0.5, 0.5), null, new Random(), energyPrices) },
-            { 2, new Station(2, "Station B", "Address B", new Position(2.0, 2.0), null, new Random(), energyPrices) },
-            { 3, new Station(3, "Station C", "Address C", new Position(0.1, 0.1), null, new Random(), energyPrices) },
+            { 1, new Station(1, "Station A", "Address A", new Position(0.5, 0.5), chargers: [], new Random(), energyPrices) },
+            { 2, new Station(2, "Station B", "Address B", new Position(2.0, 2.0), chargers: [], new Random(), energyPrices) },
+            { 3, new Station(3, "Station C", "Address C", new Position(0.1, 0.1), chargers: [], new Random(), energyPrices) },
         };
 
         var nearbyStations = new List<ushort> { 1, 2, 3 };

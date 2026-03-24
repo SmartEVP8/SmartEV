@@ -7,66 +7,6 @@ using Engine.StationFactory;
 
 public class StationFactoryTest
 {
-
-    private static readonly EnergyPrices _energyPrices = new(new FileInfo(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "data", "energy_prices.csv")));
-
-    private static StationFactory CreateFactory(StationFactoryOptions? options = null, Random? random = null)
-    {
-        random ??= new Random();
-        return new StationFactory(options ?? new StationFactoryOptions(), random, _energyPrices);
-    }
-
-    private static FileInfo CreateTempLocationsFile(params object[] locations)
-    {
-        var json = JsonSerializer.Serialize(locations);
-        var filePath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.json");
-        File.WriteAllText(filePath, json);
-        return new FileInfo(filePath);
-    }
-
-    private static FileInfo CreateTempLocationsFile(int count)
-    {
-        var locations = Enumerable.Range(1, count)
-            .Select(i => (object)new
-            {
-                Name = $"Station {i}",
-                Address = $"Address {i}",
-                Latitude = 56.0 + (i * 0.001),
-                Longitude = 10.0 + (i * 0.001),
-            })
-            .ToArray();
-
-        return CreateTempLocationsFile(locations);
-    }
-
-    private static FileInfo CreateTempFileWithRawContent(string content)
-    {
-        var filePath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.json");
-        File.WriteAllText(filePath, content);
-        return new FileInfo(filePath);
-    }
-
-    private static Dictionary<Socket, int> CountSockets(Dictionary<ushort, Station> stations)
-    {
-        var counts = new Dictionary<Socket, int>();
-
-        foreach (var station in stations)
-        {
-            foreach (var charger in station.Value.Chargers)
-            {
-                foreach (var socket in charger.GetSockets())
-                {
-                    if (!counts.TryAdd(socket, 1))
-                    {
-                        counts[socket]++;
-                    }
-                }
-            }
-        }
-
-        return counts;
-    }
-
     [Fact]
     public void Constructor_WhenTotalChargersIsZero_ThrowsArgumentOutOfRangeException()
     {
@@ -420,5 +360,64 @@ public class StationFactoryTest
         {
             file.Delete();
         }
+    }
+
+    private static readonly EnergyPrices _energyPrices = new(new FileInfo(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "data", "energy_prices.csv")));
+
+    private static StationFactory CreateFactory(StationFactoryOptions? options = null, Random? random = null)
+    {
+        random ??= new Random();
+        return new StationFactory(options ?? new StationFactoryOptions(), random, _energyPrices);
+    }
+
+    private static FileInfo CreateTempLocationsFile(params object[] locations)
+    {
+        var json = JsonSerializer.Serialize(locations);
+        var filePath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.json");
+        File.WriteAllText(filePath, json);
+        return new FileInfo(filePath);
+    }
+
+    private static FileInfo CreateTempLocationsFile(int count)
+    {
+        var locations = Enumerable.Range(1, count)
+            .Select(i => (object)new
+            {
+                Name = $"Station {i}",
+                Address = $"Address {i}",
+                Latitude = 56.0 + (i * 0.001),
+                Longitude = 10.0 + (i * 0.001),
+            })
+            .ToArray();
+
+        return CreateTempLocationsFile(locations);
+    }
+
+    private static FileInfo CreateTempFileWithRawContent(string content)
+    {
+        var filePath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.json");
+        File.WriteAllText(filePath, content);
+        return new FileInfo(filePath);
+    }
+
+    private static Dictionary<Socket, int> CountSockets(Dictionary<ushort, Station> stations)
+    {
+        var counts = new Dictionary<Socket, int>();
+
+        foreach (var station in stations)
+        {
+            foreach (var charger in station.Value.Chargers)
+            {
+                foreach (var socket in charger.GetSockets())
+                {
+                    if (!counts.TryAdd(socket, 1))
+                    {
+                        counts[socket]++;
+                    }
+                }
+            }
+        }
+
+        return counts;
     }
 }

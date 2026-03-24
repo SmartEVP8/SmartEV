@@ -30,7 +30,6 @@ public class EVPopulatorBenchMark
         var cityPath = AppContext.GetData("CityDataPath") as string
                     ?? throw new InvalidOperationException("GridPath not set in project.");
 
-
         var router = new OSRMRouter(new FileInfo(osrmPath));
         var cities = CityParser.Parse(new FileInfo(cityPath));
         var polygons = PolygonParser.Parse(File.ReadAllText(polygonPath));
@@ -44,6 +43,9 @@ public class EVPopulatorBenchMark
         _eVPopulator = new(evFactory, evStore, eventScheduler);
     }
 
+    /// <summary>
+    /// Benchmarks the creation of EVs using the EVPopulator.
+    /// </summary>
     [Benchmark]
     public void CreateEVs() => _eVPopulator.CreateEVs(_count, 1);
 }

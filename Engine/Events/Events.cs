@@ -7,7 +7,7 @@ using Engine.Metrics;
 public abstract record Event(Time Time);
 public abstract record CancelableEvent(int EVId, Time Time) : Event(Time);
 
-//TODO: THIS SHOULD BE CHANGE TO THE CORRECT FINDCANDIDATE EVENT
+// TODO: THIS SHOULD BE CHANGE TO THE CORRECT FINDCANDIDATE EVENT
 public record FindCandidate(int EVId, Time Time) : Event(Time);
 
 // ----------- DOMAIN EVENTS ----------- //
@@ -53,12 +53,10 @@ public record ArriveAtDestination(int EVId, Time Time) : CancelableEvent(EVId, T
 // - Checks if an EV should look for Stations
 public record CheckUrgency(int EVId, Time Time) : Event(Time);
 
-
 // Spawn
 // Functionality:
 //  - Spawn an EV .
-//  - Sample once from urgency to see if it needs to find a charger immediately.
-
+// - Sample once from urgency to see if it needs to find a charger immediately.
 public record SnapshotEvent(Time Time) : Event(Time);
 
 // Check urgency

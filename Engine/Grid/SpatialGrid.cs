@@ -29,7 +29,7 @@ public class SpatialGrid
         _latSize = spawnable.LatSize;
         _lonSize = spawnable.LonSize;
 
-        foreach (var cell in spawnable.Cells.SelectMany(row => row).Where(c => c.Spawnable))
+        foreach (var cell in spawnable.GetSpawnableCells())
         {
             var key = ToRowCol(cell.Centerpoint.Latitude, cell.Centerpoint.Longitude);
             _cells[key] = [];
@@ -45,26 +45,6 @@ public class SpatialGrid
 
             _cells[key].Add(station.Key);
         }
-    }
-
-
-
-    private RowCol? FindNearestSpawnableCell(RowCol origin)
-    {
-        for (var radius = 1; radius <= 1; radius++)
-        {
-            for (var dr = -radius; dr <= radius; dr++)
-            {
-                for (var dc = -radius; dc <= radius; dc++)
-                {
-                    if (Math.Abs(dr) != radius && Math.Abs(dc) != radius) continue;
-                    var candidate = new RowCol(origin.Row + dr, origin.Col + dc);
-                    if (_cells.ContainsKey(candidate)) return candidate;
-                }
-            }
-        }
-
-        return null;
     }
 
     /// <summary>
@@ -96,6 +76,24 @@ public class SpatialGrid
         }
 
         return [.. seen];
+    }
+
+    private RowCol? FindNearestSpawnableCell(RowCol origin)
+    {
+        for (var radius = 1; radius <= 1; radius++)
+        {
+            for (var dr = -radius; dr <= radius; dr++)
+            {
+                for (var dc = -radius; dc <= radius; dc++)
+                {
+                    if (Math.Abs(dr) != radius && Math.Abs(dc) != radius) continue;
+                    var candidate = new RowCol(origin.Row + dr, origin.Col + dc);
+                    if (_cells.ContainsKey(candidate)) return candidate;
+                }
+            }
+        }
+
+        return null;
     }
 
     /// <summary>
