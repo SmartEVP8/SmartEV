@@ -6,10 +6,17 @@ public interface IOSRMRouter : IMatrixRouter, IDisposable, IPointToPointRouter, 
 {
     void InitStations(List<Station> stations);
 
+    (float[] durations, float[] distances) QueryStationsWithDest(
+        double evLon,
+        double evLat,
+        double destLon,
+        double destLat,
+        ushort[] indices);
+
     (float[] durations, float[] distances) QueryStations(
         double evLon,
         double evLat,
-        int[] indices);
+        ushort[] indices);
 
     (float duration, string polyline) QuerySingleDestination(
         double evLon,

@@ -33,11 +33,25 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
         IntPtr osrm,
         double evLon,
         double evLat,
-        [In] int[] indices,
+        [In] ushort[] indices,
         int numIndices,
         float* outDurations,
         float* outDistances
     );
+
+    [LibraryImport(_lib)]
+    private static partial void ComputeTableIndexedWithDest(
+            IntPtr osrm,
+            double evLon,
+            double evLat,
+            double destLon,
+            double destLat,
+            [In] ushort[] indices,
+            int numIndices,
+            float* outDurations,
+            float* outDistances
+        );
+
 
     [LibraryImport(_lib)]
     private static partial IntPtr ComputeSrcToDest(
@@ -111,7 +125,7 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
     public (float[] durations, float[] distances) QueryStations(
         double evLon,
         double evLat,
-        int[] indices)
+        ushort[] indices)
     {
         if (indices.Length == 0)
             return ([], []);
@@ -123,6 +137,38 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
         fixed (float* distPtr = distances)
         {
             ComputeTableIndexed(_osrm, evLon, evLat, indices, indices.Length, durPtr, distPtr);
+        }
+
+        return (durations, distances);
+    }
+
+    /// <summary>
+    /// Queries the durations and distances from an electric vehicle to specified stations
+    /// and back to the destination.
+    /// </summary>
+    /// <param name="evLon">The longitude coordinate of the electric vehicle.</param>
+    /// <param name="evLat">The latitude coordinate of the electric vehicle.</param>
+    /// <param name="destLon">The latitude coordinate of the destination.</param>
+    /// <param name="destLat">The longitude coordinate of the destination.</param>
+    /// <param name="indices">An array of station indices to query.</param>
+    /// <returns>A tuple containing arrays of durations and distances to each station.</returns>
+    public (float[] durations, float[] distances) QueryStationsWithDest(
+        double evLon,
+        double evLat,
+        double destLon,
+        double destLat,
+        ushort[] indices)
+    {
+        if (indices.Length == 0)
+            return ([], []);
+
+        var durations = new float[indices.Length];
+        var distances = new float[indices.Length];
+
+        fixed (float* durPtr = durations)
+        fixed (float* distPtr = distances)
+        {
+            ComputeTableIndexedWithDest(_osrm, evLon, evLat, destLon, destLat, indices, indices.Length, durPtr, distPtr);
         }
 
         return (durations, distances);
