@@ -3,11 +3,13 @@ namespace Engine.Services;
 using Core.Charging;
 using Core.Charging.ChargingModel;
 using Core.Charging.ChargingModel.Chargepoint;
-using Engine.Events;
 using Core.Shared;
+using Core.Routing;
+using Core.Vehicles;
+using Engine.Events;
 using Engine.Metrics.Snapshots;
 using Engine.Routing;
-using Core.Routing;
+using Engine.Utils;
 
 /// <summary>
 /// Tracks an active charging session at one side of a charger.
@@ -69,7 +71,8 @@ public class StationService
     private readonly ChargingIntegrator _integrator;
     private readonly EventScheduler _scheduler;
     private readonly PathDeviator _pathDeviator;
-    private readonly ReservationMetric _metrics;
+    private readonly ReservationMetric _reservationMetric;
+    private readonly CancellationMetric _cancellationMetric;
 
     private readonly Dictionary<ushort, Station> _stations;
 
@@ -80,19 +83,22 @@ public class StationService
     /// <param name="integrator">The charging integrator to use for simulating charging sessions.</param>
     /// <param name="scheduler">The event scheduler to use for scheduling future events.</param>
     /// <param name="pathDeviator"> The path deviator used for calculating the path deviation for a reservation.</param>
-    /// <param name="metrics"> The collection of metrics that will be used for analysis later.</param>
+    /// <param name="reservationMetric">Records snapshots of reservation requests.</param>
+    /// <param name="cancellationMetric">Records snapshots of cancellation requests.</param>
     public StationService(
         ICollection<Station> stations,
         ChargingIntegrator integrator,
         EventScheduler scheduler, 
         PathDeviator pathDeviator,
-        ReservationMetric metrics)
+        ReservationMetric reservationMetric,
+        CancellationMetric cancellationMetric)
     {
         _integrator = integrator;
         _scheduler = scheduler;
         _stations = stations.ToDictionary(s => s.Id);
         _pathDeviator = pathDeviator;
-        _metrics = metrics;
+        _reservationMetric = reservationMetric;
+        _cancellationMetric = cancellationMetric;
 
         foreach (var station in stations)
         {
@@ -112,33 +118,72 @@ public class StationService
         => _chargerIndex.TryGetValue(chargerId, out var state) ? state : null;
 
     /// <summary>
-    /// Handles a reservation request by incrementing the station's expected queue size, recording metrics,
-    /// computing the path deviation, and scheduling a new arrival event with some deviation.
+    /// Handles a reservation request by checking for an existing reservation, optionally cancelling it,
+    /// incrementing the station's expected queue size, computing the path deviation, and updating the EV's journey.
     /// </summary>
-    /// <param name="e">The reservation request event.</param>
-    /// <param name="journey">The EV's current journey, used to calculate the detour deviation.</param>
-    public void HandleReservationRequest(ReservationRequest e, Journey journey)
+    /// <param name="e">The reservation request event containing the EV ID, station ID, and request time.</param>
+    /// <param name="ev">The EV making the reservation, passed by ref so its journey and reservation can be updated.</param>
+    /// <remarks>
+    /// The EV's journey is updated to reflect the detoured path through the requested station.
+    /// TODO: Create ReservationSnapshotMetric once the metrics design is finalised.
+    /// </remarks>
+    public void HandleReservationRequest(ReservationRequest e, ref EV ev)
     {
-        var station = _stations[e.StationId];
+        if (ev.ReservationStationId is not null)
+            _scheduler.ScheduleEvent(new CancelRequest(e.EVId, ev.ReservationStationId.Value, e.Time));
 
+        var station = _stations[e.StationId];
         station.ExpectedQueueSize++;
 
-        _metrics.RequestTimestamps[e.EVId] = e.Time;
-        _metrics.TotalRequests++;
+        var currentTime = new Time(_scheduler.GetCurrentTime());
 
-        var (deviation, _) = _pathDeviator.CalculateDetourDeviation(journey, e.Time, station.Position);
-        _metrics.PathDeviations[e.EVId] = deviation;
+        var (deviation, polyline) = _pathDeviator.CalculateDetourDeviation(ev.Journey, currentTime, station.Position);
+        ev.Journey.UpdateRunningSumDeviation(deviation);
+        ev.Journey.Path = Polyline6ToPoints.DecodePolyline(polyline);
 
-        var jitter = 0.8f + (float)(Random.Shared.NextDouble() * 0.4);
-        var arrivalTime = new Time((uint)(e.Time.T * jitter));
+        ev.ReservationStationId = e.StationId;
 
-        _scheduler.ScheduleEvent(new ArriveAtStation(e.EVId, e.StationId, arrivalTime));
+        _reservationMetric.Reservations.Add(new ReservationSnapshot(
+            e.EVId,
+            e.StationId,
+            currentTime,
+            deviation,
+            ev.Battery.StateOfCharge));
     }
 
-    // TODO: handle cancelrequest
-    public void HandleCancelRequest(CancelRequest e)
-        => _scheduler.CancelEvent(e.EVId);
+    /// <summary>
+    /// Handles a cancellation request by decrementing the station's expected queue size,
+    /// cancelling the scheduled arrival event, computing urgency, and clearing the EV's reservation.
+    /// </summary>
+    /// <param name="e">The cancellation request event containing the EV ID, station ID, and request time.</param>
+    /// <param name="ev">The EV cancelling the reservation, passed by ref so its reservation can be cleared.</param>
+    /// <remarks>
+    /// TODO: Restore the EV's journey path back to its original route from its current position.
+    /// TODO: Create CancellationSnapshotMetric once the metrics design is finalised.
+    /// </remarks>
+    public void HandleCancelRequest(CancelRequest e, ref EV ev)
+    {
+        var station = _stations[e.StationId];
+        station.ExpectedQueueSize--;
 
+        _scheduler.CancelEvent(e.EVId);
+
+        ev.ReservationStationId = null;
+
+        var urgency = Urgency.CalculateChargeUrgency(
+            ev.Battery.StateOfCharge,
+            ev.Preferences.MinAcceptableCharge);
+
+        if (urgency >= Random.Shared.NextDouble())
+            _scheduler.ScheduleEvent(new FindCandidate(e.EVId, e.Time));
+
+        _cancellationMetric.Cancellations.Add(new CancellationSnapshot(
+            e.EVId,
+            e.StationId,
+            new Time(_scheduler.GetCurrentTime()),
+            ev.Battery.StateOfCharge));
+    }
+    
     /// <summary>
     /// Called when an EV arrives at a station.
     /// Finds the best compatible charger, joins its queue, and starts charging only if a side is free.

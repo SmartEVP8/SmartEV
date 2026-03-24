@@ -8,4 +8,5 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     public Battery Battery { get; } = battery;
     public ushort Efficiency { get; } = efficiency;
     public Journey Journey { get; private set; } = journey;
+    public ushort? ReservationStationId { get; set; }
 }

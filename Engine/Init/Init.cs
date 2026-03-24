@@ -39,6 +39,8 @@ public static class Init
         
         services.AddSingleton<ReservationMetric>();
 
+        services.AddSingleton<CancellationMetric>();
+
         services.AddSingleton(sp =>
         {
             var router = sp.GetRequiredService<IOSRMRouter>();
@@ -123,8 +125,9 @@ public static class Init
             var integrator = sp.GetRequiredService<ChargingIntegrator>();
             var scheduler = sp.GetRequiredService<EventScheduler>();
             var pathDeviator = sp.GetRequiredService<PathDeviator>();
-            var metrics = sp.GetRequiredService<ReservationMetric>();
-            return new StationService(stations.Values, integrator, scheduler, pathDeviator, metrics);
+            var reservationMetric = sp.GetRequiredService<ReservationMetric>();
+            var cancellationMetric = sp.GetRequiredService<CancellationMetric>();
+            return new StationService(stations.Values, integrator, scheduler, pathDeviator, reservationMetric, cancellationMetric);
         });
     }
 
