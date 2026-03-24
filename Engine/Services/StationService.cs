@@ -116,15 +116,14 @@ public class StationService
         if (!_stationChargers.TryGetValue(e.StationId, out var chargers))
             return;
 
-        var compatible = chargers
+        var target = chargers
             .Where(cs => cs.Charger.GetSockets().Contains(ev.Socket))
-            .ToList();
+            .OrderBy(cs => cs.IsFree ? 0 : 1)
+            .ThenBy(cs => cs.Queue.Count)
+            .FirstOrDefault();
 
-        if (compatible.Count == 0)
+        if (target is null)
             return;
-
-        var target = compatible.FirstOrDefault(cs => cs.IsFree)
-            ?? compatible.MinBy(cs => cs.Queue.Count)!;
 
         target.Queue.Enqueue((e.EVId, ev));
 
