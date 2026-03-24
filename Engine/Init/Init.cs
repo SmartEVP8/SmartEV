@@ -96,6 +96,7 @@ public static class Init
             var random = settings.Seed;
             var intervalSize = settings.IntervalToCheckUrgency;
             return new CheckUrgencyHandler(eventScheduler, evStore, intervalSize, random);
+        });
 
         services.AddSingleton(sp =>
         {

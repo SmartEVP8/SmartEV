@@ -1,3 +1,4 @@
+using Core.Shared;
 namespace Engine.Events;
 
 using Core.Vehicles;
@@ -34,7 +35,7 @@ public class CheckUrgencyHandler(EventScheduler eventScheduler, EVStore evStore,
         eventScheduler.ScheduleEvent(newCheckUrgency);
     }
 
-    private uint NextTimeToCheck(EV ev)
+    private Time NextTimeToCheck(EV ev)
     {
         var waypoints = ev.Journey.Path.Waypoints;
         var sumOfPath = waypoints.Zip(waypoints.Skip(1), (a, b) => GeoMath.EquirectangularDistance(a, b)).Sum();
@@ -44,6 +45,6 @@ public class CheckUrgencyHandler(EventScheduler eventScheduler, EVStore evStore,
         var totalDurationOnFullBattery = totalLengthOnFullBattery / avgSpeed;
 
         var nextCheck = (ev.Battery.StateOfCharge / ev.Battery.Capacity) % intervalSize;
-        return (uint)((totalDurationOnFullBattery / 100) * nextCheck);
+        return (Time)((totalDurationOnFullBattery / 100) * nextCheck);
     }
 }
