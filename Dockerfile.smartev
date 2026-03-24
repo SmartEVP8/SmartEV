@@ -3,6 +3,13 @@ FROM ghcr.io/smartevp8/smartev:${OSRM_BUILDER_TAG} AS osrm-data
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0-noble AS build
 
+RUN apt-get update && apt-get install -y \
+    libboost-iostreams1.83.0 \
+    libboost-filesystem1.83.0 \
+    libboost-system1.83.0 \
+    libtbb12 \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 # Pull pre-processed OSRM data from dedicated builder image
@@ -32,12 +39,24 @@ COPY --from=ghcr.io/smartevp8/osrm_wrapper:latest /build/build/libosrm_wrapper.s
 COPY . .
 RUN dotnet build --no-restore
 
+# Ensures .so is found during 'dotnet test'
+RUN mkdir -p Tests/Engine.test/bin/Debug/net10.0/ && \
+    cp Core/native/libosrm_wrapper.so Tests/Engine.test/bin/Debug/net10.0/
+
 # Run tests
 FROM build AS test
+ENV LD_LIBRARY_PATH="/app/Tests/Engine.test/bin/Debug/net10.0/:$LD_LIBRARY_PATH"
 RUN dotnet test --no-build
 
 # Runtime image
 FROM mcr.microsoft.com/dotnet/sdk:10.0-noble AS runtime
+
+RUN apt-get update && apt-get install -y \
+    libboost-iostreams1.83.0 \
+    libboost-filesystem1.83.0 \
+    libboost-system1.83.0 \
+    libtbb12 \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
