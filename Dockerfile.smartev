@@ -1,7 +1,7 @@
 ARG OSRM_BUILDER_TAG=latest
 FROM ghcr.io/smartevp8/smartev:${OSRM_BUILDER_TAG} AS osrm-data
 
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0-noble AS build
 
 WORKDIR /app
 
@@ -37,7 +37,7 @@ FROM build AS test
 RUN dotnet test --no-build
 
 # Runtime image
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS runtime
+FROM mcr.microsoft.com/dotnet/sdk:10.0-noble AS runtime
 
 WORKDIR /app
 
