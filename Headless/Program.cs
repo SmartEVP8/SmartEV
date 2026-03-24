@@ -75,5 +75,4 @@ public static class Program
         provider.GetRequiredService<IJourneySamplerProvider>();
         provider.GetRequiredService<StationService>();
     }
-
 }

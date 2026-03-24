@@ -18,7 +18,7 @@ public class CheckUrgencyHandler(EventScheduler eventScheduler, EVStore evStore,
         var urgency = Urgency.CalculateChargeUrgency(ev.Battery.StateOfCharge, ev.Preferences.MinAcceptableCharge);
         if (urgency == 1)
         {
-            var findCandidateEvent = new FindCandidate(checkUrgency.EVId, checkUrgency.Time);
+            var findCandidateEvent = new FindCandidateStations(checkUrgency.EVId, checkUrgency.Time);
             eventScheduler.ScheduleEvent(findCandidateEvent);
         }
         else if (urgency > 0.0)
@@ -26,7 +26,7 @@ public class CheckUrgencyHandler(EventScheduler eventScheduler, EVStore evStore,
             var randomPercentage = random.NextDouble();
             if (urgency >= randomPercentage)
             {
-                var findCandidateEvent = new FindCandidate(checkUrgency.EVId, checkUrgency.Time);
+                var findCandidateEvent = new FindCandidateStations(checkUrgency.EVId, checkUrgency.Time);
                 eventScheduler.ScheduleEvent(findCandidateEvent);
             }
         }

@@ -48,7 +48,7 @@ public class StationsAroundPolyline
         _path = Polyline6ToPoints.DecodePolyline(polyline);
         var journey = new Journey(0, 0, _path);
 
-        _ev = new EV(new Battery(100, 100, 15, Socket.CCS2), new Preferences(1f, 0.1f), journey, 150);
+        _ev = new EV(new Battery(100, 100, 15, Socket.CCS2), new Preferences(1f, 0.1f, 10.0f), journey, 150);
 
         _stations = [];
         var rand = new Random(321);
@@ -70,8 +70,8 @@ public class StationsAroundPolyline
     [Benchmark]
     public void BenchmarkStationsInPolyline()
     {
-        var stationNearBy = _spatialGrid.GetStationsAlongPolyline(_path, 10);
-        _ = ReachableStations.FindReachableStations(_path, _ev, _stations, stationNearBy, 10);
+        var stationNearBy = _spatialGrid.GetStationsAlongPolyline(_path, _ev.Preferences.MaxPathDeviation);
+        _ = ReachableStations.FindReachableStations(_path, _ev, _stations, stationNearBy, _ev.Preferences.MaxPathDeviation);
     }
 
 }

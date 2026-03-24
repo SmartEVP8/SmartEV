@@ -1,6 +1,5 @@
 namespace Engine.test.Services;
 
-using System.Security.Policy;
 using Core.Charging;
 using Core.Charging.ChargingModel;
 using Core.Charging.ChargingModel.Chargepoint;
@@ -8,7 +7,6 @@ using Core.Shared;
 using Core.Vehicles;
 using Engine.Events;
 using Engine.Services;
-using Microsoft.VisualBasic;
 
 public class StationServiceTests
 {
@@ -134,7 +132,7 @@ public class StationServiceTests
             new Random(42),
             MakeEnergyPrices());
 
-        var scheduler = new EventScheduler();
+        var scheduler = new EventScheduler([]);
         var integrator = new ChargingIntegrator(stepSeconds: 60);
         var service = new StationService([station], integrator, scheduler);
         return (service, scheduler);
@@ -156,7 +154,7 @@ public class StationServiceTests
             new Random(42),
             MakeEnergyPrices());
 
-        var scheduler = new EventScheduler();
+        var scheduler = new EventScheduler([]);
         var integrator = new ChargingIntegrator(stepSeconds: 60);
         var service = new StationService([station], integrator, scheduler);
         return (service, scheduler);

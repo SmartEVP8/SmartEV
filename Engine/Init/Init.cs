@@ -5,6 +5,7 @@ using Core.Charging.ChargingModel;
 using Core.Shared;
 using Engine.Cost;
 using Engine.Events;
+using Engine.Events.Middleware;
 using Engine.Grid;
 using Engine.Metrics;
 using Engine.Parsers;
@@ -19,8 +20,6 @@ public static class Init
 {
     public static void InitEngine(IServiceCollection services)
     {
-        services.AddSingleton<EventScheduler>();
-
         services.AddSingleton<IOSRMRouter>(sp =>
         {
             var settings = sp.GetRequiredService<EngineSettings>();
