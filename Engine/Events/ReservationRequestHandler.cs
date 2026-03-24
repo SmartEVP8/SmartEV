@@ -7,39 +7,44 @@ using Engine.Routing;
 using Engine.Metrics.Snapshots;
 
 /// <summary>
-/// Handles a reservation request from a connected car to a charging station.
+/// Handles a reservation request from an EV to a charging station.
 /// </summary>
+/// <param name="stations">A dictionary of all known stations, keyed by station ID.</param>
+/// <param name="pathDeviator">Calculates the detour deviation added to an EV's journey by routing through a station.</param>
+/// <param name="metrics">Records reservation request counts, timestamps, and path deviations.</param>
+/// <param name="eventScheduler">Schedules the produced arrival event into the simulation queue.</param>
 public class ReservationRequestEventHandler(
     Dictionary<ushort, Station> stations,
     PathDeviator pathDeviator,
-    ReservationMetric metrics)
+    ReservationMetric metrics,
+    EventScheduler eventScheduler)
 {
     /// <summary>
     /// Handles the reservation request by incrementing the station's expected queue size,
-    /// computing the path deviation, and producing a jittered arrival event.
+    /// recording metrics, computing the path deviation, and scheduling a jittered arrival event.
     /// </summary>
-    /// <param name="e">The reservation request event.</param>
-    /// <param name="journey">The EV's current journey.</param>
-    /// <returns>
-    /// A scheduled <see cref="ArriveAtStation"/> event, or null if the station is unknown.
-    /// </returns>
-    public ArriveAtStation? Handle(ReservationRequest e, Journey journey)
+    /// <param name="e">The reservation request event containing the EV ID, station ID, and request time.</param>
+    /// <param name="journey">The EV's current journey, used to calculate the detour deviation.</param>
+    /// <remarks>
+    /// The produced <see cref="ArriveAtStation"/> event is scheduled with a ±20% deviation
+    /// applied to the reservation time to simulate variance in real-world arrival behaviour.
+    /// </remarks>
+    public void Handle(ReservationRequest e, Journey journey)
     {
         if (!stations.TryGetValue(e.StationId, out var station))
-            return null;
+            return;
 
         station.ExpectedQueueSize++;
 
         metrics.RequestTimestamps[e.EVId] = e.Time;
         metrics.TotalRequests++;
 
-        var stationPosition = station.Position;
-        var (deviation, _) = pathDeviator.CalculateDetourDeviation(journey, e.Time, stationPosition);
+        var (deviation, _) = pathDeviator.CalculateDetourDeviation(journey, e.Time, station.Position);
         metrics.PathDeviations[e.EVId] = deviation;
 
-        var addDeviation = 0.8f + ((double)Random.Shared.NextDouble() * 0.4f);
+        var addDeviation = 0.8f + (float)(Random.Shared.NextDouble() * 0.4);
         var arrivalTime = new Time((uint)(e.Time.T * addDeviation));
 
-        return new ArriveAtStation(e.EVId, e.StationId, arrivalTime);
+        eventScheduler.ScheduleEvent(new ArriveAtStation(e.EVId, e.StationId, arrivalTime));
     }
 }
