@@ -1,6 +1,7 @@
 namespace Engine.Init;
 
 using Core.Charging;
+using Core.Charging.ChargingModel;
 using Core.Shared;
 using Engine.Cost;
 using Engine.Events;
@@ -10,15 +11,15 @@ using Engine.Parsers;
 using Engine.Routing;
 using Engine.Spawning;
 using Engine.StationFactory;
+using Engine.Services;
 using Engine.Vehicles;
 using Microsoft.Extensions.DependencyInjection;
+using System.Net.ServerSentEvents;
 
 public static class Init
 {
     public static void InitEngine(IServiceCollection services)
     {
-        services.AddSingleton<EventScheduler>();
-
         services.AddSingleton<IOSRMRouter>(sp =>
         {
             var settings = sp.GetRequiredService<EngineSettings>();
@@ -95,6 +96,13 @@ public static class Init
             var random = settings.Seed;
             var intervalSize = settings.IntervalToCheckUrgency;
             return new CheckUrgencyHandler(eventScheduler, evStore, intervalSize, random);
+
+        services.AddSingleton(sp =>
+        {
+            var stations = sp.GetRequiredService<Dictionary<ushort, Station>>();
+            var integrator = sp.GetRequiredService<ChargingIntegrator>();
+            var scheduler = sp.GetRequiredService<EventScheduler>();
+            return new StationService(stations.Values, integrator, scheduler);
         });
     }
 

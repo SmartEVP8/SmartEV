@@ -9,23 +9,25 @@ using Core.Vehicles.Configs;
 
 internal static class Make
 {
-    public static ConnectedCar Car(EVConfig model, double currentSoC, double targetSoC)
-        => new(CarId: 1,
+    public static ConnectedEV EV(EVConfig model, double currentSoC, double targetSoC)
+        => new(EVId: 1,
                CurrentSoC: currentSoC,
                TargetSoC: targetSoC,
                CapacityKWh: model.BatteryConfig.MaxCapacityKWh,
-               MaxChargeRateKW: model.BatteryConfig.ChargeRateKW);
+               MaxChargeRateKW: model.BatteryConfig.ChargeRateKW,
+               Socket: model.BatteryConfig.Socket);
 
-    public static ConnectedCar Car(
+    public static ConnectedEV EV(
         double currentSoC,
         double targetSoC,
         double capacityKWh,
         double maxChargeRateKW)
-        => new(CarId: 1,
+        => new(EVId: 1,
                CurrentSoC: currentSoC,
                TargetSoC: targetSoC,
                CapacityKWh: capacityKWh,
-               MaxChargeRateKW: maxChargeRateKW);
+               MaxChargeRateKW: maxChargeRateKW,
+               Socket: Socket.CCS2);
 
     public static SingleChargingPoint SinglePoint(EVConfig model)
     {
@@ -75,13 +77,13 @@ public class ChargingTest
         var expectedDurationSeconds = (rampHours + flatHours + taperHours) * 3600.0;
 
         var integrator = new ChargingIntegrator(stepSeconds: 1);
-        var car = Make.Car(currentSoC: 0.05, targetSoC: 0.95, capacityKWh: capacityKWh, maxChargeRateKW: maxKW);
+        var ev = Make.EV(currentSoC: 0.05, targetSoC: 0.95, capacityKWh: capacityKWh, maxChargeRateKW: maxKW);
 
         var result = integrator.IntegrateSingleToCompletion(
             simNow: 0,
             maxKW: maxKW,
             point: Make.SinglePoint(Socket.CCS2),
-            car: car);
+            ev: ev);
 
         Assert.Equal(0.95, result.SocA, precision: 4);
         Assert.Equal(expectedEnergyKWh, result.EnergyDeliveredKWhA, precision: 1);
@@ -101,21 +103,21 @@ public class ChargingTest
         // Energy delivered is identical in all cases since SoC delta is the same.
         var niro = EVModels.Models.First(m => m.Model == "Kia Niro");
 
-        var car = Make.Car(niro, currentSoC: 0.05, targetSoC: 0.95);
+        var ev = Make.EV(niro, currentSoC: 0.05, targetSoC: 0.95);
         var integrator = new ChargingIntegrator(stepSeconds: 1);
         var point = Make.SinglePoint(niro);
 
         // Charger at 150 kW — car rate (85 kW) is the bottleneck
         var resultLimitedByCarRate = integrator.IntegrateSingleToCompletion(
-            simNow: 0, maxKW: 150.0, point, car);
+            simNow: 0, maxKW: 150.0, point, ev);
 
         // Charger matches car rate exactly — same outcome expected
         var resultMatchedRate = integrator.IntegrateSingleToCompletion(
-            simNow: 0, maxKW: 85.0, point, car);
+            simNow: 0, maxKW: 85.0, point, ev);
 
         // Charger at 50 kW — charger is the bottleneck, takes longer
         var resultLimitedByCharger = integrator.IntegrateSingleToCompletion(
-            simNow: 0, maxKW: 50.0, point, car);
+            simNow: 0, maxKW: 50.0, point, ev);
 
         // Car rate caps the 150 kW charger — identical to running at exactly 85 kW
         Assert.Equal(
@@ -163,16 +165,16 @@ public class ChargingTest
         var tesla = EVModels.Models.First(m => m.Model == "Tesla Model Y");
         var id3 = EVModels.Models.First(m => m.Model == "Volkswagen ID.3");
 
-        var carA = Make.Car(tesla, currentSoC: 0.70, targetSoC: 0.95);
-        var carB = Make.Car(id3, currentSoC: 0.05, targetSoC: 0.95);
+        var evA = Make.EV(tesla, currentSoC: 0.70, targetSoC: 0.95);
+        var evB = Make.EV(id3, currentSoC: 0.05, targetSoC: 0.95);
 
         var integrator = new ChargingIntegrator(stepSeconds: 1);
         var result = integrator.IntegrateDualToCompletion(
             simNow: 0,
             maxKW: maxKW,
             Make.DualPoint(tesla),
-            carA,
-            carB);
+            evA,
+            evB);
 
         Assert.Equal(0.95, result.SocA, precision: 4);
         Assert.Equal(0.95, result.SocB, precision: 4);
@@ -190,7 +192,7 @@ public class ChargingTest
             simNow: 0,
             maxKW: maxKW / 2,
             Make.SinglePoint(id3),
-            carB);
+            evB);
 
         Assert.True(
             result.FinishTimeB < resultId3Alone.FinishTimeA,
@@ -205,7 +207,7 @@ public class ChargingTest
             simNow: 0,
             maxKW: maxKW / 2,
             Make.SinglePoint(id3),
-            carA);
+            evA);
 
         Assert.True(
             result.WastedEnergyKWh < resultid3Alone.WastedEnergyKWh,
@@ -232,16 +234,16 @@ public class ChargingTest
         var mazda = EVModels.Models.First(m => m.Model == "Mazda MX-30");
         var taycan = EVModels.Models.First(m => m.Model == "Porsche Taycan");
 
-        var carA = Make.Car(mazda, currentSoC: 0.1, targetSoC: 0.9);
-        var carB = Make.Car(taycan, currentSoC: 0.1, targetSoC: 0.9);
+        var evA = Make.EV(mazda, currentSoC: 0.1, targetSoC: 0.9);
+        var evB = Make.EV(taycan, currentSoC: 0.1, targetSoC: 0.9);
 
         var integrator = new ChargingIntegrator(stepSeconds: 1);
         var result = integrator.IntegrateDualToCompletion(
             simNow: 0,
             maxKW: maxKW,
             Make.DualPoint(mazda),
-            carA,
-            carB);
+            evA,
+            evB);
 
         Assert.Equal(0.9, result.SocA, precision: 4);
         Assert.Equal(0.9, result.SocB, precision: 4);
@@ -255,7 +257,7 @@ public class ChargingTest
             simNow: 0,
             maxKW: maxKW / 2,
             Make.SinglePoint(taycan),
-            carB);
+            evB);
 
         Assert.True(
             result.FinishTimeB < resultTaycanAlone.FinishTimeA,

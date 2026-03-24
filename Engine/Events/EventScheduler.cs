@@ -1,12 +1,22 @@
 namespace Engine.Events;
 
+using Core.Shared;
+
+/// <summary>
+/// An EventScheduler responsbile for managing the scheduling and retrieval of events in the simulation. 
+/// </summary>
 public class EventScheduler
 {
     private readonly PriorityQueue<Event, (uint, uint)> _eventPriorityQueue = new();
     private readonly HashSet<int> _canceledEvents = [];
-    private uint _currentTime = 0;
-    private uint _evSequeenceId = 0;
+    private Time _currentTime = 0;
+    private Time _evSequeenceId = 0;
 
+    /// <summary>
+    /// Schedules an event to be executed at a specific timestamp.
+    /// </summary>
+    /// <param name="e">The event to schedule.</param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown if the timestamp is in the past.</exception>
     public void ScheduleEvent(Event e)
     {
         var timestamp = e.Time;
@@ -16,8 +26,7 @@ public class EventScheduler
     }
 
     /// <summary>
-    /// Returns the next event in the priority queue, or null if there are no more events.
-    /// If the event has been cancelled, it will be skipped and the next event will be returned instead.
+    /// Retrives and removes the next event from the EventScheduler.
     /// </summary>
     /// <returns>The next event in the queue to get resolved.</returns>
     public Event? GetNextEvent()
@@ -32,11 +41,14 @@ public class EventScheduler
             _canceledEvents.Remove(cancelableEvent.EVId);
             return GetNextEvent();
         }
-
         return e;
     }
 
-    public uint GetCurrentTime() => _currentTime;
+    /// <summary>
+    /// Gets the current simulation time in seconds.
+    /// </summary>
+    /// <returns>The current simulation time in seconds.</returns>
+    public Time GetCurrentTime() => _currentTime;
 
     /// <summary>
     /// Cancels a CancelableEvent by adding it to the set of canceled events.
