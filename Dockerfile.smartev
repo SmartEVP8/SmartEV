@@ -4,10 +4,20 @@ FROM ghcr.io/smartevp8/smartev:${OSRM_BUILDER_TAG} AS osrm-data
 FROM mcr.microsoft.com/dotnet/sdk:10.0-noble AS build
 
 RUN apt-get update && apt-get install -y \
-    libboost-iostreams1.83.0 \
-    libboost-filesystem1.83.0 \
-    libboost-system1.83.0 \
-    libtbb12 \
+    build-essential cmake git \
+    libboost-all-dev \
+    libtbb-dev \
+    liblua5.4-dev \
+    libluajit-5.1-dev \
+    libxml2-dev \
+    libzip-dev \
+    libbz2-dev \
+    libexpat1-dev \
+    libstxxl-dev \
+    libosmium2-dev \
+    libprotozero-dev \
+    libzmq3-dev \
+    pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -52,10 +62,20 @@ RUN dotnet test --no-build
 FROM mcr.microsoft.com/dotnet/sdk:10.0-noble AS runtime
 
 RUN apt-get update && apt-get install -y \
-    libboost-iostreams1.83.0 \
-    libboost-filesystem1.83.0 \
-    libboost-system1.83.0 \
-    libtbb12 \
+    build-essential cmake git \
+    libboost-all-dev \
+    libtbb-dev \
+    liblua5.4-dev \
+    libluajit-5.1-dev \
+    libxml2-dev \
+    libzip-dev \
+    libbz2-dev \
+    libexpat1-dev \
+    libstxxl-dev \
+    libosmium2-dev \
+    libprotozero-dev \
+    libzmq3-dev \
+    pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
