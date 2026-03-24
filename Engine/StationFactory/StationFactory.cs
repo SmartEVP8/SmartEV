@@ -89,6 +89,7 @@ public class StationFactory
         if (!file.Exists)
             throw new FileNotFoundException("Station location file not found.", file.FullName);
 
+
         var json = File.ReadAllText(file.FullName);
         var locations = JsonSerializer.Deserialize<List<StationLocationDTO>>(json, new JsonSerializerOptions
         {
