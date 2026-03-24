@@ -3,6 +3,8 @@ name: build-osrm
 on:
   push:
     branches: [ main ]
+  pull_request:
+    branches: [ main ]
     paths:
       - output.osm.pbf
       - Dockerfile.osrm
