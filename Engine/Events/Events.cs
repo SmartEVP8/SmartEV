@@ -7,7 +7,7 @@ using Engine.Metrics;
 public abstract record Event(Time Time);
 public abstract record CancelableEvent(int EVId, Time Time) : Event(Time);
 
-//PLACEHOLDER
+//TODO: THIS SHOULD BE CHANGE TO THE CORRECT FINDCANDIDATE EVENT
 public record FindCandidate(int EVId, Time Time) : Event(Time);
 
 // ----------- DOMAIN EVENTS ----------- //

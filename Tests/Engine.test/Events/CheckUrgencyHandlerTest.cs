@@ -29,7 +29,7 @@ public class CheckUrgencyHandlerTest
         _evStore.Set(1, ref ev);
 
         var urgencyEvent = new CheckUrgency(1, 0);
-        var handler = new CheckUrgencyHandler(_scheduler, _evStore, 5);
+        var handler = new CheckUrgencyHandler(_scheduler, _evStore, 5, new Random(42));
         handler.Handle(urgencyEvent);
         var nextEvent = _scheduler.GetNextEvent();
         Assert.IsType<CheckUrgency>(nextEvent);
@@ -49,7 +49,7 @@ public class CheckUrgencyHandlerTest
         _evStore.Set(1, ref ev);
 
         var urgencyEvent = new CheckUrgency(1, 0);
-        var handler = new CheckUrgencyHandler(_scheduler, _evStore, 5);
+        var handler = new CheckUrgencyHandler(_scheduler, _evStore, 5, new Random(42));
         handler.Handle(urgencyEvent);
         var nextEvent = _scheduler.GetNextEvent();
         Assert.IsType<FindCandidate>(nextEvent);

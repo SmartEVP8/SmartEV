@@ -25,6 +25,20 @@ public static class Init
             return new OSRMRouter(settings.OsrmPath);
         });
 
+        services.AddSingleton(sp =>
+        {
+            var settings = sp.GetRequiredService<EngineSettings>();
+            var energyPrices = sp.GetRequiredService<EnergyPrices>();
+            var stationFactory = new StationFactory(settings.StationFactoryOptions, settings.Seed, energyPrices);
+            return stationFactory.CreateStations(settings.StationsPath);
+        });
+
+        services.AddSingleton(sp =>
+        {
+            var settings = sp.GetRequiredService<EngineSettings>();
+            return new EVStore(settings.MaximumEVs);
+        });
+
         services.AddSingleton<IJourneySamplerProvider>(sp =>
         {
             var settings = sp.GetRequiredService<EngineSettings>();
@@ -68,11 +82,19 @@ public static class Init
         services.AddSingleton(sp =>
         {
             var settings = sp.GetRequiredService<EngineSettings>();
-            var energyPrices = sp.GetRequiredService<EnergyPrices>();
+            var stations = sp.GetRequiredService<Dictionary<ushort, Station>>();
             var spawnGrid = InitSpawnGrid(settings.PolygonPath);
-            var stationFactory = new StationFactory(settings.StationFactoryOptions, settings.Seed, energyPrices);
-            var stations = stationFactory.CreateStations(settings.StationsPath);
             return new SpatialGrid(spawnGrid, stations);
+        });
+
+        services.AddSingleton(sp =>
+        {
+            var eventScheduler = sp.GetRequiredService<EventScheduler>();
+            var evStore = sp.GetRequiredService<EVStore>();
+            var settings = sp.GetRequiredService<EngineSettings>();
+            var random = settings.Seed;
+            var intervalSize = settings.IntervalToCheckUrgency;
+            return new CheckUrgencyHandler(eventScheduler, evStore, intervalSize, random);
         });
     }
 
