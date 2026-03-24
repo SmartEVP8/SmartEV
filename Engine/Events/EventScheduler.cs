@@ -1,7 +1,11 @@
-using Core.Shared;
-
 namespace Engine.Events;
 
+using Core.Shared;
+
+/// <summary>
+/// The EventScheduler is responsible for managing and scheduling events in the system.
+/// </summary>
+/// <param name="preProcessors">Middleware/Preprocessors that are fired on MiddlewareEvents if attatched.</param>
 public class EventScheduler(Dictionary<Type, Action<IMiddlewareEvent>> preProcessors)
 {
     private readonly PriorityQueue<Event, (uint, uint)> _eventPriorityQueue = new();
@@ -48,12 +52,13 @@ public class EventScheduler(Dictionary<Type, Action<IMiddlewareEvent>> preProces
             _canceledEvents.Remove(cancelableEvent.EVId);
             return GetNextEvent();
         }
+
         return e;
     }
 
     /// <summary>Gets the current timestamp of the event scheduler.</summary>
     /// <remark>The time is monotonically increasing.</remark
-    public uint CurrentTime => _currentTime;
+    public Time CurrentTime => _currentTime;
 
     /// <summary>
     /// Cancels a CancelableEvent by adding it to the set of canceled events.
