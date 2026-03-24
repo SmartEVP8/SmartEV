@@ -17,11 +17,10 @@ namespace Engine.Metrics;
 public sealed class MetricsService : IAsyncDisposable
 {
     private readonly IMetricWriter<EVSnapshotMetric>? _cars;
-    private readonly IMetricWriter<StationSnapshotMetric>? _stations;
     private readonly IMetricWriter<DeadlineMetric>? _deadlines;
 
     private readonly IMetricWriter<SnapshotMetric>? _snapshots;
-    
+
     /// <summary>
     /// Initializes a new instance of the <see cref="MetricsService"/> class.
     /// Creates writers for each enabled metric type based on the provided config.
@@ -34,8 +33,6 @@ public sealed class MetricsService : IAsyncDisposable
 
         if (config.RecordCarSnapshots)
             _cars = new MetricWriter<EVSnapshotMetric>(config.BufferSize, files.GetMetricPath<EVSnapshotMetric>());
-        if (config.RecordStationSnapshots)
-            _stations = new MetricWriter<StationSnapshotMetric>(config.BufferSize, files.GetMetricPath<StationSnapshotMetric>());
         if (config.RecordDeadlines)
             _deadlines = new MetricWriter<DeadlineMetric>(config.BufferSize, files.GetMetricPath<DeadlineMetric>());
         if (config.RecordSingleStationSnapshot)
@@ -45,10 +42,6 @@ public sealed class MetricsService : IAsyncDisposable
     /// <summary>Records a car snapshot. No-op if car snapshots are disabled in config.</summary>
     /// <param name="metric">The car snapshot metric to record.</param>
     public void RecordCar(EVSnapshotMetric metric) => _cars?.Record(metric);
-
-    /// <summary>Records a station snapshot. No-op if station snapshots are disabled in config.</summary>
-    /// <param name="metric">The station snapshot metric to record.</param>
-    public void RecordStation(StationSnapshotMetric metric) => _stations?.Record(metric);
 
     /// <summary>Records a deadline metric. No-op if deadlines are disabled in config.</summary>
     /// <param name="metric">The deadline metric to record.</param>
@@ -67,7 +60,7 @@ public sealed class MetricsService : IAsyncDisposable
     {
         var tasks = new List<Task>();
         if (_cars is not null) tasks.Add(_cars.DisposeAsync().AsTask());
-        if (_stations is not null) tasks.Add(_stations.DisposeAsync().AsTask());
+        if (_snapshots is not null) tasks.Add(_snapshots.DisposeAsync().AsTask());
         if (_deadlines is not null) tasks.Add(_deadlines.DisposeAsync().AsTask());
         await Task.WhenAll(tasks);
     }

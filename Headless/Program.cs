@@ -7,6 +7,7 @@ using Engine.Init;
 using Engine.Metrics;
 using Engine.Routing;
 using Engine.Spawning;
+using Engine.Services;
 using Engine.StationFactory;
 using Engine.Vehicles;
 using Microsoft.Extensions.DependencyInjection;
@@ -66,6 +67,7 @@ public static class Program
         provider.GetRequiredService<EVFactory>();
         provider.GetRequiredService<SpatialGrid>();
         provider.GetRequiredService<IJourneySamplerProvider>();
+        provider.GetRequiredService<StationService>();
     }
 
 }
