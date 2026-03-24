@@ -60,6 +60,12 @@ public static class Init
             return stationFactory.CreateStations(settings.StationsPath);
         });
 
+        services.AddSingleton(sp =>
+        {
+            var settings = sp.GetRequiredService<EngineSettings>();
+            return new EVStore(settings.CurrentAmoutOfEVsInDenmark);
+        });
+
         services.AddSingleton<IJourneySamplerProvider>(sp =>
         {
             var settings = sp.GetRequiredService<EngineSettings>();
@@ -99,6 +105,16 @@ public static class Init
             var stations = sp.GetRequiredService<Dictionary<ushort, Station>>();
             var spawnGrid = InitSpawnGrid(settings.PolygonPath);
             return new SpatialGrid(spawnGrid, stations);
+        });
+
+        services.AddSingleton(sp =>
+        {
+            var eventScheduler = sp.GetRequiredService<EventScheduler>();
+            var evStore = sp.GetRequiredService<EVStore>();
+            var settings = sp.GetRequiredService<EngineSettings>();
+            var random = settings.Seed;
+            var intervalSize = settings.IntervalToCheckUrgency;
+            return new CheckUrgencyHandler(eventScheduler, evStore, intervalSize, random);
         });
 
         services.AddSingleton(sp =>
