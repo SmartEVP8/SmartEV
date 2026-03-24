@@ -36,7 +36,7 @@ public static class Init
         services.AddSingleton(sp =>
         {
             var settings = sp.GetRequiredService<EngineSettings>();
-            return new EVStore(settings.MaximumEVs);
+            return new EVStore(settings.CurrentAmoutOfEVsInDenmark);
         });
 
         services.AddSingleton<IJourneySamplerProvider>(sp =>

@@ -12,7 +12,7 @@ public class EngineSettings
     required public Random Seed { get; init; }
     required public StationFactoryOptions StationFactoryOptions { get; init; }
 
-    required public int MaximumEVs { get; init; }
+    required public int CurrentAmoutOfEVsInDenmark { get; init; }
 
     required public FileInfo EnergyPricesPath { get; init; }
     required public FileInfo OsrmPath { get; init; }
