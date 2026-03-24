@@ -7,5 +7,5 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     public readonly Preferences Preferences = preferences;
     public Battery Battery { get; } = battery;
     public ushort Efficiency { get; } = efficiency;
-    private Journey _journey = journey;
+    public Journey Journey { get; private set; } = journey;
 }
