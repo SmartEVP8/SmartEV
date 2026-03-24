@@ -5,6 +5,9 @@ using Core.Charging.ChargingModel;
 using Core.Charging.ChargingModel.Chargepoint;
 using Engine.Events;
 using Core.Shared;
+using Engine.Metrics.Snapshots;
+using Engine.Routing;
+using Core.Routing;
 
 /// <summary>
 /// Tracks an active charging session at one side of a charger.
@@ -65,6 +68,10 @@ public class StationService
     private readonly Dictionary<int, ChargerState> _chargerIndex = [];
     private readonly ChargingIntegrator _integrator;
     private readonly EventScheduler _scheduler;
+    private readonly PathDeviator _pathDeviator;
+    private readonly ReservationMetric _metrics;
+
+    private readonly Dictionary<ushort, Station> _stations;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="StationService"/> class.
@@ -72,13 +79,20 @@ public class StationService
     /// <param name="stations">The collection of stations to manage.</param>
     /// <param name="integrator">The charging integrator to use for simulating charging sessions.</param>
     /// <param name="scheduler">The event scheduler to use for scheduling future events.</param>
+    /// <param name="pathDeviator"> The path deviator used for calculating the path deviation for a reservation.</param>
+    /// <param name="metrics"> The collection of metrics that will be used for analysis later.</param>
     public StationService(
         ICollection<Station> stations,
         ChargingIntegrator integrator,
-        EventScheduler scheduler)
+        EventScheduler scheduler, 
+        PathDeviator pathDeviator,
+        ReservationMetric metrics)
     {
         _integrator = integrator;
         _scheduler = scheduler;
+        _stations = stations.ToDictionary(s => s.Id);
+        _pathDeviator = pathDeviator;
+        _metrics = metrics;
 
         foreach (var station in stations)
         {
@@ -97,9 +111,29 @@ public class StationService
     public ChargerState? GetChargerState(int chargerId)
         => _chargerIndex.TryGetValue(chargerId, out var state) ? state : null;
 
-    // TODO: Handle reservationrequest
-    public void HandleReservationRequest(ReservationRequest e)
-        => _scheduler.ScheduleEvent(new ArriveAtStation(e.EVId, e.StationId, e.Time));
+    /// <summary>
+    /// Handles a reservation request by incrementing the station's expected queue size, recording metrics,
+    /// computing the path deviation, and scheduling a new arrival event with some deviation.
+    /// </summary>
+    /// <param name="e">The reservation request event.</param>
+    /// <param name="journey">The EV's current journey, used to calculate the detour deviation.</param>
+    public void HandleReservationRequest(ReservationRequest e, Journey journey)
+    {
+        var station = _stations[e.StationId];
+
+        station.ExpectedQueueSize++;
+
+        _metrics.RequestTimestamps[e.EVId] = e.Time;
+        _metrics.TotalRequests++;
+
+        var (deviation, _) = _pathDeviator.CalculateDetourDeviation(journey, e.Time, station.Position);
+        _metrics.PathDeviations[e.EVId] = deviation;
+
+        var jitter = 0.8f + (float)(Random.Shared.NextDouble() * 0.4);
+        var arrivalTime = new Time((uint)(e.Time.T * jitter));
+
+        _scheduler.ScheduleEvent(new ArriveAtStation(e.EVId, e.StationId, arrivalTime));
+    }
 
     // TODO: handle cancelrequest
     public void HandleCancelRequest(CancelRequest e)

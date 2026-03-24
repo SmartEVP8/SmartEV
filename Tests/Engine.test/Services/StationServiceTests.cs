@@ -1,14 +1,15 @@
 namespace Engine.test.Services;
 
-using System.Security.Policy;
 using Core.Charging;
 using Core.Charging.ChargingModel;
 using Core.Charging.ChargingModel.Chargepoint;
 using Core.Shared;
 using Core.Vehicles;
+using Core.Routing;
 using Engine.Events;
 using Engine.Services;
-using Microsoft.VisualBasic;
+using Engine.Routing;
+using Engine.Metrics.Snapshots;
 
 public class StationServiceTests
 {
@@ -19,7 +20,6 @@ public class StationServiceTests
     private readonly ushort _stationId = 1;
 
     private readonly Time _time = 0;
-
 
     [Fact]
     public void TwoCars_DualCharger_BothReceiveCharge()
@@ -110,6 +110,24 @@ public class StationServiceTests
         Assert.True(ev2Event.Time > ev1End.Time);
     }
 
+    [Fact]
+    public void Handle_ValidReservation_ProducesCorrectSideEffects()
+    {
+        var router = new FakeDestinationRouter(duration: 2000f);
+        var (service, scheduler) = BuildSingle(router: router);
+        var journey = MakeJourney(departure: 0, duration: 10000);
+        var requestTime = new Time(1000);
+
+        service.HandleReservationRequest(new ReservationRequest(1, 1, requestTime), journey);
+
+        var e = scheduler.GetNextEvent();
+        Assert.NotNull(e);
+        var arrival = Assert.IsType<ArriveAtStation>(e);
+        Assert.Equal(1, arrival.EVId);
+        Assert.Equal(1, arrival.StationId);
+        Assert.InRange(arrival.Time.T, requestTime.T * 0.8, requestTime.T * 1.2);
+    }
+
     private static EnergyPrices MakeEnergyPrices()
     {
         var csvPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "data", "energy_prices.csv");
@@ -118,7 +136,8 @@ public class StationServiceTests
 
     private static (StationService service, EventScheduler scheduler) BuildSingle(
         Socket socket = Socket.CCS2,
-        int maxPowerKW = 150)
+        int maxPowerKW = 150,
+        IDestinationRouter? router = null)
     {
         var connector = new Connector(socket);
         var connectors = new Connectors([connector]);
@@ -136,13 +155,17 @@ public class StationServiceTests
 
         var scheduler = new EventScheduler();
         var integrator = new ChargingIntegrator(stepSeconds: 60);
-        var service = new StationService([station], integrator, scheduler);
+        var pathDeviator = new PathDeviator(router ?? new FakeDestinationRouter());
+        var metrics = new ReservationMetric();
+        var service = new StationService([station], integrator, scheduler, pathDeviator, metrics);
+        
         return (service, scheduler);
     }
 
     private static (StationService service, EventScheduler scheduler) BuildDual(
         Socket socket = Socket.CCS2,
-        int maxPowerKW = 150)
+        int maxPowerKW = 150,
+        IDestinationRouter? router = null)
     {
         var point = new DualChargingPoint(new Connectors([new Connector(socket)]));
         var charger = new DualCharger(1, maxPowerKW, point);
@@ -158,7 +181,9 @@ public class StationServiceTests
 
         var scheduler = new EventScheduler();
         var integrator = new ChargingIntegrator(stepSeconds: 60);
-        var service = new StationService([station], integrator, scheduler);
+        var pathDeviator = new PathDeviator(router ?? new FakeDestinationRouter());
+        var metrics = new ReservationMetric();
+        var service = new StationService([station], integrator, scheduler, pathDeviator, metrics);
         return (service, scheduler);
     }
 
@@ -179,5 +204,24 @@ public class StationServiceTests
         Assert.NotNull(e);
         Assert.IsType<EndCharging>(e);
         return (EndCharging)e!;
+    }
+
+    private class FakeDestinationRouter(float duration = 100f) : IDestinationRouter
+    {
+        public (float duration, string polyline) QueryDestination(double[] coords)
+            => (duration, "fake_polyline");
+    }
+
+    private static Journey MakeJourney(uint departure, uint duration)
+    {
+        var waypoints = new List<Position>
+        {
+            new(longitude: 10.0, latitude: 56.0),
+            new(longitude: 12.0, latitude: 57.0),
+        };
+        return new Journey(
+            departure: new Time(departure),
+            originalDuration: new Time(duration),
+            path: new Paths(waypoints));
     }
 }

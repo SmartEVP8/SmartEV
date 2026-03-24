@@ -13,17 +13,43 @@ using Engine.Spawning;
 using Engine.StationFactory;
 using Engine.Services;
 using Engine.Vehicles;
+using Engine.Metrics.Snapshots;
 using Microsoft.Extensions.DependencyInjection;
-using System.Net.ServerSentEvents;
 
+/// <summary>
+/// Initializes the SmartEV simulation engine by registering all services with the dependency injection container.
+/// </summary>
 public static class Init
 {
+    /// <summary>
+    /// Registers all Engine services and their dependencies with the dependency injection container.
+    /// </summary>
+    /// <param name="services">The service collection to register services into.</param>
     public static void InitEngine(IServiceCollection services)
     {
         services.AddSingleton<IOSRMRouter>(sp =>
         {
             var settings = sp.GetRequiredService<EngineSettings>();
             return new OSRMRouter(settings.OsrmPath);
+        });
+
+        services.AddSingleton<EventScheduler>();
+        
+        services.AddSingleton<ChargingIntegrator>();
+        
+        services.AddSingleton<ReservationMetric>();
+
+        services.AddSingleton(sp =>
+        {
+            var router = sp.GetRequiredService<IOSRMRouter>();
+            return new PathDeviator(router);
+        });
+
+        services.AddSingleton(sp =>
+        {
+            var settings = sp.GetRequiredService<EngineSettings>();
+            var path = settings.EnergyPricesPath;
+            return new EnergyPrices(path);
         });
 
         services.AddSingleton(sp =>
@@ -70,25 +96,19 @@ public static class Init
         services.AddSingleton(sp =>
         {
             var settings = sp.GetRequiredService<EngineSettings>();
-            var path = settings.EnergyPricesPath;
-            return new EnergyPrices(path);
-        });
-
-        services.AddSingleton(sp =>
-        {
-            var settings = sp.GetRequiredService<EngineSettings>();
             var stations = sp.GetRequiredService<Dictionary<ushort, Station>>();
             var spawnGrid = InitSpawnGrid(settings.PolygonPath);
             return new SpatialGrid(spawnGrid, stations);
         });
-
 
         services.AddSingleton(sp =>
         {
             var stations = sp.GetRequiredService<Dictionary<ushort, Station>>();
             var integrator = sp.GetRequiredService<ChargingIntegrator>();
             var scheduler = sp.GetRequiredService<EventScheduler>();
-            return new StationService(stations.Values, integrator, scheduler);
+            var pathDeviator = sp.GetRequiredService<PathDeviator>();
+            var metrics = sp.GetRequiredService<ReservationMetric>();
+            return new StationService(stations.Values, integrator, scheduler, pathDeviator, metrics);
         });
     }
 
