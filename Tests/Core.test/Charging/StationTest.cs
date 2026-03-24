@@ -26,9 +26,9 @@ public class StationTest
         var station = CreateStation();
         var basePrice = _energyPrices.GetHourPrice(day, hour);
 
-        var price = station.CalculatePrice(DayOfWeek.Monday, hour);
+        station.CalculatePrice(DayOfWeek.Monday, hour);
 
-        Assert.InRange(price, basePrice * 0.80f, basePrice * 1.20f);
+        Assert.InRange(station.Price, basePrice * 0.80f, basePrice * 1.20f);
     }
 
     /// <summary>
@@ -39,14 +39,17 @@ public class StationTest
     public void CalculatePrice_ChangesPrice()
     {
         var station = CreateStation(random: new Random(42));
-        var price = station.CalculatePrice(DayOfWeek.Monday, 12);
-        Assert.NotEqual(3.0f, price);
+        station.CalculatePrice(DayOfWeek.Monday, 12);
+        Assert.NotEqual(3.0f, station.Price);
     }
 
-    private Station CreateStation(float price = 3.0f, Random? random = null)
-    {
-        return new(id: 1, name: "Test Station", address: "Test Street 1",
-            position: new Position(10.0, 56.0), chargers: [],
-            random: random ?? new Random(42), _energyPrices);
-    }
+    private Station CreateStation(Random? random = null) =>
+        new(
+            id: 1,
+            name: "Test Station",
+            address: "Test Street 1",
+            position: new Position(10.0, 56.0),
+            chargers: [],
+            random: random ?? new Random(42),
+            _energyPrices);
 }

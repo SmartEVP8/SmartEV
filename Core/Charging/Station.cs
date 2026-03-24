@@ -21,35 +21,28 @@ public class Station(ushort id,
                 Random random,
                 EnergyPrices energyPrices)
 {
-    /// <summary>
-    /// Gets the position of the station.
-    /// </summary>
+    /// <summary>Gets the position of the station.</summary>
     public Position Position => position;
 
-    /// <summary>
-    /// Gets the id of the station.
-    /// </summary>
+    /// <summary>Gets the id of the station.</summary>
     public ushort Id => id;
 
-    /// <summary>
-    /// Gets the name of the station.
-    /// </summary>
+    /// <summary>Gets the name of the station.</summary>
     public string Name => name;
 
-    /// <summary>
-    /// Gets the address of the station.
-    /// </summary>
+    /// <summary>Gets the address of the station.</summary>
     public string Address => address;
 
-    /// <summary>
-    /// Gets the list of chargers on a station.
-    /// </summary>
+    /// <summary>Gets the current price of energy at the station.</summary>
+    public float Price { get; private set; }
+
+    /// <summary>Gets the list of chargers on a station.</summary>
     public IReadOnlyList<ChargerBase> Chargers => _chargers;
 
     private readonly List<ChargerBase> _chargers = chargers;
 
     /// <summary>
-    /// Calculates the price of a specific station.
+    /// Calculates and sets the price of a specific station.
     /// </summary>
     /// <param name="day">The day being queried.</param>
     /// <param name="hour">The hour being queried.</param>
@@ -57,12 +50,11 @@ public class Station(ushort id,
     /// The new price is randomly generated in the range [3.0, 5.0].
     /// Call this periodically to simulate dynamic pricing.
     /// </remarks>
-    /// <returns>The calculated price.</returns>
-    public float CalculatePrice(DayOfWeek day, int hour)
+    public void CalculatePrice(DayOfWeek day, int hour)
     {
         var basePrice = energyPrices.GetHourPrice(day, hour);
         var deviation = 0.10f + (random.NextSingle() * 0.10f); // 10–20%
         var sign = random.Next(2) == 0 ? 1.0f : -1.0f;
-        return basePrice * (1.0f + (sign * deviation));
+        Price = basePrice * (1.0f + (sign * deviation));
     }
 }
