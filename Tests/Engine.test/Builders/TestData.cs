@@ -23,14 +23,12 @@ public static class TestData
     private static readonly StationFactory _stationFactory = new(
         new StationFactoryOptions(),
         _random,
-        EnergyPrices);
+        EnergyPrices,
+        new FileInfo(AppContext.GetData("ChargersPath") as string ?? throw new SkillissueException()));
 
 
 
-    public static readonly Dictionary<ushort, Station> AllStations =
-        _stationFactory.CreateStations(new FileInfo(AppContext.GetData("ChargersPath") as string
-            ?? throw new InvalidDataException("ChargersPath not set.")));
-
+    public static readonly Dictionary<ushort, Station> AllStations = _stationFactory.CreateStations();
 
     public static OSRMRouter OSRMRouter
     {

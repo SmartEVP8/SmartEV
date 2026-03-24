@@ -7,6 +7,7 @@ using Engine.Init;
 using Engine.Metrics;
 using Engine.Routing;
 using Engine.Spawning;
+using Engine.Services;
 using Engine.StationFactory;
 using Engine.Vehicles;
 using Microsoft.Extensions.DependencyInjection;
@@ -51,6 +52,12 @@ public static class Program
             // TODO: GET THE ACTUAL NUMBER
             MaximumEVs = 600_000,
 
+            IntervalToCheckUrgency = 10,
+
+            CurrentAmoutOfEVsInDenmark = 583320, // Based on the number of registered EVs in Denmark as of 2026-03-22 https://mobility.dk/nyheder/nu-koerer-hver-femte-personbil-i-danmark-paa-el/
+
+            ChargingStepSeconds = 60,
+
             EnergyPricesPath = new FileInfo(Path.Combine(dataPath.FullName, "energy_prices.csv")),
             OsrmPath = new FileInfo(Path.Combine(dataPath.FullName, "osrm/output.osrm")),
             CitiesPath = new FileInfo(Path.Combine(dataPath.FullName, "CityInfo.csv")),
@@ -69,5 +76,6 @@ public static class Program
         provider.GetRequiredService<EVFactory>();
         provider.GetRequiredService<SpatialGrid>();
         provider.GetRequiredService<IJourneySamplerProvider>();
+        provider.GetRequiredService<StationService>();
     }
 }

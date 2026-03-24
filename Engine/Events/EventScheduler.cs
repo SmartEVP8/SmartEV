@@ -1,3 +1,5 @@
+using Core.Shared;
+
 namespace Engine.Events;
 
 public class EventScheduler(Dictionary<Type, Action<IMiddlewareEvent>> preProcessors)
@@ -9,8 +11,8 @@ public class EventScheduler(Dictionary<Type, Action<IMiddlewareEvent>> preProces
     /// </summary>
     private readonly Dictionary<Type, Action<IMiddlewareEvent>> _preProcessors = preProcessors;
     private readonly HashSet<int> _canceledEvents = [];
-    private uint _currentTime = 0;
-    private uint _evSequeenceId = 0;
+    private Time _currentTime = 0;
+    private Time _evSequeenceId = 0;
 
     /// <summary>
     /// Schedules the event <paramref name="e"/> at its Time attribute.
@@ -31,8 +33,7 @@ public class EventScheduler(Dictionary<Type, Action<IMiddlewareEvent>> preProces
     }
 
     /// <summary>
-    /// Returns the next event in the priority queue, or null if there are no more events.
-    /// If the event has been cancelled, it will be skipped and the next event will be returned instead.
+    /// Retrives and removes the next event from the EventScheduler.
     /// </summary>
     /// <returns>The next event in the queue to get resolved.</returns>
     public Event? GetNextEvent()
@@ -47,7 +48,6 @@ public class EventScheduler(Dictionary<Type, Action<IMiddlewareEvent>> preProces
             _canceledEvents.Remove(cancelableEvent.EVId);
             return GetNextEvent();
         }
-
         return e;
     }
 

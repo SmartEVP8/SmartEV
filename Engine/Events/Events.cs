@@ -13,9 +13,6 @@ public abstract record CancelableEvent(int EVId, Time Time) : Event(Time);
 public interface IMiddlewareEvent
 {
 }
-
-// ----------- DOMAIN EVENTS ----------- //
-
 // Functionality:
 //  - Should compute the distance from the EV's current position to all station candidates and back to their destination.
 public record FindCandidateStations(int EVId, Time Time) : Event(Time), IMiddlewareEvent;
@@ -49,15 +46,18 @@ public record ArriveAtStation(int EVId, ushort StationId, Time Time) : Cancelabl
 //  - Record the time an EV spent charging
 public record EndCharging(int EVId, int ChargerId, Time Time) : CancelableEvent(EVId, Time);
 
-
 // Metrics:
 //  - Record if the EV missed its deadline.
 //  - Record how much the EV missed the deadline by.
 //  - Record the path deviation of an EVs actual journey compared to its original journey.
 public record ArriveAtDestination(int EVId, Time Time) : CancelableEvent(EVId, Time);
 
-
 // ---------- NON-DOMAIN EVENTS ---------- //
+
+// Functionality:
+// - Checks if an EV should look for Stations
+public record CheckUrgency(int EVId, Time Time) : Event(Time);
+
 
 // Spawn
 // Functionality:
