@@ -14,12 +14,13 @@ using Engine.StationFactory;
 using Engine.Services;
 using Engine.Vehicles;
 using Microsoft.Extensions.DependencyInjection;
-using System.Net.ServerSentEvents;
 
 public static class Init
 {
     public static void InitEngine(IServiceCollection services)
     {
+        services.AddSingleton<EventScheduler>();
+
         services.AddSingleton<IOSRMRouter>(sp =>
         {
             var settings = sp.GetRequiredService<EngineSettings>();
@@ -30,8 +31,10 @@ public static class Init
         {
             var settings = sp.GetRequiredService<EngineSettings>();
             var energyPrices = sp.GetRequiredService<EnergyPrices>();
-            var stationFactory = new StationFactory(settings.StationFactoryOptions, settings.Seed, energyPrices);
-            return stationFactory.CreateStations(settings.StationsPath);
+            var seed = settings.Seed;
+            var stationPath = settings.StationsPath;
+            var stationFactory = new StationFactory(settings.StationFactoryOptions, seed, energyPrices, stationPath);
+            return stationFactory.CreateStations();
         });
 
         services.AddSingleton(sp =>
@@ -96,6 +99,13 @@ public static class Init
             var random = settings.Seed;
             var intervalSize = settings.IntervalToCheckUrgency;
             return new CheckUrgencyHandler(eventScheduler, evStore, intervalSize, random);
+        });
+
+        services.AddSingleton(sp =>
+        {
+            var settings = sp.GetRequiredService<EngineSettings>();
+            var steps = settings.ChargingStepSeconds;
+            return new ChargingIntegrator(steps);
         });
 
         services.AddSingleton(sp =>
