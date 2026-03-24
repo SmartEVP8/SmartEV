@@ -5,7 +5,8 @@
     <OsrmDataPath>$(MSBuildThisFileDirectory)\data\osrm\output.osrm</OsrmDataPath>
     <GridPath>$(MSBuildThisFileDirectory)\data\denmark.polygon.json</GridPath>
     <CityDataPath>$(MSBuildThisFileDirectory)\data\CityInfo.csv</CityDataPath>
-    <CSVPath>$(MSBuildThisFileDirectory)\data\energy_prices.csv</CSVPath>
+    <EnergyPricesPath>$(MSBuildThisFileDirectory)\data\energy_prices.csv</EnergyPricesPath>
+    <ChargersPath>$(MSBuildThisFileDirectory)\data\denmark_charging_locations.json</ChargersPath>
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="BenchmarkDotNet" Version="0.15.8" />
@@ -24,6 +25,7 @@
     <RuntimeHostConfigurationOption Include="OsrmDataPath" Value="$(OsrmDataPath)" Trim="true" />
     <RuntimeHostConfigurationOption Include="GridPath" Value="$(GridPath)" Trim="false" />
     <RuntimeHostConfigurationOption Include="CityDataPath" Value="$(CityDataPath)" Trim="false" />
-    <RuntimeHostConfigurationOption Include="CSVPath" Value="$(CSVPath)" Trim="false" />
+    <RuntimeHostConfigurationOption Include="EnergyPricesPath" Value="$(EnergyPricesPath)" Trim="false" />
+    <RuntimeHostConfigurationOption Include="ChargersPath" Value="$(ChargersPath)" Trim="false" />
   </ItemGroup>
 </Project>

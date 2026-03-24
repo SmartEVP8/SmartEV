@@ -17,7 +17,7 @@ public class FindCandidateStationService(
     SpatialGrid spatialGrid,
     EVStore evStore)
 {
-    private record StationQuery(ushort[] StationIds, Task<(float[] Durations, float[] Distances)> Task);
+    private record StationQuery(Station[] Stations, Task<(float[] Durations, float[] Distances)> Task);
 
     private readonly Dictionary<int, StationQuery> _evStationPaths = [];
 
@@ -45,7 +45,9 @@ public class FindCandidateStationService(
             var pos = ev.Journey.CurrentPosition(fcse.Time);
             var dest = ev.Journey.Path.Waypoints.Last();
 
-            _evStationPaths[fcse.EVId] = new StationQuery(reachableStationsIds, Task.Run(() => router.QueryStationsWithDest(
+            _evStationPaths[fcse.EVId] = new StationQuery(
+                    [.. reachableStationsIds.Select(id => stations[id])],
+                    Task.Run(() => router.QueryStationsWithDest(
                 pos.Longitude,
                 pos.Latitude,
                 dest.Longitude,
@@ -58,7 +60,7 @@ public class FindCandidateStationService(
     /// <param name="evId">The EV's id.</param>
     /// <returns>The pre-computed candidate stations.</returns>
     /// <exception cref="SkillissueException">If you try and get a cached candidate which was never precomputed.</exception>
-    public async Task<Dictionary<ushort, float>> ComputeCandidateStationFromCache(int evId)
+    public async Task<Dictionary<Station, float>> ComputeCandidateStationFromCache(int evId)
     {
         if (!_evStationPaths.TryGetValue(evId, out var query))
             throw new SkillissueException($"No pre-computed station query found for EV {evId}. Ensure PreComputeCandidateStation is called first.");
