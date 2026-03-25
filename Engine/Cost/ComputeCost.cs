@@ -2,7 +2,6 @@ namespace Engine.Cost;
 
 using System.Data;
 using Core.Charging;
-using Core.Shared;
 using Core.Vehicles;
 using Engine.Routing;
 
@@ -10,11 +9,9 @@ using Engine.Routing;
 /// Computes the cost of detouring to each station and selects the station with the lowest cost.
 /// </summary>
 /// <param name="costStore">The cost store.</param>
-/// <param name="pathDeviator">The path deviator.</param>
-public class ComputeCost(ICostStore costStore, PathDeviator pathDeviator)
+public class ComputeCost(ICostStore costStore)
 {
     private readonly ICostStore _costStore = costStore;
-    private readonly PathDeviator _pathDeviator = pathDeviator;
 
     /// <summary>
     /// Computes the cost of detouring to each station and selects the station with the lowest cost.
@@ -22,12 +19,11 @@ public class ComputeCost(ICostStore costStore, PathDeviator pathDeviator)
     /// <param name="ev">The EV for which to compute costs.</param>
     /// <param name="stations">The array of stations to evaluate.</param>
     /// <param name="journeys">The journeys for each station.</param>
-    /// <param name="currentTime">The current time.</param>
     /// <returns>The station with the lowest cost.</returns>
     /// <exception cref="NoNullAllowedException">If no suitable station is found.</exception>
-    public Station Compute(ref EV ev, Station[] stations, (float[] duration, float[] distance, string[] polyline) journeys, Time currentTime)
+    public Station Compute(ref EV ev, Station[] stations, (float[] duration, float[] distance, string[] polyline) journeys)
     {
-        var totalCost = 0d;
+        var totalCost = double.MaxValue;
         Station? bestStation = null;
 
         for (var i = 0; i < stations.Length; i++)
@@ -42,8 +38,12 @@ public class ComputeCost(ICostStore costStore, PathDeviator pathDeviator)
                 station.Chargers.Count,
                 station.Chargers.Where(c => c.Queue.Count == 0).ToList().Count
             );
-            var availableChargerRatio = MathF.Abs((availableChargers / totalChargers) - 1);
-            var pathDeviation = _pathDeviator.CalculateDetourDeviation(ev.Journey, currentTime, station.Position);
+
+            if (totalChargers == 0)
+                throw new NoNullAllowedException($"Station {station.Id} has no chargers.");
+
+            var availableChargerRatio = MathF.Abs(((float)availableChargers / totalChargers) - 1);
+            var pathDeviation = PathDeviator.CalculateDetourDeviation(ref ev, (duration, polyline));
             var urgency = Urgency.CalculateChargeUrgency(ev.Battery.StateOfCharge, ev.Preferences.MinAcceptableCharge);
             var price = station.Price;
 
@@ -51,14 +51,14 @@ public class ComputeCost(ICostStore costStore, PathDeviator pathDeviator)
             var weights = _costStore.GetWeights();
 
             var effectiveQueueCost = weights.EffectiveQueueSize * MathF.Pow(effectiveQueueSize, 2);
-            var pathDeviationCost = weights.PathDeviation * pathDeviation.Item1;
+            var pathDeviationCost = weights.PathDeviation * pathDeviation;
             var urgencyCost = weights.Urgency * urgency;
             var priceCost = weights.PriceSensitivity * ev.Preferences.PriceSensitivity * price;
             var effectiveWaitTimeCost = weights.ExpectedWaitTime * 0; // TODO: Compute expected wait time cost
             var availableChargerRatioCost = weights.AvailableChargerRatio * availableChargerRatio;
 
             tempCost = effectiveQueueCost + pathDeviationCost + urgencyCost + priceCost + effectiveWaitTimeCost + availableChargerRatioCost;
-            if (tempCost > totalCost)
+            if (tempCost < totalCost)
             {
                 totalCost = tempCost;
                 bestStation = station;
