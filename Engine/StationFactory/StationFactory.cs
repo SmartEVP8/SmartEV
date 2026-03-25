@@ -147,8 +147,6 @@ public class StationFactory
             chargers,
             _energyPrices);
 
-        station.UpdatePrice(DateTime.Now.DayOfWeek, DateTime.Now.Hour);
-
         return station;
     }
 

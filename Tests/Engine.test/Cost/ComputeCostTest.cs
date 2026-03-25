@@ -1,63 +1,27 @@
 namespace Engine.test.Cost;
 
-using System.Collections.Immutable;
 using Core.Charging;
 using Core.Routing;
 using Core.Shared;
 using Core.Vehicles;
 using Engine.Cost;
+using Engine.test.Builders;
 
 public class ComputeCostTest
 {
-    private static Station CreateStation(ushort id, int queueSize)
-    {
-        var charger = new FakeCharger();
-        for (var i = 0; i < queueSize; i++)
-        {
-            charger.Queue.Enqueue(i);
-        }
-
-        return new Station(
-            id: id,
-            name: $"Station-{id}",
-            address: "Address",
-            position: new Position(0, 0),
-            chargers: [charger],
-            energyPrices: new EnergyPrices(new FileInfo("data/energy_prices.csv"), new Random(42)));
-    }
-
-    private sealed class StubCostStore(CostWeights weights) : ICostStore
-    {
-        private readonly CostWeights _weights = weights;
-
-        public CostWeights GetWeights() => _weights;
-
-        public void TrySet(CostWeights update, long seq)
-        {
-        }
-    }
-
-    private sealed class FakeCharger() : ChargerBase(id: 1, maxPowerKW: 100)
-    {
-        public override ImmutableArray<Socket> GetSockets() => [Socket.CCS2];
-    }
-
-    private sealed class FixedEnergyPrices(float fixedPrice) : EnergyPrices(new FileInfo("data/energy_prices.csv"), new Random(42))
-    {
-        private readonly float _fixedPrice = fixedPrice;
-
-        public new float CalculatePrice(DayOfWeek day, int hour) => _fixedPrice;
-    }
-
     [Fact]
     public void Compute_OnlyPathDeviationWeighted_SelectsLowerDeviationStation()
     {
-        var costStore = new StubCostStore(new CostWeights(PathDeviation: 1));
+        var costStore = new TestData.StubCostStore(new CostWeights(PathDeviation: 1));
         var computeCost = new ComputeCost(costStore);
-        var ev = CreateNeutralEv(originalDuration: 500);
+        var ev = new EV(
+            TestData.Battery(stateOfCharge: 100),
+            TestData.Preferences(PriceSensitivity: 0.0f, MinAcceptableCharge: 0f),
+            new Journey(new Time(0), new Time(500), new Paths([new Position(0, 0), new Position(1, 1)])),
+            150);
 
-        var stationA = CreateStation(id: 1, queueSize: 0);
-        var stationB = CreateStation(id: 2, queueSize: 0);
+        var stationA = TestData.Station(id: 1, pos: new Position(0, 0));
+        var stationB = TestData.Station(id: 2, pos: new Position(0, 0));
 
         var stations = new[] { stationA, stationB };
         var journeys = (
@@ -73,12 +37,16 @@ public class ComputeCostTest
     [Fact]
     public void Compute_OnlyQueueWeighted_SelectsShorterQueueStation()
     {
-        var costStore = new StubCostStore(new CostWeights(EffectiveQueueSize: 1));
+        var costStore = new TestData.StubCostStore(new CostWeights(EffectiveQueueSize: 1));
         var computeCost = new ComputeCost(costStore);
-        var ev = CreateNeutralEv(originalDuration: 500);
+        var ev = new EV(
+            TestData.Battery(stateOfCharge: 100),
+            TestData.Preferences(PriceSensitivity: 0.0f, MinAcceptableCharge: 0f),
+            new Journey(new Time(0), new Time(500), new Paths([new Position(0, 0), new Position(1, 1)])),
+            150);
 
-        var lowQueueStation = CreateStation(id: 1, queueSize: 1);
-        var highQueueStation = CreateStation(id: 2, queueSize: 3);
+        var lowQueueStation = TestData.Station(id: 1, queueSize: 1);
+        var highQueueStation = TestData.Station(id: 2, queueSize: 3);
 
         var stations = new[] { lowQueueStation, highQueueStation };
         var journeys = (
@@ -97,12 +65,16 @@ public class ComputeCostTest
         // Station A: low deviation (100), high queue (5)
         // Station B: high deviation (300), low queue (1)
         // With equal weights, station A wins with lower total cost
-        var costStore = new StubCostStore(new CostWeights(PathDeviation: 1, EffectiveQueueSize: 1));
+        var costStore = new TestData.StubCostStore(new CostWeights(PathDeviation: 1, EffectiveQueueSize: 1));
         var computeCost = new ComputeCost(costStore);
-        var ev = CreateNeutralEv(originalDuration: 500);
+        var ev = new EV(
+            TestData.Battery(stateOfCharge: 100),
+            TestData.Preferences(PriceSensitivity: 0.0f, MinAcceptableCharge: 0f),
+            new Journey(new Time(0), new Time(500), new Paths([new Position(0, 0), new Position(1, 1)])),
+            150);
 
-        var stationA = CreateStation(id: 1, queueSize: 5);
-        var stationB = CreateStation(id: 2, queueSize: 1);
+        var stationA = TestData.Station(id: 1, queueSize: 5);
+        var stationB = TestData.Station(id: 2, queueSize: 1);
 
         var stations = new[] { stationA, stationB };
         var journeys = (
@@ -120,12 +92,16 @@ public class ComputeCostTest
     [Fact]
     public void Compute_AllStationsIdenticalCost_ReturnsFirst()
     {
-        var costStore = new StubCostStore(new CostWeights(PathDeviation: 1, EffectiveQueueSize: 1));
+        var costStore = new TestData.StubCostStore(new CostWeights(PathDeviation: 1, EffectiveQueueSize: 1));
         var computeCost = new ComputeCost(costStore);
-        var ev = CreateNeutralEv(originalDuration: 500);
+        var ev = new EV(
+            TestData.Battery(stateOfCharge: 100),
+            TestData.Preferences(PriceSensitivity: 0.0f, MinAcceptableCharge: 0f),
+            new Journey(new Time(0), new Time(500), new Paths([new Position(0, 0), new Position(1, 1)])),
+            150);
 
-        var stationA = CreateStation(id: 1, queueSize: 0);
-        var stationB = CreateStation(id: 2, queueSize: 0);
+        var stationA = TestData.Station(id: 1, queueSize: 0);
+        var stationB = TestData.Station(id: 2, queueSize: 0);
 
         var stations = new[] { stationA, stationB };
         var journeys = (
@@ -142,32 +118,20 @@ public class ComputeCostTest
     [Fact]
     public void Compute_OnlyPriceSensitivityWeighted_SelectsCheaperStation()
     {
-        var costStore = new StubCostStore(new CostWeights(PriceSensitivity: 1));
+        var costStore = new TestData.StubCostStore(new CostWeights(PriceSensitivity: 1));
         var computeCost = new ComputeCost(costStore);
-        var ev = CreateEv(originalDuration: 500, priceSensitivity: 1.0f);
+        var ev = new EV(
+            TestData.Battery(stateOfCharge: 50),
+            TestData.Preferences(PriceSensitivity: 1.0f, MinAcceptableCharge: 20f),
+            new Journey(new Time(0), new Time(500), new Paths([new Position(0, 0), new Position(1, 1)])),
+            150);
 
         // Use deterministic energy prices to control station costs
-        var cheapEnergyPrices = new FixedEnergyPrices(2.0f);
-        var expensiveEnergyPrices = new FixedEnergyPrices(4.0f);
+        var cheapEnergyPrices = new TestData.FixedEnergyPrices(2.0f);
+        var expensiveEnergyPrices = new TestData.FixedEnergyPrices(4.0f);
 
-        var cheapCharger = new FakeCharger();
-        var expensiveCharger = new FakeCharger();
-
-        var cheapStation = new Station(
-            id: 1,
-            name: "Cheap",
-            address: "Address",
-            position: new Position(0, 0),
-            chargers: [cheapCharger],
-            energyPrices: cheapEnergyPrices);
-
-        var expensiveStation = new Station(
-            id: 2,
-            name: "Expensive",
-            address: "Address",
-            position: new Position(1, 1),
-            chargers: [expensiveCharger],
-            energyPrices: expensiveEnergyPrices);
+        var cheapStation = TestData.Station(id: 1, pos: new Position(0, 0), energyPrices: cheapEnergyPrices);
+        var expensiveStation = TestData.Station(id: 2, pos: new Position(1, 1), energyPrices: expensiveEnergyPrices);
 
         // Trigger price calculation (caches price internally)
         cheapStation.UpdatePrice(DayOfWeek.Monday, 12);
@@ -188,9 +152,13 @@ public class ComputeCostTest
     [Fact]
     public void Compute_NoStations_ThrowsNoNullAllowedException()
     {
-        var costStore = new StubCostStore(new CostWeights(PathDeviation: 1));
+        var costStore = new TestData.StubCostStore(new CostWeights(PathDeviation: 1));
         var computeCost = new ComputeCost(costStore);
-        var ev = CreateNeutralEv(originalDuration: 500);
+        var ev = new EV(
+            TestData.Battery(stateOfCharge: 100),
+            TestData.Preferences(PriceSensitivity: 0.0f, MinAcceptableCharge: 0f),
+            new Journey(new Time(0), new Time(500), new Paths([new Position(0, 0), new Position(1, 1)])),
+            150);
 
         var stations = Array.Empty<Station>();
         var journeys = (
@@ -200,30 +168,5 @@ public class ComputeCostTest
 
         Assert.Throws<System.Data.NoNullAllowedException>(() =>
             computeCost.Compute(ref ev, stations, journeys));
-    }
-
-    private static EV CreateNeutralEv(uint originalDuration)
-    {
-        // High SoC to minimize urgency cost, zero price sensitivity to minimize price cost
-        var battery = new Battery(capacity: 100, maxChargeRate: 200, stateOfCharge: 100, socket: Socket.CCS2);
-        var preferences = new Preferences(priceSensitivity: 0.0f, minAcceptableCharge: 0f, maxPathDeviation: 1000.0);
-        var journey = new Journey(
-            departure: new Time(0),
-            originalDuration: new Time(originalDuration),
-            path: new Paths([new Position(0, 0), new Position(1, 1)]));
-
-        return new EV(battery, preferences, journey, efficiency: 150);
-    }
-
-    private static EV CreateEv(uint originalDuration, float priceSensitivity = 0.5f)
-    {
-        var battery = new Battery(capacity: 100, maxChargeRate: 200, stateOfCharge: 50, socket: Socket.CCS2);
-        var preferences = new Preferences(priceSensitivity: priceSensitivity, minAcceptableCharge: 20f, maxPathDeviation: 1000.0);
-        var journey = new Journey(
-            departure: new Time(0),
-            originalDuration: new Time(originalDuration),
-            path: new Paths([new Position(0, 0), new Position(1, 1)]));
-
-        return new EV(battery, preferences, journey, efficiency: 150);
     }
 }

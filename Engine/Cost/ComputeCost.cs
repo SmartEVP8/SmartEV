@@ -23,44 +23,31 @@ public class ComputeCost(ICostStore costStore)
     /// <exception cref="NoNullAllowedException">If no suitable station is found.</exception>
     public Station Compute(ref EV ev, Station[] stations, (float[] duration, float[] distance, string[] polyline) journeys)
     {
-        var totalCost = double.MaxValue;
+        var bestCost = double.MaxValue;
         Station? bestStation = null;
+        var weights = _costStore.GetWeights();
 
         for (var i = 0; i < stations.Length; i++)
         {
-            var tempCost = 0d;
             var station = stations[i];
-            var (duration, distance, polyline) = (journeys.duration[i], journeys.distance[i], journeys.polyline[i]);
+            var (duration, _, polyline) = (journeys.duration[i], journeys.distance[i], journeys.polyline[i]);
 
-            // Factors
-            var effectiveQueueSize = station.Chargers.Sum(c => c.Queue.Count);
-            var (totalChargers, availableChargers) = (
-                station.Chargers.Count,
-                station.Chargers.Where(c => c.Queue.Count == 0).ToList().Count
-            );
+            var effectiveQueueCost = CalculateEffectiveQueueSizeCost(station, weights);
+            var pathDeviationCost = CalculatePathDeviationCost(ref ev, (duration, polyline), weights);
+            var urgencyCost = CalculateUrgencyCost(ref ev, weights);
+            var priceCost = CalculatePriceCost(ref ev, station, weights);
+            var effectiveWaitTimeCost = CalculateEffectiveWaitTimeCost(weights);
+            var availableChargerRatioCost = CalculateAvailableChargerRatioCost(station, weights);
 
-            if (totalChargers == 0)
-                throw new NoNullAllowedException($"Station {station.Id} has no chargers.");
-
-            var availableChargerRatio = MathF.Abs((availableChargers / totalChargers) - 1);
-            var pathDeviation = PathDeviator.CalculateDetourDeviation(ref ev, (duration, polyline));
-            var urgency = Urgency.CalculateChargeUrgency(ev.Battery.StateOfCharge, ev.Preferences.MinAcceptableCharge);
-            var price = station.Price;
-
-            // Costs
-            var weights = _costStore.GetWeights();
-
-            var effectiveQueueCost = weights.EffectiveQueueSize * MathF.Pow(effectiveQueueSize, 2);
-            var pathDeviationCost = weights.PathDeviation * pathDeviation;
-            var urgencyCost = weights.Urgency * urgency;
-            var priceCost = weights.PriceSensitivity * ev.Preferences.PriceSensitivity * price;
-            var effectiveWaitTimeCost = weights.ExpectedWaitTime * 0; // TODO: Compute expected wait time cost
-            var availableChargerRatioCost = weights.AvailableChargerRatio * availableChargerRatio;
-
-            tempCost = effectiveQueueCost + pathDeviationCost + urgencyCost + priceCost + effectiveWaitTimeCost + availableChargerRatioCost;
-            if (tempCost < totalCost)
+            var cost = effectiveQueueCost
+                + pathDeviationCost
+                + urgencyCost
+                + priceCost
+                + effectiveWaitTimeCost
+                + availableChargerRatioCost;
+            if (cost < bestCost)
             {
-                totalCost = tempCost;
+                bestCost = cost;
                 bestStation = station;
             }
         }
@@ -70,4 +57,45 @@ public class ComputeCost(ICostStore costStore)
 
         return bestStation;
     }
+
+    // TODO: Think about effective queue size
+    private static double CalculateEffectiveQueueSizeCost(Station station, CostWeights weights)
+    {
+        var totalQueueSize = station.Chargers.Sum(c => c.Queue.Count);
+        var effectiveQueueSize = totalQueueSize / station.Chargers.Count; // Average queue size per charger
+
+        return weights.EffectiveQueueSize * MathF.Pow(effectiveQueueSize, 2);
+    }
+
+    private static double CalculateAvailableChargerRatioCost(Station station, CostWeights weights)
+    {
+        var (totalChargers, availableChargers) = (
+                station.Chargers.Count,
+                station.Chargers.Where(c => c.Queue.Count == 0).ToList().Count
+            );
+        var availableChargerRatio = MathF.Abs((availableChargers / totalChargers) - 1);
+
+        return weights.AvailableChargerRatio * availableChargerRatio;
+    }
+
+    private static double CalculatePathDeviationCost(ref EV ev, (float duration, string polyline) journey, CostWeights weights)
+    {
+        var pathDeviation = PathDeviator.CalculateDetourDeviation(ref ev, (journey.duration, journey.polyline));
+        return weights.PathDeviation * pathDeviation;
+    }
+
+    private static double CalculateUrgencyCost(ref EV ev, CostWeights weights)
+    {
+        var urgency = Urgency.CalculateChargeUrgency(ev.Battery.StateOfCharge, ev.Preferences.MinAcceptableCharge);
+        return weights.Urgency * urgency;
+    }
+
+    private static double CalculatePriceCost(ref EV ev, Station station, CostWeights weights)
+    {
+        var price = station.Price;
+        return weights.PriceSensitivity * ev.Preferences.PriceSensitivity * price;
+    }
+
+    // TODO: Implement
+    private static double CalculateEffectiveWaitTimeCost(CostWeights weights) => weights.ExpectedWaitTime * 0;
 }

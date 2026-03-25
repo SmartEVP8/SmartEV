@@ -49,14 +49,11 @@ public class EnergyPrices(FileInfo csvPath, Random random)
     }
 
     /// <summary>
-    /// Calculates and sets the price of a specific station.
+    /// Calculates a price and applies a random deviation of 0–20% to the base hourly price.
+    /// Call this periodically to simulate dynamic pricing.
     /// </summary>
     /// <param name="day">The day being queried.</param>
     /// <param name="hour">The hour being queried.</param>
-    /// <remarks>
-    /// Applies a random deviation of 0–20% to the base hourly price.
-    /// Call this periodically to simulate dynamic pricing.
-    /// </remarks>
     /// <returns>The price at the specified day and hour ± deviation.</returns>
     public float CalculatePrice(DayOfWeek day, int hour)
     {
