@@ -4,8 +4,8 @@ using Core.Routing;
 
 public struct EV(Battery battery, Preferences preferences, Journey journey, ushort efficiency)
 {
-    public readonly Preferences Preferences = preferences;
-    public Battery Battery { get; } = battery;
-    public ushort Efficiency { get; } = efficiency;
-    public Journey Journey { get; private set; } = journey;
+    public readonly Preferences Preferences = preferences; // 8 bytes
+    public Battery Battery { get; } = battery; // 8 bytes
+    public Journey Journey { get; private set; } = journey; // 8 bytes
+    public ushort Efficiency { get; } = efficiency; // 2
 }

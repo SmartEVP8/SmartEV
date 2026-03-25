@@ -1,12 +1,8 @@
 namespace Engine.Events;
 
-using Core.Charging;
 using Core.Shared;
-using Engine.Metrics;
 
 public abstract record Event(Time Time);
-public abstract record CancelableEvent(int EVId, Time Time) : Event(Time);
-public abstract record contineousEvent(int EVId, Time Time) : Event(Time);
 
 /// <summary>
 /// MiddlewareEvents has handlers that are called when scheduled.
@@ -14,6 +10,7 @@ public abstract record contineousEvent(int EVId, Time Time) : Event(Time);
 public interface IMiddlewareEvent
 {
 }
+
 // Functionality:
 //  - Should compute the distance from the EV's current position to all station candidates and back to their destination.
 public record FindCandidateStations(int EVId, Time Time) : Event(Time), IMiddlewareEvent;
@@ -38,33 +35,31 @@ public record CancelRequest(int EVId, ushort StationId, Time Time) : Event(Time)
 //  - Should increase Actual Queue Size by 1 (AQS + 1).
 //  - Method for either placing the EV in the queue or if there are no EVs in the queue, immediately start charging.
 //  - Method that stores the EVs arrival time at the station.
-public record ArriveAtStation(int EVId, ushort StationId, Time Time) : CancelableEvent(EVId, Time);
+public record ArriveAtStation(int EVId, ushort StationId, Time Time) : Event(Time);
 
 // Functionality:
 //  - Pop next EV from the the queue and start charging that EV and stores the EV's start charging time.
 //  - Integrate the Recompute functionality.
 // Metrics:
 //  - Record the time an EV spent charging
-public record EndCharging(int EVId, int ChargerId, Time Time) : CancelableEvent(EVId, Time);
+public record EndCharging(int EVId, int ChargerId, Time Time) : Event(Time);
 
 // Metrics:
 //  - Record if the EV missed its deadline.
 //  - Record how much the EV missed the deadline by.
 //  - Record the path deviation of an EVs actual journey compared to its original journey.
-public record ArriveAtDestination(int EVId, Time Time) : CancelableEvent(EVId, Time);
+public record ArriveAtDestination(int EVId, Time Time) : Event(Time);
 
 // ---------- NON-DOMAIN EVENTS ---------- //
 
 // Functionality:
 // - Checks if an EV should look for Stations
-public record CheckUrgency(int EVId, Time Time) : contineousEvent(EVId, Time);
-
+public record CheckUrgency(int EVId, Time Time) : Event(Time);
 
 // Spawn
 // Functionality:
 //  - Spawn an EV .
 //  - Sample once from urgency to see if it needs to find a charger immediately.
-
 public record SnapshotEvent(Time Time) : Event(Time);
 
 // Check urgency
