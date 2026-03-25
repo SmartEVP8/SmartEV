@@ -83,4 +83,44 @@ public class EventSchedulerTest
         Assert.Equal(request4, _scheduler.GetNextEvent());
         Assert.Null(_scheduler.GetNextEvent());
     }
+
+    [Fact]
+    public void PauseUrgencyEventTest()
+    {
+        var checkUrgency1 = new CheckUrgency(1, 10);
+        var checkUrgency2 = new CheckUrgency(2, 20);
+        var checkUrgency3 = new CheckUrgency(3, 15);
+
+        _scheduler.ScheduleEvent(checkUrgency1);
+        _scheduler.ScheduleEvent(checkUrgency2);
+        _scheduler.ScheduleEvent(checkUrgency3);
+
+        _scheduler.PauseUrgencyEvent(checkUrgency2.EVId);
+
+        Assert.Equal(checkUrgency1, _scheduler.GetNextEvent());
+        Assert.Equal(checkUrgency3, _scheduler.GetNextEvent());
+        Assert.Null(_scheduler.GetNextEvent());
+    }
+
+    [Fact]
+    public void PauseUrgencyButNotCancelOthersTest()
+    {
+        var request1 = new ArriveAtStation(2, 1, 5);
+        var request2 = new CheckUrgency(2, 10);
+        var request3 = new EndCharging(2, 1, 15);
+        var request4 = new ArriveAtDestination(2, 25);
+
+        _scheduler.ScheduleEvent(request1);
+        _scheduler.ScheduleEvent(request2);
+        _scheduler.ScheduleEvent(request3);
+        _scheduler.ScheduleEvent(request4);
+
+        _scheduler.PauseUrgencyEvent(request2.EVId);
+
+        Assert.Equal(request1, _scheduler.GetNextEvent());
+        Assert.Equal(request3, _scheduler.GetNextEvent());
+        Assert.Equal(request4, _scheduler.GetNextEvent());
+        Assert.Null(_scheduler.GetNextEvent());
+
+    }
 }
