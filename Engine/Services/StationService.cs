@@ -5,6 +5,7 @@ using Core.Charging.ChargingModel;
 using Core.Charging.ChargingModel.Chargepoint;
 using Engine.Events;
 using Core.Shared;
+using Engine.Vehicles;
 
 /// <summary>
 /// Tracks an active charging session at one side of a charger.
@@ -72,6 +73,7 @@ public class StationService
     private readonly Dictionary<int, ChargerState> _chargerIndex = [];
     private readonly ChargingIntegrator _integrator;
     private readonly EventScheduler _scheduler;
+    private readonly EVStore _evStore;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="StationService"/> class.
@@ -82,10 +84,12 @@ public class StationService
     public StationService(
         ICollection<Station> stations,
         ChargingIntegrator integrator,
-        EventScheduler scheduler)
+        EventScheduler scheduler,
+        EVStore evStore)
     {
         _integrator = integrator;
         _scheduler = scheduler;
+        _evStore = evStore;
 
         foreach (var station in stations)
         {
@@ -132,6 +136,7 @@ public class StationService
             return;
 
         target.Queue.Enqueue((e.EVId, ev));
+        _evStore.Get(e.EVId).IsCharging = true;
 
         if (target.IsFree)
             StartCharging(target, e.Time);
@@ -155,6 +160,7 @@ public class StationService
             case SingleCharger single:
                 single.ChargingPoint.Disconnect();
                 state.SessionA = null;
+                _evStore.Get(e.EVId).IsCharging = false;
                 break;
 
             case DualCharger dual:
@@ -162,6 +168,7 @@ public class StationService
                 {
                     dual.ChargingPoint.Disconnect(ChargingSide.Left);
                     state.SessionA = null;
+                    _evStore.Get(e.EVId).IsCharging = false;
 
                     if (state.SessionB is not null && result is not null)
                     {
@@ -188,7 +195,7 @@ public class StationService
                 {
                     dual.ChargingPoint.Disconnect(ChargingSide.Right);
                     state.SessionB = null;
-
+                    _evStore.Get(e.EVId).IsCharging = false;
                     if (state.SessionA is not null && result is not null)
                     {
                         var updatedSoC = result.ASoCWhenBFinish;
@@ -213,6 +220,7 @@ public class StationService
                 break;
         }
 
+        _scheduler.ScheduleEvent(new CheckUrgency(e.EVId, e.Time));
         StartCharging(state, e.Time);
     }
 

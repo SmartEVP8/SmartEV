@@ -15,24 +15,27 @@ public class CheckUrgencyHandler(EventScheduler eventScheduler, EVStore evStore,
     public void Handle(CheckUrgency checkUrgency)
     {
         var ev = evStore.Get(checkUrgency.EVId);
-        var urgency = Urgency.CalculateChargeUrgency(ev.Battery.StateOfCharge, ev.Preferences.MinAcceptableCharge);
-        if (urgency == 1)
+        if (ev.IsCharging)
         {
-            var findCandidateEvent = new FindCandidateStations(checkUrgency.EVId, checkUrgency.Time);
-            eventScheduler.ScheduleEvent(findCandidateEvent);
-        }
-        else if (urgency > 0.0)
-        {
-            var randomPercentage = random.NextDouble();
-            if (urgency >= randomPercentage)
+            var urgency = Urgency.CalculateChargeUrgency(ev.Battery.StateOfCharge, ev.Preferences.MinAcceptableCharge);
+            if (urgency == 1)
             {
                 var findCandidateEvent = new FindCandidateStations(checkUrgency.EVId, checkUrgency.Time);
                 eventScheduler.ScheduleEvent(findCandidateEvent);
             }
-        }
+            else if (urgency > 0.0)
+            {
+                var randomPercentage = random.NextDouble();
+                if (urgency >= randomPercentage)
+                {
+                    var findCandidateEvent = new FindCandidateStations(checkUrgency.EVId, checkUrgency.Time);
+                    eventScheduler.ScheduleEvent(findCandidateEvent);
+                }
+            }
 
-        var newCheckUrgency = new CheckUrgency(checkUrgency.EVId, checkUrgency.Time + NextTimeToCheck(ev));
-        eventScheduler.ScheduleEvent(newCheckUrgency);
+            var newCheckUrgency = new CheckUrgency(checkUrgency.EVId, checkUrgency.Time + NextTimeToCheck(ev));
+            eventScheduler.ScheduleEvent(newCheckUrgency);
+        }
     }
 
     private Time NextTimeToCheck(EV ev)
