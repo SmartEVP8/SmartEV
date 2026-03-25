@@ -10,7 +10,6 @@ using Xunit;
 /// </summary>
 public class CarsOnRoadTests
 {
-
     /// <summary>
     /// Tests known day/hour combinations against expected EV counts.
     ///
@@ -19,7 +18,7 @@ public class CarsOnRoadTests
     ///   = 16,680 + (417,000 - 16,680) * (congestion / 100).
     /// </summary>
     /// <param name="day">The day of the week to test.</param>
-    /// <param name="hour">The hour of the day to test (0-23).</param>
+    /// <param name="hourOfDay">The hour of the day to test (0-23).</param>
     /// <param name="expected">The expected number of EVs on the road.</param>
     [Theory]
     [InlineData(DayOfWeek.Tuesday, 7, BaselineCars + ((PeakCars - BaselineCars) * 100 / 100))]
@@ -28,9 +27,9 @@ public class CarsOnRoadTests
     [InlineData(DayOfWeek.Friday, 13, BaselineCars + ((PeakCars - BaselineCars) * 60 / 100))]
     [InlineData(DayOfWeek.Saturday, 12, BaselineCars + ((PeakCars - BaselineCars) * 32 / 100))]
     [InlineData(DayOfWeek.Wednesday, 2, BaselineCars + ((PeakCars - BaselineCars) * 3 / 100))]
-    public void ReturnsExpectedEVCount(DayOfWeek day, int hour, double expected)
+    public void ReturnsExpectedEVCount(DayOfWeek day, int hourOfDay, double expected)
     {
-        var result = GetEVsOnRoad(day, hour);
+        var result = GetEVsOnRoad(day, hourOfDay);
         Assert.Equal(expected, result, 0);
     }
 

@@ -2,10 +2,24 @@ namespace Core.Vehicles;
 
 using Core.Shared;
 
-public class Battery(ushort capacity, ushort maxChargeRate, float currentCharge, Socket socket)
+/// <summary>
+/// Represents the battery of an electric vehicle.
+/// </summary>
+/// <param name="capacity">The capacity of the battery.</param>
+/// <param name="maxChargeRate">The maximum charge rate of the battery.</param>
+/// <param name="stateOfCharge">The current state of charge of the battery.</param>
+/// <param name="socket">The socket type of the battery.</param>
+public class Battery(ushort capacity, ushort maxChargeRate, float stateOfCharge, Socket socket)
 {
-    public readonly ushort Capacity = capacity; // 2 bytes
-    public readonly ushort MaxChargeRate = maxChargeRate; // 2 bytes
-    public float CurrentCharge { get; } = currentCharge; // 4 bytes
-    public readonly Socket Socket = socket; // 1 byte
+    /// <summary>Gets the capacity of the battery.</summary>
+    public ushort Capacity { get; } = capacity;
+
+    /// <summary>Gets the maximum charge rate of the battery.</summary>
+    public ushort MaxChargeRate { get; } = maxChargeRate;
+
+    /// <summary>Gets the current state of charge of the battery.</summary>
+    public float StateOfCharge { get; } = stateOfCharge;
+
+    /// <summary>Gets the socket type of the battery.</summary>
+    public Socket Socket { get; } = socket;
 }

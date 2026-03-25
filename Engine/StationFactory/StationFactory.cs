@@ -15,6 +15,7 @@ public class StationFactory
     private readonly StationFactoryOptions _options;
     private readonly Random _random;
     private readonly EnergyPrices _energyPrices;
+    private readonly FileInfo _stationsFile;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="StationFactory"/> class with the specified options and random seed.
@@ -22,11 +23,12 @@ public class StationFactory
     /// <param name="options">The configuration options for station generation.</param>
     /// <param name="random">The seed for random number generation to ensure deterministic output.</param>
     /// <param name="energyPrices">Dynamic energy prices based on time of day.</param>
+    /// <param name="stationsFile">The file containing the station location data.</param>
     /// <exception cref="ArgumentNullException">Thrown if options is null.</exception>
     /// <exception cref="ArgumentOutOfRangeException">Thrown if TotalChargers is not greater than zero, or if probabilities are not between 0 and 1.</exception>
     /// <exception cref="ArgumentException">Thrown if SocketProbabilities is empty, contains negative probabilities, or does not sum to approximately 1.</exception>
     /// <exception cref="InvalidOperationException">Thrown if there are not enough chargers to assign at least one to each station.</exception>
-    public StationFactory(StationFactoryOptions options, Random random, EnergyPrices energyPrices)
+    public StationFactory(StationFactoryOptions options, Random random, EnergyPrices energyPrices, FileInfo stationsFile)
     {
         ArgumentNullException.ThrowIfNull(options);
 
@@ -70,9 +72,15 @@ public class StationFactory
                 "MultiSocketChargerProbability must be between 0 and 1.");
         }
 
+        if (stationsFile == null)
+        {
+            throw new ArgumentNullException(nameof(stationsFile), "Stations file cannot be null.");
+        }
+
         _options = options;
         _random = random;
         _energyPrices = energyPrices;
+        _stationsFile = stationsFile;
     }
 
     /// <summary>
@@ -82,14 +90,10 @@ public class StationFactory
     /// The order of socket assignment is randomised to avoid clustering of connector types at the first stations.
     /// Throws exceptions if the file does not exist or if there are not enough chargers to assign at least one to each station.
     /// </summary>
-    /// <param name="file"> The file containing the station location data. </param>
     /// <returns> Returns a list of created stations. </returns>
-    public List<Station> CreateStations(FileInfo file)
+    public Dictionary<ushort, Station> CreateStations()
     {
-        if (!file.Exists)
-            throw new FileNotFoundException("Station location file not found.", file.FullName);
-
-        var json = File.ReadAllText(file.FullName);
+        var json = File.ReadAllText(_stationsFile.FullName);
         var locations = JsonSerializer.Deserialize<List<StationLocationDTO>>(json, new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true,
@@ -103,7 +107,7 @@ public class StationFactory
 
         var chargerCountsPerStation = DistributeChargersAcrossStations(locations.Count, _options.TotalChargers);
 
-        var stations = new List<Station>(locations.Count);
+        var stations = new Dictionary<ushort, Station>(locations.Count);
         ushort nextStationId = 1;
         var socketIndex = 0;
 
@@ -118,7 +122,7 @@ public class StationFactory
                 chargers.Add(CreateCharger(chargerId, socket));
             }
 
-            stations.Add(CreateStation(nextStationId++, locations[i], chargers));
+            stations.Add(nextStationId, CreateStation(nextStationId++, locations[i], chargers));
         }
 
         return stations;

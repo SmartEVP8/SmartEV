@@ -23,13 +23,13 @@ public class SpatialGrid
     /// <param name="spawnable">The spawnable grid defines the bounds and cell sizes of the spatial grid. It is used to determine which cells are spawnable and to initialize the grid structure.</param>
     /// <param name="stations">Used as points to be queried for.</param>
     /// <exception cref="Exception">Thrown if a station is located outside the bounds of the grid defined by the spawnable parameter.</exception>
-    public SpatialGrid(SpawnGrid spawnable, IEnumerable<Station> stations)
+    public SpatialGrid(SpawnGrid spawnable, Dictionary<ushort, Station> stations)
     {
         _min = spawnable.Min;
         _latSize = spawnable.LatSize;
         _lonSize = spawnable.LonSize;
 
-        foreach (var cell in spawnable.Cells.SelectMany(row => row).Where(c => c.Spawnable))
+        foreach (var cell in spawnable.GetSpawnableCells())
         {
             var key = ToRowCol(cell.Centerpoint.Latitude, cell.Centerpoint.Longitude);
             _cells[key] = [];
@@ -37,34 +37,14 @@ public class SpatialGrid
 
         foreach (var station in stations)
         {
-            _stationPositions[station.Id] = station.Position;
-            var key = ToRowCol(station.Position.Latitude, station.Position.Longitude);
+            _stationPositions[station.Key] = station.Value.Position;
+            var key = ToRowCol(station.Value.Position.Latitude, station.Value.Position.Longitude);
 
             if (!_cells.TryGetValue(key, out var list))
-                key = FindNearestSpawnableCell(key) ?? throw new Exception($"Station {station.Position.Latitude}, {station.Position.Longitude} has no nearby spawnable cell.");
+                key = FindNearestSpawnableCell(key) ?? throw new Exception($"Station {station.Value.Position.Latitude}, {station.Value.Position.Longitude} has no nearby spawnable cell.");
 
-            _cells[key].Add(station.Id);
+            _cells[key].Add(station.Key);
         }
-    }
-
-
-
-    private RowCol? FindNearestSpawnableCell(RowCol origin)
-    {
-        for (var radius = 1; radius <= 1; radius++)
-        {
-            for (var dr = -radius; dr <= radius; dr++)
-            {
-                for (var dc = -radius; dc <= radius; dc++)
-                {
-                    if (Math.Abs(dr) != radius && Math.Abs(dc) != radius) continue;
-                    var candidate = new RowCol(origin.Row + dr, origin.Col + dc);
-                    if (_cells.ContainsKey(candidate)) return candidate;
-                }
-            }
-        }
-
-        return null;
     }
 
     /// <summary>
@@ -96,6 +76,24 @@ public class SpatialGrid
         }
 
         return [.. seen];
+    }
+
+    private RowCol? FindNearestSpawnableCell(RowCol origin)
+    {
+        for (var radius = 1; radius <= 1; radius++)
+        {
+            for (var dr = -radius; dr <= radius; dr++)
+            {
+                for (var dc = -radius; dc <= radius; dc++)
+                {
+                    if (Math.Abs(dr) != radius && Math.Abs(dc) != radius) continue;
+                    var candidate = new RowCol(origin.Row + dr, origin.Col + dc);
+                    if (_cells.ContainsKey(candidate)) return candidate;
+                }
+            }
+        }
+
+        return null;
     }
 
     /// <summary>

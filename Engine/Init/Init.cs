@@ -1,28 +1,62 @@
 namespace Engine.Init;
 
 using Core.Charging;
+using Core.Charging.ChargingModel;
 using Core.Shared;
 using Engine.Cost;
 using Engine.Events;
+using Engine.Events.Middleware;
 using Engine.Grid;
 using Engine.Metrics;
 using Engine.Parsers;
 using Engine.Routing;
 using Engine.Spawning;
 using Engine.StationFactory;
+using Engine.Services;
 using Engine.Vehicles;
 using Microsoft.Extensions.DependencyInjection;
 
+/// <summary>
+/// Initializes the Engine by setting up all necessary services and configurations.
+/// </summary>
 public static class Init
 {
+    /// <summary>
+    /// Initializes the Engine with the required services and configurations.
+    /// </summary>
+    /// <param name="services">The service collection to initialize.</param>
     public static void InitEngine(IServiceCollection services)
     {
-        services.AddSingleton<EventScheduler>();
-
         services.AddSingleton<IOSRMRouter>(sp =>
         {
             var settings = sp.GetRequiredService<EngineSettings>();
             return new OSRMRouter(settings.OsrmPath);
+        });
+
+        services.AddSingleton(sp =>
+        {
+            var settings = sp.GetRequiredService<EngineSettings>();
+            var energyPrices = sp.GetRequiredService<EnergyPrices>();
+            var seed = settings.Seed;
+            var stationPath = settings.StationsPath;
+            var stationFactory = new StationFactory(settings.StationFactoryOptions, seed, energyPrices, stationPath);
+            return stationFactory.CreateStations();
+        });
+
+        services.AddSingleton(sp =>
+        {
+            var settings = sp.GetRequiredService<EngineSettings>();
+            return new EVStore(settings.CurrentAmoutOfEVsInDenmark);
+        });
+
+        services.AddSingleton<IJourneySamplerProvider>(sp =>
+        {
+            var settings = sp.GetRequiredService<EngineSettings>();
+            var router = sp.GetRequiredService<IOSRMRouter>();
+            var spawnGrid = InitSpawnGrid(settings.PolygonPath);
+            var cities = InitCities(settings.CitiesPath);
+            var journeyPipeline = new JourneyPipeline(spawnGrid, cities, router);
+            return new JourneySamplerProvider(journeyPipeline);
         });
 
         services.AddSingleton<ICostStore>(sp =>
@@ -42,8 +76,10 @@ public static class Init
         services.AddSingleton(sp =>
         {
             var settings = sp.GetRequiredService<EngineSettings>();
+            var journeySamplerProvider = sp.GetRequiredService<IJourneySamplerProvider>();
+            var router = sp.GetRequiredService<IOSRMRouter>();
             var random = settings.Seed;
-            return new EVFactory(random);
+            return new EVFactory(random, journeySamplerProvider, router);
         });
 
         services.AddSingleton(sp =>
@@ -56,19 +92,34 @@ public static class Init
         services.AddSingleton(sp =>
         {
             var settings = sp.GetRequiredService<EngineSettings>();
-            var energyPrices = sp.GetRequiredService<EnergyPrices>();
-            var stationFactory = new StationFactory(settings.StationFactoryOptions, settings.Seed, energyPrices);
-            var stations = stationFactory.CreateStations(settings.StationsPath);
-            return new SpatialGrid(InitSpawnGrid(settings.PolygonPath), stations);
+            var stations = sp.GetRequiredService<Dictionary<ushort, Station>>();
+            var spawnGrid = InitSpawnGrid(settings.PolygonPath);
+            return new SpatialGrid(spawnGrid, stations);
+        });
+
+        services.AddSingleton(sp =>
+        {
+            var eventScheduler = sp.GetRequiredService<EventScheduler>();
+            var evStore = sp.GetRequiredService<EVStore>();
+            var settings = sp.GetRequiredService<EngineSettings>();
+            var random = settings.Seed;
+            var intervalSize = settings.IntervalToCheckUrgency;
+            return new CheckUrgencyHandler(eventScheduler, evStore, intervalSize, random);
         });
 
         services.AddSingleton(sp =>
         {
             var settings = sp.GetRequiredService<EngineSettings>();
-            var router = sp.GetRequiredService<IOSRMRouter>();
-            var spawnGrid = InitSpawnGrid(settings.PolygonPath);
-            var cities = InitCities(settings.CitiesPath);
-            return new JourneyPipeline(spawnGrid, cities, router);
+            var steps = settings.ChargingStepSeconds;
+            return new ChargingIntegrator(steps);
+        });
+
+        services.AddSingleton(sp =>
+        {
+            var stations = sp.GetRequiredService<Dictionary<ushort, Station>>();
+            var integrator = sp.GetRequiredService<ChargingIntegrator>();
+            var scheduler = sp.GetRequiredService<EventScheduler>();
+            return new StationService(stations.Values, integrator, scheduler);
         });
     }
 

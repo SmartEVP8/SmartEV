@@ -14,7 +14,7 @@ using Engine.Routing;
 public class OsrmRouterBenchmark
 {
     private OSRMRouter _router = null!;
-    private int[] _stationIndices = null!;
+    private ushort[] _stationIndices = null!;
     private (double Lon, double Lat)[] _evCoordinates = null!;
     private double[] _evCoordsFlat = null!;
     private double[] _stationCoordsFlat = null!;
@@ -29,8 +29,7 @@ public class OsrmRouterBenchmark
             ?? throw new InvalidOperationException("OsrmDataPath not set in project.");
         _router = new OSRMRouter(new FileInfo(path));
         var csvPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "data", "energy_prices.csv");
-        var _energyPrices = new EnergyPrices(new FileInfo(csvPath));
-
+        var energyPrices = new EnergyPrices(new FileInfo(csvPath));
 
         var stations = new List<Station>(50);
         for (ushort i = 0; i < 50; i++)
@@ -42,11 +41,11 @@ public class OsrmRouterBenchmark
                 position: new Position(9.9217 + (i * 0.001), 57.0488 + (i * 0.001)),
                 chargers: [],
                 random: new Random(i),
-                _energyPrices));
+                energyPrices));
         }
 
         _router.InitStations(stations);
-        _stationIndices = [.. Enumerable.Range(0, 50)];
+        _stationIndices = [.. Enumerable.Range(0, 50).Select(i => (ushort)i)];
 
         _evCoordinates = new (double Lon, double Lat)[1000];
         _evCoordsFlat = new double[1000 * 2];

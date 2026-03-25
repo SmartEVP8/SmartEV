@@ -1,50 +1,78 @@
 namespace Engine.Events;
 
-public class EventScheduler
-{
-    private readonly PriorityQueue<IEvent, (uint, uint)> _eventPriorityQueue = new();
-    private readonly HashSet<(uint, ushort)> _canceledEvents = new();
-    private uint _currentTime = 0;
-    private uint _evSequeenceId = 0;
+using Core.Shared;
 
-    public void ScheduleEvent(IEvent e, uint timestamp)
+/// <summary>
+/// The EventScheduler is responsible for managing and scheduling events in the system.
+/// </summary>
+/// <param name="preProcessors">Middleware/Preprocessors that are fired on MiddlewareEvents if attatched.</param>
+public class EventScheduler(Dictionary<Type, Action<IMiddlewareEvent>> preProcessors)
+{
+    private readonly PriorityQueue<Event, (uint, uint)> _eventPriorityQueue = new();
+
+    /// <summary>
+    /// Optional event handlers that can perform actions on scheduleEvent.
+    /// </summary>
+    private readonly Dictionary<Type, Action<IMiddlewareEvent>> _preProcessors = preProcessors;
+    private readonly HashSet<int> _canceledEvents = [];
+    private Time _currentTime = 0;
+    private Time _evSequeenceId = 0;
+
+    /// <summary>
+    /// Schedules the event <paramref name="e"/> at its Time attribute.
+    /// Potentially calls pre-processor if one is registered for that event type.
+    /// </summary>
+    /// <param name="e">The event to be scheduled.</param>
+    /// <exception cref="ArgumentOutOfRangeException">If the events timestamp is before current time.</exception>
+    public void ScheduleEvent(Event e)
     {
+        var timestamp = e.Time;
         if (timestamp < _currentTime)
             throw new ArgumentOutOfRangeException($"Event timestamp {timestamp} is in the past (current time: {_currentTime})");
+
+        if (e is IMiddlewareEvent me && _preProcessors.TryGetValue(me.GetType(), out var handler))
+            handler.Invoke(me);
+
         _eventPriorityQueue.Enqueue(e, (timestamp, _evSequeenceId++));
     }
 
     /// <summary>
-    /// Returns the next event in the priority queue, or null if there are no more events.
-    /// If the event has been cancelled, it will be skipped and the next event will be returned instead.
+    /// Retrives and removes the next event from the EventScheduler.
     /// </summary>
     /// <returns>The next event in the queue to get resolved.</returns>
-    public IEvent? GetNextEvent()
+    public Event? GetNextEvent()
     {
         if (_eventPriorityQueue.Count == 0)
             return null;
 
         _eventPriorityQueue.TryDequeue(out var e, out var priority);
         _currentTime = priority.Item1;
-        if (e is ReservationRequest request && _canceledEvents.Contains((request.EVId, request.StationId)))
+        if (e is CancelableEvent cancelableEvent && _canceledEvents.Contains(cancelableEvent.EVId))
         {
-            _canceledEvents.Remove((request.EVId, request.StationId));
+            _canceledEvents.Remove(cancelableEvent.EVId);
             return GetNextEvent();
-
         }
+
         return e;
     }
 
-    public uint GetCurrentTime() => _currentTime;
+    /// <summary>Gets the current timestamp of the event scheduler.</summary>
+    /// <remark>The time is monotonically increasing.</remark>
+    public Time CurrentTime => _currentTime;
 
     /// <summary>
-    /// Cancels a reservation request by adding it to the set of canceled events.
+    /// Cancels a CancelableEvent by adding it to the set of canceled events.
     /// When the event is dequeued, it will be skipped.
     /// </summary>
-    /// <param name="request">The CancelRequest for a given event.</param>
-    public void CancelEvent(CancelRequest request)
+    /// <param name="evID">The evID from which a CancelableEvent should be cancelled bu.</param>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when attempting to cancel an event for an EV that already has a pending
+    /// cancellation, violating the invariant that an EV can only have one cancelable event at a time.
+    /// </exception>
+    public void CancelEvent(int evID)
     {
-        var e = (request.EVId, request.StationId);
-        _canceledEvents.Add(e);
+        if (_canceledEvents.Contains(evID))
+            throw new InvalidOperationException($"Event with EVId {evID} is already cancelled.");
+        _canceledEvents.Add(evID);
     }
 }

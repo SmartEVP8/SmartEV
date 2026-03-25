@@ -1,3 +1,5 @@
+namespace Core.test.Charging;
+
 using Core.Charging;
 using Core.Shared;
 
@@ -6,7 +8,6 @@ using Core.Shared;
 /// </summary>
 public class StationTest
 {
-
     private readonly EnergyPrices _energyPrices = new(new FileInfo(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "data", "energy_prices.csv")));
 
     /// <summary>
@@ -22,8 +23,8 @@ public class StationTest
     [InlineData(DayOfWeek.Monday, 23)]
     public void CalculatePrice_SetsPrice_WithinExpectedRange(DayOfWeek day, int hour)
     {
-        Station station = CreateStation();
-        float basePrice = _energyPrices.GetHourPrice(day, hour);
+        var station = CreateStation();
+        var basePrice = _energyPrices.GetHourPrice(day, hour);
 
         var price = station.CalculatePrice(DayOfWeek.Monday, hour);
 
@@ -37,7 +38,7 @@ public class StationTest
     [Fact]
     public void CalculatePrice_ChangesPrice()
     {
-        Station station = CreateStation(random: new Random(42));
+        var station = CreateStation(random: new Random(42));
         var price = station.CalculatePrice(DayOfWeek.Monday, 12);
         Assert.NotEqual(3.0f, price);
     }
@@ -45,7 +46,7 @@ public class StationTest
     private Station CreateStation(float price = 3.0f, Random? random = null)
     {
         return new(id: 1, name: "Test Station", address: "Test Street 1",
-            position: new Position(10.0, 56.0), chargers: null,
+            position: new Position(10.0, 56.0), chargers: [],
             random: random ?? new Random(42), _energyPrices);
     }
 }

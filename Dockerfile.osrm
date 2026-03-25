@@ -1,4 +1,6 @@
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS osrm-build
+# Force rebuild to sync with new C++ logic (add or remove this line)
+
+FROM mcr.microsoft.com/dotnet/sdk:10.0-noble AS osrm-build
 
 RUN apt-get update && apt-get install -y \
     build-essential cmake pkg-config curl \
@@ -25,7 +27,7 @@ RUN osrm-extract -p /usr/local/share/osrm/profiles/car.lua output.osm.pbf \
     && rm output.osm.pbf
 
 # Final image — processed data + runtime libraries only
-FROM debian:bookworm-slim
+FROM ubuntu:24.04
 
 RUN apt-get update && apt-get install -y \
     libboost-all-dev liblua5.4-0 libtbb12 \

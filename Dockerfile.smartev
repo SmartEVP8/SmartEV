@@ -3,6 +3,23 @@ FROM ghcr.io/smartevp8/smartev:${OSRM_BUILDER_TAG} AS osrm-data
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 
+RUN apt-get update && apt-get install -y \
+    build-essential cmake git \
+    libboost-all-dev \
+    libtbb-dev \
+    liblua5.4-dev \
+    libluajit-5.1-dev \
+    libxml2-dev \
+    libzip-dev \
+    libbz2-dev \
+    libexpat1-dev \
+    libstxxl-dev \
+    libosmium2-dev \
+    libprotozero-dev \
+    libzmq3-dev \
+    pkg-config \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 # Pull pre-processed OSRM data from dedicated builder image
@@ -38,6 +55,23 @@ RUN dotnet test --no-build
 
 # Runtime image
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS runtime
+
+RUN apt-get update && apt-get install -y \
+    build-essential cmake git \
+    libboost-all-dev \
+    libtbb-dev \
+    liblua5.4-dev \
+    libluajit-5.1-dev \
+    libxml2-dev \
+    libzip-dev \
+    libbz2-dev \
+    libexpat1-dev \
+    libstxxl-dev \
+    libosmium2-dev \
+    libprotozero-dev \
+    libzmq3-dev \
+    pkg-config \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 

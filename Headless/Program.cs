@@ -1,18 +1,26 @@
 namespace Headless;
 
 using Engine.Cost;
-using Engine.Init;
-using Engine.Metrics;
-using Engine.StationFactory;
-using Microsoft.Extensions.DependencyInjection;
-using Engine;
 using Engine.Events;
 using Engine.Grid;
+using Engine.Init;
+using Engine.Metrics;
 using Engine.Routing;
+using Engine.Spawning;
+using Engine.Services;
+using Engine.StationFactory;
 using Engine.Vehicles;
+using Microsoft.Extensions.DependencyInjection;
 
+/// <summary>
+/// The entry point for the headless execution of the Engine. Initializes all necessary services and starts the simulation.
+/// </summary>
 public static class Program
 {
+    /// <summary>
+    /// The main method initializes the Engine with the required services and configurations, then starts the simulation by resolving necessary services from the dependency injection.
+    /// </summary>
+    /// <returns>The running simulation.</returns>
     public static async Task Main()
     {
         var dataPath = new DirectoryInfo("../data/");
@@ -48,6 +56,12 @@ public static class Program
                 TotalChargers = 10000,
             },
 
+            IntervalToCheckUrgency = 10,
+
+            CurrentAmoutOfEVsInDenmark = 583320, // Based on the number of registered EVs in Denmark as of 2026-03-22 https://mobility.dk/nyheder/nu-koerer-hver-femte-personbil-i-danmark-paa-el/
+
+            ChargingStepSeconds = 60,
+
             EnergyPricesPath = new FileInfo(Path.Combine(dataPath.FullName, "energy_prices.csv")),
             OsrmPath = new FileInfo(Path.Combine(dataPath.FullName, "osrm/output.osrm")),
             CitiesPath = new FileInfo(Path.Combine(dataPath.FullName, "CityInfo.csv")),
@@ -65,6 +79,7 @@ public static class Program
         provider.GetRequiredService<MetricsService>();
         provider.GetRequiredService<EVFactory>();
         provider.GetRequiredService<SpatialGrid>();
-        provider.GetRequiredService<JourneyPipeline>();
+        provider.GetRequiredService<IJourneySamplerProvider>();
+        provider.GetRequiredService<StationService>();
     }
 }

@@ -58,11 +58,11 @@ public static class CarsOnRoad
     /// Gets the estimated number of EVs on the road for a specific day and hour.
     /// </summary>
     /// <param name="day">The day of the week.</param>
-    /// <param name="hour">The hour of the day (0-23).</param>
+    /// <param name="hourOfDay">The hour of the day (0-23).</param>
     /// <returns>The estimated number of EVs on the road.</returns>
-    public static int GetEVsOnRoad(DayOfWeek day, int hour)
+    public static int GetEVsOnRoad(DayOfWeek day, int hourOfDay)
     {
-        var carCongestion = _congestion[(int)day, hour];
+        var carCongestion = _congestion[(int)day, hourOfDay];
         var cars = BaselineCars + ((PeakCars - BaselineCars) * carCongestion / _maxCongestion);
 
         return Math.Min(cars, TotalEVs);
