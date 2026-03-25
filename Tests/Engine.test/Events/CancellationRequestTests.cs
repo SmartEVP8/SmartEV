@@ -1,90 +1,75 @@
 namespace Testing;
 
-using Core.Charging;
-using Core.Routing;
 using Core.Shared;
-using Core.Vehicles;
 using Engine.Events;
 using Engine.Routing;
 using Engine.Services;
 using Engine.Vehicles;
+using Engine.test.Builders;
+using Engine.Init;
+using Engine.Cost;
+using Engine.Metrics;
+using Engine.StationFactory;
 
 public class CancelRequestTests
 {
-    private class StubRouter : IDestinationRouter
-    {
-        public (float duration, string polyline) QueryDestination(double[] coords)
-            => (700, "_p~iF~ps|U_ulLnnqC");
-    }
-
     private const ushort _stationID = 1;
     private const int _evID = 0;
 
-    private readonly EventScheduler _scheduler = new([]);
-    private readonly EVStore _evStore = new(10);
-    private readonly StationService _stationService;
+    private readonly EngineSettings _engineSettings;
 
     public CancelRequestTests()
     {
-        var station = MakeStation();
+        _engineSettings = new EngineSettings
+        {
+            CostConfig = new CostWeights(),
+            RunId = Guid.NewGuid(),
+            MetricsConfig = new MetricsConfig(),
+            Seed = new Random(42),
+            StationFactoryOptions = new StationFactoryOptions(),
 
-        _stationService = new StationService(
-            stations: [station],
-            integrator: null!,
-            scheduler: _scheduler,
-            pathDeviator: new PathDeviator(new StubRouter()),
-            random: new Random(42));
+            CurrentAmoutOfEVsInDenmark = 1,
+            IntervalToCheckUrgency = 10,
+            MaxNoiseArrivalTime = 0,
+            ChargingStepSeconds = 1,
 
-        var ev = new EV(
-            battery: new Battery(capacity: 50, maxChargeRate: 20, stateOfCharge: 30f, socket: Socket.CCS2),
-            efficiency: 2,
-            preferences: new Preferences(priceSensitivity: 0.5f, minAcceptableCharge: 0.1f, maxPathDeviation: 1.0f),
-            journey: new Journey(
-                departure: new Time(0),
-                originalDuration: new Time(1000),
-                path: new Paths([new Position(0.0, 0.0), new Position(2.0, 2.0)])));
-        _evStore.Set(_evID, ref ev);
+            EnergyPricesPath = new FileInfo("dummy"),
+            OsrmPath = new FileInfo("dummy"),
+            CitiesPath = new FileInfo("dummy"),
+            GridPath = new FileInfo("dummy"),
+            StationsPath = new FileInfo("dummy"),
+            PolygonPath = new FileInfo("dummy"),
+        };
     }
-
-    private static EnergyPrices MakeEnergyPrices()
-    {
-        var lines = new List<string> { "Day,Hour,Price" };
-        foreach (var day in Enum.GetValues<DayOfWeek>())
-            for (var h = 0; h < 24; h++)
-                lines.Add($"{day},{h},3.00");
-
-        var path = Path.GetTempFileName();
-        File.WriteAllLines(path, lines);
-        return new EnergyPrices(new FileInfo(path));
-    }
-
-    private static Station MakeStation() => new(
-        id: _stationID,
-        name: "Test Station",
-        address: "Test Address",
-        position: new Position(1.0, 1.0),
-        chargers: [],
-        random: new Random(42),
-        energyPrices: MakeEnergyPrices());
 
     [Fact]
-    public void CancelsPendingArrivalEvent()
+    public void CancelsPendingArrivalEvent_WithTestData()
     {
-        // First, make a reservation
-        _stationService.HandleReservationRequest(
-            new ReservationRequest(_evID, _stationID, new Time(0)), _evStore);
+        var scheduler = new EventScheduler([]);
+        var evStore = new EVStore(10);
 
-        // Get a reference to the EV to pass to the cancel method
-        ref var ev = ref _evStore.Get(_evID);
+        var stations = TestData.Stations((_stationID, 1.0, 1.0));
 
-        // Cancel the reservation
-        _stationService.HandleCancelRequest(
-            new ReservationRequest(_evID, _stationID, new Time(0)), ref ev);
+        var stationService = new StationService(
+            stations: [.. stations.Values],
+            integrator: null!,
+            scheduler: scheduler,
+            pathDeviator: new PathDeviator(TestData.OSRMRouter),
+            random: new Random(42),
+            settings: _engineSettings);
 
-        // Assert that the scheduled arrival event was cancelled
-        Assert.Null(_scheduler.GetNextEvent());
+        var path = TestData.Route(0.0, 0.0, 2.0, 2.0);
 
-        // Also assert that the EV no longer has a reservation
+        var ev = TestData.EV(path);
+        evStore.Set(_evID, ref ev);
+
+        stationService.HandleReservationRequest(
+            new ReservationRequest(_evID, _stationID, new Time(0)), evStore);
+
+        stationService.HandleCancelRequest(
+            new CancelRequest(_evID, _stationID, new Time(0)), evStore);
+
+        Assert.Null(scheduler.GetNextEvent());
         Assert.Null(ev.HasReservationAtStationId);
     }
 }

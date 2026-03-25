@@ -113,8 +113,9 @@ public static class Init
             var integrator = sp.GetRequiredService<ChargingIntegrator>();
             var scheduler = sp.GetRequiredService<EventScheduler>();
             var pathDeviator = sp.GetRequiredService<PathDeviator>();
-            var random = sp.GetRequiredService<Random>();
-            return new StationService(stations.Values, integrator, scheduler, pathDeviator, random);
+            var settings = sp.GetRequiredService<EngineSettings>();
+            var random = settings.Seed;
+            return new StationService(stations.Values, integrator, scheduler, pathDeviator, random, settings);
         });
     }
 
