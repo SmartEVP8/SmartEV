@@ -134,7 +134,7 @@ public class StationServiceTests
 
         var scheduler = new EventScheduler([]);
         var integrator = new ChargingIntegrator(stepSeconds: 60);
-        var service = new StationService([station], integrator, scheduler);
+        var service = new StationService([station], integrator, scheduler, pathDeviator: null!, random: null!);
         return (service, scheduler);
     }
 
@@ -156,7 +156,7 @@ public class StationServiceTests
 
         var scheduler = new EventScheduler([]);
         var integrator = new ChargingIntegrator(stepSeconds: 60);
-        var service = new StationService([station], integrator, scheduler);
+        var service = new StationService([station], integrator, scheduler, pathDeviator: null!, random: null!);;
         return (service, scheduler);
     }
 

@@ -8,6 +8,7 @@ using Engine.Vehicles;
 using Engine.Events;
 using Engine.Routing;
 using Engine.Utils;
+using Core.Vehicles;
 
 /// <summary>
 /// Tracks an active charging session at one side of a charger.
@@ -95,6 +96,7 @@ public class StationService
 
         foreach (var station in stations)
         {
+            _stationIndex[station.Id] = station;
             var states = station.Chargers.Select(c => new ChargerState(c)).ToList();
             _stationChargers[station.Id] = states;
             foreach (var cs in states)
@@ -120,13 +122,16 @@ public class StationService
     /// <param name="evStore">The EV store used to retrieve the requesting EV.</param>
     public void HandleReservationRequest(ReservationRequest e, EVStore evStore)
     {
-        var ev = evStore.Get(e.EVId);
+        ref var ev = ref evStore.Get(e.EVId);
         if (!_stationIndex.TryGetValue(e.StationId, out var station))
             return;
 
         if (ev.HasReservationAtStationId.HasValue)
-            _scheduler.CancelEvent(e.EVId);
+        {
+            HandleCancelRequest(e, ref ev);
+        }
 
+        ev.HasReservationAtStationId = e.StationId;
         station.IncrementReservations();
 
         var currentTime = _scheduler.CurrentTime;
@@ -140,7 +145,6 @@ public class StationService
 
         ev.Journey.Path = Polyline6ToPoints.DecodePolyline(newPolyline);
         ev.Journey.UpdateRunningSumDeviation(deviation);
-        ev.HasReservationAtStationId = e.StationId;
 
         _scheduler.ScheduleEvent(new ArriveAtStation(e.EVId, e.StationId, arrivalTime));
     }
@@ -150,17 +154,15 @@ public class StationService
     /// clearing the reservation from the EV, and cancelling the scheduled arrival event.
     /// </summary>
     /// <param name="e">The cancellation request event.</param>
-    /// <param name="evStore">The EV store used to retrieve the requesting EV.</param>
-    public void HandleCancelRequest(CancelRequest e, EVStore evStore)
+    /// <param name="ev">The EV whose request is being cancelled.</param>
+    public void HandleCancelRequest(ReservationRequest e, ref EV ev)
     {
-        var ev = evStore.Get(e.EVId);
         if (!_stationIndex.TryGetValue(e.StationId, out var station))
             return;
 
         station.DecrementReservations();
 
-        if (ev.HasReservationAtStationId.HasValue)
-            _scheduler.CancelEvent(e.EVId);
+        _scheduler.CancelEvent(e.EVId);
 
         ev.HasReservationAtStationId = null;
     }
