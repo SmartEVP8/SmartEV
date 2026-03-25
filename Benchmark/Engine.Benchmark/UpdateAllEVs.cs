@@ -4,11 +4,13 @@ using Core.Shared;
 using Core.Vehicles;
 namespace Engine.Benchmark;
 
+using BenchmarkDotNet.Diagnosers;
 using Engine.Events;
 using Engine.Vehicles;
 
 [MemoryDiagnoser]
 [MaxIterationCount(35)]
+[EventPipeProfiler(EventPipeProfile.CpuSampling)]
 public class UpdateAllEVsBenchMark
 {
     private const int _count = 580000;
@@ -32,6 +34,9 @@ public class UpdateAllEVsBenchMark
         }
         _checkAndUpdateAllEVsHandler = new CheckAndUpdateAllEVsHandler(_eventScheduler, _evStore, 5, 10);
     }
+
+    [IterationCleanup]
+    public void IterationCleanup() => _eventScheduler = new EventScheduler([]);
 
     [Benchmark]
     public void UpdateAllEVs() => _checkAndUpdateAllEVsHandler.Handle(new CheckAndUpdateAllEVs(10));
