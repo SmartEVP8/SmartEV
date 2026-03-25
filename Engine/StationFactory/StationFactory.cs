@@ -145,10 +145,9 @@ public class StationFactory
             location.Address ?? string.Empty,
             position,
             chargers,
-            _random,
             _energyPrices);
 
-        station.CalculatePrice(DateTime.Now.DayOfWeek, DateTime.Now.Hour);
+        station.UpdatePrice(DateTime.Now.DayOfWeek, DateTime.Now.Hour);
 
         return station;
     }

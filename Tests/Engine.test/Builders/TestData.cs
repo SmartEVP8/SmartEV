@@ -20,7 +20,7 @@ public static class TestData
 
     public static readonly EnergyPrices EnergyPrices =
         new(new FileInfo(AppContext.GetData("EnergyPricesPath") as string
-            ?? throw new InvalidDataException("EnergyPricesPath not set.")));
+            ?? throw new InvalidDataException("EnergyPricesPath not set.")), _random);
 
     private static readonly StationFactory _stationFactory = new(
         new StationFactoryOptions(),
@@ -44,7 +44,7 @@ public static class TestData
     public static readonly SpatialGrid SpatialGrid = BuildSpatialGrid(AllStations);
 
     public static Station Station(ushort id, Position pos, List<ChargerBase>? chargers = null) =>
-        new(id, string.Empty, string.Empty, pos, chargers ?? [], _random, EnergyPrices);
+        new(id, string.Empty, string.Empty, pos, chargers ?? [], EnergyPrices);
 
     public static Dictionary<ushort, Station> Stations(params (ushort Id, double Lon, double Lat)[] stations) =>
         stations.ToDictionary(s => s.Id, s => Station(s.Id, new Position(s.Lon, s.Lat)));

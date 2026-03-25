@@ -42,7 +42,7 @@ public class ComputeCost(ICostStore costStore)
             if (totalChargers == 0)
                 throw new NoNullAllowedException($"Station {station.Id} has no chargers.");
 
-            var availableChargerRatio = MathF.Abs(((float)availableChargers / totalChargers) - 1);
+            var availableChargerRatio = MathF.Abs((availableChargers / totalChargers) - 1);
             var pathDeviation = PathDeviator.CalculateDetourDeviation(ref ev, (duration, polyline));
             var urgency = Urgency.CalculateChargeUrgency(ev.Battery.StateOfCharge, ev.Preferences.MinAcceptableCharge);
             var price = station.Price;

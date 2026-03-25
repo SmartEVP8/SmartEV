@@ -35,7 +35,7 @@ public class OSRMRouterTests
             ?? throw new InvalidOperationException("OsrmDataPath not set in project.");
 
         var csvPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "data", "energy_prices.csv");
-        _energyPrices = new EnergyPrices(new FileInfo(csvPath));
+        _energyPrices = new EnergyPrices(new FileInfo(csvPath), new Random(42));
     }
 
     [Fact]

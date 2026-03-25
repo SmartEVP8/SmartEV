@@ -7,36 +7,6 @@ using Core.Shared;
 
 public class SnapshotMetricTests
 {
-    private static EnergyPrices MakeEnergyPrices()
-    {
-        var lines = new List<string> { "Day,Hour,Price" };
-        foreach (var day in Enum.GetValues<DayOfWeek>())
-            for (var h = 0; h < 24; h++) lines.Add($"{day},{h},3.00");
-
-        var path = Path.GetTempFileName();
-        File.WriteAllLines(path, lines);
-        return new EnergyPrices(new FileInfo(path));
-    }
-
-    private static Station MakeStation(List<ChargerBase> chargers)
-    {
-        return new Station(
-            id: 1,
-            name: "Test Station",
-            address: "Test Address",
-            position: new Position(0, 0),
-            chargers: chargers,
-            random: new Random(42),
-            energyPrices: MakeEnergyPrices());
-    }
-
-    private static SingleCharger MakeSingleCharger(int id, int maxPowerKW = 150)
-    {
-        var connectors = new Connectors([new Connector(Socket.CCS2)]);
-        var point = new SingleChargingPoint(connectors);
-        return new SingleCharger(id, maxPowerKW, point);
-    }
-
     [Theory]
     [InlineData(0, 0, 0)]
     [InlineData(1, 0, 1)]
@@ -52,5 +22,34 @@ public class SnapshotMetricTests
         var metric = SnapshotMetric.Collect(station, 0, DayOfWeek.Monday, 0, _ => 0);
 
         Assert.Equal(expectedActive, metric.ActiveChargers);
+    }
+
+    private static EnergyPrices MakeEnergyPrices()
+    {
+        var lines = new List<string> { "Day,Hour,Price" };
+        foreach (var day in Enum.GetValues<DayOfWeek>())
+            for (var h = 0; h < 24; h++) lines.Add($"{day},{h},3.00");
+
+        var path = Path.GetTempFileName();
+        File.WriteAllLines(path, lines);
+        return new EnergyPrices(new FileInfo(path), new Random(42));
+    }
+
+    private static Station MakeStation(List<ChargerBase> chargers)
+    {
+        return new Station(
+            id: 1,
+            name: "Test Station",
+            address: "Test Address",
+            position: new Position(0, 0),
+            chargers: chargers,
+            energyPrices: MakeEnergyPrices());
+    }
+
+    private static SingleCharger MakeSingleCharger(int id, int maxPowerKW = 150)
+    {
+        var connectors = new Connectors([new Connector(Socket.CCS2)]);
+        var point = new SingleChargingPoint(connectors);
+        return new SingleCharger(id, maxPowerKW, point);
     }
 }

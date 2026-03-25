@@ -16,8 +16,11 @@ using System.Globalization;
 /// Initializes the energy price table by reading the csv file and coverting to (Day, Hour, Price).
 /// </remarks>
 /// <param name="csvPath">The path to the csv containing the pricing data.</param>
-public class EnergyPrices(FileInfo csvPath)
+/// <param name="random">A random number generator for simulating price fluctuations.</param>
+public class EnergyPrices(FileInfo csvPath, Random random)
 {
+    private readonly Random _random = random;
+
     /// <summary>
     /// Array of energy price for each hour.
     /// </summary>
@@ -46,17 +49,20 @@ public class EnergyPrices(FileInfo csvPath)
     }
 
     /// <summary>
-    /// Gets a dictionary of all prices for a day.
+    /// Calculates and sets the price of a specific station.
     /// </summary>
     /// <param name="day">The day being queried.</param>
-    /// <returns>A dictionary with (hour, price) tuples.</returns>
-    public Dictionary<int, float> GetDayPrice(DayOfWeek day)
+    /// <param name="hour">The hour being queried.</param>
+    /// <remarks>
+    /// Applies a random deviation of 0–20% to the base hourly price.
+    /// Call this periodically to simulate dynamic pricing.
+    /// </remarks>
+    /// <returns>The price at the specified day and hour ± deviation.</returns>
+    public float CalculatePrice(DayOfWeek day, int hour)
     {
-        if (!Enum.IsDefined(day))
-            throw new ArgumentOutOfRangeException(nameof(day), "Invalid day of week.");
-
-        return _energyPriceTable
-            .Where(x => x.Day == day)
-            .ToDictionary(x => x.Hour, x => x.Price);
+        var basePrice = GetHourPrice(day, hour);
+        var deviation = _random.NextSingle() * 0.20f; // 0–20%
+        var sign = _random.Next(2) == 0 ? 1.0f : -1.0f;
+        return basePrice * (1.0f + (sign * deviation));
     }
 }

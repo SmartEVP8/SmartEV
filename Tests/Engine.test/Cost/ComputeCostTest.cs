@@ -23,8 +23,7 @@ public class ComputeCostTest
             address: "Address",
             position: new Position(0, 0),
             chargers: [charger],
-            random: new Random(42),
-            energyPrices: new EnergyPrices(new FileInfo("data/energy_prices.csv")));
+            energyPrices: new EnergyPrices(new FileInfo("data/energy_prices.csv"), new Random(42)));
     }
 
     private sealed class StubCostStore(CostWeights weights) : ICostStore
@@ -41,6 +40,13 @@ public class ComputeCostTest
     private sealed class FakeCharger() : ChargerBase(id: 1, maxPowerKW: 100)
     {
         public override ImmutableArray<Socket> GetSockets() => [Socket.CCS2];
+    }
+
+    private sealed class FixedEnergyPrices(float fixedPrice) : EnergyPrices(new FileInfo("data/energy_prices.csv"), new Random(42))
+    {
+        private readonly float _fixedPrice = fixedPrice;
+
+        public new float CalculatePrice(DayOfWeek day, int hour) => _fixedPrice;
     }
 
     [Fact]
@@ -140,12 +146,33 @@ public class ComputeCostTest
         var computeCost = new ComputeCost(costStore);
         var ev = CreateEv(originalDuration: 500, priceSensitivity: 1.0f);
 
-        var cheapStation = CreateStation(id: 1, queueSize: 0);
-        var expensiveStation = CreateStation(id: 2, queueSize: 0);
-        cheapStation.CalculatePrice(DayOfWeek.Monday, 12);
-        expensiveStation.CalculatePrice(DayOfWeek.Monday, 12);
+        // Use deterministic energy prices to control station costs
+        var cheapEnergyPrices = new FixedEnergyPrices(2.0f);
+        var expensiveEnergyPrices = new FixedEnergyPrices(4.0f);
 
-        // Manually set prices for deterministic test
+        var cheapCharger = new FakeCharger();
+        var expensiveCharger = new FakeCharger();
+
+        var cheapStation = new Station(
+            id: 1,
+            name: "Cheap",
+            address: "Address",
+            position: new Position(0, 0),
+            chargers: [cheapCharger],
+            energyPrices: cheapEnergyPrices);
+
+        var expensiveStation = new Station(
+            id: 2,
+            name: "Expensive",
+            address: "Address",
+            position: new Position(1, 1),
+            chargers: [expensiveCharger],
+            energyPrices: expensiveEnergyPrices);
+
+        // Trigger price calculation (caches price internally)
+        cheapStation.UpdatePrice(DayOfWeek.Monday, 12);
+        expensiveStation.UpdatePrice(DayOfWeek.Monday, 12);
+
         var stations = new[] { cheapStation, expensiveStation };
         var journeys = (
             duration: new[] { 500f, 500f },
@@ -154,8 +181,8 @@ public class ComputeCostTest
 
         var bestStation = computeCost.Compute(ref ev, stations, journeys);
 
-        // Cheaper station should be selected (lower cost)
-        Assert.NotNull(bestStation);
+        // Cheaper station (2.0 DKK/kWh) should be selected over expensive (4.0 DKK/kWh)
+        Assert.Same(cheapStation, bestStation);
     }
 
     [Fact]

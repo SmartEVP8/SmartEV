@@ -26,9 +26,8 @@ public class OsrmRouterOneToManyBenchmark
             ?? throw new InvalidOperationException("OsrmDataPath not set in project.");
         _router = new OSRMRouter(new FileInfo(path));
 
-        var energyPath = AppContext.GetData("EnergyPricesPath") as string
-            ?? throw new InvalidOperationException("EnergyPricesPath not set in project.");
-        var energyPrices = new EnergyPrices(new FileInfo(energyPath));
+        var energyPath = AppContext.GetData("EnergyPricesPath") as string;
+        var _energyPrices = new EnergyPrices(new FileInfo(energyPath), new Random(42));
 
         var stations = new List<Station>(50);
         for (ushort i = 0; i < 50; i++)
@@ -39,8 +38,7 @@ public class OsrmRouterOneToManyBenchmark
                 address: string.Empty,
                 position: new Position(9.9217 + (i * 0.001), 57.0488 + (i * 0.001)),
                 chargers: [],
-                random: new Random(i),
-                energyPrices: energyPrices));
+                energyPrices: _energyPrices));
         }
 
         _router.InitStations(stations);

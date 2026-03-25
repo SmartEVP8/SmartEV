@@ -7,7 +7,7 @@ using Core.Charging;
 /// </summary>
 public class EnergyPricesTest
 {
-    private readonly EnergyPrices _energyPrices = new(new FileInfo(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "data", "energy_prices.csv")));
+    private readonly EnergyPrices _energyPrices = new(new FileInfo(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "data", "energy_prices.csv")), new Random(42));
 
     /// <summary>
     /// Verifies that <see cref="EnergyPrices.GetHourPrice"/> returns the correct price for a given hour.
@@ -45,31 +45,19 @@ public class EnergyPricesTest
     public void GetHourPrice_InvalidDay_ThrowsArgumentOutOfRangeException() => _ = Assert.Throws<ArgumentOutOfRangeException>(() => _energyPrices.GetHourPrice((DayOfWeek)99, 0));
 
     /// <summary>
-    /// Verifies that <see cref="EnergyPrices.GetDayPrice"/> returns exactly 24 entries containing all hours 0-23.
+    /// Verifies that <see cref="EnergyPrices.CalculatePrice"/> returns a price within ±20% of the base price.
     /// </summary>
-    [Fact]
-    public void GetDayPrice_ValidDay_Returns24EntriesWithAllHours()
+    /// <param name="day">The day of the week.</param>
+    /// <param name="hour">The hour of the day (0–23).</param>
+    [Theory]
+    [InlineData(DayOfWeek.Monday, 0)]
+    [InlineData(DayOfWeek.Wednesday, 15)]
+    [InlineData(DayOfWeek.Saturday, 23)]
+    public void CalculatePrice_ReturnsVarianceWithinRange(DayOfWeek day, int hour)
     {
-        var result = _energyPrices.GetDayPrice(DayOfWeek.Monday);
-        Assert.Equal(24, result.Count);
-        for (var hour = 0; hour <= 23; hour++)
-            Assert.True(result.ContainsKey(hour), $"Missing hour {hour}");
-    }
+        var basePrice = _energyPrices.GetHourPrice(day, hour);
+        var calculatedPrice = _energyPrices.CalculatePrice(day, hour);
 
-    /// <summary>
-    /// Verifies that <see cref="EnergyPrices.GetDayPrice"/> returns the correct price for a known entry.
-    /// </summary>
-    [Fact]
-    public void GetDayPrice_ValidDay_ReturnsCorrectPrice()
-    {
-        var result = _energyPrices.GetDayPrice(DayOfWeek.Monday);
-        Assert.Equal(2.745128f, result[0]);
+        Assert.InRange(calculatedPrice, basePrice * 0.80f, basePrice * 1.20f);
     }
-
-    /// <summary>
-    /// Verifies that <see cref="EnergyPrices.GetDayPrice"/> throws for an invalid day.
-    /// </summary>
-    [Fact]
-    public void GetDayPrice_InvalidDay_ThrowsArgumentOutOfRangeException() =>
-        Assert.Throws<ArgumentOutOfRangeException>(() => _energyPrices.GetDayPrice((DayOfWeek)99));
 }

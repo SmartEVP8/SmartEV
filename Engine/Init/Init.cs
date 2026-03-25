@@ -85,7 +85,8 @@ public static class Init
         {
             var settings = sp.GetRequiredService<EngineSettings>();
             var path = settings.EnergyPricesPath;
-            return new EnergyPrices(path);
+            var random = settings.Seed;
+            return new EnergyPrices(path, random);
         });
 
         services.AddSingleton(sp =>
