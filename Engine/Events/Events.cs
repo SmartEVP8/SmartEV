@@ -13,6 +13,7 @@ public abstract record CancelableEvent(int EVId, Time Time) : Event(Time);
 public interface IMiddlewareEvent
 {
 }
+
 // Functionality:
 //  - Should compute the distance from the EV's current position to all station candidates and back to their destination.
 public record FindCandidateStations(int EVId, Time Time) : Event(Time), IMiddlewareEvent;

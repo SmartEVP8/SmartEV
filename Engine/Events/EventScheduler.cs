@@ -57,7 +57,7 @@ public class EventScheduler(Dictionary<Type, Action<IMiddlewareEvent>> preProces
     }
 
     /// <summary>Gets the current timestamp of the event scheduler.</summary>
-    /// <remark>The time is monotonically increasing.</remark
+    /// <remark>The time is monotonically increasing.</remark>
     public Time CurrentTime => _currentTime;
 
     /// <summary>

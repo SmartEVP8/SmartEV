@@ -12,13 +12,12 @@ using Engine.StationFactory;
 
 public static class TestData
 {
-    private static readonly Random _random = new(1);
-
-
-
     public static readonly EnergyPrices EnergyPrices =
         new(new FileInfo(AppContext.GetData("EnergyPricesPath") as string
             ?? throw new InvalidDataException("EnergyPricesPath not set.")));
+
+#pragma warning disable SA1202
+    private static readonly Random _random = new(1);
 
     private static readonly StationFactory _stationFactory = new(
         new StationFactoryOptions(),
@@ -26,9 +25,9 @@ public static class TestData
         EnergyPrices,
         new FileInfo(AppContext.GetData("ChargersPath") as string ?? throw new SkillissueException()));
 
-
-
     public static readonly Dictionary<ushort, Station> AllStations = _stationFactory.CreateStations();
+
+#pragma warning restore SA1202
 
     public static OSRMRouter OSRMRouter
     {
@@ -69,7 +68,6 @@ public static class TestData
 
     public static Dictionary<ushort, Station> Stations(params (ushort Id, double Lon, double Lat)[] stations) =>
         stations.ToDictionary(s => s.Id, s => Station(s.Id, new Position(s.Lon, s.Lat)));
-
 
     private static SpatialGrid BuildSpatialGrid(Dictionary<ushort, Station>? stations = null)
     {

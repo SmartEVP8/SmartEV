@@ -23,7 +23,7 @@ public class StationFactory
     /// <param name="options">The configuration options for station generation.</param>
     /// <param name="random">The seed for random number generation to ensure deterministic output.</param>
     /// <param name="energyPrices">Dynamic energy prices based on time of day.</param>
-    /// <param name="stationsFile"aram name="stationsFile">The file containing the station location data.</param>
+    /// <param name="stationsFile">The file containing the station location data.</param>
     /// <exception cref="ArgumentNullException">Thrown if options is null.</exception>
     /// <exception cref="ArgumentOutOfRangeException">Thrown if TotalChargers is not greater than zero, or if probabilities are not between 0 and 1.</exception>
     /// <exception cref="ArgumentException">Thrown if SocketProbabilities is empty, contains negative probabilities, or does not sum to approximately 1.</exception>
@@ -90,7 +90,6 @@ public class StationFactory
     /// The order of socket assignment is randomised to avoid clustering of connector types at the first stations.
     /// Throws exceptions if the file does not exist or if there are not enough chargers to assign at least one to each station.
     /// </summary>
-    /// <param name="file"> The file containing the station location data. </param>
     /// <returns> Returns a list of created stations. </returns>
     public Dictionary<ushort, Station> CreateStations()
     {

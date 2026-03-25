@@ -14,6 +14,20 @@ public class OSRMRouterTests
     private readonly string _osrmPath;
     private readonly EnergyPrices _energyPrices;
 
+    private OSRMRouter CreateRouter(params Position[] positions)
+    {
+        var router = new OSRMRouter(new FileInfo(_osrmPath));
+        router.InitStations([.. positions.Select((pos, i) => new Station(
+            id: (ushort)(i + 1),
+            name: string.Empty,
+            address: string.Empty,
+            position: pos,
+            chargers: [],
+            random: new Random(1),
+            energyPrices: _energyPrices))]);
+        return router;
+    }
+
     public OSRMRouterTests()
     {
         _osrmPath = AppContext.GetData("OsrmDataPath") as string
@@ -111,19 +125,5 @@ public class OSRMRouterTests
         Assert.True(
             Math.Abs(tableDurations[0] - routeSum) < 1f,
             $"Table={tableDurations[0]:F1}s RouteSum={routeSum:F1}s — likely wrong leg wired");
-    }
-
-    private OSRMRouter CreateRouter(params Position[] positions)
-    {
-        var router = new OSRMRouter(new FileInfo(_osrmPath));
-        router.InitStations([.. positions.Select((pos, i) => new Station(
-            id: (ushort)(i + 1),
-            name: string.Empty,
-            address: string.Empty,
-            position: pos,
-            chargers: [],
-            random: new Random(1),
-            energyPrices: _energyPrices))]);
-        return router;
     }
 }

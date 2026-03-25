@@ -43,6 +43,10 @@ public class EngineSettings
     /// Gets the interval at which the engine checks for urgent EVs.
     /// </summary>
     required public int IntervalToCheckUrgency { get; init; }
+
+    /// <summary>
+    /// Gets the number of seconds an EV is expected to spend charging at a station, used for simulating charging time and scheduling.
+    /// </summary>
     required public uint ChargingStepSeconds { get; init; }
 
     /// <summary>

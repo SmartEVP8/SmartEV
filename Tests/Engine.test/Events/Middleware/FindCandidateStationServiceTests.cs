@@ -11,26 +11,6 @@ using Engine.Utils;
 
 public class FindCandidateStationServiceTests
 {
-    private static readonly Paths _path = TestData.Route(9.935932, 57.046707, 12.5683, 55.6761);
-
-    private static (EVStore store, int index) EVStoreWith(EV ev)
-    {
-        var store = new EVStore(1);
-        var index = -1;
-        store.TryAllocate(1, (i, ref e) =>
-        {
-            index = i;
-            e = ev;
-        });
-        return (store, index);
-    }
-
-    private FindCandidateStationService CreateSut(EVStore store) =>
-        new(TestData.OSRMRouter,
-            TestData.AllStations,
-            TestData.SpatialGrid,
-            store);
-
     [Fact]
     public async Task ComputeFromCache_ReturnsDurationPerStation()
     {
@@ -82,4 +62,24 @@ public class FindCandidateStationServiceTests
 
     private record FakeMiddlewareEvent : IMiddlewareEvent
     { }
+
+    private static readonly Paths _path = TestData.Route(9.935932, 57.046707, 12.5683, 55.6761);
+
+    private static (EVStore store, int index) EVStoreWith(EV ev)
+    {
+        var store = new EVStore(1);
+        var index = -1;
+        store.TryAllocate(1, (i, ref e) =>
+        {
+            index = i;
+            e = ev;
+        });
+        return (store, index);
+    }
+
+    private FindCandidateStationService CreateSut(EVStore store) =>
+        new(TestData.OSRMRouter,
+            TestData.AllStations,
+            TestData.SpatialGrid,
+            store);
 }
