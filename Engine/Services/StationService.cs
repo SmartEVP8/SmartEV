@@ -1,12 +1,9 @@
 namespace Engine.Services;
 
-using System;
-
 using Core.Charging;
 using Core.Charging.ChargingModel;
 using Core.Charging.ChargingModel.Chargepoint;
 using Core.Shared;
-using Core.Vehicles;
 using Engine.Vehicles;
 using Engine.Events;
 using Engine.Routing;
