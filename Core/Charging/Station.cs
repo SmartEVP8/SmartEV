@@ -44,7 +44,7 @@ public class Station(ushort id,
     /// </summary>
     public float Price { get; private set; }
 
-    private int _lastPriceUpdateHour = int.MaxValue;
+    private (DayOfWeek Day, int Hour) _lastPriceUpdate = ((DayOfWeek)(-1), -1);
 
     /// <summary>
     /// Gets the list of chargers on a station.
@@ -54,16 +54,16 @@ public class Station(ushort id,
     private readonly List<ChargerBase> _chargers = chargers;
 
     /// <summary>
-    /// Updates and caches the price for the given day and hour. If the hour has changed
+    /// Updates and caches the price for the given day and hour. If changed
     /// since the last update, recalculates; otherwise uses the cached price.
     /// </summary>
     /// <param name="day">The day of the week.</param>
     /// <param name="hour">The hour of the day (0–23).</param>
     public void UpdatePrice(DayOfWeek day, int hour)
     {
-        if (hour != _lastPriceUpdateHour)
+        if ((day, hour) != _lastPriceUpdate)
         {
-            _lastPriceUpdateHour = hour;
+            _lastPriceUpdate = (day, hour);
             Price = energyPrices.CalculatePrice(day, hour);
         }
     }
