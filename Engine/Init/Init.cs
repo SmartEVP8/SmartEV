@@ -112,7 +112,9 @@ public static class Init
             var stations = sp.GetRequiredService<Dictionary<ushort, Station>>();
             var integrator = sp.GetRequiredService<ChargingIntegrator>();
             var scheduler = sp.GetRequiredService<EventScheduler>();
-            return new StationService(stations.Values, integrator, scheduler);
+            var pathDeviator = sp.GetRequiredService<PathDeviator>();
+            var random = sp.GetRequiredService<Random>();
+            return new StationService(stations.Values, integrator, scheduler, pathDeviator, random);
         });
     }
 

@@ -1,10 +1,17 @@
 namespace Engine.Services;
 
+using System;
+
 using Core.Charging;
 using Core.Charging.ChargingModel;
 using Core.Charging.ChargingModel.Chargepoint;
-using Engine.Events;
 using Core.Shared;
+using Core.Vehicles;
+using Engine.Vehicles;
+using Engine.Events;
+using Engine.Routing;
+using Engine.Metrics;
+using Engine.Utils;
 
 /// <summary>
 /// Tracks an active charging session at one side of a charger.
@@ -63,8 +70,11 @@ public class StationService
 {
     private readonly Dictionary<int, List<ChargerState>> _stationChargers = [];
     private readonly Dictionary<int, ChargerState> _chargerIndex = [];
+    private readonly Dictionary<ushort, Station> _stationIndex = [];
     private readonly ChargingIntegrator _integrator;
     private readonly EventScheduler _scheduler;
+    private readonly PathDeviator _pathDeviator;
+    private readonly Random _random;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="StationService"/> class.
@@ -72,13 +82,20 @@ public class StationService
     /// <param name="stations">The collection of stations to manage.</param>
     /// <param name="integrator">The charging integrator to use for simulating charging sessions.</param>
     /// <param name="scheduler">The event scheduler to use for scheduling future events.</param>
+    /// <param name="pathDeviator">The path deviator to use for calculating route deviations through charging stations.</param>
+    /// <param name="random">The random instance to use for stochastic sampling throughout the service.</param>
+    /// <param name="metricsService">The metrics service to use for recording simulation metrics.</param>
     public StationService(
         ICollection<Station> stations,
         ChargingIntegrator integrator,
-        EventScheduler scheduler)
+        EventScheduler scheduler,
+        PathDeviator pathDeviator,
+        Random random)
     {
         _integrator = integrator;
         _scheduler = scheduler;
+        _pathDeviator = pathDeviator;
+        _random = random;
 
         foreach (var station in stations)
         {
@@ -97,13 +114,60 @@ public class StationService
     public ChargerState? GetChargerState(int chargerId)
         => _chargerIndex.TryGetValue(chargerId, out var state) ? state : null;
 
-    // TODO: Handle reservationrequest
-    public void HandleReservationRequest(ReservationRequest e)
-        => _scheduler.ScheduleEvent(new ArriveAtStation(e.EVId, e.StationId, e.Time));
+    /// <summary>
+    /// Handles a reservation request from an EV to a station.
+    /// If the EV already has an active reservation, the existing arrival event is cancelled before proceeding.
+    /// Calculates the detoured path through the station, updates the EV's journey, and schedules a new arrival event
+    /// with a ±20% on the estimated travel time.
+    /// </summary>
+    /// <param name="e">The reservation request event.</param>
+    /// <param name="evStore">The EV store used to retrieve the requesting EV.</param>
+    public void HandleReservationRequest(ReservationRequest e, EVStore evStore)
+    {
+        var ev = evStore.Get(e.EVId);
+        if (!_stationIndex.TryGetValue(e.StationId, out var station))
+            return;
 
-    // TODO: handle cancelrequest
-    public void HandleCancelRequest(CancelRequest e)
-        => _scheduler.CancelEvent(e.EVId);
+        if (ev.HasReservationAtStationId.HasValue)
+            _scheduler.CancelEvent(e.EVId);
+
+        station.IncrementReservations();
+
+        var currentTime = _scheduler.CurrentTime;
+        var (deviation, newPolyline) = _pathDeviator.CalculateDetourDeviation(
+        ev.Journey, currentTime, station.Position);
+
+        var originalRemainingSeconds = ev.Journey.OriginalDuration - ev.Journey.TimeElapsed(currentTime);
+        var totalTravelTime = originalRemainingSeconds + deviation;
+        var addTravelDuration = 1f + (_random.NextSingle() * 0.4f) - 0.2f;
+        var arrivalTime = (Time)(currentTime + (uint)(totalTravelTime * addTravelDuration));
+
+        ev.Journey.Path = Polyline6ToPoints.DecodePolyline(newPolyline);
+        ev.Journey.UpdateRunningSumDeviation(deviation);
+        ev.HasReservationAtStationId = e.StationId;
+
+        _scheduler.ScheduleEvent(new ArriveAtStation(e.EVId, e.StationId, arrivalTime));
+    }
+
+    /// <summary>
+    /// Handles a cancellation request from an EV, decrementing the station's active reservation count,
+    /// clearing the reservation from the EV, and cancelling the scheduled arrival event.
+    /// </summary>
+    /// <param name="e">The cancellation request event.</param>
+    /// <param name="evStore">The EV store used to retrieve the requesting EV.</param>
+    public void HandleCancelRequest(CancelRequest e, EVStore evStore)
+    {
+        var ev = evStore.Get(e.EVId);
+        if (!_stationIndex.TryGetValue(e.StationId, out var station))
+            return;
+
+        station.DecrementReservations();
+
+        if (ev.HasReservationAtStationId.HasValue)
+            _scheduler.CancelEvent(e.EVId);
+
+        ev.HasReservationAtStationId = null;
+    }
 
     /// <summary>
     /// Called when an EV arrives at a station.

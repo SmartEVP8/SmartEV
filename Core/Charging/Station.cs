@@ -41,6 +41,25 @@ public class Station(ushort id,
     /// </summary>
     public string Address => address;
 
+    private ushort _totalReservations = 0;
+    private ushort _totalCancellations = 0;
+    private ushort _currentAmountOfReservations = 0;
+
+    /// <summary>
+    /// Gets the total number of reservation requests ever made to this station.
+    /// </summary>
+    public uint TotalReservations => _totalReservations;
+
+    /// <summary>
+    /// Gets the total number of cancellation requests ever made to this station.
+    /// </summary>
+    public uint TotalCancellations => _totalCancellations;
+
+    /// <summary>
+    /// Gets the number of active reservations at this station.
+    /// </summary>
+    public ushort CurrentAmountOfReservations => _currentAmountOfReservations;
+
     /// <summary>
     /// Gets the list of chargers on a station.
     /// </summary>
@@ -64,5 +83,35 @@ public class Station(ushort id,
         var deviation = 0.10f + (random.NextSingle() * 0.10f); // 10–20%
         var sign = random.Next(2) == 0 ? 1.0f : -1.0f;
         return basePrice * (1.0f + (sign * deviation));
+    }
+
+    /// <summary>
+    /// Collects the reservation and cancellation counts since the last snapshot, then resets both counters.
+    /// </summary>
+    /// <returns> Returns the reservation and cancellation counts since the last snapshot.</returns>
+    public (ushort reservations, ushort cancellations) CountReservationsCancellations()
+    {
+        var reservationsAndCancellations = (_totalReservations, _totalCancellations);
+        _totalReservations = 0;
+        _totalCancellations = 0;
+        return reservationsAndCancellations;
+    }
+
+    /// <summary>
+    /// Increments the amount of reservations on a station, and updates the total amount of reservations.
+    /// </summary>
+    public void IncrementReservations()
+    {
+        _currentAmountOfReservations++;
+        _totalReservations++;
+    }
+    
+    /// <summary>
+    /// Decrements the amount of reservations on a station, and updates the total amount of cancellations.
+    /// </summary>
+    public void DecrementReservations()
+    {
+        _currentAmountOfReservations = (ushort)Math.Max(0, _currentAmountOfReservations - 1);
+        _totalCancellations++;
     }
 }
