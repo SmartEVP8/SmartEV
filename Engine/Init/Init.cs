@@ -96,8 +96,17 @@ public static class Init
             var evStore = sp.GetRequiredService<EVStore>();
             var settings = sp.GetRequiredService<EngineSettings>();
             var random = settings.Seed;
-            var intervalSize = settings.IntervalToCheckUrgency;
-            return new CheckUrgencyHandler(eventScheduler, evStore, intervalSize, random);
+            return new CheckUrgencyHandler(eventScheduler, evStore, random);
+        });
+
+        services.AddSingleton(sp =>
+        {
+            var eventScheduler = sp.GetRequiredService<EventScheduler>();
+            var evStore = sp.GetRequiredService<EVStore>();
+            var settings = sp.GetRequiredService<EngineSettings>();
+            var intervalSize = settings.IntervalToUpdateEVs;
+            var urgencyInterval = settings.IntervalToCheckUrgency;
+            return new CheckAndUpdateAllEVsHandler(eventScheduler, evStore, intervalSize, urgencyInterval);
         });
 
         services.AddSingleton(sp =>

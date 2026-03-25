@@ -50,6 +50,8 @@ public record EndCharging(int EVId, int ChargerId, Time Time) : Event(Time);
 //  - Record the path deviation of an EVs actual journey compared to its original journey.
 public record ArriveAtDestination(int EVId, Time Time) : Event(Time);
 
+public record CheckAndUpdateAllEVs(Time Time) : Event(Time);
+
 // ---------- NON-DOMAIN EVENTS ---------- //
 
 // Functionality:

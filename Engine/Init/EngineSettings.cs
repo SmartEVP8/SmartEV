@@ -13,7 +13,8 @@ public class EngineSettings
     required public StationFactoryOptions StationFactoryOptions { get; init; }
 
     required public int CurrentAmoutOfEVsInDenmark { get; init; }
-    required public int IntervalToCheckUrgency { get; init; }
+    required public uint IntervalToUpdateEVs { get; init; }
+    required public ushort IntervalToCheckUrgency { get; init; }
     required public uint ChargingStepSeconds { get; init; }
 
     required public FileInfo EnergyPricesPath { get; init; }

@@ -49,6 +49,8 @@ public static class Program
                 TotalChargers = 10000,
             },
 
+            IntervalToUpdateEVs = 10,
+
             IntervalToCheckUrgency = 10,
 
             CurrentAmoutOfEVsInDenmark = 583320, // Based on the number of registered EVs in Denmark as of 2026-03-22 https://mobility.dk/nyheder/nu-koerer-hver-femte-personbil-i-danmark-paa-el/

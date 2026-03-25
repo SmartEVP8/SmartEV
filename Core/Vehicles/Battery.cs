@@ -6,6 +6,6 @@ public class Battery(ushort capacity, ushort maxChargeRate, float stateOfCharge,
 {
     public readonly ushort Capacity = capacity; // 2 bytes
     public readonly ushort MaxChargeRate = maxChargeRate; // 2 bytes
-    public float StateOfCharge { get; } = stateOfCharge; // 4 bytes
+    public float StateOfCharge { get; set; } = stateOfCharge; // 4 bytes
     public readonly Socket Socket = socket; // 1 byte
 }
