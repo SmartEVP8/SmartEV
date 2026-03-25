@@ -4,6 +4,7 @@ using Core.Charging;
 using Core.Shared;
 using Engine.Routing;
 
+// If this test ever fails report it. We should have been fixed but just in case.
 public class OSRMRouterTests
 {
     private static readonly double[] _evPosition = [10.2039, 56.1629];

@@ -34,7 +34,7 @@ public class FindCandidateStationServiceTests
     [Fact]
     public async Task ComputeFromCache_ReturnsDurationPerStation()
     {
-        var ev = TestData.EV(_path);
+        var ev = TestData.EV(_path.Waypoints);
         var (store, index) = EVStoreWith(ev);
         var sut = CreateSut(store);
 
@@ -48,7 +48,7 @@ public class FindCandidateStationServiceTests
     [Fact]
     public async Task ComputeFromCache_Throws_WhenNeverPrecomputed()
     {
-        var (store, _) = EVStoreWith(TestData.EV(_path));
+        var (store, _) = EVStoreWith(TestData.EV(_path.Waypoints));
         var sut = CreateSut(store);
 
         await Assert.ThrowsAsync<SkillissueException>(() =>
@@ -58,7 +58,7 @@ public class FindCandidateStationServiceTests
     [Fact]
     public void PreCompute_Throws_WhenWrongEventType()
     {
-        var (store, _) = EVStoreWith(TestData.EV(_path));
+        var (store, _) = EVStoreWith(TestData.EV(_path.Waypoints));
         var sut = CreateSut(store);
 
         Assert.Throws<SkillissueException>(() =>
@@ -68,7 +68,7 @@ public class FindCandidateStationServiceTests
     [Fact]
     public async Task PreCompute_CalledTwice_OverwritesPreviousResult()
     {
-        var ev = TestData.EV(_path);
+        var ev = TestData.EV(_path.Waypoints);
         var (store, index) = EVStoreWith(ev);
         var sut = CreateSut(store);
         var e = new FindCandidateStations(index, default);
