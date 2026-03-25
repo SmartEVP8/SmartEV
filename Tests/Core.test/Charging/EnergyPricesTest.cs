@@ -1,3 +1,5 @@
+namespace Core.test.Charging;
+
 using Core.Charging;
 
 /// <summary>
@@ -5,7 +7,6 @@ using Core.Charging;
 /// </summary>
 public class EnergyPricesTest
 {
-
     private readonly EnergyPrices _energyPrices = new(new FileInfo(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "data", "energy_prices.csv")));
 
     /// <summary>

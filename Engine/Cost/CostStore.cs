@@ -15,7 +15,7 @@ public class CostStore(CostWeights initialState) : ICostStore
     /// <para>
     /// Intended usage:
     /// var current = store.Get();
-    /// store.TrySet(current with { SliderA = 0.75 }, seq);
+    /// store.TrySet(current with { SliderA = 0.75 }, seq);.
     /// </para>
     /// </summary>
     /// <param name="update">The updated state.</param>

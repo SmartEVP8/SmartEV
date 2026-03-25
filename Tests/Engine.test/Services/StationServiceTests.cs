@@ -10,6 +10,77 @@ using Engine.Services;
 
 public class StationServiceTests
 {
+    private static EnergyPrices MakeEnergyPrices()
+    {
+        var csvPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "data", "energy_prices.csv");
+        return new EnergyPrices(new FileInfo(csvPath));
+    }
+
+    private static (StationService service, EventScheduler scheduler) BuildSingle(
+        Socket socket = Socket.CCS2,
+        int maxPowerKW = 150)
+    {
+        var connector = new Connector(socket);
+        var connectors = new Connectors([connector]);
+        var point = new SingleChargingPoint(connectors);
+        var charger = new SingleCharger(1, maxPowerKW, point);
+
+        var station = new Station(
+            1,
+            "Test",
+            "Test Address",
+            new Position(0, 0),
+            [charger],
+            new Random(42),
+            MakeEnergyPrices());
+
+        var scheduler = new EventScheduler([]);
+        var integrator = new ChargingIntegrator(stepSeconds: 60);
+        var service = new StationService([station], integrator, scheduler);
+        return (service, scheduler);
+    }
+
+    private static (StationService service, EventScheduler scheduler) BuildDual(
+        Socket socket = Socket.CCS2,
+        int maxPowerKW = 150)
+    {
+        var point = new DualChargingPoint(new Connectors([new Connector(socket)]));
+        var charger = new DualCharger(1, maxPowerKW, point);
+
+        var station = new Station(
+            1,
+            "Test",
+            "Test Address",
+            new Position(0, 0),
+            [charger],
+            new Random(42),
+            MakeEnergyPrices());
+
+        var scheduler = new EventScheduler([]);
+        var integrator = new ChargingIntegrator(stepSeconds: 60);
+        var service = new StationService([station], integrator, scheduler);
+        return (service, scheduler);
+    }
+
+    private static ConnectedEV MakeEV(int evId, double currentSoC, double targetSoC, Socket socket = Socket.CCS2)
+    {
+        var model = EVModels.Models.First(m => m.Model == "Volkswagen ID.3");
+        return new ConnectedEV(
+            EVId: evId,
+            CurrentSoC: currentSoC,
+            TargetSoC: targetSoC,
+            CapacityKWh: model.BatteryConfig.MaxCapacityKWh,
+            MaxChargeRateKW: model.BatteryConfig.ChargeRateKW,
+            Socket: socket);
+    }
+
+    private static EndCharging AsEndCharging(Event? e)
+    {
+        Assert.NotNull(e);
+        Assert.IsType<EndCharging>(e);
+        return (EndCharging)e!;
+    }
+
     private readonly int _evId1 = 1;
     private readonly int _evId2 = 2;
     private readonly int _evId3 = 3;
@@ -17,7 +88,6 @@ public class StationServiceTests
     private readonly ushort _stationId = 1;
 
     private readonly Time _time = 0;
-
 
     [Fact]
     public void TwoCars_DualCharger_BothReceiveCharge()
@@ -106,76 +176,5 @@ public class StationServiceTests
         Assert.Equal(2, ev2Event.EVId);
         Assert.Equal(3, ev3Event.EVId);
         Assert.True(ev2Event.Time > ev1End.Time);
-    }
-
-    private static EnergyPrices MakeEnergyPrices()
-    {
-        var csvPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "data", "energy_prices.csv");
-        return new EnergyPrices(new FileInfo(csvPath));
-    }
-
-    private static (StationService service, EventScheduler scheduler) BuildSingle(
-        Socket socket = Socket.CCS2,
-        int maxPowerKW = 150)
-    {
-        var connector = new Connector(socket);
-        var connectors = new Connectors([connector]);
-        var point = new SingleChargingPoint(connectors);
-        var charger = new SingleCharger(1, maxPowerKW, point);
-
-        var station = new Station(
-            1,
-            "Test",
-            "Test Address",
-            new Position(0, 0),
-            [charger],
-            new Random(42),
-            MakeEnergyPrices());
-
-        var scheduler = new EventScheduler([]);
-        var integrator = new ChargingIntegrator(stepSeconds: 60);
-        var service = new StationService([station], integrator, scheduler);
-        return (service, scheduler);
-    }
-
-    private static (StationService service, EventScheduler scheduler) BuildDual(
-        Socket socket = Socket.CCS2,
-        int maxPowerKW = 150)
-    {
-        var point = new DualChargingPoint(new Connectors([new Connector(socket)]));
-        var charger = new DualCharger(1, maxPowerKW, point);
-
-        var station = new Station(
-            1,
-            "Test",
-            "Test Address",
-            new Position(0, 0),
-            [charger],
-            new Random(42),
-            MakeEnergyPrices());
-
-        var scheduler = new EventScheduler([]);
-        var integrator = new ChargingIntegrator(stepSeconds: 60);
-        var service = new StationService([station], integrator, scheduler);
-        return (service, scheduler);
-    }
-
-    private static ConnectedEV MakeEV(int evId, double currentSoC, double targetSoC, Socket socket = Socket.CCS2)
-    {
-        var model = EVModels.Models.First(m => m.Model == "Volkswagen ID.3");
-        return new ConnectedEV(
-            EVId: evId,
-            CurrentSoC: currentSoC,
-            TargetSoC: targetSoC,
-            CapacityKWh: model.BatteryConfig.MaxCapacityKWh,
-            MaxChargeRateKW: model.BatteryConfig.ChargeRateKW,
-            Socket: socket);
-    }
-
-    private static EndCharging AsEndCharging(Event? e)
-    {
-        Assert.NotNull(e);
-        Assert.IsType<EndCharging>(e);
-        return (EndCharging)e!;
     }
 }

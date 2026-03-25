@@ -22,6 +22,7 @@ public class MetricWriterTests
             {
                 writer.Record(new TestMetric());
             }
+
             await writer.DisposeAsync();
             var results = await ParquetSerializer.DeserializeAsync<TestMetric>(path);
             Assert.Single(results);
@@ -46,6 +47,7 @@ public class MetricWriterTests
             {
                 writer.Record(new TestMetric());
             }
+
             await writer.DisposeAsync();
             var results = await ParquetSerializer.DeserializeAsync<TestMetric>(path);
             Assert.Equal(count, results.Count);

@@ -2,8 +2,10 @@ namespace Engine.Spawning;
 
 /// <summary>
 /// Implements Vose's Alias Method for efficient sampling from a discrete probability distribution.
-/// https://cwyman.org/papers/rtg2-aliasMethod.pdf
 /// </summary>
+/// <remarks>
+/// For implementation details, see: <see href="https://cwyman.org/papers/rtg2-aliasMethod.pdf"/>.
+/// </remarks>
 public class AliasSampler
 {
     private readonly int[] _alias;

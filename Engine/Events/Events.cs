@@ -13,6 +13,7 @@ public abstract record CancelableEvent(int EVId, Time Time) : Event(Time);
 public interface IMiddlewareEvent
 {
 }
+
 // Functionality:
 //  - Should compute the distance from the EV's current position to all station candidates and back to their destination.
 public record FindCandidateStations(int EVId, Time Time) : Event(Time), IMiddlewareEvent;
@@ -58,12 +59,10 @@ public record ArriveAtDestination(int EVId, Time Time) : CancelableEvent(EVId, T
 // - Checks if an EV should look for Stations
 public record CheckUrgency(int EVId, Time Time) : Event(Time);
 
-
 // Spawn
 // Functionality:
 //  - Spawn an EV .
-//  - Sample once from urgency to see if it needs to find a charger immediately.
-
+// - Sample once from urgency to see if it needs to find a charger immediately.
 public record SnapshotEvent(Time Time) : Event(Time);
 
 // Check urgency

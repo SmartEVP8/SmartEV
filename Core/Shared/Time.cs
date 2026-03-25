@@ -1,6 +1,5 @@
 namespace Core.Shared;
 
-
 /// <summary>
 /// Simple time wrapper with implicit conversion between int and time
 /// https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/operators/user-defined-conversion-operators

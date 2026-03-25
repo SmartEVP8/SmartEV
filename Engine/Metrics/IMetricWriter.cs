@@ -4,7 +4,7 @@ namespace Engine.Metrics;
 /// Defines a writer for a specific metric type.
 /// Implementations own the channel, buffer, and parquet file for that type.
 /// </summary>
-/// <typeparam name="T">Metric type.<typeparam>
+/// <typeparam name="T">Metric type.</typeparam>
 public interface IMetricWriter<T> : IAsyncDisposable
 {
     /// <summary>

@@ -1,8 +1,8 @@
 namespace Engine.test.Metrics;
 
 using Engine.Metrics;
+using Engine.Metrics.Snapshots;
 using Parquet.Serialization;
-using Xunit;
 
 public class MetricsServiceIntegrationTests
 {

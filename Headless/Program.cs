@@ -12,8 +12,15 @@ using Engine.StationFactory;
 using Engine.Vehicles;
 using Microsoft.Extensions.DependencyInjection;
 
+/// <summary>
+/// The entry point for the headless execution of the Engine. Initializes all necessary services and starts the simulation.
+/// </summary>
 public static class Program
 {
+    /// <summary>
+    /// The main method initializes the Engine with the required services and configurations, then starts the simulation by resolving necessary services from the dependency injection.
+    /// </summary>
+    /// <returns>The running simulation.</returns>
     public static async Task Main()
     {
         var dataPath = new DirectoryInfo("../data/");

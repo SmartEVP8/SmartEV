@@ -1,3 +1,5 @@
+namespace Engine.test.Routing;
+
 using Core.Routing;
 using Core.Shared;
 using Engine.Routing;

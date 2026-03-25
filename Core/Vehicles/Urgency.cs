@@ -51,7 +51,7 @@ public static class Urgency
     }
 
     /// <summary>
-    /// Determines whether the search for a charging station should be stopped based on the remaining distance
+    /// Determines whether the search for a charging station should be stopped based on the remaining distance.
     /// </summary>
     /// <param name="remainingDistanceKm">The remaining distance on the route, expressed in kilometers.</param>
     /// <param name="stopSearchDistanceKm">The distance at which the search for a charging station should be stopped, expressed in kilometers.</param>

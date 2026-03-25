@@ -25,7 +25,6 @@ public class EVStoreTests
         for (var i = 0; i < 500; i++)
             Assert.Equal(1f, evStore.Get(evIndexes[i]).Preferences.PriceSensitivity);
 
-
         evStore.Free(evIndexes[0]);
         var realloc = evStore.TryAllocate(1, (_, ref _) => TestData.EV());
 

@@ -10,7 +10,6 @@ using Xunit;
 /// </summary>
 public class CarsOnRoadTests
 {
-
     /// <summary>
     /// Tests known day/hour combinations against expected EV counts.
     ///

@@ -12,21 +12,6 @@ using Engine.Vehicles;
 public class EVFactoryTest
 {
     /// <summary>
-    /// Verifies that the price sensitivity stays within [0, 1].
-    /// </summary>
-    [Fact]
-    public void Create_PriceSensitivityWithinUnitRange()
-    {
-        var factory = MakeFactory();
-
-        for (var i = 0; i < 20; i++)
-        {
-            var ev = factory.Create(0);
-            Assert.InRange(ev.Preferences.PriceSensitivity, 0f, 1f);
-        }
-    }
-
-    /// <summary>
     /// Initialization of an EVFactory.
     /// </summary>
     /// <param name="seed">The seed used to create EVs.</param>
@@ -52,7 +37,18 @@ public class EVFactoryTest
         public (float duration, string polyline) QuerySingleDestination(double evLon, double evLat, double destLon, double destLat) => (10, "_p~iF~ps|U_ulLnnqC_mqNvxq`@");
     }
 
+    /// <summary>
+    /// Verifies that the price sensitivity stays within [0, 1].
+    /// </summary>
+    [Fact]
+    public void Create_PriceSensitivityWithinUnitRange()
+    {
+        var factory = MakeFactory();
 
-
-
+        for (var i = 0; i < 20; i++)
+        {
+            var ev = factory.Create(0);
+            Assert.InRange(ev.Preferences.PriceSensitivity, 0f, 1f);
+        }
+    }
 }

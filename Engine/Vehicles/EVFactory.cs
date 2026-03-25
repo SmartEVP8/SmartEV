@@ -11,6 +11,8 @@ using Engine.Utils;
 /// Factory for creating EVs, supporting for single or batch creation.
 /// </summary>
 /// <param name="random">An instance of Random.</param>
+/// <param name="samplersProvider">The provider of the samplers used to sample the EVs' journeys.</param>
+/// <param name="pointToPointRouter">Used to get the duration and path of the EVs' journeys.</param>
 public class EVFactory(Random random, IJourneySamplerProvider samplersProvider, IPointToPointRouter pointToPointRouter)
 {
     private readonly AliasSampler _sampler = new([.. EVModels.Models.Select(m => m.SpawnChance)]);

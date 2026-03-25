@@ -3,8 +3,15 @@ namespace Headless;
 using BenchmarkDotNet.Running;
 using Engine.Benchmark;
 
+/// <summary>
+/// Engine.Benchmark is a collection of benchmarks related to the Engine.
+/// </summary>
 public static class Program
 {
+    /// <summary>
+    /// Runs benchmarks.
+    /// </summary>
+    /// <returns>Benchmark results.</returns>
     public static async Task Main()
     {
         BenchmarkRunner.Run<StationsAroundPolyline>();

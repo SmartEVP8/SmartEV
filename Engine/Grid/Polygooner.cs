@@ -2,6 +2,9 @@ namespace Engine.Grid;
 
 using Core.Shared;
 
+/// <summary>
+/// Generates a grid of the specified size (in degrees) and marks cells that are inside any of the provided polygons.
+/// </summary>
 public static class Polygooner
 {
     /// <summary>

@@ -1,4 +1,4 @@
-namespace Engine.Metrics;
+namespace Engine.Metrics.Snapshots;
 
 using Core.Charging;
 using System;

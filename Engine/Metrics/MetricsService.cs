@@ -1,5 +1,8 @@
 namespace Engine.Metrics;
 
+using Engine.Metrics.Events;
+using Engine.Metrics.Snapshots;
+
 /// <summary>
 /// <para>Entry point for all metric recording during a simulation run.</para>
 /// <para>
@@ -25,7 +28,7 @@ public sealed class MetricsService : IAsyncDisposable
     /// Initializes a new instance of the <see cref="MetricsService"/> class.
     /// Creates writers for each enabled metric type based on the provided config.
     /// </summary>
-    /// <param name="config">The configuration specifying which metric types to record and where to store them.</
+    /// <param name="config">The configuration specifying which metric types to record and where to store them.</param>
     /// <param name="runId">The unique identifier for the simulation run, used to organize output files.</param>
     public MetricsService(MetricsConfig config, Guid runId)
     {

@@ -69,7 +69,6 @@ public class AliasSamplerTests
         Assert.Equal(1.0f, total);
     }
 
-
     [Fact]
     public void TotalProbabilitiesIs1LargeNumbers()
     {

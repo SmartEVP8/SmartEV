@@ -11,6 +11,9 @@ using Engine.Utils;
 
 public class FindCandidateStationServiceTests
 {
+    private record FakeMiddlewareEvent : IMiddlewareEvent
+    { }
+
     private static readonly Paths _path = TestData.Route(9.935932, 57.046707, 12.5683, 55.6761);
 
     private static (EVStore store, int index) EVStoreWith(EV ev)
@@ -79,7 +82,4 @@ public class FindCandidateStationServiceTests
 
         Assert.NotEmpty(result);
     }
-
-    private record FakeMiddlewareEvent : IMiddlewareEvent
-    { }
 }

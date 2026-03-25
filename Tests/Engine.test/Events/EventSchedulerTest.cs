@@ -66,7 +66,7 @@ public class EventSchedulerTest
     [Fact]
     public void CancelWithManyDifferentEventsTest()
     {
-        var request1 = new ReservationRequest(2, 1, 10); //Cant be cancelled
+        var request1 = new ReservationRequest(2, 1, 10); // Cant be cancelled
         var request2 = new ArriveAtStation(2, 1, 20); // Can be cancelled
         var request3 = new EndCharging(2, 1, 15);
         var request4 = new ArriveAtDestination(2, 25);

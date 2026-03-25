@@ -1,10 +1,17 @@
-using Core.Shared;
 namespace Engine.Events;
 
+using Core.Shared;
 using Core.Vehicles;
 using Engine.Vehicles;
 using Engine.GeoMath;
 
+/// <summary>
+/// Handles the CheckUrgency event by calculating the urgency of an EV's charge and scheduling a FindCandidate event if necessary.
+/// </summary>
+/// <param name="eventScheduler">The event scheduler.</param>
+/// <param name="evStore">The EV store.</param>
+/// <param name="intervalSize">The size of the interval for checking urgency.</param>
+/// <param name="random">The random number generator.</param>
 public class CheckUrgencyHandler(EventScheduler eventScheduler, EVStore evStore, int intervalSize, Random random)
 {
     /// <summary>

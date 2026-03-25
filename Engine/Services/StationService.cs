@@ -98,10 +98,20 @@ public class StationService
         => _chargerIndex.TryGetValue(chargerId, out var state) ? state : null;
 
     // TODO: Handle reservationrequest
+
+    /// <summary>
+    /// Called when an EV makes a reservation request for a station.
+    /// </summary>
+    /// <param name="e">The reservation request event.</param>
     public void HandleReservationRequest(ReservationRequest e)
         => _scheduler.ScheduleEvent(new ArriveAtStation(e.EVId, e.StationId, e.Time));
 
     // TODO: handle cancelrequest
+
+    /// <summary>
+    /// Called when an EV cancels its reservation.
+    /// </summary>
+    /// <param name="e">The cancel request event.</param>
     public void HandleCancelRequest(CancelRequest e)
         => _scheduler.CancelEvent(e.EVId);
 

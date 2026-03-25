@@ -10,7 +10,6 @@ using Engine.Parsers;
 using Engine.Utils;
 using Engine.StationFactory;
 
-
 /// <summary>
 /// Ugly file for construction of objects more easily where we do not have to specifiy all properties or think about paths.
 /// Just add it here if you think anything is missing.
