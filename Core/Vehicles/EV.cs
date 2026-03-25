@@ -14,7 +14,7 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     /// <summary>
     /// Gets the preferences of the EV.
     /// </summary>
-    public readonly Preferences Preferences = preferences;
+    public Preferences Preferences { get; } = preferences;
 
     /// <summary>
     /// Gets the battery of the EV.

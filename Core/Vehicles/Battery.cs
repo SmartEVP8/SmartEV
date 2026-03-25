@@ -3,7 +3,7 @@ namespace Core.Vehicles;
 using Core.Shared;
 
 /// <summary>
-/// Represents the battery of an electric vehicle, containing properties such as capacity, maximum charge rate, current state of charge, and socket type.
+/// Represents the battery of an electric vehicle.
 /// </summary>
 /// <param name="capacity">The capacity of the battery.</param>
 /// <param name="maxChargeRate">The maximum charge rate of the battery.</param>

@@ -52,6 +52,6 @@ public class CheckUrgencyHandler(EventScheduler eventScheduler, EVStore evStore,
         var totalDurationOnFullBattery = totalLengthOnFullBattery / avgSpeed;
 
         var nextCheck = (ev.Battery.StateOfCharge / ev.Battery.Capacity) % intervalSize;
-        return (Time)(uint)((totalDurationOnFullBattery / 100) * nextCheck);
+        return (Time)((totalDurationOnFullBattery / 100) * nextCheck);
     }
 }
