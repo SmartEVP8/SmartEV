@@ -7,6 +7,71 @@ using Engine.StationFactory;
 
 public class StationFactoryTest
 {
+
+    private static readonly EnergyPrices _energyPrices = new(new FileInfo(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "data", "energy_prices.csv")));
+
+    private static StationFactory CreateFactory(StationFactoryOptions? options = null, Random? random = null, FileInfo? file = null)
+    {
+        random ??= new Random();
+        if (file is null)
+        {
+            throw new ArgumentNullException(nameof(file), "A FileInfo must be provided to create a StationFactory.");
+        }
+
+        return new StationFactory(options ?? new StationFactoryOptions(), random, _energyPrices, file);
+    }
+
+    private static FileInfo CreateTempLocationsFile(params object[] locations)
+    {
+        var json = JsonSerializer.Serialize(locations);
+        var filePath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.json");
+        File.WriteAllText(filePath, json);
+        return new FileInfo(filePath);
+    }
+
+    private static FileInfo CreateTempLocationsFile(int count)
+    {
+        var locations = Enumerable.Range(1, count)
+            .Select(i => (object)new
+            {
+                Name = $"Station {i}",
+                Address = $"Address {i}",
+                Latitude = 56.0 + (i * 0.001),
+                Longitude = 10.0 + (i * 0.001),
+            })
+            .ToArray();
+
+        return CreateTempLocationsFile(locations);
+    }
+
+    private static FileInfo CreateTempFileWithRawContent(string content)
+    {
+        var filePath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.json");
+        File.WriteAllText(filePath, content);
+        return new FileInfo(filePath);
+    }
+
+    private static Dictionary<Socket, int> CountSockets(Dictionary<ushort, Station> stations)
+    {
+        var counts = new Dictionary<Socket, int>();
+
+        foreach (var station in stations)
+        {
+            foreach (var charger in station.Value.Chargers)
+            {
+                foreach (var socket in charger.GetSockets())
+                {
+                    if (!counts.TryAdd(socket, 1))
+                    {
+                        counts[socket]++;
+                    }
+                }
+            }
+        }
+
+        return counts;
+    }
+
     [Fact]
     public void Constructor_WhenTotalChargersIsZero_ThrowsArgumentOutOfRangeException()
     {
@@ -15,7 +80,7 @@ public class StationFactoryTest
             TotalChargers = 0,
         };
 
-        Assert.Throws<ArgumentOutOfRangeException>(() => new StationFactory(options, new Random(), _energyPrices));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new StationFactory(options, new Random(), _energyPrices, CreateTempLocationsFile(1)));
     }
 
     [Fact]
@@ -26,7 +91,7 @@ public class StationFactoryTest
             DualChargingPointProbability = 1.5,
         };
 
-        Assert.Throws<ArgumentOutOfRangeException>(() => new StationFactory(options, new Random(), _energyPrices));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new StationFactory(options, new Random(), _energyPrices, CreateTempLocationsFile(1)));
     }
 
     [Fact]
@@ -37,7 +102,7 @@ public class StationFactoryTest
             SocketProbabilities = [],
         };
 
-        Assert.Throws<ArgumentException>(() => new StationFactory(options, new Random(), _energyPrices));
+        Assert.Throws<ArgumentException>(() => new StationFactory(options, new Random(), _energyPrices, CreateTempLocationsFile(1)));
     }
 
     [Fact]
@@ -52,7 +117,7 @@ public class StationFactoryTest
             },
         };
 
-        Assert.Throws<ArgumentException>(() => new StationFactory(options, new Random(), _energyPrices));
+        Assert.Throws<ArgumentException>(() => new StationFactory(options, new Random(), _energyPrices, CreateTempLocationsFile(1)));
     }
 
     [Fact]
@@ -62,8 +127,8 @@ public class StationFactoryTest
 
         try
         {
-            var factory = CreateFactory();
-            Assert.Throws<InvalidOperationException>(() => factory.CreateStations(file));
+            var factory = CreateFactory(file: file);
+            Assert.Throws<InvalidOperationException>(() => factory.CreateStations());
         }
         finally
         {
@@ -85,8 +150,8 @@ public class StationFactoryTest
 
         try
         {
-            var factory = CreateFactory();
-            var stations = factory.CreateStations(file);
+            var factory = CreateFactory(file: file);
+            var stations = factory.CreateStations();
 
             var station = Assert.Single(stations);
             Assert.Equal((ushort)1, station.Key);
@@ -130,8 +195,8 @@ public class StationFactoryTest
 
         try
         {
-            var factory = CreateFactory();
-            var stations = factory.CreateStations(file);
+            var factory = CreateFactory(file: file);
+            var stations = factory.CreateStations();
 
             Assert.Equal(3, stations.Count);
             Assert.Equal("First", stations[1].Name);
@@ -151,9 +216,9 @@ public class StationFactoryTest
     public void CreateStations_WhenFileDoesNotExist_ThrowsFileNotFoundException()
     {
         var file = new FileInfo(Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.json"));
-        var factory = CreateFactory();
+        var factory = CreateFactory(file: file);
 
-        Assert.Throws<FileNotFoundException>(() => factory.CreateStations(file));
+        Assert.Throws<FileNotFoundException>(() => factory.CreateStations());
     }
 
     [Fact]
@@ -163,9 +228,9 @@ public class StationFactoryTest
 
         try
         {
-            var factory = CreateFactory();
+            var factory = CreateFactory(file: file);
 
-            Assert.Throws<JsonException>(() => factory.CreateStations(file));
+            Assert.Throws<JsonException>(() => factory.CreateStations());
         }
         finally
         {
@@ -185,9 +250,9 @@ public class StationFactoryTest
 
         try
         {
-            var factory = CreateFactory(options);
+            var factory = CreateFactory(options, file: file);
 
-            var exception = Assert.Throws<InvalidOperationException>(() => factory.CreateStations(file));
+            var exception = Assert.Throws<InvalidOperationException>(() => factory.CreateStations());
             Assert.Equal("Not enough chargers to give at least one to each station.", exception.Message);
         }
         finally
@@ -208,8 +273,8 @@ public class StationFactoryTest
 
         try
         {
-            var factory = CreateFactory(options, new Random());
-            var stations = factory.CreateStations(file);
+            var factory = CreateFactory(options, new Random(), file: file);
+            var stations = factory.CreateStations();
 
             Assert.Equal(10, stations.Count);
             Assert.All(stations, station => Assert.NotEmpty(station.Value.Chargers));
@@ -235,11 +300,11 @@ public class StationFactoryTest
         try
         {
             const int seed = 0;
-            var factory1 = CreateFactory(options, new Random(seed));
-            var factory2 = CreateFactory(options, new Random(seed));
+            var factory1 = CreateFactory(options, new Random(seed), file: file);
+            var factory2 = CreateFactory(options, new Random(seed), file: file);
 
-            var stations1 = factory1.CreateStations(file);
-            var stations2 = factory2.CreateStations(file);
+            var stations1 = factory1.CreateStations();
+            var stations2 = factory2.CreateStations();
 
             Assert.Equal(stations1.Count, stations2.Count);
             Assert.Equal(
@@ -271,8 +336,8 @@ public class StationFactoryTest
 
         try
         {
-            var factory = CreateFactory(options, new Random());
-            var stations = factory.CreateStations(file);
+            var factory = CreateFactory(options, new Random(), file: file);
+            var stations = factory.CreateStations();
 
             Assert.Equal(10, stations.Count);
             Assert.All(stations, station => Assert.NotEmpty(station.Value.Chargers));
@@ -310,8 +375,8 @@ public class StationFactoryTest
 
         try
         {
-            var factory = CreateFactory(options, new Random());
-            var stations = factory.CreateStations(file);
+            var factory = CreateFactory(options, new Random(), file: file);
+            var stations = factory.CreateStations();
 
             var chargers = stations.SelectMany(station => station.Value.Chargers).ToList();
 
@@ -347,8 +412,8 @@ public class StationFactoryTest
 
         try
         {
-            var factory = CreateFactory(options, new Random());
-            var stations = factory.CreateStations(file);
+            var factory = CreateFactory(options, new Random(), file);
+            var stations = factory.CreateStations();
 
             var chargers = stations.SelectMany(station => station.Value.Chargers).ToList();
 

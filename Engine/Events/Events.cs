@@ -7,10 +7,15 @@ using Engine.Metrics;
 public abstract record Event(Time Time);
 public abstract record CancelableEvent(int EVId, Time Time) : Event(Time);
 
-// TODO: THIS SHOULD BE CHANGE TO THE CORRECT FINDCANDIDATE EVENT
-public record FindCandidate(int EVId, Time Time) : Event(Time);
-
-// ----------- DOMAIN EVENTS ----------- //
+/// <summary>
+/// MiddlewareEvents has handlers that are called when scheduled.
+/// </summary>
+public interface IMiddlewareEvent
+{
+}
+// Functionality:
+//  - Should compute the distance from the EV's current position to all station candidates and back to their destination.
+public record FindCandidateStations(int EVId, Time Time) : Event(Time), IMiddlewareEvent;
 
 // Functionality:
 //  - Should increase Expected Queue Size by 1 (EQS + 1).

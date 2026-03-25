@@ -43,6 +43,7 @@ public class EngineSettings
     /// Gets the interval at which the engine checks for urgent EVs.
     /// </summary>
     required public int IntervalToCheckUrgency { get; init; }
+    required public uint ChargingStepSeconds { get; init; }
 
     /// <summary>
     /// Gets the file paths for various input data required by the engine inclduing energy prices.

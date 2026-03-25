@@ -6,10 +6,7 @@ public class EventSchedulerTest
 {
     private EventScheduler _scheduler;
 
-    public EventSchedulerTest()
-    {
-        _scheduler = new EventScheduler();
-    }
+    public EventSchedulerTest() => _scheduler = new EventScheduler([]);
 
     [Fact]
     public void ScheduleEventTest()

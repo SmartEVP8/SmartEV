@@ -29,10 +29,13 @@ public class EVFactory(Random random, IJourneySamplerProvider samplersProvider, 
         var maxCapacity = batteryConfig.MaxCapacityKWh;
         var chargeRate = batteryConfig.ChargeRateKW;
         var currCharge = maxCapacity * NextFloatInRange(0.2f, 1f);
+        var battery = new Battery(maxCapacity, chargeRate, currCharge, batteryConfig.Socket);
+
         var priceSensPref = random.NextSingle();
         var minAcceptableCharge = NextFloatInRange(0.05f, 0.4f);
-        var battery = new Battery(maxCapacity, chargeRate, currCharge, batteryConfig.Socket);
-        var preferences = new Preferences(priceSensPref, minAcceptableCharge);
+        var maxPathDeviation = NextFloatInRange(5.0f, 30.0f);
+        var preferences = new Preferences(priceSensPref, minAcceptableCharge, maxPathDeviation);
+
         var journey = CreateJourney(departure);
         return new EV(battery, preferences, journey, config.Efficiency);
     }

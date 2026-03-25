@@ -24,7 +24,7 @@ public class EVPopulator(EVFactory evFactory, EVStore evStore, EventScheduler ev
     /// <param name="distributionWindow">The time window over which to distribute the spawning events.</param>
     public void CreateEVs(int amount, Time distributionWindow)
     {
-        var currentTime = _eventScheduler.GetCurrentTime();
+        var currentTime = _eventScheduler.CurrentTime;
         var interval = distributionWindow / amount;
         var spawnTimes = Enumerable.Range(0, amount)
                                    .Select(i => currentTime + (i * interval))

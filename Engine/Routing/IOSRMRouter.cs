@@ -13,17 +13,17 @@ public interface IOSRMRouter : IMatrixRouter, IDisposable, IPointToPointRouter, 
     /// <param name="stations">The list of stations to initialize the router with.</param>
     void InitStations(List<Station> stations);
 
-    /// <summary>
-    /// Queries the OSRM API for the durations and distances from the given EV location to the stations at the given indices.
-    /// </summary>
-    /// <param name="evLon">The longitude of the EV location.</param>
-    /// <param name="evLat">The latitude of the EV location.</param>
-    /// <param name="indices">The indices of the stations to query.</param>
-    /// <returns>A tuple containing the durations and distances.</returns>
+    (float[] durations, float[] distances) QueryStationsWithDest(
+        double evLon,
+        double evLat,
+        double destLon,
+        double destLat,
+        ushort[] indices);
+
     (float[] durations, float[] distances) QueryStations(
         double evLon,
         double evLat,
-        int[] indices);
+        ushort[] indices);
 
     /// <summary>
     /// Queries the OSRM API for the duration and polyline from the given EV location to the given destination.

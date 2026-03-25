@@ -3,25 +3,36 @@ namespace Engine.Events;
 using Core.Shared;
 
 /// <summary>
-/// An EventScheduler responsbile for managing the scheduling and retrieval of events in the simulation. 
+/// The EventScheduler is responsible for managing and scheduling events in the system.
 /// </summary>
-public class EventScheduler
+/// <param name="preProcessors">Middleware/Preprocessors that are fired on MiddlewareEvents if attatched.</param>
+public class EventScheduler(Dictionary<Type, Action<IMiddlewareEvent>> preProcessors)
 {
     private readonly PriorityQueue<Event, (uint, uint)> _eventPriorityQueue = new();
+
+    /// <summary>
+    /// Optional event handlers that can perform actions on scheduleEvent.
+    /// </summary>
+    private readonly Dictionary<Type, Action<IMiddlewareEvent>> _preProcessors = preProcessors;
     private readonly HashSet<int> _canceledEvents = [];
     private Time _currentTime = 0;
     private Time _evSequeenceId = 0;
 
     /// <summary>
-    /// Schedules an event to be executed at a specific timestamp.
+    /// Schedules the event <paramref name="e"/> at its Time attribute.
+    /// Potentially calls pre-processor if one is registered for that event type.
     /// </summary>
-    /// <param name="e">The event to schedule.</param>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown if the timestamp is in the past.</exception>
+    /// <param name="e">The event to be scheduled.</param>
+    /// <exception cref="ArgumentOutOfRangeException">If the events timestamp is before current time.</exception>
     public void ScheduleEvent(Event e)
     {
         var timestamp = e.Time;
         if (timestamp < _currentTime)
             throw new ArgumentOutOfRangeException($"Event timestamp {timestamp} is in the past (current time: {_currentTime})");
+
+        if (e is IMiddlewareEvent me && _preProcessors.TryGetValue(me.GetType(), out var handler))
+            handler.Invoke(me);
+
         _eventPriorityQueue.Enqueue(e, (timestamp, _evSequeenceId++));
     }
 
@@ -45,11 +56,9 @@ public class EventScheduler
         return e;
     }
 
-    /// <summary>
-    /// Gets the current simulation time in seconds.
-    /// </summary>
-    /// <returns>The current simulation time in seconds.</returns>
-    public Time GetCurrentTime() => _currentTime;
+    /// <summary>Gets the current timestamp of the event scheduler.</summary>
+    /// <remark>The time is monotonically increasing.</remark
+    public Time CurrentTime => _currentTime;
 
     /// <summary>
     /// Cancels a CancelableEvent by adding it to the set of canceled events.
