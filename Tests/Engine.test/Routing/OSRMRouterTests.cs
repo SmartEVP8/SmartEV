@@ -4,6 +4,11 @@ using Core.Charging;
 using Core.Shared;
 using Engine.Routing;
 
+
+// HACK: WE DO NOT KNOW WHY THIS FAILS 1% OF THE TIME
+// WE HOPE THAT TURNING OFF PARALLELISM FIXES THIS.
+// PLEASE REPORT IF THIS EVER FAILS AGAIN.
+[Collection("OSRMRouterTests")]
 public class OSRMRouterTests
 {
     private static readonly double[] _evPosition = [10.2039, 56.1629];
