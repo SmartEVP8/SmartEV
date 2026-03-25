@@ -14,7 +14,7 @@ public class EngineSettings
 
     required public int CurrentAmoutOfEVsInDenmark { get; init; }
     required public int IntervalToCheckUrgency { get; init; }
-    required public int MaxNoiseArrivalTime { get; init; }
+     required public int NoiseForArrivalTime { get; init; }
     required public uint ChargingStepSeconds { get; init; }
 
     required public FileInfo EnergyPricesPath { get; init; }

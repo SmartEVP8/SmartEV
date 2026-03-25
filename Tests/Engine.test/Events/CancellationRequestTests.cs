@@ -30,7 +30,7 @@ public class CancelRequestTests
 
             CurrentAmoutOfEVsInDenmark = 1,
             IntervalToCheckUrgency = 10,
-            MaxNoiseArrivalTime = 0,
+            NoiseForArrivalTime = 0,
             ChargingStepSeconds = 1,
 
             EnergyPricesPath = new FileInfo("dummy"),

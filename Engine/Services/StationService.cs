@@ -126,7 +126,7 @@ public class StationService
     /// <param name="evStore">The EV store used to retrieve the requesting EV.</param>
     public void HandleReservationRequest(ReservationRequest e, EVStore evStore)
     {
-        var ev = evStore.Get(e.EVId);
+        ref var ev = ref evStore.Get(e.EVId);
         if (!_stationIndex.TryGetValue(e.StationId, out var station))
             return;
 
@@ -135,11 +135,11 @@ public class StationService
             HandleCancelRequest(
                 new CancelRequest(e.EVId, ev.HasReservationAtStationId.Value, e.Time),
                 evStore);
-            ev = evStore.Get(e.EVId);
         }
 
         station.IncrementReservations();
 
+        /* Old (naive) way of setting EVs new journey and arrival
         var currentTime = _scheduler.CurrentTime;
         var (deviation, newPolyline) = _pathDeviator.CalculateDetourDeviation(
             ev.Journey, currentTime, station.Position);
@@ -147,18 +147,17 @@ public class StationService
         var originalRemainingSeconds = ev.Journey.OriginalDuration - ev.Journey.TimeElapsed(currentTime);
         var totalTravelTime = originalRemainingSeconds + deviation;
 
-        var addTravelDuration = 1f + (_random.NextSingle() * (_settings.MaxNoiseArrivalTime / 2)) - _settings.MaxNoiseArrivalTime;
-        var arrivalTime = (Time)(currentTime + (Time)(uint)(totalTravelTime * addTravelDuration));
+        var arrivalTime = (Time)(currentTime + totalTravelTime);
 
         ev.Journey.Path = Polyline6ToPoints.DecodePolyline(newPolyline);
         ev.Journey.UpdateRunningSumDeviation(deviation);
-
+        
         var arrivalEvent = new ArriveAtStation(e.EVId, e.StationId, arrivalTime);
         _scheduler.ScheduleEvent(arrivalEvent);
-        
-        ev.HasReservationAtStationId = e.StationId;
+        */
 
-        evStore.Set(e.EVId, ref ev);
+        // Method to set an EVs new path and schedule the arrival event.
+        ev.HasReservationAtStationId = e.StationId;
     }
 
     /// <summary>
@@ -169,7 +168,7 @@ public class StationService
     /// <param name="evStore">The EV store used to retrieve the cancel-requesting EV.</param>
     public void HandleCancelRequest(CancelRequest e, EVStore evStore)
     {
-        var ev = evStore.Get(e.EVId);
+        ref var ev = ref evStore.Get(e.EVId);
         if (!_stationIndex.TryGetValue(e.StationId, out var station))
             return;
 
@@ -178,8 +177,6 @@ public class StationService
         _scheduler.CancelEvent(e.EVId);
 
         ev.HasReservationAtStationId = null;
-
-        evStore.Set(e.EVId, ref ev);
     }
 
     /// <summary>

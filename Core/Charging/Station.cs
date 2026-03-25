@@ -43,7 +43,6 @@ public class Station(ushort id,
 
     private ushort _totalReservations = 0;
     private ushort _totalCancellations = 0;
-    private ushort _currentAmountOfReservations = 0;
 
     /// <summary>
     /// Gets the total number of reservation requests ever made to this station.
@@ -54,11 +53,6 @@ public class Station(ushort id,
     /// Gets the total number of cancellation requests ever made to this station.
     /// </summary>
     public uint TotalCancellations => _totalCancellations;
-
-    /// <summary>
-    /// Gets the number of active reservations at this station.
-    /// </summary>
-    public ushort CurrentAmountOfReservations => _currentAmountOfReservations;
 
     /// <summary>
     /// Gets the list of chargers on a station.
@@ -100,18 +94,10 @@ public class Station(ushort id,
     /// <summary>
     /// Increments the amount of reservations on a station, and updates the total amount of reservations.
     /// </summary>
-    public void IncrementReservations()
-    {
-        _currentAmountOfReservations++;
-        _totalReservations++;
-    }
-    
+    public void IncrementReservations() => _totalReservations++;
+
     /// <summary>
     /// Decrements the amount of reservations on a station, and updates the total amount of cancellations.
     /// </summary>
-    public void DecrementReservations()
-    {
-        _currentAmountOfReservations = (ushort)Math.Max(0, _currentAmountOfReservations - 1);
-        _totalCancellations++;
-    }
+    public void DecrementReservations() => _totalCancellations++;
 }
