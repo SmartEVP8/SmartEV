@@ -1,3 +1,5 @@
+namespace Engine.test.Cost;
+
 using System.Collections.Immutable;
 using Core.Charging;
 using Core.Routing;
@@ -177,7 +179,7 @@ public class ComputeCostTest
     {
         // High SoC to minimize urgency cost, zero price sensitivity to minimize price cost
         var battery = new Battery(capacity: 100, maxChargeRate: 200, stateOfCharge: 100, socket: Socket.CCS2);
-        var preferences = new Preferences(priceSensitivity: 0.0f, minAcceptableCharge: 0f);
+        var preferences = new Preferences(priceSensitivity: 0.0f, minAcceptableCharge: 0f, maxPathDeviation: 1000.0);
         var journey = new Journey(
             departure: new Time(0),
             originalDuration: new Time(originalDuration),
@@ -189,7 +191,7 @@ public class ComputeCostTest
     private static EV CreateEv(uint originalDuration, float priceSensitivity = 0.5f)
     {
         var battery = new Battery(capacity: 100, maxChargeRate: 200, stateOfCharge: 50, socket: Socket.CCS2);
-        var preferences = new Preferences(priceSensitivity: priceSensitivity, minAcceptableCharge: 20f);
+        var preferences = new Preferences(priceSensitivity: priceSensitivity, minAcceptableCharge: 20f, maxPathDeviation: 1000.0);
         var journey = new Journey(
             departure: new Time(0),
             originalDuration: new Time(originalDuration),

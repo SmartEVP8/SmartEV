@@ -1,3 +1,5 @@
+namespace Engine.test.Routing;
+
 using Core.Routing;
 using Core.Shared;
 using Core.Vehicles;
@@ -41,7 +43,7 @@ public class PathDeviatorTest
     private static EV CreateEvWithOriginalDuration(uint originalDuration)
     {
         var battery = new Battery(capacity: 100, maxChargeRate: 150, stateOfCharge: 80, socket: Socket.CCS2);
-        var preferences = new Preferences(priceSensitivity: 0.5f, minAcceptableCharge: 0.2f);
+        var preferences = new Preferences(priceSensitivity: 0.5f, minAcceptableCharge: 0.2f, maxPathDeviation: 1000.0);
         var journey = new Journey(
             departure: new Time(0),
             originalDuration: new Time(originalDuration),
