@@ -5,6 +5,7 @@ using Core.Charging.ChargingModel;
 using Core.Charging.ChargingModel.Chargepoint;
 using Engine.Events;
 using Core.Shared;
+using Engine.Vehicles;
 
 /// <summary>
 /// Tracks an active charging session at one side of a charger.
@@ -65,6 +66,7 @@ public class StationService
     private readonly Dictionary<int, ChargerState> _chargerIndex = [];
     private readonly ChargingIntegrator _integrator;
     private readonly EventScheduler _scheduler;
+    private readonly EVStore _eVStore;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="StationService"/> class.
@@ -120,14 +122,14 @@ public class StationService
     /// Finds the best compatible charger, joins its queue, and starts charging only if a side is free.
     /// </summary>
     /// <param name="e">The arrival event.</param>
-    /// <param name="ev">The connected EV.</param>
-    public void HandleArrivalAtStation(ArriveAtStation e, ConnectedEV ev)
+    public void HandleArrivalAtStation(ArriveAtStation e)
     {
+        var ev = _eVStore.Get(e.EVId);
         if (!_stationChargers.TryGetValue(e.StationId, out var chargers))
             return;
 
         var target = chargers
-            .Where(cs => cs.Charger.GetSockets().Contains(ev.Socket))
+            .Where(cs => cs.Charger.GetSockets().Contains(ev.Battery.Socket))
             .OrderBy(cs => cs.IsFree ? 0 : 1)
             .ThenBy(cs => cs.Queue.Count)
             .FirstOrDefault();
@@ -135,7 +137,15 @@ public class StationService
         if (target is null)
             return;
 
-        target.Queue.Enqueue((e.EVId, ev));
+        var connectedEV = new ConnectedEV(
+                e.EVId,
+                ev.Battery.StateOfCharge,
+                50.0, //TODO: WE NEED SOME MECHANISM TO FIGURE OUT HOW MUCH THEY SHOULD CHARGE
+                ev.Battery.Capacity,
+                ev.Battery.MaxChargeRate,
+                ev.Battery.Socket);
+
+        target.Queue.Enqueue((e.EVId, connectedEV));
 
         if (target.IsFree)
             StartCharging(target, e.Time);
