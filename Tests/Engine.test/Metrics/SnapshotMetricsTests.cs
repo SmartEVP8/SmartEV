@@ -13,8 +13,8 @@ public class SnapshotMetricTests
     [InlineData(1, 1, 2)]
     public void ActiveChargers_IsCorrect(int enqueuedOnA, int enqueuedOnB, int expectedActive)
     {
-        var chargerA = TestData.MakeSingleCharger(id: 1);
-        var chargerB = TestData.MakeSingleCharger(id: 2);
+        var chargerA = TestData.SingleCharger(id: 1);
+        var chargerB = TestData.SingleCharger(id: 2);
         for (var i = 0; i < enqueuedOnA; i++) chargerA.Queue.Enqueue(i);
         for (var i = 0; i < enqueuedOnB; i++) chargerB.Queue.Enqueue(i);
         var station = TestData.Station(1, chargers: [chargerA, chargerB]);

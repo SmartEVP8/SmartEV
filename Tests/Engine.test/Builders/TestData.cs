@@ -116,18 +116,17 @@ public static class TestData
             Journey(waypoints),
             efficiency);
 
-    public static EV EV() =>
-        new(
-            Battery(),
-            Preferences(),
-            Journey(null),
-            150);
-
-    public static SingleCharger MakeSingleCharger(int id, int maxPowerKW = 150)
+    public static SingleCharger SingleCharger(int id, int maxPowerKW = 150)
     {
         var connectors = new Connectors([new Connector(Socket.CCS2)]);
         var point = new SingleChargingPoint(connectors);
         return new SingleCharger(id, maxPowerKW, point);
+    }
+
+    public static DualCharger DualCharger(int id, int maxPowerKW = 150)
+    {
+        var point = new DualChargingPoint(new Connectors([new Connector(Socket.CCS2)]));
+        return new DualCharger(id, maxPowerKW, point);
     }
 
     public static ConnectedEV ConnectedEV(int evId, double currentSoC, double targetSoC, Socket socket = Socket.CCS2)

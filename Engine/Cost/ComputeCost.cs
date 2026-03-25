@@ -37,14 +37,12 @@ public class ComputeCost(ICostStore costStore)
             var urgencyCost = CalculateUrgencyCost(ref ev, weights);
             var priceCost = CalculatePriceCost(ref ev, station, weights);
             var effectiveWaitTimeCost = CalculateEffectiveWaitTimeCost(weights);
-            var availableChargerRatioCost = CalculateAvailableChargerRatioCost(station, weights);
 
             var cost = effectiveQueueCost
                 + pathDeviationCost
                 + urgencyCost
                 + priceCost
-                + effectiveWaitTimeCost
-                + availableChargerRatioCost;
+                + effectiveWaitTimeCost;
             if (cost < bestCost)
             {
                 bestCost = cost;
@@ -65,17 +63,6 @@ public class ComputeCost(ICostStore costStore)
         var effectiveQueueSize = totalQueueSize / station.Chargers.Count; // Average queue size per charger
 
         return weights.EffectiveQueueSize * MathF.Pow(effectiveQueueSize, 2);
-    }
-
-    private static double CalculateAvailableChargerRatioCost(Station station, CostWeights weights)
-    {
-        var (totalChargers, availableChargers) = (
-                station.Chargers.Count,
-                station.Chargers.Where(c => c.Queue.Count == 0).ToList().Count
-            );
-        var availableChargerRatio = MathF.Abs((availableChargers / totalChargers) - 1);
-
-        return weights.AvailableChargerRatio * availableChargerRatio;
     }
 
     private static double CalculatePathDeviationCost(ref EV ev, (float duration, string polyline) journey, CostWeights weights)

@@ -90,7 +90,7 @@ public record SnapshotMetric
             TotalDeliveredKW = totalDeliveredKW,
             TotalMaxKW = totalMaxKW,
             TotalQueueSize = totalQueueSize,
-            Price = station.Price,
+            Price = station.UpdatePrice(day, hour),
             ActiveChargers = activeChargers,
             TotalChargers = station.Chargers.Count,
         };

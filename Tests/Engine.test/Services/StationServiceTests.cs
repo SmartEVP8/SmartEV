@@ -53,8 +53,9 @@ public class StationServiceTests
 
         // Only ev1 should have an EndCharging scheduled — ev2 and ev3 are queued
         var firstEnd = AsEndCharging(scheduler.GetNextEvent());
-        Assert.Equal(1, firstEnd.EVId);
-        Assert.Equal(2, service.GetChargerState(chargerId: 1)!.Queue.Count);
+        var expectedQueueSize = 2;
+        Assert.Equal(index1, firstEnd.EVId);
+        Assert.Equal(expectedQueueSize, service.GetChargerState(chargerId: 1)!.Queue.Count);
         Assert.Null(scheduler.GetNextEvent()); // ev2 and ev3 still queued
 
         // ev1 finishes — service should start ev2
@@ -82,7 +83,7 @@ public class StationServiceTests
 
         // Both sides occupied — ev3 is queued
         var ev1End = AsEndCharging(scheduler.GetNextEvent());
-        Assert.Equal(1, ev1End.EVId);
+        Assert.Equal(index1, ev1End.EVId);
         Assert.Single(service.GetChargerState(chargerId: 1)!.Queue);
 
         service.HandleEndCharging(ev1End);
@@ -104,19 +105,8 @@ public class StationServiceTests
         Socket socket = Socket.CCS2,
         int maxPowerKW = 150)
     {
-        var connector = new Connector(socket);
-        var connectors = new Connectors([connector]);
-        var point = new SingleChargingPoint(connectors);
-        var charger = new SingleCharger(1, maxPowerKW, point);
-
-        var station = new Station(
-            1,
-            "Test",
-            "Test Address",
-            new Position(0, 0),
-            [charger],
-            TestData.EnergyPrices);
-
+        var charger = TestData.SingleCharger(1, maxPowerKW: maxPowerKW);
+        var station = TestData.Station(1, chargers: [charger]);
         var scheduler = new EventScheduler([]);
         var integrator = new ChargingIntegrator(stepSeconds: 60);
         var evStore = new EVStore(10);
@@ -129,17 +119,8 @@ public class StationServiceTests
         Socket socket = Socket.CCS2,
         int maxPowerKW = 150)
     {
-        var point = new DualChargingPoint(new Connectors([new Connector(socket)]));
-        var charger = new DualCharger(1, maxPowerKW, point);
-
-        var station = new Station(
-            1,
-            "Test",
-            "Test Address",
-            new Position(0, 0),
-            [charger],
-            TestData.EnergyPrices);
-
+        var charger = TestData.DualCharger(1, maxPowerKW: maxPowerKW);
+        var station = TestData.Station(1, chargers: [charger]);
         var scheduler = new EventScheduler([]);
         var integrator = new ChargingIntegrator(stepSeconds: 60);
         var evStore = new EVStore(10);

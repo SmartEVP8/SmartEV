@@ -59,12 +59,15 @@ public class Station(ushort id,
     /// </summary>
     /// <param name="day">The day of the week.</param>
     /// <param name="hour">The hour of the day (0–23).</param>
-    public void UpdatePrice(DayOfWeek day, int hour)
+    /// <returns>The current price at the station.</returns>
+    public float UpdatePrice(DayOfWeek day, int hour)
     {
         if ((day, hour) != _lastPriceUpdate)
         {
             _lastPriceUpdate = (day, hour);
             Price = energyPrices.CalculatePrice(day, hour);
         }
+
+        return Price;
     }
 }
