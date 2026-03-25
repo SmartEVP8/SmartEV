@@ -38,7 +38,7 @@ public record CancelRequest(int EVId, ushort StationId, Time Time) : Event(Time)
 //  - Should increase Actual Queue Size by 1 (AQS + 1).
 //  - Method for either placing the EV in the queue or if there are no EVs in the queue, immediately start charging.
 //  - Method that stores the EVs arrival time at the station.
-public record ArriveAtStation(int EVId, ushort StationId, Time Time) : CancelableEvent(EVId, Time);
+public record ArriveAtStation(int EVId, ushort StationId, double TargetSoC, Time Time) : CancelableEvent(EVId, Time);
 
 // Functionality:
 //  - Pop next EV from the the queue and start charging that EV and stores the EV's start charging time.

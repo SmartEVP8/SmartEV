@@ -74,13 +74,16 @@ public class StationService
     /// <param name="stations">The collection of stations to manage.</param>
     /// <param name="integrator">The charging integrator to use for simulating charging sessions.</param>
     /// <param name="scheduler">The event scheduler to use for scheduling future events.</param>
+    /// <param name="evStore">The storage of current EV's.</param>
     public StationService(
         ICollection<Station> stations,
         ChargingIntegrator integrator,
-        EventScheduler scheduler)
+        EventScheduler scheduler,
+        EVStore evStore)
     {
         _integrator = integrator;
         _scheduler = scheduler;
+        _eVStore = evStore;
 
         foreach (var station in stations)
         {
@@ -106,7 +109,7 @@ public class StationService
     /// </summary>
     /// <param name="e">The reservation request event.</param>
     public void HandleReservationRequest(ReservationRequest e)
-        => _scheduler.ScheduleEvent(new ArriveAtStation(e.EVId, e.StationId, e.Time));
+        => _scheduler.ScheduleEvent(new ArriveAtStation(e.EVId, e.StationId, 0.5f, e.Time)); //TODO: FIGURE OUT HOW TO CALC THE WANTED SOC TO CHARGE TO
 
     // TODO: handle cancelrequest
 
@@ -138,12 +141,12 @@ public class StationService
             return;
 
         var connectedEV = new ConnectedEV(
-                e.EVId,
-                ev.Battery.StateOfCharge,
-                50.0, //TODO: WE NEED SOME MECHANISM TO FIGURE OUT HOW MUCH THEY SHOULD CHARGE
-                ev.Battery.Capacity,
-                ev.Battery.MaxChargeRate,
-                ev.Battery.Socket);
+                EVId: e.EVId,
+                CurrentSoC: ev.Battery.StateOfCharge,
+                TargetSoC: e.TargetSoC,
+                CapacityKWh: ev.Battery.Capacity,
+                MaxChargeRateKW: ev.Battery.MaxChargeRate,
+                Socket: ev.Battery.Socket);
 
         target.Queue.Enqueue((e.EVId, connectedEV));
 
