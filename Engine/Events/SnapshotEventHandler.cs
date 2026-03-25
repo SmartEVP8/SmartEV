@@ -1,6 +1,7 @@
 namespace Engine.Events;
 
 using Engine.Metrics;
+using Engine.Metrics.Snapshots;
 using Core.Shared;
 using Core.Charging;
 

@@ -1,7 +1,5 @@
 namespace Engine.test.Metrics;
 
-namespace Engine.test.Metrics;
-
 using Engine.Metrics;
 using Parquet.Serialization;
 

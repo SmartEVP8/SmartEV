@@ -7,6 +7,23 @@ using Engine.Spawning;
 
 public class JourneyPipelineTests
 {
+    private static Position Pos() => new(0.0, 0.0);
+
+    private static City MakeCity(string name, int pop) => new(name, Pos(), pop);
+
+    private static GridCell SpawnableCell() => new(spawnable: true, Pos());
+
+    private static GridCell NonSpawnableCell() => new(spawnable: false, Pos());
+
+    private static SpawnGrid MakeGrid(int spawnableCount, int nonSpawnableCount = 0)
+    {
+        var row = Enumerable.Repeat(SpawnableCell(), spawnableCount)
+            .Concat(Enumerable.Repeat(NonSpawnableCell(), nonSpawnableCount))
+            .ToList();
+
+        return new SpawnGrid([row], min: new Position(0.0, 0.0), latSize: 1.0, lonSize: 1.0);
+    }
+
     [Fact]
     public void Compute_NoSpawnableCells_ReturnsThrows()
     {
@@ -62,22 +79,5 @@ public class JourneyPipelineTests
 
         public (float[], float[]) QueryPointsToPoints(double[] origins, double[] destinations)
             => ([], _distances);
-    }
-
-    private static Position Pos() => new(0.0, 0.0);
-
-    private static City MakeCity(string name, int pop) => new(name, Pos(), pop);
-
-    private static GridCell SpawnableCell() => new(spawnable: true, Pos());
-
-    private static GridCell NonSpawnableCell() => new(spawnable: false, Pos());
-
-    private static SpawnGrid MakeGrid(int spawnableCount, int nonSpawnableCount = 0)
-    {
-        var row = Enumerable.Repeat(SpawnableCell(), spawnableCount)
-            .Concat(Enumerable.Repeat(NonSpawnableCell(), nonSpawnableCount))
-            .ToList();
-
-        return new SpawnGrid([row], min: new Position(0.0, 0.0), latSize: 1.0, lonSize: 1.0);
     }
 }
