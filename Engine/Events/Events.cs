@@ -6,6 +6,7 @@ using Engine.Metrics;
 
 public abstract record Event(Time Time);
 public abstract record CancelableEvent(int EVId, Time Time) : Event(Time);
+public abstract record contineousEvent(int EVId, Time Time) : Event(Time);
 
 /// <summary>
 /// MiddlewareEvents has handlers that are called when scheduled.
@@ -56,7 +57,7 @@ public record ArriveAtDestination(int EVId, Time Time) : CancelableEvent(EVId, T
 
 // Functionality:
 // - Checks if an EV should look for Stations
-public record CheckUrgency(int EVId, Time Time) : Event(Time);
+public record CheckUrgency(int EVId, Time Time) : contineousEvent(EVId, Time);
 
 
 // Spawn

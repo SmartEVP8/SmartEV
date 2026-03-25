@@ -125,6 +125,7 @@ public class StationService
         if (target is null)
             return;
 
+        _scheduler.PauseUrgencyEvent(e.EVId);
         target.Queue.Enqueue((e.EVId, ev));
 
         if (target.IsFree)
@@ -149,6 +150,7 @@ public class StationService
             case SingleCharger single:
                 single.ChargingPoint.Disconnect();
                 state.SessionA = null;
+                _scheduler.ScheduleEvent(new CheckUrgency(e.EVId, e.Time + 1));
                 break;
 
             case DualCharger dual:
@@ -195,6 +197,7 @@ public class StationService
                     }
                 }
 
+                _scheduler.ScheduleEvent(new CheckUrgency(e.EVId, e.Time + 1));
                 break;
         }
 

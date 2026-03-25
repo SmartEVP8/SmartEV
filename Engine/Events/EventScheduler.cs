@@ -15,6 +15,7 @@ public class EventScheduler(Dictionary<Type, Action<IMiddlewareEvent>> preProces
     /// </summary>
     private readonly Dictionary<Type, Action<IMiddlewareEvent>> _preProcessors = preProcessors;
     private readonly HashSet<int> _canceledEvents = [];
+    private readonly HashSet<int> _pausedUrgencyEvents = [];
     private Time _currentTime = 0;
     private Time _evSequeenceId = 0;
 
@@ -52,6 +53,11 @@ public class EventScheduler(Dictionary<Type, Action<IMiddlewareEvent>> preProces
             _canceledEvents.Remove(cancelableEvent.EVId);
             return GetNextEvent();
         }
+        if (e is contineousEvent contineousEvent && _pausedUrgencyEvents.Contains(contineousEvent.EVId))
+        {
+            _pausedUrgencyEvents.Remove(contineousEvent.EVId);
+            return GetNextEvent();
+        }
 
         return e;
     }
@@ -74,5 +80,20 @@ public class EventScheduler(Dictionary<Type, Action<IMiddlewareEvent>> preProces
         if (_canceledEvents.Contains(evID))
             throw new InvalidOperationException($"Event with EVId {evID} is already cancelled.");
         _canceledEvents.Add(evID);
+    }
+
+    /// <summary>
+    /// Pauses a contineousEvent by adding it to the set of paused events.
+    /// When the event is dequeued, it will be skipped.
+    /// </summary> <param name="evID">The evID from which a contineousEvent should be paused.</param>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when attempting to pause an event for an EV that already has a pending
+    /// pause, violating the invariant that an EV can only have one contineous event at a time.
+    /// </exception>
+    public void PauseUrgencyEvent(int evID)
+    {
+        if (_pausedUrgencyEvents.Contains(evID))
+            throw new InvalidOperationException($"Event with EVId {evID} is already paused.");
+        _pausedUrgencyEvents.Add(evID);
     }
 }
