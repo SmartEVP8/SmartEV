@@ -56,6 +56,10 @@ public record CheckAndUpdateAllEVs(Time Time) : Event(Time);
 
 // ---------- NON-DOMAIN EVENTS ---------- //
 
+// Spawn new EVs into the future.
+// EV's are allocated up front and polled once their depature has been reached.
+public record SpawnEVS(Time Time) : Event(Time);
+
 // Functionality:
 // - Checks if an EV should look for Stations
 public record CheckUrgency(int EVId, Time Time) : Event(Time);
