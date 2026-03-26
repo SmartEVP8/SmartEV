@@ -2,6 +2,7 @@ namespace Engine.Cost;
 
 using System.Data;
 using Core.Charging;
+using Core.Shared;
 using Core.Vehicles;
 using Engine.Routing;
 
@@ -21,7 +22,7 @@ public class ComputeCost(ICostStore costStore)
     /// <param name="journeys">The journeys for each station.</param>
     /// <returns>The station with the lowest cost.</returns>
     /// <exception cref="NoNullAllowedException">If no suitable station is found.</exception>
-    public Station Compute(ref EV ev, Station[] stations, (float[] duration, float[] distance, string[] polyline) journeys)
+    public Station Compute(ref EV ev, Station[] stations, (float[] duration, float[] distance) journeys)
     {
         var bestCost = double.MaxValue;
         Station? bestStation = null;
@@ -30,10 +31,10 @@ public class ComputeCost(ICostStore costStore)
         for (var i = 0; i < stations.Length; i++)
         {
             var station = stations[i];
-            var (duration, _, polyline) = (journeys.duration[i], journeys.distance[i], journeys.polyline[i]);
+            var (duration, _) = (journeys.duration[i], journeys.distance[i]);
 
             var effectiveQueueCost = CalculateEffectiveQueueSizeCost(station, weights);
-            var pathDeviationCost = CalculatePathDeviationCost(ref ev, (duration, polyline), weights);
+            var pathDeviationCost = CalculatePathDeviationCost(ref ev, duration, weights);
             var urgencyCost = CalculateUrgencyCost(ref ev, weights);
             var priceCost = CalculatePriceCost(ref ev, station, weights);
             var effectiveWaitTimeCost = CalculateEffectiveWaitTimeCost(weights);
@@ -65,9 +66,9 @@ public class ComputeCost(ICostStore costStore)
         return weights.EffectiveQueueSize * MathF.Pow(effectiveQueueSize, 2);
     }
 
-    private static double CalculatePathDeviationCost(ref EV ev, (float duration, string polyline) journey, CostWeights weights)
+    private static double CalculatePathDeviationCost(ref EV ev, float duration, CostWeights weights)
     {
-        var pathDeviation = PathDeviator.CalculateDetourDeviation(ref ev, (journey.duration, journey.polyline));
+        var pathDeviation = PathDeviator.CalculateDetourDeviation(ref ev, duration);
         return weights.PathDeviation * pathDeviation;
     }
 

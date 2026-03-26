@@ -26,8 +26,7 @@ public class ComputeCostTest
         var stations = new[] { stationA, stationB };
         var journeys = (
             duration: new[] { 600f, 800f },
-            distance: new[] { 10f, 20f },
-            polyline: new[] { "polyline-a", "polyline-b" });
+            distance: new[] { 10f, 20f });
 
         var bestStation = computeCost.Compute(ref ev, stations, journeys);
 
@@ -51,8 +50,7 @@ public class ComputeCostTest
         var stations = new[] { lowQueueStation, highQueueStation };
         var journeys = (
             duration: new[] { 500f, 500f },
-            distance: new[] { 10f, 10f },
-            polyline: new[] { "polyline-a", "polyline-b" });
+            distance: new[] { 10f, 10f });
 
         var bestStation = computeCost.Compute(ref ev, stations, journeys);
 
@@ -79,8 +77,7 @@ public class ComputeCostTest
         var stations = new[] { stationA, stationB };
         var journeys = (
             duration: new[] { 600f, 800f },
-            distance: new[] { 10f, 20f },
-            polyline: new[] { "polyline-a", "polyline-b" });
+            distance: new[] { 10f, 20f });
 
         var bestStation = computeCost.Compute(ref ev, stations, journeys);
 
@@ -106,8 +103,7 @@ public class ComputeCostTest
         var stations = new[] { stationA, stationB };
         var journeys = (
             duration: new[] { 500f, 500f },
-            distance: new[] { 10f, 10f },
-            polyline: new[] { "polyline-a", "polyline-b" });
+            distance: new[] { 10f, 10f });
 
         var bestStation = computeCost.Compute(ref ev, stations, journeys);
 
@@ -140,8 +136,7 @@ public class ComputeCostTest
         var stations = new[] { cheapStation, expensiveStation };
         var journeys = (
             duration: new[] { 500f, 500f },
-            distance: new[] { 10f, 10f },
-            polyline: new[] { "polyline-a", "polyline-b" });
+            distance: new[] { 10f, 10f });
 
         var bestStation = computeCost.Compute(ref ev, stations, journeys);
 
@@ -163,8 +158,7 @@ public class ComputeCostTest
         var stations = Array.Empty<Station>();
         var journeys = (
             duration: Array.Empty<float>(),
-            distance: Array.Empty<float>(),
-            polyline: Array.Empty<string>());
+            distance: Array.Empty<float>());
 
         Assert.Throws<System.Data.NoNullAllowedException>(() =>
             computeCost.Compute(ref ev, stations, journeys));
