@@ -24,7 +24,7 @@ public class ApplyNewPath(IOSRMRouter router)
         var currentPos = ev.Journey.CurrentPosition(currentTime);
         var destination = ev.Journey.Path.Waypoints.Last();
 
-        var (_, polyline) = _router.QueryDestination(
+        var (duration, polyline) = _router.QueryDestination(
         [
             currentPos.Longitude, currentPos.Latitude,
             station.Position.Longitude, station.Position.Latitude,
@@ -33,15 +33,11 @@ public class ApplyNewPath(IOSRMRouter router)
 
         var detourPath = Polyline6ToPoints.DecodePolyline(polyline);
 
-        var percentageCompleted = (double)(currentTime - ev.Journey.Departure) / (double)ev.Journey.OriginalDuration;
-        var waypointIndex = (int)(percentageCompleted * ev.Journey.Path.Waypoints.Count);
-        var remainingOriginalWaypoints = ev.Journey.Path.Waypoints.Skip(waypointIndex).ToList();
-
         var newWaypoints = new List<Position> { currentPos }
-            .Concat(remainingOriginalWaypoints)
             .Concat(detourPath.Waypoints)
             .ToList();
 
         ev.Journey.UpdatePath(new Paths(newWaypoints));
-    }    
+        ev.Journey.UpdateJourneyDuration((Time)(uint)duration);
+    }
 }

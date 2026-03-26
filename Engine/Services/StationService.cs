@@ -142,17 +142,13 @@ public class StationService
         station.IncrementReservations();
         ev.HasReservationAtStationId = e.StationId;
 
-        var evId = e.EVId;
-        var time = e.Time;
-        var durationToStation = e.DurationToStation;
-
         Task.Run(() =>
         {
             ref var ev = ref evStore.Get(e.EVId);
             _applyNewPath.ApplyNewPathToEV(ref ev, station, e.Time);
 
-            // TODO: Determind the Correct TargetSoC                                    here !!!
-            _scheduler.ScheduleEvent(new ArriveAtStation(e.EVId, e.StationId, ev.Preferences.MinAcceptableCharge, e.Time + e.DurationToStation));
+            // TODO: Determine the Correct TargetSoC               should be the result of Calculate(TargetSoC)
+            _scheduler.ScheduleEvent(new ArriveAtStation(e.EVId, e.StationId, ev.Battery.Capacity, e.Time + e.DurationToStation));
         });
     }
 

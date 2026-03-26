@@ -21,6 +21,12 @@ public class Journey(Time departure, Time originalDuration, Paths path)
     public Time OriginalDuration { get; } = originalDuration;
 
     /// <summary>
+    /// Gets the duration of an EVs journey, after it has been altered, i.e the duration of Start -> Station -> Detour.
+    /// </summary>
+    public Time JourneyDuration { get; private set; } = originalDuration;
+
+
+    /// <summary>
     /// Gets the path as it is currently. 
     /// This can be updated as the journey progresses, e.g. if the EV is rerouted to a different station.
     /// Represented by waypoints that are mutated as the journey progresses.
@@ -37,13 +43,13 @@ public class Journey(Time departure, Time originalDuration, Paths path)
     /// <exception cref="ArgumentException">Thrown when the current time is before the journey starts or after it has completed.</exception>
     public Position CurrentPosition(Time currentTime)
     {
-        Time completedTime = Departure + OriginalDuration;
+        Time completedTime = Departure + JourneyDuration;
         if (currentTime > completedTime)
             throw new ArgumentException("Current time is after the journey has completed.");
         if (currentTime < Departure)
             throw new ArgumentException("Current time is before the journey has started.");
 
-        var percentageCompleted = (double)(currentTime - Departure) / (double)OriginalDuration;
+        var percentageCompleted = (currentTime - Departure) / (double)JourneyDuration;
 
         var segments = Path
             .Waypoints.Zip(Path.Waypoints.Skip(1))
@@ -99,4 +105,10 @@ public class Journey(Time departure, Time originalDuration, Paths path)
     /// </summary>
     /// <param name="newPath">The new path for the journey.</param>
     public void UpdatePath(Paths newPath) => Path = newPath;
+
+    /// <summary>
+    /// Updates the journey's full duration. This is used to calculate an EVs position after its journey has been changed.
+    /// </summary>
+    /// <param name="newDuration"> The new duration of the EVs journey.</param>
+    public void UpdateJourneyDuration(Time newDuration) => JourneyDuration = newDuration;
 }
