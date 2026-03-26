@@ -126,7 +126,6 @@ public class StationService
     /// arrival event.
     /// </summary>
     /// <param name="e">The reservation request event.</param>
-    /// <param name="evStore">The EV store used to retrieve the requesting EV.</param>
     public void HandleReservationRequest(ReservationRequest e)
     {
         ref var ev = ref _eVStore.Get(e.EVId);
