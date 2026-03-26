@@ -1,5 +1,6 @@
 namespace Engine.Init;
 
+using Core.Shared;
 using Engine.Cost;
 using Engine.Metrics;
 using Engine.StationFactory;
@@ -53,6 +54,27 @@ public class EngineSettings
     /// Gets the number of seconds an EV is expected to spend charging at a station, used for simulating charging time and scheduling.
     /// </summary>
     required public uint ChargingStepSeconds { get; init; }
+
+    /// <summary>
+    ///   Gets the interval at which snapshots of the simulation state are taken.
+    /// </summary>
+    required public uint SnapshotInterval { get; init; }
+
+    /// <summary>
+    /// Gets the simulation end time, which determines
+    /// when the simulation should stop running.
+    /// </summary>
+    required public Time SimulationEndTime { get; init; }
+
+    /// <summary>
+    ///  Gets the interval of the window used for spawning EV distributed.
+    /// </summary>
+    required public Time EVDistributionInterval { get; init; }
+
+    /// <summary>
+    ///     Gets the fraction of the total EV population that should be spawned in the simulation.
+    /// </summary>
+    required public double EVSpawnFraction { get; init; }
 
     /// <summary>
     /// Gets the file paths for various input data required by the engine inclduing energy prices.

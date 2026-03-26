@@ -27,14 +27,14 @@ public class EVPopulator(EVFactory evFactory, EVStore evStore, EventScheduler ev
         var spawnTimes = Enumerable.Range(0, amount)
                                    .Select(i => currentTime + (i * interval))
                                    .ToArray();
-
-        Parallel.For(0, amount, i =>
+        for (var i = 0; i < amount; i++)
         {
-            var departure = (uint)spawnTimes[i];
-            _eVStore.TryAllocate(amount, (index, ref ev) =>
+            var departure = (uint)(currentTime + (i * interval));
+            _eVStore.TryAllocate(
+                (index, ref ev) =>
             {
                 ev = _evFactory.Create(departure);
-            });
-        });
+            }, out _);
+        }
     }
 }

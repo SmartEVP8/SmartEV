@@ -15,11 +15,14 @@ using Engine.Services;
 /// </param>
 /// <param name="checkUrgencyHandler">Where the event <c>CheckUrgency</c> is handled.</param>
 /// <param name="snapshotEventHandler">Where the event <c>Snapshot</c> is handled.</param>
+/// <param name="evService">Where the event <c>SpawnEVS</c> is handled.</param>
+/// <param name="CheckAndUpdateAllEVsHandler">Where the event <c>CheckAndUpdateAllEVs</c> is handled.</param>
 public class EventDispatcher(
         StationService stationService,
         CheckUrgencyHandler checkUrgencyHandler,
         SnapshotEventHandler snapshotEventHandler,
-        EVService evService)
+        EVService evService,
+        CheckAndUpdateAllEVsHandler CheckAndUpdateAllEVsHandler)
 {
     /// <summary>
     /// Dispatches the event to the correct handler.
@@ -65,6 +68,10 @@ public class EventDispatcher(
 
             case SpawnEVS ev:
                 evService.Handle(ev);
+                break;
+
+            case CheckAndUpdateAllEVs ev:
+                CheckAndUpdateAllEVsHandler.Handle(ev);
                 break;
 
             default:
