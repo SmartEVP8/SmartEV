@@ -5,6 +5,7 @@ using Core.Charging.ChargingModel;
 using Core.Charging.ChargingModel.Chargepoint;
 using Engine.Events;
 using Core.Shared;
+using Engine.Vehicles;
 
 /// <summary>
 /// Tracks an active charging session at one side of a charger.
@@ -65,6 +66,7 @@ public class StationService
     private readonly Dictionary<int, ChargerState> _chargerIndex = [];
     private readonly ChargingIntegrator _integrator;
     private readonly EventScheduler _scheduler;
+    private readonly EVStore _eVStore;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="StationService"/> class.
@@ -72,13 +74,16 @@ public class StationService
     /// <param name="stations">The collection of stations to manage.</param>
     /// <param name="integrator">The charging integrator to use for simulating charging sessions.</param>
     /// <param name="scheduler">The event scheduler to use for scheduling future events.</param>
+    /// <param name="evStore">The storage of current EV's.</param>
     public StationService(
         ICollection<Station> stations,
         ChargingIntegrator integrator,
-        EventScheduler scheduler)
+        EventScheduler scheduler,
+        EVStore evStore)
     {
         _integrator = integrator;
         _scheduler = scheduler;
+        _eVStore = evStore;
 
         foreach (var station in stations)
         {
@@ -104,7 +109,7 @@ public class StationService
     /// </summary>
     /// <param name="e">The reservation request event.</param>
     public void HandleReservationRequest(ReservationRequest e)
-        => _scheduler.ScheduleEvent(new ArriveAtStation(e.EVId, e.StationId, e.Time));
+        => _scheduler.ScheduleEvent(new ArriveAtStation(e.EVId, e.StationId, 0.5f, e.Time)); //TODO: FIGURE OUT HOW TO CALC THE WANTED SOC TO CHARGE TO
 
     // TODO: handle cancelrequest
 
@@ -120,14 +125,14 @@ public class StationService
     /// Finds the best compatible charger, joins its queue, and starts charging only if a side is free.
     /// </summary>
     /// <param name="e">The arrival event.</param>
-    /// <param name="ev">The connected EV.</param>
-    public void HandleArrivalAtStation(ArriveAtStation e, ConnectedEV ev)
+    public void HandleArrivalAtStation(ArriveAtStation e)
     {
+        var ev = _eVStore.Get(e.EVId);
         if (!_stationChargers.TryGetValue(e.StationId, out var chargers))
             return;
 
         var target = chargers
-            .Where(cs => cs.Charger.GetSockets().Contains(ev.Socket))
+            .Where(cs => cs.Charger.GetSockets().Contains(ev.Battery.Socket))
             .OrderBy(cs => cs.IsFree ? 0 : 1)
             .ThenBy(cs => cs.Queue.Count)
             .FirstOrDefault();
@@ -135,7 +140,15 @@ public class StationService
         if (target is null)
             return;
 
-        target.Queue.Enqueue((e.EVId, ev));
+        var connectedEV = new ConnectedEV(
+                EVId: e.EVId,
+                CurrentSoC: ev.Battery.StateOfCharge,
+                TargetSoC: e.TargetSoC,
+                CapacityKWh: ev.Battery.Capacity,
+                MaxChargeRateKW: ev.Battery.MaxChargeRate,
+                Socket: ev.Battery.Socket);
+
+        target.Queue.Enqueue((e.EVId, connectedEV));
 
         if (target.IsFree)
             StartCharging(target, e.Time);

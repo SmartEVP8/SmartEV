@@ -77,7 +77,7 @@ public static class TestData
     public static Battery Battery(
         ushort capacity = 100,
         ushort maxChargeRate = 150,
-        float stateOfCharge = 80f,
+        float stateOfCharge = 0.2f,
         Socket socket = Socket.CCS2) =>
         new(capacity, maxChargeRate, stateOfCharge, socket);
 

@@ -41,6 +41,24 @@ public class EVStore(int totalCapacity)
     }
 
     /// <summary>
+    /// Tries to allocate a specified number of EV instances, initializing them using the provided EVInitializer delegate.
+    /// </summary>
+    /// <param name="initialize">The delegate used to initialize the allocated EV instance.</param>
+    /// <param name="allocatedIndex">The allocated index. -1 if allocation fails.</param>
+    /// <returns>True if the allocation was successful, false otherwise.</returns>
+    public bool TryAllocate(EVInitializer initialize, out int allocatedIndex)
+    {
+        allocatedIndex = -1;
+        if (_freeIndexes.Count < 1)
+            return false;
+
+        var index = _freeIndexes.Pop();
+        initialize(index, ref _evs[index]);
+        allocatedIndex = index;
+        return true;
+    }
+
+    /// <summary>
     /// Returns the number of free indexes currently available for allocation.
     /// </summary>
     /// <returns>The Available capacity.</returns>
