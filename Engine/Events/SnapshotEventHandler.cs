@@ -14,6 +14,7 @@ using Engine.Vehicles;
 public class SnapshotEventHandler(
     Time rescheduleTime,
     DateTimeOffset startTime,
+    Dictionary<ushort, Station> stations,
     IReadOnlyList<Station> stations,
     EVStore evStore,
     MetricsService metrics,
@@ -55,15 +56,13 @@ public class SnapshotEventHandler(
     {
         var currentTime = startTime.AddSeconds(e.Time.T);
 
-        // Station snapshots
-        foreach (var station in stations)
+        foreach (var station in stations.Values)
         {
             var metric = StationSnapshotMetric.Collect(
                 station,
                 e.Time,
                 currentTime.DayOfWeek,
-                currentTime.Hour,
-                getDeliveredKW);
+                currentTime.Hour);
             metrics.RecordStationSnapshot(metric);
         }
 

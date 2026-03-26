@@ -67,8 +67,7 @@ public record StationSnapshotMetric
         Station station,
         Time simTime,
         DayOfWeek day,
-        int hour,
-        Func<ChargerBase, double> getDeliveredKW)
+        int hour)
     {
         var totalDeliveredKW = 0f;
         var totalMaxKW = 0f;
@@ -77,7 +76,7 @@ public record StationSnapshotMetric
 
         foreach (var charger in station.Chargers)
         {
-            totalDeliveredKW += (float)getDeliveredKW(charger);
+            totalDeliveredKW += totalDeliveredKW; // TODO: ADD METRICS BACK HERE
             totalMaxKW += charger.MaxPowerKW;
             totalQueueSize += charger.Queue.Count;
             if (charger.Queue.Count > 0) activeChargers++;
