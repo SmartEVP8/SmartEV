@@ -20,7 +20,7 @@ using Engine.Metrics.Snapshots;
 public sealed class MetricsService : IAsyncDisposable
 {
     private readonly IMetricWriter<EVSnapshotMetric>? _cars;
-    private readonly IMetricWriter<DeadlineMetric>? _deadlines;
+    private readonly IMetricWriter<ArrivalAtDestinationMetric>? _deadlines;
 
     private readonly IMetricWriter<SnapshotMetric>? _snapshots;
 
@@ -37,7 +37,7 @@ public sealed class MetricsService : IAsyncDisposable
         if (config.RecordCarSnapshots)
             _cars = new MetricWriter<EVSnapshotMetric>(config.BufferSize, files.GetMetricPath<EVSnapshotMetric>());
         if (config.RecordDeadlines)
-            _deadlines = new MetricWriter<DeadlineMetric>(config.BufferSize, files.GetMetricPath<DeadlineMetric>());
+            _deadlines = new MetricWriter<ArrivalAtDestinationMetric>(config.BufferSize, files.GetMetricPath<ArrivalAtDestinationMetric>());
         if (config.RecordSingleStationSnapshot)
             _snapshots = new MetricWriter<SnapshotMetric>(config.BufferSize, files.GetMetricPath<SnapshotMetric>());
     }
@@ -48,7 +48,7 @@ public sealed class MetricsService : IAsyncDisposable
 
     /// <summary>Records a deadline metric. No-op if deadlines are disabled in config.</summary>
     /// <param name="metric">The deadline metric to record.</param>
-    public void RecordDeadline(DeadlineMetric metric) => _deadlines?.Record(metric);
+    public void RecordArrival(ArrivalAtDestinationMetric metric) => _deadlines?.Record(metric);
 
     /// <summary>Records a station snapshot metric. No-op if station snapshots are disabled in config.</summary>
     /// <param name="metric">The station snapshot metric to record.</param>
