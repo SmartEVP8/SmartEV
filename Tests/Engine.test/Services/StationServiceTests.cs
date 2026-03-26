@@ -164,6 +164,47 @@ public class StationServiceTests
         Assert.Equal(1, newStation.TotalReservations);
     }
 
+    [Fact]
+    public async Task CheckReservationOrderIsCorrect()
+    {
+        var totalRequest = 100;
+        var scheduler = new EventScheduler([]);
+        var evStore = new EVStore(totalRequest);
+        var router = TestData.OSRMRouter;
+
+        var staionId = (ushort)1;
+        var stations = TestData.Stations(
+            (staionId, 1.0, 1.0));
+
+        var stationService = new StationService(
+            stations: [.. stations.Values],
+            integrator: null!,
+            scheduler: scheduler,
+            evStore: evStore,
+            applyNewPath: new ApplyNewPath(router));
+
+        evStore.TryAllocate(totalRequest, (index, ref ev) =>
+        {
+            ev = TestData.EV();
+        });
+
+        for (var i = 0; i < totalRequest; i++)
+        {
+            var reservation = new ReservationRequest(i, staionId, 0, 1);
+            stationService.HandleReservationRequest(reservation);
+        }
+
+        await stationService.WaitForAllScheduled();
+
+        for (var i = 0; i < totalRequest; i++)
+        {
+            var ev = scheduler.GetNextEvent();
+            Assert.NotNull(ev);
+            Assert.IsType<ArriveAtStation>(ev);
+            Assert.Equal(i, ((ArriveAtStation)ev).EVId);
+        }
+    }
+
     private static (StationService service, EventScheduler scheduler, EVStore evStore) BuildSingle(
         int maxPowerKW = 150)
     {

@@ -7,8 +7,6 @@ using Core.Shared;
 using Engine.Events;
 using Engine.Vehicles;
 using Engine.Routing;
-using Engine.Init;
-using System.Collections.Concurrent;
 using Engine.Utils;
 
 /// <summary>
@@ -80,6 +78,8 @@ public class StationService
     private readonly EventScheduler _scheduler;
     private readonly EVStore _eVStore;
     private readonly ApplyNewPath _applyNewPath;
+    private SemaphoreSlim _lastGate = new(1, 1);
+    private Task _lastTask = Task.CompletedTask;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="StationService"/> class.
@@ -141,16 +141,30 @@ public class StationService
         station.IncrementReservations();
         ev.HasReservationAtStationId = e.StationId;
 
-        Task.Run(() =>
-        {
-            ref var ev = ref _eVStore.Get(e.EVId);
-            _applyNewPath.ApplyNewPathToEV(ref ev, station, e.Time);
+        var previousGate = _lastGate;
+        var myGate = new SemaphoreSlim(0, 1);
+        _lastGate = myGate;
 
-            // TODO: Determine the Correct TargetSoC               should be the result of Calculate(TargetSoC)
+        _lastTask = Task.Run(async () =>
+        {
+            var ev = _eVStore.Get(e.EVId);
+            _applyNewPath.ApplyNewPathToEV(ref ev, station, e.Time);
+            _eVStore.Set(e.EVId, ref ev);
+
+            await previousGate.WaitAsync();
+
             _scheduler.ScheduleEvent(
-                    new ArriveAtStation(e.EVId, e.StationId, ev.Battery.Capacity, e.Time + e.DurationToStation));
+                new ArriveAtStation(e.EVId, e.StationId, ev.Battery.Capacity, e.Time + e.DurationToStation));
+
+            myGate.Release();
         });
     }
+
+    /// <summary>
+    /// Waits for all currently scheduled reservation requests to complete.
+    /// </summary>
+    /// <returns>A task that completes when all reservation request handling has completed.</returns>
+    public Task WaitForAllScheduled() => _lastTask;
 
     /// <summary>
     /// Handles a cancellation request from an EV, decrementing the station's active reservation count,
