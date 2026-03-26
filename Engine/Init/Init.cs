@@ -130,9 +130,7 @@ public static class Init
             var scheduler = sp.GetRequiredService<EventScheduler>();
             var evStore = sp.GetRequiredService<EVStore>();
             var applyNewPath = sp.GetRequiredService<ApplyNewPath>();
-            var settings = sp.GetRequiredService<EngineSettings>();
-            var random = settings.Seed;
-            return new StationService(stations.Values, integrator, scheduler, evStore, applyNewPath, random, settings);
+            return new StationService(stations.Values, integrator, scheduler, evStore, applyNewPath);
         });
     }
 

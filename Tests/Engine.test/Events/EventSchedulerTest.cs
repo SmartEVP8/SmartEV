@@ -11,9 +11,9 @@ public class EventSchedulerTest
     [Fact]
     public void ScheduleEventTest()
     {
-        var request1 = new ReservationRequest(1, 1, 10);
-        var request2 = new ReservationRequest(2, 1, 20);
-        var request3 = new ReservationRequest(3, 1, 15);
+        var request1 = new ReservationRequest(1, 1, 10, 0);
+        var request2 = new ReservationRequest(2, 1, 20, 0);
+        var request3 = new ReservationRequest(3, 1, 15, 0);
 
         _scheduler.ScheduleEvent(request1);
         _scheduler.ScheduleEvent(request2);
@@ -45,7 +45,7 @@ public class EventSchedulerTest
     [Fact]
     public void CancelWithManyDifferentEventsTest()
     {
-        var request1 = new ReservationRequest(2, 1, 10);
+        var request1 = new ReservationRequest(2, 1, 10, 0);
         var request2 = new ArriveAtStation(2, 1, 0.6f, 20);
         var request3 = new EndCharging(2, 1, 15);
         var request4 = new ArriveAtDestination(2, 25);

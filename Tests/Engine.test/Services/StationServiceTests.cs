@@ -1,10 +1,9 @@
 namespace Engine.test.Services;
 
-using Core.Charging;
 using Core.Charging.ChargingModel;
-using Core.Charging.ChargingModel.Chargepoint;
 using Core.Shared;
 using Engine.Events;
+using Engine.Routing;
 using Engine.Services;
 using Engine.test.Builders;
 using Engine.Vehicles;
@@ -101,6 +100,9 @@ public class StationServiceTests
         Assert.True(ev2Event.Time > ev1End.Time);
     }
 
+
+    private static OSRMRouter _router = TestData.OSRMRouter;
+
     private static (StationService service, EventScheduler scheduler, EVStore evStore) BuildSingle(
         Socket socket = Socket.CCS2,
         int maxPowerKW = 150)
@@ -110,7 +112,8 @@ public class StationServiceTests
         var scheduler = new EventScheduler([]);
         var integrator = new ChargingIntegrator(stepSeconds: 60);
         var evStore = new EVStore(10);
-        var service = new StationService([station], integrator, scheduler, evStore);
+        var applyNewPath = new ApplyNewPath(_router);
+        var service = new StationService([station], integrator, scheduler, evStore, applyNewPath);
 
         return (service, scheduler, evStore);
     }
@@ -124,9 +127,12 @@ public class StationServiceTests
         var scheduler = new EventScheduler([]);
         var integrator = new ChargingIntegrator(stepSeconds: 60);
         var evStore = new EVStore(10);
-        var service = new StationService([station], integrator, scheduler, evStore);
+        var applyNewPath = new ApplyNewPath(_router);
+        var service = new StationService([station], integrator, scheduler, evStore, applyNewPath);
         return (service, scheduler, evStore);
     }
+
+
 
     private static EndCharging AsEndCharging(Event? e)
     {
