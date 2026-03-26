@@ -109,7 +109,7 @@ public class StationService
     /// </summary>
     /// <param name="e">The reservation request event.</param>
     public void HandleReservationRequest(ReservationRequest e)
-        => _scheduler.ScheduleEvent(new ArriveAtStation(e.EVId, e.StationId, 0.5f, e.Time)); //TODO: FIGURE OUT HOW TO CALC THE WANTED SOC TO CHARGE TO
+        => _scheduler.ScheduleEvent(new ArriveAtStation(e.EVId, e.StationId, 0.5f, e.Time)); // TODO: FIGURE OUT HOW TO CALC THE WANTED SOC TO CHARGE TO
 
     // TODO: handle cancelrequest
 

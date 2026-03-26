@@ -2,10 +2,14 @@ namespace Engine.Events;
 
 using Engine.Services;
 
+/// <summary>
+/// The EventDispatcher is responsible for dispatching events to the correct handlers.
+/// </summary>
 public class EventDispatcher(
         StationService stationService,
         CheckUrgencyHandler checkUrgencyHandler,
-        SnapshotEventHandler snapshotEventHandler)
+        SnapshotEventHandler snapshotEventHandler,
+        DestinationArrivalHandler destinationArrivalHandler)
 {
     /// <summary>
     /// Dispatches the event to the correct handler.
@@ -34,11 +38,11 @@ public class EventDispatcher(
                 break;
 
             case FindCandidateStations ev:
-                //TODO: Cost function here
+                // TODO: Cost function here
                 break;
 
             case ArriveAtDestination ev:
-                //TODO:
+                destinationArrivalHandler.Handle(ev);
                 break;
 
             case CheckUrgency ev:
