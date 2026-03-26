@@ -26,7 +26,7 @@ public class DeadlineMetricTest
         var metric = DeadlineMetric.Collect(ref ev, simNow);
 
         Assert.True(metric.ExpectedDeadline == expectedDeadline);
-        Assert.True(metric.ActualDeadline == simNow);
+        Assert.True(metric.ActualArrivalTime == simNow);
         Assert.Equal(12U, metric.PathDeviation);
     }
 
