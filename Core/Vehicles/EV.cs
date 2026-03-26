@@ -27,6 +27,11 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     public ushort Efficiency { get; } = efficiency;
 
     /// <summary>
+    /// Gets or sets a reservation at a station for the EV.
+    /// </summary>
+    public ushort? HasReservationAtStationId { get; set; }
+
+    /// <summary>
     /// Gets the journey of the EV.
     /// </summary>
     public Journey Journey { get; private set; } = journey;

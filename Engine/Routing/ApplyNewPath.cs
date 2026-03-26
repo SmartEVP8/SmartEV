@@ -1,0 +1,47 @@
+namespace Engine.Routing;
+
+using Core.Shared;
+using Core.Charging;
+using Core.Vehicles;
+using Engine.Utils;
+
+/// <summary>
+/// Calculates detour deviations by querying OSRM routes.
+/// </summary>
+public class ApplyNewPath(IOSRMRouter router)
+{
+    private readonly IOSRMRouter _router = router;
+    
+    /// <summary>
+    /// Fetches the detour route from the EV's current position through the station to the destination,
+    /// decodes the polyline, and splices it into the EV's journey.
+    /// </summary>
+    /// <param name="ev">The EV to reroute.</param>
+    /// <param name="station">The station the EV should reroute through.</param>
+    /// <param name="currentTime">Used to determine the EV's current position in the journey.</param>
+    public void ApplyNewPathToEV(ref EV ev, Station station, Time currentTime)
+    {
+        var currentPos = ev.Journey.CurrentPosition(currentTime);
+        var destination = ev.Journey.Path.Waypoints.Last();
+
+        var (_, polyline) = _router.QueryDestination(
+        [
+            currentPos.Longitude, currentPos.Latitude,
+            station.Position.Longitude, station.Position.Latitude,
+            destination.Longitude, destination.Latitude,
+        ]);
+
+        var detourPath = Polyline6ToPoints.DecodePolyline(polyline);
+
+        var percentageCompleted = (double)(currentTime - ev.Journey.Departure) / (double)ev.Journey.OriginalDuration;
+        var waypointIndex = (int)(percentageCompleted * ev.Journey.Path.Waypoints.Count);
+        var remainingOriginalWaypoints = ev.Journey.Path.Waypoints.Skip(waypointIndex).ToList();
+
+        var newWaypoints = new List<Position> { currentPos }
+            .Concat(remainingOriginalWaypoints)
+            .Concat(detourPath.Waypoints)
+            .ToList();
+
+        ev.Journey.UpdatePath(new Paths(newWaypoints));
+    }    
+}

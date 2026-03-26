@@ -120,7 +120,10 @@ public static class Init
             var integrator = sp.GetRequiredService<ChargingIntegrator>();
             var scheduler = sp.GetRequiredService<EventScheduler>();
             var evStore = sp.GetRequiredService<EVStore>();
-            return new StationService(stations.Values, integrator, scheduler, evStore);
+            var applyNewPath = sp.GetRequiredService<ApplyNewPath>();
+            var settings = sp.GetRequiredService<EngineSettings>();
+            var random = settings.Seed;
+            return new StationService(stations.Values, integrator, scheduler, evStore, applyNewPath, random, settings);
         });
     }
 

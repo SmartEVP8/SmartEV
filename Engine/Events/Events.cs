@@ -24,7 +24,7 @@ public record FindCandidateStations(int EVId, Time Time) : Event(Time), IMiddlew
 //  - Calculate what the path deviation to the station will be from the original journey.
 // Metrics:
 //  - Count of reservation requests and their timestamps for when the reservation requests are made.
-public record ReservationRequest(int EVId, ushort StationId, Time Time) : Event(Time);
+public record ReservationRequest(int EVId, ushort StationId, Time Time, Time DurationToStation) : Event(Time);
 
 // Functionality:
 //  - Should decrease Expected Queue Size by 1 (EQS - 1).
