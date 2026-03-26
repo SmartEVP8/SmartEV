@@ -31,17 +31,11 @@ public class FindCandidateStationsHandler(
         {
             var stationCosts = await findCandidateStationService.ComputeCandidateStationFromCache(e.EVId);
 
-            if (stationCosts.Count == 0)
-                return;
-
             var ev = evStore.Get(e.EVId);
             var stations = stationCosts.Keys.ToArray();
+            var journeyDurations = stationCosts.Values.ToArray();
 
-            var journeys = (
-                duration: stationCosts.Values.ToArray(),
-                distance: new float[stations.Length]);
-
-            var bestStation = computeCost.Compute(ref ev, stations, journeys);
+            var bestStation = computeCost.Compute(ref ev, stations, journeyDurations);
             var reservationRequest = new ReservationRequest(e.EVId, bestStation.Id, e.Time);
             eventScheduler.ScheduleEvent(reservationRequest);
         });
