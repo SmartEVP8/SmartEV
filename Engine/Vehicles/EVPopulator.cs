@@ -3,8 +3,6 @@ namespace Engine.Vehicles;
 using Core.Shared;
 using Engine.Events;
 
-public record SpawnEV(int EVId, Time Time) : Event(Time);
-
 /// <summary>
 /// The EVPopulator class is responsible for creating and scheduling the spawning of EVs.
 /// </summary>
@@ -36,8 +34,6 @@ public class EVPopulator(EVFactory evFactory, EVStore evStore, EventScheduler ev
             _eVStore.TryAllocate(amount, (index, ref ev) =>
             {
                 ev = _evFactory.Create(departure);
-                var spawnEvent = new SpawnEV(index, departure);
-                _eventScheduler.ScheduleEvent(spawnEvent);
             });
         });
     }

@@ -5,7 +5,8 @@ using Engine.Services;
 public class EventDispatcher(
         StationService stationService,
         CheckUrgencyHandler checkUrgencyHandler,
-        SnapshotEventHandler snapshotEventHandler)
+        SnapshotEventHandler snapshotEventHandler,
+        EVService evService)
 {
     /// <summary>
     /// Dispatches the event to the correct handler.
@@ -47,6 +48,10 @@ public class EventDispatcher(
 
             case SnapshotEvent ev:
                 snapshotEventHandler.Handle(ev);
+                break;
+
+            case SpawnEVS ev:
+                evService.Handle(ev);
                 break;
 
             default:
