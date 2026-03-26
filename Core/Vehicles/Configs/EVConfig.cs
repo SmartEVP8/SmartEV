@@ -1,7 +1,7 @@
 namespace Core.Vehicles.Configs;
 
 /// <summary>
-/// Configuration for an EV model, used to instantiate <see cref="Core.Vehicles.EV"/> instances.
+/// Configuration for an EV model, used to instantiate <see cref="EV"/> instances.
 /// </summary>
 public readonly struct EVConfig(string model, float spawnChance, string category, BatteryConfig batteryConfig, ushort efficiency)
 {
@@ -22,7 +22,7 @@ public readonly struct EVConfig(string model, float spawnChance, string category
     public readonly string Category = category;
 
     /// <summary>
-    /// The battery configuration from <see cref="Core.Vehicles.Configs.BatteryConfig"/> describing capacity, charge rate, and socket type.
+    /// The battery configuration from <see cref="Configs.BatteryConfig"/> describing capacity, charge rate, and socket type.
     /// </summary>
     public readonly BatteryConfig BatteryConfig = batteryConfig;
 

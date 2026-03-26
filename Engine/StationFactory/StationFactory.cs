@@ -131,30 +131,23 @@ public class StationFactory
     /// <summary>
     /// Creates a station from a charging location DTO and a predefined charger list.
     /// </summary>
-    /// <param name="id">
-    /// The station identifier.
-    /// </param>
-    /// <param name="location">
-    /// The charging location data.
-    /// </param>
-    /// <param name="chargers">
-    /// The chargers assigned to the station.
-    /// </param>
-    /// <returns>
-    /// The created station.
-    /// </returns>
+    /// <param name="id">The station identifier.</param>
+    /// <param name="location">The charging location data.</param>
+    /// <param name="chargers">The chargers assigned to the station.</param>
+    /// <returns>The created station.</returns>
     private Station CreateStation(ushort id, StationLocationDTO location, List<ChargerBase> chargers)
     {
         var position = new Position(location.Longitude, location.Latitude);
 
-        return new Station(
+        var station = new Station(
             id,
             location.Name ?? string.Empty,
             location.Address ?? string.Empty,
             position,
             chargers,
-            _random,
             _energyPrices);
+
+        return station;
     }
 
     /// <summary>
@@ -255,15 +248,9 @@ public class StationFactory
     /// Ensures every station gets at least one charger.
     /// The distribution is deterministic for a given seed.
     /// </summary>
-    /// <param name="stationCount">
-    /// The number of stations.
-    /// </param>
-    /// <param name="totalChargers">
-    /// The total number of chargers to distribute.
-    /// </param>
-    /// <returns>
-    /// A list where each element is the number of chargers assigned to the corresponding station.
-    /// </returns>
+    /// <param name="stationCount">The number of stations.</param>
+    /// <param name="totalChargers">The total number of chargers to distribute.</param>
+    /// <returns>A list where each element is the number of chargers assigned to the corresponding station.</returns>
     private List<int> DistributeChargersAcrossStations(int stationCount, int totalChargers)
     {
         if (stationCount <= 0)
@@ -294,12 +281,8 @@ public class StationFactory
     /// same fixed order as defined in <see cref="CreateSocketPool"/>, which would lead to
     /// unrealistic clustering of connector types at the first stations.
     /// </remarks>
-    /// <typeparam name="T">
-    /// The type of item in the list.
-    /// </typeparam>
-    /// <param name="list">
-    /// The list to shuffle.
-    /// </param>
+    /// <typeparam name="T">The type of item in the list.</typeparam>
+    /// <param name="list">The list to shuffle.</param>
     private void Shuffle<T>(IList<T> list)
     {
         for (var i = list.Count - 1; i > 0; i--)

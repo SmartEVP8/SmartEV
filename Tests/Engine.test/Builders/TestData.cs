@@ -1,6 +1,9 @@
 namespace Engine.test.Builders;
 
+using System.Collections.Immutable;
 using Core.Charging;
+using Core.Charging.ChargingModel;
+using Core.Charging.ChargingModel.Chargepoint;
 using Core.Shared;
 using Core.Vehicles;
 using Core.Routing;
@@ -9,6 +12,7 @@ using Engine.Grid;
 using Engine.Parsers;
 using Engine.Utils;
 using Engine.StationFactory;
+using Engine.Cost;
 
 /// <summary>
 /// Ugly file for construction of objects more easily where we do not have to specifiy all properties or think about paths.
@@ -16,19 +20,15 @@ using Engine.StationFactory;
 /// </summary>
 public static class TestData
 {
-    private static readonly Random _random = new(1);
-
     public static readonly EnergyPrices EnergyPrices =
         new(new FileInfo(AppContext.GetData("EnergyPricesPath") as string
-            ?? throw new InvalidDataException("EnergyPricesPath not set.")));
+            ?? throw new InvalidDataException("EnergyPricesPath not set.")), new Random(1));
 
-    private static readonly StationFactory _stationFactory = new(
-        new StationFactoryOptions(),
-        _random,
-        EnergyPrices,
-        new FileInfo(AppContext.GetData("ChargersPath") as string ?? throw new SkillissueException()));
+    private static readonly Random _random = new(1);
 
-    public static readonly Dictionary<ushort, Station> AllStations = _stationFactory.CreateStations();
+    private static Dictionary<ushort, Station>? _allStations;
+
+    public static Dictionary<ushort, Station> AllStations => _allStations ??= CreateAllStations();
 
     public static OSRMRouter OSRMRouter
     {
@@ -43,8 +43,26 @@ public static class TestData
 
     public static readonly SpatialGrid SpatialGrid = BuildSpatialGrid(AllStations);
 
-    public static Station Station(ushort id, Position pos, List<ChargerBase>? chargers = null) =>
-        new(id, string.Empty, string.Empty, pos, chargers ?? [], _random, EnergyPrices);
+    public static Station Station(
+        ushort id,
+        Position? pos = null,
+        EnergyPrices? energyPrices = null,
+        int? queueSize = null,
+        List<ChargerBase>? chargers = null)
+    {
+        var position = pos ?? new Position(0, 0);
+        var prices = energyPrices ?? EnergyPrices;
+
+        List<ChargerBase> chargerList;
+        if (chargers != null)
+            chargerList = chargers;
+        else if (queueSize.HasValue)
+            chargerList = [CreateFakeChargerWithQueue(queueSize.Value)];
+        else
+            chargerList = [CreateFakeChargerWithQueue(0)]; // Default: one empty charger
+
+        return new Station(id, string.Empty, string.Empty, position, chargerList, prices);
+    }
 
     public static Dictionary<ushort, Station> Stations(params (ushort Id, double Lon, double Lat)[] stations) =>
         stations.ToDictionary(s => s.Id, s => Station(s.Id, new Position(s.Lon, s.Lat)));
@@ -98,10 +116,72 @@ public static class TestData
             Journey(waypoints),
             efficiency);
 
-    public static EV EV() =>
-        new(
-            Battery(),
-            Preferences(),
-            Journey(null),
-            150);
+    public static SingleCharger SingleCharger(int id, int maxPowerKW = 150)
+    {
+        var connectors = new Connectors([new Connector(Socket.CCS2)]);
+        var point = new SingleChargingPoint(connectors);
+        return new SingleCharger(id, maxPowerKW, point);
+    }
+
+    public static DualCharger DualCharger(int id, int maxPowerKW = 150)
+    {
+        var point = new DualChargingPoint(new Connectors([new Connector(Socket.CCS2)]));
+        return new DualCharger(id, maxPowerKW, point);
+    }
+
+    public static ConnectedEV ConnectedEV(int evId, double currentSoC, double targetSoC, Socket socket = Socket.CCS2)
+    {
+        var model = EVModels.Models.First(m => m.Model == "Volkswagen ID.3");
+        return new ConnectedEV(
+            EVId: evId,
+            CurrentSoC: currentSoC,
+            TargetSoC: targetSoC,
+            CapacityKWh: model.BatteryConfig.MaxCapacityKWh,
+            MaxChargeRateKW: model.BatteryConfig.ChargeRateKW,
+            Socket: socket);
+    }
+
+    internal sealed class FixedEnergyPrices(float fixedPrice) : EnergyPrices(new FileInfo("data/energy_prices.csv"), new Random(42))
+    {
+        private readonly float _fixedPrice = fixedPrice;
+
+        public new float CalculatePrice(DayOfWeek day, int hour) => _fixedPrice;
+    }
+
+    internal sealed class StubCostStore(CostWeights weights) : ICostStore
+    {
+        private readonly CostWeights _weights = weights;
+
+        public CostWeights GetWeights() => _weights;
+
+        public void TrySet(CostWeights update, long seq)
+        {
+        }
+    }
+
+    private sealed class FakeCharger() : ChargerBase(id: 1, maxPowerKW: 100)
+    {
+        public override ImmutableArray<Socket> GetSockets() => [Socket.CCS2];
+    }
+
+    private static Dictionary<ushort, Station> CreateAllStations()
+    {
+        var stationFactory = new StationFactory(
+            new StationFactoryOptions(),
+            _random,
+            EnergyPrices,
+            new FileInfo(AppContext.GetData("ChargersPath") as string ?? throw new SkillissueException()));
+        return stationFactory.CreateStations();
+    }
+
+    private static ChargerBase CreateFakeChargerWithQueue(int queueSize)
+    {
+        var charger = new FakeCharger();
+        for (var i = 0; i < queueSize; i++)
+        {
+            charger.Queue.Enqueue(i);
+        }
+
+        return charger;
+    }
 }
