@@ -61,7 +61,6 @@ public class CheckAndUpdateAllEVsHandler(
         }
 
         var avgSpeed = totalDistance / ev.Journey.OriginalDuration;
-
         var totalDrivingTimeInInterval = interval * avgSpeed / 60;
         return (float)(totalDrivingTimeInInterval / 60) * ev.Efficiency;
     }

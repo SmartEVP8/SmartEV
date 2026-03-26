@@ -26,9 +26,9 @@ public class UpdateAllEVsBenchMark
         _eventScheduler = new EventScheduler([]);
         _evStore = new EVStore(_count);
         var random = new Random(1);
-        for (int i = 0; i < _count; i++)
+        for (var i = 0; i < _count; i++)
         {
-            var battery = new Battery(100, 50, 50, Socket.CCS2);
+            var battery = new Battery(100, 50, 50 * random.NextSingle(), Socket.CCS2);
             var preferences = new Preferences(0, 0, 0);
             var journey = new Journey(0, 100, new Paths([new Position(10 * random.NextSingle(), 10 * random.NextSingle()), new Position(20 * random.NextSingle(), 20 * random.NextSingle())]));
             var ev = new EV(battery, preferences, journey, 10);

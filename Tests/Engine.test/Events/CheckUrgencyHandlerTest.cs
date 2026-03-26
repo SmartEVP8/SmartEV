@@ -1,3 +1,4 @@
+using Engine.test.Builders;
 namespace Testing;
 
 using Engine.Events;
@@ -5,7 +6,7 @@ using Core.Vehicles;
 using Core.Routing;
 using Engine.Vehicles;
 using Core.Shared;
-/*
+
 public class CheckUrgencyHandlerTest
 {
     private EventScheduler _scheduler;
@@ -29,12 +30,10 @@ public class CheckUrgencyHandlerTest
         _evStore.Set(1, ref ev);
 
         var urgencyEvent = new CheckUrgency(1, 0);
-        var handler = new CheckUrgencyHandler(_scheduler, _evStore, 5, new Random(42));
+        var handler = new CheckUrgencyHandler(_scheduler, _evStore, new Random(42));
         handler.Handle(urgencyEvent);
         var nextEvent = _scheduler.GetNextEvent();
-        Assert.IsType<CheckUrgency>(nextEvent);
-        var noNextEvent = _scheduler.GetNextEvent();
-        Assert.Null(noNextEvent);
+        Assert.Null(nextEvent);
     }
 
     [Fact]
@@ -46,17 +45,14 @@ public class CheckUrgencyHandlerTest
             efficiency: 2,
             preferences: new Preferences(priceSensitivity: 0.5f, minAcceptableCharge: 0.1f, maxPathDeviation: 0.0f),
             journey: new Journey(0, 100, new Paths([new Position(10, 10), new Position(20, 20)])));
-        _evStore.Set(1, ref ev);
+        _evStore.Set(2, ref ev);
 
-        var urgencyEvent = new CheckUrgency(1, 0);
-        var handler = new CheckUrgencyHandler(_scheduler, _evStore, 5, new Random(42));
+        var urgencyEvent = new CheckUrgency(2, 0);
+        var handler = new CheckUrgencyHandler(_scheduler, _evStore, new Random(42));
         handler.Handle(urgencyEvent);
         var nextEvent = _scheduler.GetNextEvent();
         Assert.IsType<FindCandidateStations>(nextEvent);
-        var nextCheckUrgencyEvent = _scheduler.GetNextEvent();
-        Assert.IsType<CheckUrgency>(nextCheckUrgencyEvent);
         var noNextEvent = _scheduler.GetNextEvent();
         Assert.Null(noNextEvent);
     }
 }
-*/
