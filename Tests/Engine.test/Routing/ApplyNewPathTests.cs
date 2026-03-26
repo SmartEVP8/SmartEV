@@ -35,23 +35,23 @@ public class ApplyNewPathToEVTests(ITestOutputHelper output)
             new(5, 5),
             new(10, 10),
         };
-    
+
         var ev = TestData.EV(
             waypoints: waypoints,
             originalDuration: new Time(100));
-    
+
         var station = TestData.Station(1, new Position(7, 7));
         var router = TestData.OSRMRouter;
         var applyNewPath = new ApplyNewPath(router);
-    
+
         var currentTime = new Time(50);
-    
+
         applyNewPath.ApplyNewPathToEV(ref ev, station, currentTime);
-    
+
         var newWaypoints = ev.Journey.Path.Waypoints;
-    
+
         Assert.Contains(waypoints[0], newWaypoints);
-    
+
         Assert.Contains(waypoints[1], newWaypoints);
     }
 
@@ -60,13 +60,13 @@ public class ApplyNewPathToEVTests(ITestOutputHelper output)
     {
         var ev = TestData.EV(
             waypoints: [
-                new Position(0, 0),
-                new Position(5, 5),
-                new Position(10, 10)
+                new Position(9.94564, 57.27760),
+                new Position(9.97161, 57.12783),
+                new Position(9.92063, 57.04893)
             ],
             originalDuration: new Time(100));
 
-        var station = TestData.Station(1, new Position(7, 7));
+        var station = TestData.Station(1, new Position(9.97140, 57.08917));
         var applyNewPath = new ApplyNewPath(TestData.OSRMRouter);
 
         var currentTime = new Time(50);

@@ -11,7 +11,7 @@ using Engine.Utils;
 public class ApplyNewPath(IOSRMRouter router)
 {
     private readonly IOSRMRouter _router = router;
-    
+
     /// <summary>
     /// Fetches the detour route from the EV's current position through the station to the destination,
     /// decodes the polyline, and splices it into the EV's journey.
@@ -31,6 +31,8 @@ public class ApplyNewPath(IOSRMRouter router)
             station.Position.Longitude, station.Position.Latitude,
             destination.Longitude, destination.Latitude,
         ]);
+
+        duration /= 60;
 
         var detourPath = Polyline6ToPoints.DecodePolyline(polyline);
 
@@ -69,5 +71,7 @@ public class ApplyNewPath(IOSRMRouter router)
 
         ev.Journey.UpdatePath(new Paths(newWaypoints));
         ev.Journey.UpdateJourneyDuration((Time)(uint)newJourneyDuration);
+
+        var newPosition = ev.Journey.CurrentPosition(currentTime);
     }
 }
