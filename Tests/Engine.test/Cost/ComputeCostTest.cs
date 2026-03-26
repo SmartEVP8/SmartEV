@@ -24,11 +24,9 @@ public class ComputeCostTest
         var stationB = TestData.Station(id: 2, pos: new Position(0, 0));
 
         var stations = new[] { stationA, stationB };
-        var journeys = (
-            duration: new[] { 600f, 800f },
-            distance: new[] { 10f, 20f });
+        var journeyDurations = new[] { 600f, 800f };
 
-        var bestStation = computeCost.Compute(ref ev, stations, journeys);
+        var bestStation = computeCost.Compute(ref ev, stations, journeyDurations);
 
         Assert.Same(stationA, bestStation);
     }
@@ -48,11 +46,9 @@ public class ComputeCostTest
         var highQueueStation = TestData.Station(id: 2, queueSize: 3);
 
         var stations = new[] { lowQueueStation, highQueueStation };
-        var journeys = (
-            duration: new[] { 500f, 500f },
-            distance: new[] { 10f, 10f });
+        var journeyDurations = new[] { 500f, 500f };
 
-        var bestStation = computeCost.Compute(ref ev, stations, journeys);
+        var bestStation = computeCost.Compute(ref ev, stations, journeyDurations);
 
         Assert.Same(lowQueueStation, bestStation);
     }
@@ -75,11 +71,9 @@ public class ComputeCostTest
         var stationB = TestData.Station(id: 2, queueSize: 1);
 
         var stations = new[] { stationA, stationB };
-        var journeys = (
-            duration: new[] { 600f, 800f },
-            distance: new[] { 10f, 20f });
+        var journeyDurations = new[] { 600f, 800f };
 
-        var bestStation = computeCost.Compute(ref ev, stations, journeys);
+        var bestStation = computeCost.Compute(ref ev, stations, journeyDurations);
 
         // Station A: cost = 1 * 100 (deviation) + 1 * 5^2 (queue) = 125
         // Station B: cost = 1 * 300 (deviation) + 1 * 1^2 (queue) = 301
@@ -101,11 +95,9 @@ public class ComputeCostTest
         var stationB = TestData.Station(id: 2, queueSize: 0);
 
         var stations = new[] { stationA, stationB };
-        var journeys = (
-            duration: new[] { 500f, 500f },
-            distance: new[] { 10f, 10f });
+        var journeyDurations = new[] { 500f, 500f };
 
-        var bestStation = computeCost.Compute(ref ev, stations, journeys);
+        var bestStation = computeCost.Compute(ref ev, stations, journeyDurations);
 
         // Both have cost 0, so first in iteration order wins
         Assert.Same(stationA, bestStation);
@@ -134,11 +126,9 @@ public class ComputeCostTest
         expensiveStation.UpdatePrice(DayOfWeek.Monday, 12);
 
         var stations = new[] { cheapStation, expensiveStation };
-        var journeys = (
-            duration: new[] { 500f, 500f },
-            distance: new[] { 10f, 10f });
+        var journeyDuration = new[] { 500f, 500f };
 
-        var bestStation = computeCost.Compute(ref ev, stations, journeys);
+        var bestStation = computeCost.Compute(ref ev, stations, journeyDuration);
 
         // Cheaper station (2.0 DKK/kWh) should be selected over expensive (4.0 DKK/kWh)
         Assert.Same(cheapStation, bestStation);
@@ -156,11 +146,9 @@ public class ComputeCostTest
             150);
 
         var stations = Array.Empty<Station>();
-        var journeys = (
-            duration: Array.Empty<float>(),
-            distance: Array.Empty<float>());
+        var journeyDurations = Array.Empty<float>();
 
         Assert.Throws<System.Data.NoNullAllowedException>(() =>
-            computeCost.Compute(ref ev, stations, journeys));
+            computeCost.Compute(ref ev, stations, journeyDurations));
     }
 }
