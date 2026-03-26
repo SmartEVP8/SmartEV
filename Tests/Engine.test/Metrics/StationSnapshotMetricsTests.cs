@@ -7,20 +7,20 @@ using Engine.Metrics.Snapshots;
 
 public class StationSnapshotMetricTests
 {
-    [Theory]
-    [InlineData(0, 0, 0)]
-    [InlineData(1, 0, 1)]
-    [InlineData(1, 1, 2)]
-    public void ActiveChargers_IsCorrect(int enqueuedOnA, int enqueuedOnB, int expectedActive)
-    {
-        var chargerA = TestData.SingleCharger(id: 1);
-        var chargerB = TestData.SingleCharger(id: 2);
-        for (var i = 0; i < enqueuedOnA; i++) chargerA.Queue.Enqueue(i);
-        for (var i = 0; i < enqueuedOnB; i++) chargerB.Queue.Enqueue(i);
-        var station = TestData.Station(1, chargers: [chargerA, chargerB]);
+        [Theory]
+        [InlineData(0, 0, 0)]
+        [InlineData(1, 0, 1)]
+        [InlineData(1, 1, 2)]
+        public void ActiveChargers_IsCorrect(int enqueuedOnA, int enqueuedOnB, int expectedActive)
+        {
+                var chargerA = TestData.SingleCharger(id: 1);
+                var chargerB = TestData.SingleCharger(id: 2);
+                for (var i = 0; i < enqueuedOnA; i++) chargerA.Queue.Enqueue(i);
+                for (var i = 0; i < enqueuedOnB; i++) chargerB.Queue.Enqueue(i);
+                var station = TestData.Station(1, chargers: [chargerA, chargerB]);
 
-        var metric = StationSnapshotMetric.Collect(station, 0, DayOfWeek.Monday, 0, _ => 0);
+                var metric = StationSnapshotMetric.Collect(station, 0, DayOfWeek.Monday, 0);
 
-        Assert.Equal(expectedActive, metric.ActiveChargers);
-    }
+                Assert.Equal(expectedActive, metric.ActiveChargers);
+        }
 }
