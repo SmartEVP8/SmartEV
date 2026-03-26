@@ -5,12 +5,6 @@ namespace Core.Shared;
 /// The unit of <see cref="T"/> is <b>minutes</b>.
 /// https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/operators/user-defined-conversion-operators
 /// </summary>
-<<<<<<< Overview
-/// <param name="T">The raw timestamp in minutes since the epoch (Monday 00:00).</param>
-public readonly record struct Time(uint T)
-{
-    // Implicitly convert uint → Time
-=======
 /// <param name="T"></param>
 public readonly record struct Time(uint T) : IComparable<Time>
 {
@@ -18,7 +12,6 @@ public readonly record struct Time(uint T) : IComparable<Time>
     public int CompareTo(Time other) => T.CompareTo(other.T);
 
     // Implicitly convert int → Time
->>>>>>> main
     public static implicit operator Time(uint t) => new(t);
 
     // Implicitly convert Time → uint
