@@ -4,12 +4,25 @@ using Engine.Services;
 
 /// <summary>
 /// The EventDispatcher is responsible for dispatching events to the correct handlers.
+/// It has a handler for every <c>Event</c>. If an event is dispatched for which there is no handler, an exception is thrown.
 /// </summary>
+/// <param name="stationService">
+/// The service where the events
+/// <c>ReservationRequest</c>,
+/// <c>CancelRequest</c>,
+/// <c>ArriveAtStation</c>,
+/// and <c>EndCharging</c> are handled.
+/// </param>
+/// <param name="checkUrgencyHandler">Where the event <c>CheckUrgency</c> is handled.</param>
+/// <param name="snapshotEventHandler">Where the event <c>Snapshot</c> is handled.</param>
+/// <param name="destinationArrivalHandler">Where the event <c>ArriveAtDestination</c> is handled.</param>
+/// <param name="evService">Where the event <c>SpawnEVS</c> is handled.</param>
 public class EventDispatcher(
         StationService stationService,
         CheckUrgencyHandler checkUrgencyHandler,
         SnapshotEventHandler snapshotEventHandler,
-        DestinationArrivalHandler destinationArrivalHandler)
+        DestinationArrivalHandler destinationArrivalHandler,
+        EVService evService)
 {
     /// <summary>
     /// Dispatches the event to the correct handler.
@@ -51,6 +64,10 @@ public class EventDispatcher(
 
             case SnapshotEvent ev:
                 snapshotEventHandler.Handle(ev);
+                break;
+
+            case SpawnEVS ev:
+                evService.Handle(ev);
                 break;
 
             default:
