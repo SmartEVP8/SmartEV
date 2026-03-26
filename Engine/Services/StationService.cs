@@ -73,7 +73,7 @@ public class StationService
     private readonly ApplyNewPath _applyNewPath;
     private readonly Random _random;
     private readonly EngineSettings _settings;
-    
+
     /// <summary>
     /// Initializes a new instance of the <see cref="StationService"/> class.
     /// </summary>
