@@ -27,7 +27,7 @@ public class Journey(Time departure, Time originalDuration, Paths path)
     /// </summary>
     public Paths Path { get; private set; } = path;
 
-    private float _runningSumDeviation;
+    private Time _runningSumDeviation;
 
     /// <summary>
     /// Calucates the EV's current position. Assumes the speed is always the same.
@@ -88,11 +88,11 @@ public class Journey(Time departure, Time originalDuration, Paths path)
     /// Gets the running sum of deviations for this journey. 
     /// Can be updated as the journey progresses using the UpdateRunningSumDeviation method.
     /// </summary>
-    public float RunningSumDeviation => _runningSumDeviation;
+    public Time RunningSumDeviation => _runningSumDeviation;
 
     /// <summary> Updates the running sum deviation for this journey.</summary>
     /// <param name="deviation">The new deviation to set.</param>
-    public void UpdateRunningSumDeviation(float deviation) => _runningSumDeviation = deviation;
+    public void UpdateRunningSumDeviation(Time deviation) => _runningSumDeviation = deviation;
 
     /// <summary>
     /// Updates the path of the journey. This can be used to update the path as the journey progresses, e.g. if the EV is rerouted to a different station.
