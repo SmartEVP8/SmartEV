@@ -60,7 +60,7 @@ public record SnapshotMetric
     /// <param name="getDeliveredKW">
     /// A delegate that returns the actual power currently being delivered (in kW)
     /// for a given charger. Provided by the caller since power state lives outside
-    /// this record.
+    /// this record. // TODO: Should be implemented somehow later.
     /// </param>
     /// <returns>A <see cref="SnapshotMetric"/> containing the collected metrics for the station.</returns>
     public static SnapshotMetric Collect(
