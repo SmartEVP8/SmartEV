@@ -152,9 +152,9 @@ public static class Init
             var evPopulator = sp.GetRequiredService<EVPopulator>();
             var scheduler = sp.GetRequiredService<EventScheduler>();
             var settings = sp.GetRequiredService<EngineSettings>();
-            var distributionWindow = settings.EVDistributionInterval;
+            var distributionWindow = settings.EVDistributionWindowsSize;
             var spawnFraction = settings.EVSpawnFraction;
-            return new EVService(evPopulator, scheduler, distributionWindow, spawnFraction);
+            return new EVService(evPopulator, scheduler, distributionWindow, spawnFraction); // TODO: Look into how we can remove DateTime
         });
 
         services.AddSingleton(sp =>

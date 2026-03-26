@@ -67,12 +67,12 @@ public class EngineSettings
     required public Time SimulationEndTime { get; init; }
 
     /// <summary>
-    ///  Gets the interval of the window used for spawning EV distributed.
+    /// Gets the size of the windows in which EVs are spawned, which affects the distribution of EV arrivals over time.
     /// </summary>
-    required public Time EVDistributionInterval { get; init; }
+    required public Time EVDistributionWindowsSize { get; init; }
 
     /// <summary>
-    ///     Gets the fraction of the total EV population that should be spawned in the simulation.
+    /// Gets the fraction of the total EV population that should be spawned in the simulation.
     /// </summary>
     required public double EVSpawnFraction { get; init; }
 
