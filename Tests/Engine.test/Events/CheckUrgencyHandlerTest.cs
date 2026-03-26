@@ -1,4 +1,3 @@
-using Engine.test.Builders;
 namespace Testing;
 
 using Engine.Events;
@@ -20,7 +19,7 @@ public class CheckUrgencyHandlerTest
             efficiency: 2);
 
     private CheckUrgencyHandler MakeHandler() =>
-        new(_scheduler, _evStore, 5, new Random(42));
+        new(_scheduler, _evStore, new Random(42));
 
     [Fact]
     public void LowUrgencySchedulesCheckUrgency()
@@ -37,9 +36,9 @@ public class CheckUrgencyHandlerTest
     public void HighUrgencySchedulesFindCandidate()
     {
         var ev = MakeEV(stateOfCharge: 4f);
-        _evStore.Set(1, ref ev);
+        _evStore.Set(2, ref ev);
 
-        MakeHandler().Handle(new CheckUrgency(1, 0));
+        MakeHandler().Handle(new CheckUrgency(2, 0));
 
         Assert.IsType<FindCandidateStations>(_scheduler.GetNextEvent());
         Assert.Null(_scheduler.GetNextEvent());

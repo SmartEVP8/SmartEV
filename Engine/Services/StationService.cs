@@ -125,7 +125,7 @@ public class StationService
     /// </summary>
     /// <param name="e">The cancel request event.</param>
     public void HandleCancelRequest(CancelRequest e)
-        => _scheduler.CancelEvent(e.EVId);
+        => _scheduler.CancelEvent((uint)e.EVId);
 
     /// <summary>
     /// Called when an EV arrives at a station.
@@ -179,7 +179,7 @@ public class StationService
             case SingleCharger single:
                 single.ChargingPoint.Disconnect();
                 state.SessionA = null;
-                _evStore.Get(e.EVId).IsCharging = false;
+                _eVStore.Get(e.EVId).IsCharging = false;
                 break;
 
             case DualCharger dual:
@@ -187,7 +187,7 @@ public class StationService
                 {
                     dual.ChargingPoint.Disconnect(ChargingSide.Left);
                     state.SessionA = null;
-                    _evStore.Get(e.EVId).IsCharging = false;
+                    _eVStore.Get(e.EVId).IsCharging = false;
 
                     if (state.SessionB is not null && result is not null)
                     {
@@ -214,7 +214,7 @@ public class StationService
                 {
                     dual.ChargingPoint.Disconnect(ChargingSide.Right);
                     state.SessionB = null;
-                    _evStore.Get(e.EVId).IsCharging = false;
+                    _eVStore.Get(e.EVId).IsCharging = false;
                     if (state.SessionA is not null && result is not null)
                     {
                         var updatedSoC = result.ASoCWhenBFinish;
@@ -238,8 +238,6 @@ public class StationService
 
                 break;
         }
-
-        _scheduler.ScheduleEvent(new CheckUrgency(e.EVId, e.Time));
         StartCharging(state, e.Time);
     }
 

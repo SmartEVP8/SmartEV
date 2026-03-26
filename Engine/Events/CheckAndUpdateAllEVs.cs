@@ -26,6 +26,7 @@ public class CheckAndUpdateAllEVsHandler(
     public void Handle(CheckAndUpdateAllEVs checkAndUpdateAllEVs)
     {
         var evsThatNeedChecking = new int[evStore.Count];
+        Array.Fill(evsThatNeedChecking, -1);
 
         Parallel.For(0, evStore.Count, evID =>
         {
@@ -35,7 +36,6 @@ public class CheckAndUpdateAllEVsHandler(
 
             var batteryLost = CalculateStateOfCharge(ev, intervalSize);
             ev.Battery.StateOfCharge -= batteryLost;
-
             var currentBucket = (int)(ev.Battery.StateOfCharge / BatteryInterval);
             var prevBucket = (int)((ev.Battery.StateOfCharge + batteryLost) / BatteryInterval);
 
@@ -44,7 +44,10 @@ public class CheckAndUpdateAllEVsHandler(
         });
 
         foreach (var evID in evsThatNeedChecking)
+        {
+            if (evID == -1) continue;
             eventScheduler.ScheduleEvent(new CheckUrgency(evID, checkAndUpdateAllEVs.Time));
+        }
 
         var nextCheckTime = checkAndUpdateAllEVs.Time + intervalSize;
         var nextCheckEvent = new CheckAndUpdateAllEVs(nextCheckTime);

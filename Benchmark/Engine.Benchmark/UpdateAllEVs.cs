@@ -7,6 +7,12 @@ using BenchmarkDotNet.Attributes;
 using Core.Routing;
 using Core.Shared;
 using Core.Vehicles;
+
+/// <summary>
+/// Benchmark for the CheckAndUpdateAllEVsHandler,
+/// which checks and updates all EVs in the EVStore.
+/// Also creates a FlameGraph which can be found in the BenchmarkDotNet.Artifacts folder after running the benchmark.
+/// </summary>
 [MemoryDiagnoser]
 [EventPipeProfiler(EventPipeProfile.CpuSampling)]
 public class UpdateAllEVsBenchMark
@@ -38,9 +44,16 @@ public class UpdateAllEVsBenchMark
         _checkAndUpdateAllEVsHandler = new CheckAndUpdateAllEVsHandler(_eventScheduler, _evStore, 5, 10);
     }
 
+    /// <summary>
+    /// Ensure that we have a clean EventScheduler for each iteration of the benchmark.
+    /// </summary>
     [IterationCleanup]
     public void IterationCleanup() => _eventScheduler = new EventScheduler([]);
 
+    /// <summary>
+    /// Benchmarks the CheckAndUpdateAllEVsHandler by invoking its Handle method with a CheckAndUpdateAllEVs event,
+    /// which checks and updates all EVs in the EVStore.
+    /// </summary>
     [Benchmark]
     public void UpdateAllEVs() => _checkAndUpdateAllEVsHandler.Handle(new CheckAndUpdateAllEVs(10));
 }

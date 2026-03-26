@@ -112,7 +112,7 @@ public static class Init
             var evStore = sp.GetRequiredService<EVStore>();
             var settings = sp.GetRequiredService<EngineSettings>();
             var intervalSize = settings.IntervalToUpdateEVs;
-            var urgencyInterval = settings.IntervalToCheckUrgency;
+            var urgencyInterval = settings.BatteryIntervalForCheckUrgency;
             return new CheckAndUpdateAllEVsHandler(eventScheduler, evStore, intervalSize, urgencyInterval);
         });
 

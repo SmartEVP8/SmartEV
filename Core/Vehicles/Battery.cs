@@ -18,7 +18,7 @@ public class Battery(ushort capacity, ushort maxChargeRate, float stateOfCharge,
     public ushort MaxChargeRate { get; } = maxChargeRate;
 
     /// <summary>Gets the current state of charge of the battery.</summary>
-    public float StateOfCharge { get; } = stateOfCharge;
+    public float StateOfCharge { get; set; } = stateOfCharge;
 
     /// <summary>Gets the socket type of the battery.</summary>
     public Socket Socket { get; } = socket;
