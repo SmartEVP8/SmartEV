@@ -68,7 +68,7 @@ public static class Program
 
             SnapshotInterval = 1000,
 
-            EVDistributionInterval = 100,
+            EVDistributionWindowsSize = 100,
 
             EVSpawnFraction = 0.01f,
 

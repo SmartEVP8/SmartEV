@@ -8,10 +8,10 @@ using Core.Shared;
 /// </summary>
 /// <param name="dispatcher">The Dispatcher that takes an Event and dispatches it to a handler.</param>
 /// <param name="scheduler">The Scheduler that stores and schedules the Events.</param>
-/// <param name="runUntilStap">A Time that indicates when the simulation should stop.</param>
+/// <param name="runUntilStop">A Time that indicates when the simulation should stop.</param>
 public class Simulation(
     EventDispatcher dispatcher,
-    EventScheduler scheduler, Time runUntilStap)
+    EventScheduler scheduler, Time runUntilStop)
 {
     /// <summary>
     /// Runs the simulation by scheduling initial events
@@ -38,7 +38,7 @@ public class Simulation(
         if (nextEvent != null)
         {
             Console.WriteLine($"Handling event: {nextEvent.GetType().Name} at time {nextEvent.Time}");
-            if (nextEvent.Time > runUntilStap)
+            if (nextEvent.Time > runUntilStop)
             {
                 Console.WriteLine("Reached end of simulation time.");
                 Environment.Exit(0);
