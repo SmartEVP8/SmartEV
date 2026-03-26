@@ -17,7 +17,7 @@ public class Battery(ushort capacity, ushort maxChargeRate, float stateOfCharge,
     /// <summary>Gets the maximum charge rate of the battery.</summary>
     public ushort MaxChargeRate { get; } = maxChargeRate;
 
-    /// <summary>Gets the current state of charge of the battery.</summary>
+    /// <summary>Gets or sets the current state of charge of the battery.</summary>
     public float StateOfCharge { get; set; } = stateOfCharge;
 
     /// <summary>Gets the socket type of the battery.</summary>
