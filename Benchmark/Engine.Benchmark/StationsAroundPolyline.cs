@@ -9,7 +9,6 @@ using BenchmarkDotNet.Diagnosers;
 using Engine.Routing;
 using Engine.Utils;
 using Core.Vehicles;
-using Core.Vehicles.Configs;
 using Core.Routing;
 
 /// <summary>
@@ -41,7 +40,7 @@ public class StationsAroundPolyline
             ?? throw new InvalidOperationException("GridPath not set in project.");
         var csvPath = AppContext.GetData("CSVPath") as string
             ?? throw new InvalidOperationException("CSVPath not set in project.");
-        var _energyPrices = new EnergyPrices(new FileInfo(csvPath));
+        var energyPrices = new EnergyPrices(new FileInfo(csvPath), new Random(42));
         _router = new OSRMRouter(new FileInfo(path));
         var route = _router.QuerySingleDestination(9.935932, 57.046707, 12.5683, 55.6761);
         var polyline = route.polyline;
@@ -56,7 +55,7 @@ public class StationsAroundPolyline
         {
             var lat = 55.95 + (rand.NextDouble() * 1);
             var lon = 8.36 + (rand.NextDouble() * 1.7);
-            _stations.Add((ushort)i, new Station((ushort)i, string.Empty, string.Empty, new Position(lon, lat), null, rand, _energyPrices));
+            _stations.Add((ushort)i, new Station((ushort)i, string.Empty, string.Empty, new Position(lon, lat), [], energyPrices));
         }
 
         var polygons = PolygonParser.Parse(File.ReadAllText(gridPath));
@@ -64,14 +63,19 @@ public class StationsAroundPolyline
         _spatialGrid = new SpatialGrid(grid, _stations);
     }
 
+    /// <summary>
+    /// Cleans up resources after the benchmark is complete.
+    /// </summary>
     [GlobalCleanup]
     public void Cleanup() => _router?.Dispose();
 
+    /// <summary>
+    /// Benchmarks the StationsInPolyline method to evaluate its performance in finding stations within a certain radius of a polyline defined by a path's waypoints.
+    /// </summary>
     [Benchmark]
     public void BenchmarkStationsInPolyline()
     {
         var stationNearBy = _spatialGrid.GetStationsAlongPolyline(_path, _ev.Preferences.MaxPathDeviation);
         _ = ReachableStations.FindReachableStations(_path, _ev, _stations, stationNearBy, _ev.Preferences.MaxPathDeviation);
     }
-
 }

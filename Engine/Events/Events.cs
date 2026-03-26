@@ -35,7 +35,7 @@ public record CancelRequest(int EVId, ushort StationId, Time Time) : Event(Time)
 //  - Should increase Actual Queue Size by 1 (AQS + 1).
 //  - Method for either placing the EV in the queue or if there are no EVs in the queue, immediately start charging.
 //  - Method that stores the EVs arrival time at the station.
-public record ArriveAtStation(int EVId, ushort StationId, Time Time) : Event(Time);
+public record ArriveAtStation(int EVId, ushort StationId, double TargetSoC, Time Time) : Event(Time);
 
 // Functionality:
 //  - Pop next EV from the the queue and start charging that EV and stores the EV's start charging time.
@@ -63,7 +63,7 @@ public record CheckUrgency(int EVId, Time Time) : Event(Time);
 // Spawn
 // Functionality:
 //  - Spawn an EV .
-//  - Sample once from urgency to see if it needs to find a charger immediately.
+// - Sample once from urgency to see if it needs to find a charger immediately.
 public record SnapshotEvent(Time Time) : Event(Time);
 
 // Check urgency

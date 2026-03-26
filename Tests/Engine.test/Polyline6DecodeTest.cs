@@ -1,5 +1,6 @@
-using Engine.Utils;
+namespace Engine.test;
 
+using Engine.Utils;
 
 public class Polyline6DecodeTests
 {

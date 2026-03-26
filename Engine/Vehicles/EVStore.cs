@@ -11,7 +11,20 @@ public class EVStore(int totalCapacity)
     private readonly Stack<int> _freeIndexes = new(Enumerable.Range(0, totalCapacity));
     private readonly EV[] _evs = new EV[totalCapacity];
 
+    /// <summary>
+    /// Attempts to allocate a specified number of EV instances, initializing them using the provided EVInitializer delegate.
+    /// </summary>
+    /// <param name="index">The index of the EV to initialize.</param>
+    /// <param name="ev">The EV instance to initialize.</param>
     public delegate void EVInitializer(int index, ref EV ev);
+
+    /// <summary>
+    /// Tries to allocate a specified number of EV instances, initializing them using the provided EVInitializer delegate.
+    /// </summary>
+    /// <param name="amount">The number of EV instances to allocate.</param>
+    /// <param name="initialize">The delegate used to initialize each allocated EV instance.</param>
+    /// <param name="allocatedIndexes">A span to receive the indexes of the allocated EV instances.</param>
+    /// <returns>True if the allocation was successful, false otherwise.</returns>
     public bool TryAllocate(int amount, EVInitializer initialize, Span<int> allocatedIndexes = default)
     {
         if (_freeIndexes.Count < amount)
@@ -23,6 +36,25 @@ public class EVStore(int totalCapacity)
             if (!allocatedIndexes.IsEmpty)
                 allocatedIndexes[i] = index;
         }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Tries to allocate a specified number of EV instances, initializing them using the provided EVInitializer delegate.
+    /// </summary>
+    /// <param name="initialize">The delegate used to initialize the allocated EV instance.</param>
+    /// <param name="allocatedIndex">The allocated index. -1 if allocation fails.</param>
+    /// <returns>True if the allocation was successful, false otherwise.</returns>
+    public bool TryAllocate(EVInitializer initialize, out int allocatedIndex)
+    {
+        allocatedIndex = -1;
+        if (_freeIndexes.Count < 1)
+            return false;
+
+        var index = _freeIndexes.Pop();
+        initialize(index, ref _evs[index]);
+        allocatedIndex = index;
         return true;
     }
 

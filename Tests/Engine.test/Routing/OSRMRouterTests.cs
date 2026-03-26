@@ -3,7 +3,9 @@ namespace Engine.test.Routing;
 using Core.Charging;
 using Core.Shared;
 using Engine.Routing;
+using Engine.test.Builders;
 
+// If this test ever fails report it. We should have been fixed but just in case.
 public class OSRMRouterTests
 {
     private static readonly double[] _evPosition = [10.2039, 56.1629];
@@ -12,15 +14,21 @@ public class OSRMRouterTests
     private static readonly Position _stationFarPosition = new(10.2100, 56.1700);
 
     private readonly string _osrmPath;
-    private readonly EnergyPrices _energyPrices;
+
+    private OSRMRouter CreateRouter(params Position[] positions)
+    {
+        var router = new OSRMRouter(new FileInfo(_osrmPath));
+        router.InitStations([.. positions.Select((pos, i) => TestData.Station(
+            id: (ushort)(i + 1),
+            pos: pos,
+            energyPrices: TestData.EnergyPrices))]);
+        return router;
+    }
 
     public OSRMRouterTests()
     {
         _osrmPath = AppContext.GetData("OsrmDataPath") as string
             ?? throw new InvalidOperationException("OsrmDataPath not set in project.");
-
-        var csvPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "data", "energy_prices.csv");
-        _energyPrices = new EnergyPrices(new FileInfo(csvPath));
     }
 
     [Fact]
@@ -111,19 +119,5 @@ public class OSRMRouterTests
         Assert.True(
             Math.Abs(tableDurations[0] - routeSum) < 1f,
             $"Table={tableDurations[0]:F1}s RouteSum={routeSum:F1}s — likely wrong leg wired");
-    }
-
-    private OSRMRouter CreateRouter(params Position[] positions)
-    {
-        var router = new OSRMRouter(new FileInfo(_osrmPath));
-        router.InitStations([.. positions.Select((pos, i) => new Station(
-            id: (ushort)(i + 1),
-            name: string.Empty,
-            address: string.Empty,
-            position: pos,
-            chargers: [],
-            random: new Random(1),
-            energyPrices: _energyPrices))]);
-        return router;
     }
 }

@@ -4,8 +4,16 @@ using System.Globalization;
 using Core.Shared;
 using Engine.Spawning;
 
+/// <summary>
+/// Parses city data from a CSV file and creates a list of City objects.
+/// </summary>
 public static class CityParser
 {
+    /// <summary>
+    /// Parses city data from a CSV file and creates a list of City objects.
+    /// </summary>
+    /// <param name="csvPath">The path to the CSV file containing city data.</param>
+    /// <returns>A list of City objects.</returns>
     public static List<City> Parse(FileInfo csvPath)
     {
         return [.. File.ReadLines(csvPath.FullName)

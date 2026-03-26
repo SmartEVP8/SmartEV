@@ -4,7 +4,7 @@ using Core.Shared;
 using Core.Vehicles;
 using Core.Charging;
 using Engine.Routing;
-using Core.Routing;
+using Engine.test.Builders;
 
 public class ReachableStationsTests
 {
@@ -16,21 +16,17 @@ public class ReachableStationsTests
             new Position(0, 0),
             new Position(1, 1),
         ]);
-        var battery = new Battery(100, 50, 50, Socket.CCS2);
+
         var preferences = new Preferences(0.5f, 0.9f, 50.0f);
-        var journey = new Journey(0, 0, new Paths(
-        [
-            new(1, 1),
-            new(1, 2),
-        ]));
-        ushort efficiency = 150;
-        var ev = new EV(battery, preferences, journey, efficiency);
-        var energyPrices = new EnergyPrices(new FileInfo("data/energy_prices.csv"));
+        var ev = TestData.EV(
+                path.Waypoints,
+                TestData.Battery(capacity: 100, maxChargeRate: 150, stateOfCharge: 50));
+
         var stations = new Dictionary<ushort, Station>
         {
-            { 1, new Station(1, "Station A", "Address A", new Position(0.5, 0.5), null, new Random(), energyPrices) },
-            { 2, new Station(2, "Station B", "Address B", new Position(2.0, 2.0), null, new Random(), energyPrices) },
-            { 3, new Station(3, "Station C", "Address C", new Position(0.1, 0.1), null, new Random(), energyPrices) },
+            { 1, TestData.Station(1, new Position(0.5, 0.5)) },
+            { 2, TestData.Station(2, new Position(2.0, 2.0)) },
+            { 3, TestData.Station(3, new Position(0.1, 0.1)) },
         };
 
         var nearbyStations = new List<ushort> { 1, 2, 3 };

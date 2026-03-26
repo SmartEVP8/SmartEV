@@ -52,7 +52,6 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
             float* outDistances
         );
 
-
     [LibraryImport(_lib)]
     private static partial IntPtr ComputeSrcToDest(
         IntPtr osrm,

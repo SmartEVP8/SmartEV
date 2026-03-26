@@ -3,56 +3,45 @@ namespace Testing;
 
 using Engine.Events;
 using Core.Vehicles;
-using Core.Routing;
 using Engine.Vehicles;
 using Core.Shared;
+using Engine.test.Builders;
 
 public class CheckUrgencyHandlerTest
 {
-    private EventScheduler _scheduler;
-    private EVStore _evStore;
+    private readonly EventScheduler _scheduler = new([]);
+    private readonly EVStore _evStore = new(10);
 
-    public CheckUrgencyHandlerTest()
-    {
-        _scheduler = new EventScheduler([]);
-        _evStore = new EVStore(10);
-    }
+    private EV MakeEV(float stateOfCharge) =>
+        TestData.EV(
+            waypoints: [new Position(10, 10), new Position(20, 20)],
+            battery: TestData.Battery(capacity: 50, maxChargeRate: 20, stateOfCharge: stateOfCharge),
+            preferences: TestData.Preferences(PriceSensitivity: 0.5f, MinAcceptableCharge: 0.0f),
+            efficiency: 2);
+
+    private CheckUrgencyHandler MakeHandler() =>
+        new(_scheduler, _evStore, 5, new Random(42));
 
     [Fact]
-    public void LowUrgencySchedulesFindCandidate()
+    public void LowUrgencySchedulesCheckUrgency()
     {
-        var stateOfCharge = 50f;
-        var ev = new EV(
-            battery: new Battery(capacity: 50, maxChargeRate: 20, stateOfCharge: stateOfCharge, socket: Socket.CCS2),
-            efficiency: 2,
-            preferences: new Preferences(priceSensitivity: 0.5f, minAcceptableCharge: 0.1f, maxPathDeviation: 0.0f),
-            journey: new Journey(0, 100, new Paths([new Position(10, 10), new Position(20, 20)])));
+        var ev = MakeEV(stateOfCharge: 50f);
         _evStore.Set(1, ref ev);
 
-        var urgencyEvent = new CheckUrgency(1, 0);
-        var handler = new CheckUrgencyHandler(_scheduler, _evStore, new Random(42));
-        handler.Handle(urgencyEvent);
-        var nextEvent = _scheduler.GetNextEvent();
-        Assert.Null(nextEvent);
+        MakeHandler().Handle(new CheckUrgency(1, 0));
+
+        Assert.Null(_scheduler.GetNextEvent());
     }
 
     [Fact]
     public void HighUrgencySchedulesFindCandidate()
     {
-        var stateOfCharge = 4f;
-        var ev = new EV(
-            battery: new Battery(capacity: 50, maxChargeRate: 20, stateOfCharge: stateOfCharge, socket: Socket.CCS2),
-            efficiency: 2,
-            preferences: new Preferences(priceSensitivity: 0.5f, minAcceptableCharge: 0.1f, maxPathDeviation: 0.0f),
-            journey: new Journey(0, 100, new Paths([new Position(10, 10), new Position(20, 20)])));
-        _evStore.Set(2, ref ev);
+        var ev = MakeEV(stateOfCharge: 4f);
+        _evStore.Set(1, ref ev);
 
-        var urgencyEvent = new CheckUrgency(2, 0);
-        var handler = new CheckUrgencyHandler(_scheduler, _evStore, new Random(42));
-        handler.Handle(urgencyEvent);
-        var nextEvent = _scheduler.GetNextEvent();
-        Assert.IsType<FindCandidateStations>(nextEvent);
-        var noNextEvent = _scheduler.GetNextEvent();
-        Assert.Null(noNextEvent);
+        MakeHandler().Handle(new CheckUrgency(1, 0));
+
+        Assert.IsType<FindCandidateStations>(_scheduler.GetNextEvent());
+        Assert.Null(_scheduler.GetNextEvent());
     }
 }

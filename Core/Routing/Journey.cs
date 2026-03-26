@@ -10,9 +10,23 @@ using Core.Shared;
 /// <param name="path">The path of the journey.</param>
 public class Journey(Time departure, Time originalDuration, Paths path)
 {
-    public readonly Time Departure = departure;
-    public readonly Time OriginalDuration = originalDuration;
-    public Paths Path = path;
+    /// <summary>
+    /// Gets the time the journey started.
+    /// </summary>
+    public Time Departure { get; } = departure;
+
+    /// <summary>
+    /// Gets the original duration of the journey, i.e. the duration of A -> B without any detours.
+    /// </summary>
+    public Time OriginalDuration { get; } = originalDuration;
+
+    /// <summary>
+    /// Gets the path as it is currently. 
+    /// This can be updated as the journey progresses, e.g. if the EV is rerouted to a different station.
+    /// Represented by waypoints that are mutated as the journey progresses.
+    /// </summary>
+    public Paths Path { get; private set; } = path;
+
     private float _runningSumDeviation;
 
     /// <summary>
@@ -79,4 +93,10 @@ public class Journey(Time departure, Time originalDuration, Paths path)
     /// <summary> Updates the running sum deviation for this journey.</summary>
     /// <param name="deviation">The new deviation to set.</param>
     public void UpdateRunningSumDeviation(float deviation) => _runningSumDeviation = deviation;
+
+    /// <summary>
+    /// Updates the path of the journey. This can be used to update the path as the journey progresses, e.g. if the EV is rerouted to a different station.
+    /// </summary>
+    /// <param name="newPath">The new path for the journey.</param>
+    public void UpdatePath(Paths newPath) => Path = newPath;
 }

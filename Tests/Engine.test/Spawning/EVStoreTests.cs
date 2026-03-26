@@ -1,33 +1,33 @@
 namespace Engine.test.Spawning;
 
-using Core.Routing;
-using Core.Shared;
 using Core.Vehicles;
+using Engine.test.Builders;
 using Engine.Vehicles;
 
 public class EVStoreTests
 {
-    private readonly Journey journey = new(
-        0,
-        0,
-        new Paths(new List<Position> { new(1, 1) }));
-
     [Fact]
     public void TryAllocate()
     {
         var evStore = new EVStore(500);
         Span<int> evIndexes = stackalloc int[500];
-        var success = evStore.TryAllocate(500, (_, ref ev) => ev = new EV(new Battery(1, 1, 1, Socket.CCS2), new Preferences(1.5f, 0.1f, 0.0f), journey, 0), evIndexes);
+        var success = evStore.TryAllocate(
+                500,
+                (_, ref ev) => ev = TestData.EV(),
+                evIndexes);
+
         Assert.True(success);
         Assert.Equal(0, evStore.AvailableCapacity());
-        for (var i = 0; i < 500; i++)
-            Assert.Equal(1.5f, evStore.Get(evIndexes[i]).Preferences.PriceSensitivity);
+        Assert.False(evStore.TryAllocate(
+                1,
+                (_, ref _) => throw new InvalidOperationException("Callback should not be invoked when allocation fails.")));
 
-        var failure = evStore.TryAllocate(1, (_, ref _) => throw new InvalidOperationException("Callback should not be invoked when allocation fails."));
-        Assert.False(failure);
+        for (var i = 0; i < 500; i++)
+            Assert.Equal(1f, evStore.Get(evIndexes[i]).Preferences.PriceSensitivity);
 
         evStore.Free(evIndexes[0]);
-        var realloc = evStore.TryAllocate(1, (_, ref ev) => ev = new EV(new Battery(1, 1, 1, Socket.CCS2), new Preferences(1.5f, 0.1f, 0.0f), journey, 0));
+        var realloc = evStore.TryAllocate(1, (_, ref _) => TestData.EV());
+
         Assert.True(realloc);
         Assert.Equal(0, evStore.AvailableCapacity());
     }
@@ -36,14 +36,14 @@ public class EVStoreTests
     public void SetGet()
     {
         var evStore = new EVStore(1);
-        var success = evStore.TryAllocate(1, (_, ref ev) => ev = new EV(new Battery(1, 1, 1, Socket.CCS2), new Preferences(1.5f, 0.1f, 0.0f), journey, 0));
+        var success = evStore.TryAllocate(1, (_, ref ev) => ev = TestData.EV());
 
         Assert.True(success);
 
         var ev = evStore.Get(0);
-        Assert.Equal(1.5f, ev.Preferences.PriceSensitivity);
+        Assert.Equal(1.0f, ev.Preferences.PriceSensitivity);
 
-        var newEv = new EV(new Battery(1, 1, 1, Socket.CCS2), new Preferences(2.0f, 0.1f, 0.0f), journey, 0);
+        var newEv = TestData.EV(preferences: new Preferences(2, 0, 0));
         evStore.Set(0, ref newEv);
 
         ev = evStore.Get(0);

@@ -13,7 +13,7 @@ using Parquet.Serialization;
 /// </para>
 /// <para>The sim thread never waits on I/O. Parquet writes happen entirely on the writer task.</para>
 /// </summary>
-/// <typeparam name="T">Metric type.<typeparam>
+/// <typeparam name="T">Metric type.</typeparam>
 ///
 public sealed class MetricWriter<T> : IMetricWriter<T>
 {

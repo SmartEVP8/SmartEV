@@ -21,4 +21,3 @@ public interface IJourneySamplerProvider
     /// <returns>The computed samplers. Equivelant to calling Current after Recomputation.</returns>
     IJourneySampler Recompute(float scalar);
 }
-

@@ -1,18 +1,17 @@
-namespace Core.Tests.Vehicles;
+namespace Core.test.Vehicles.test;
 
 using Core.Vehicles;
 
 public class UrgencyTests
 {
-
     [Fact]
     public void CalculateChargeUrgency_ReturnsZero_WhenStateOfChargeIsAtUpperBound()
     {
-        float minCharge = 20f;
+        var minCharge = 20f;
 
-        float stateOfCharge = 80f;
+        var stateOfCharge = 80f;
 
-        double urgency = Urgency.CalculateChargeUrgency(stateOfCharge, minCharge);
+        var urgency = Urgency.CalculateChargeUrgency(stateOfCharge, minCharge);
 
         Assert.Equal(0.0, urgency);
     }
@@ -20,11 +19,11 @@ public class UrgencyTests
     [Fact]
     public void CalculateChargeUrgency_ReturnsOne_WhenStateOfChargeIsAtMinimumAcceptableCharge()
     {
-        float minCharge = 20f;
+        var minCharge = 20f;
 
-        float stateOfCharge = 20f;
+        var stateOfCharge = 20f;
 
-        double urgency = Urgency.CalculateChargeUrgency(stateOfCharge, minCharge);
+        var urgency = Urgency.CalculateChargeUrgency(stateOfCharge, minCharge);
 
         Assert.Equal(1.0, urgency);
     }

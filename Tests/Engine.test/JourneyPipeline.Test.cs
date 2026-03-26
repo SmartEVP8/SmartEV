@@ -7,14 +7,6 @@ using Engine.Spawning;
 
 public class JourneyPipelineTests
 {
-    private class StubRouter(float[] distances) : IMatrixRouter
-    {
-        private readonly float[] _distances = distances;
-
-        public (float[], float[]) QueryPointsToPoints(double[] origins, double[] destinations)
-            => ([], _distances);
-    }
-
     private static Position Pos() => new(0.0, 0.0);
 
     private static City MakeCity(string name, int pop) => new(name, Pos(), pop);
@@ -37,7 +29,6 @@ public class JourneyPipelineTests
     {
         var grid = MakeGrid(spawnableCount: 0);
         var cities = new List<City> { MakeCity("X", pop: 5000) };
-
 
         Assert.Throws<InvalidOperationException>(() => new JourneyPipeline(grid, cities, new StubRouter([])));
     }
@@ -80,5 +71,13 @@ public class JourneyPipelineTests
 
         Assert.InRange(cell.Centerpoint.Longitude, min.Longitude, max.Longitude);
         Assert.InRange(cell.Centerpoint.Latitude, min.Latitude, max.Latitude);
+    }
+
+    private class StubRouter(float[] distances) : IMatrixRouter
+    {
+        private readonly float[] _distances = distances;
+
+        public (float[], float[]) QueryPointsToPoints(double[] origins, double[] destinations)
+            => ([], _distances);
     }
 }

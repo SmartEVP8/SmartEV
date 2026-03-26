@@ -5,7 +5,6 @@ using Core.Charging.ChargingModel;
 using Core.Shared;
 using Engine.Cost;
 using Engine.Events;
-using Engine.Events.Middleware;
 using Engine.Grid;
 using Engine.Metrics;
 using Engine.Parsers;
@@ -16,8 +15,15 @@ using Engine.Services;
 using Engine.Vehicles;
 using Microsoft.Extensions.DependencyInjection;
 
+/// <summary>
+/// Initializes the Engine by setting up all necessary services and configurations.
+/// </summary>
 public static class Init
 {
+    /// <summary>
+    /// Initializes the Engine with the required services and configurations.
+    /// </summary>
+    /// <param name="services">The service collection to initialize.</param>
     public static void InitEngine(IServiceCollection services)
     {
         services.AddSingleton<IOSRMRouter>(sp =>
@@ -79,7 +85,8 @@ public static class Init
         {
             var settings = sp.GetRequiredService<EngineSettings>();
             var path = settings.EnergyPricesPath;
-            return new EnergyPrices(path);
+            var random = settings.Seed;
+            return new EnergyPrices(path, random);
         });
 
         services.AddSingleton(sp =>

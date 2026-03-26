@@ -11,6 +11,9 @@ using Engine.Utils;
 
 public class FindCandidateStationServiceTests
 {
+    private record FakeMiddlewareEvent : IMiddlewareEvent
+    { }
+
     private static readonly Paths _path = TestData.Route(9.935932, 57.046707, 12.5683, 55.6761);
 
     private static (EVStore store, int index) EVStoreWith(EV ev)
@@ -34,7 +37,7 @@ public class FindCandidateStationServiceTests
     [Fact]
     public async Task ComputeFromCache_ReturnsDurationPerStation()
     {
-        var ev = TestData.EV(_path);
+        var ev = TestData.EV(_path.Waypoints);
         var (store, index) = EVStoreWith(ev);
         var sut = CreateSut(store);
 
@@ -48,7 +51,7 @@ public class FindCandidateStationServiceTests
     [Fact]
     public async Task ComputeFromCache_Throws_WhenNeverPrecomputed()
     {
-        var (store, _) = EVStoreWith(TestData.EV(_path));
+        var (store, _) = EVStoreWith(TestData.EV(_path.Waypoints));
         var sut = CreateSut(store);
 
         await Assert.ThrowsAsync<SkillissueException>(() =>
@@ -58,7 +61,7 @@ public class FindCandidateStationServiceTests
     [Fact]
     public void PreCompute_Throws_WhenWrongEventType()
     {
-        var (store, _) = EVStoreWith(TestData.EV(_path));
+        var (store, _) = EVStoreWith(TestData.EV(_path.Waypoints));
         var sut = CreateSut(store);
 
         Assert.Throws<SkillissueException>(() =>
@@ -68,7 +71,7 @@ public class FindCandidateStationServiceTests
     [Fact]
     public async Task PreCompute_CalledTwice_OverwritesPreviousResult()
     {
-        var ev = TestData.EV(_path);
+        var ev = TestData.EV(_path.Waypoints);
         var (store, index) = EVStoreWith(ev);
         var sut = CreateSut(store);
         var e = new FindCandidateStations(index, default);
@@ -79,7 +82,4 @@ public class FindCandidateStationServiceTests
 
         Assert.NotEmpty(result);
     }
-
-    private record FakeMiddlewareEvent : IMiddlewareEvent
-    { }
 }

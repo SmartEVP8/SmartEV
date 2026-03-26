@@ -1,20 +1,21 @@
 namespace Engine.test.Metrics;
 
 using Engine.Metrics;
+using Engine.Metrics.Snapshots;
 using Parquet.Serialization;
-using Xunit;
 
 public class MetricsServiceIntegrationTests
 {
+    private readonly DirectoryInfo _dir = new(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()));
+
     [Fact]
     public async Task RecordsAreWrittenToParquet()
     {
-        var dir = new DirectoryInfo(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()));
         var runId = Guid.NewGuid();
         var config = new MetricsConfig
         {
             BufferSize = 3,
-            OutputDirectory = dir,
+            OutputDirectory = _dir,
             RecordCarSnapshots = true,
         };
 
@@ -24,7 +25,7 @@ public class MetricsServiceIntegrationTests
                 service.RecordCar(new EVSnapshotMetric());
         }
 
-        var files = new MetricsFileManager(dir, runId);
+        var files = new MetricsFileManager(_dir, runId);
         var results = await ParquetSerializer.DeserializeAsync<EVSnapshotMetric>(files.GetMetricPath<EVSnapshotMetric>().FullName);
         Assert.Equal(5, results.Count);
     }
@@ -32,12 +33,11 @@ public class MetricsServiceIntegrationTests
     [Fact]
     public async Task DisabledMetricProducesNoFile()
     {
-        var dir = new DirectoryInfo(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()));
         var runId = Guid.NewGuid();
         var config = new MetricsConfig
         {
             BufferSize = 3,
-            OutputDirectory = dir,
+            OutputDirectory = _dir,
             RecordCarSnapshots = false,
         };
 
@@ -46,7 +46,7 @@ public class MetricsServiceIntegrationTests
             service.RecordCar(new EVSnapshotMetric());
         }
 
-        var files = new MetricsFileManager(dir, runId);
+        var files = new MetricsFileManager(_dir, runId);
         Assert.False(files.GetMetricPath<EVSnapshotMetric>().Exists);
     }
 }

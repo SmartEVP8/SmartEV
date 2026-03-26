@@ -1,4 +1,4 @@
-namespace Engine.Metrics;
+namespace Engine.Metrics.Snapshots;
 
 using Core.Charging;
 using System;
@@ -90,7 +90,7 @@ public record SnapshotMetric
             TotalDeliveredKW = totalDeliveredKW,
             TotalMaxKW = totalMaxKW,
             TotalQueueSize = totalQueueSize,
-            Price = station.CalculatePrice(day, hour),
+            Price = station.UpdatePrice(day, hour),
             ActiveChargers = activeChargers,
             TotalChargers = station.Chargers.Count,
         };
