@@ -16,7 +16,7 @@ public readonly struct DeadlineMetric
     /// <summary>
     /// Gets the actual arrival time at the destination for a journey.
     /// </summary>
-    required public Time ActualDeadline { get; init; }
+    required public Time ActualArrivalTime { get; init; }
 
     /// <summary>
     /// Gets the path deviation for a journey.
@@ -26,7 +26,7 @@ public readonly struct DeadlineMetric
     /// <summary>
     /// Gets the difference between actual and expected deadline.
     /// </summary>
-    public Time DeltaDeadline => ActualDeadline - ExpectedDeadline;
+    public Time DeltaDeadline => ActualArrivalTime - ExpectedDeadline;
 
     /// <summary>
     /// Gets a value indicating whether the expected deadline was missed.
@@ -46,7 +46,7 @@ public readonly struct DeadlineMetric
         return new DeadlineMetric
         {
             ExpectedDeadline = expectedDeadline,
-            ActualDeadline = simNow,
+            ActualArrivalTime = simNow,
             PathDeviation = ev.Journey.RunningSumDeviation,
         };
     }
