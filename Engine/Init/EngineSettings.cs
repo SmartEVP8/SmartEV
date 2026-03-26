@@ -40,9 +40,14 @@ public class EngineSettings
     required public int CurrentAmoutOfEVsInDenmark { get; init; }
 
     /// <summary>
+    /// Gets the interval at which the event for updating EVs should happen at.
+    /// </summary>
+    required public uint IntervalToUpdateEVs { get; init; }
+
+    /// <summary>
     /// Gets the interval at which the engine checks for urgent EVs.
     /// </summary>
-    required public int IntervalToCheckUrgency { get; init; }
+    required public ushort BatteryIntervalForCheckUrgency { get; init; }
 
     /// <summary>
     /// Gets the number of seconds an EV is expected to spend charging at a station, used for simulating charging time and scheduling.

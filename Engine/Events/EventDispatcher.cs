@@ -4,7 +4,17 @@ using Engine.Services;
 
 /// <summary>
 /// The EventDispatcher is responsible for dispatching events to the correct handlers.
+/// It has a handler for every <c>Event</c>. If an event is dispatched for which there is no handler, an exception is thrown.
 /// </summary>
+/// <param name="stationService">
+/// The service where the events
+/// <c>ReservationRequest</c>,
+/// <c>CancelRequest</c>,
+/// <c>ArriveAtStation</c>,
+/// and <c>EndCharging</c> are handled.
+/// </param>
+/// <param name="checkUrgencyHandler">Where the event <c>CheckUrgency</c> is handled.</param>
+/// <param name="snapshotEventHandler">Where the event <c>Snapshot</c> is handled.</param>
 public class EventDispatcher(
         StationService stationService,
         CheckUrgencyHandler checkUrgencyHandler,
@@ -40,10 +50,11 @@ public class EventDispatcher(
 
             case FindCandidateStations ev:
                 // TODO: Cost function here
+                // TODO: Cost function here
                 break;
 
             case ArriveAtDestination ev:
-                destinationArrivalHandler.Handle(ev);
+                // TODO:
                 break;
 
             case CheckUrgency ev:

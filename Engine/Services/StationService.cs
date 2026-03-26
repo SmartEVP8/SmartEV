@@ -16,7 +16,9 @@ public record ChargingSession(
     int EVId,
     ConnectedEV EV,
     Time StartTime,
-    ChargingSide? Side); // null for single chargers
+    ChargingSide? Side,  // null for single chargers
+    uint? EndChargingCancellationToken // Gets set after scheduling
+);
 
 /// <summary>
 /// Tracks the runtime state of a charger, active sessions, waiting queue, and last integration result.
@@ -37,6 +39,11 @@ public class ChargerState(ChargerBase charger)
     /// Gets or sets the active charging session at side A, or null if free. Always used for single chargers.
     /// </summary>
     public ChargingSession? SessionA { get; set; }
+
+    /// <summary>
+    /// Gets or sets The id used for cancellation of the EndChargingEvent.
+    /// </summary>
+    public uint CancellationToken { get; set; }
 
     /// <summary>
     /// Gets or sets the active charging session at side B, or null if free. Always null for single chargers.
@@ -166,7 +173,7 @@ public class StationService
 
         station.DecrementReservations();
 
-        _scheduler.CancelEvent(e.EVId);
+        _scheduler.CancelEvent((uint)e.EVId);
 
         ev.HasReservationAtStationId = null;
     }
@@ -223,6 +230,7 @@ public class StationService
             case SingleCharger single:
                 single.ChargingPoint.Disconnect();
                 state.SessionA = null;
+                _eVStore.Get(e.EVId).IsCharging = false;
                 break;
 
             case DualCharger dual:
@@ -230,6 +238,7 @@ public class StationService
                 {
                     dual.ChargingPoint.Disconnect(ChargingSide.Left);
                     state.SessionA = null;
+                    _eVStore.Get(e.EVId).IsCharging = false;
 
                     if (state.SessionB is not null && result is not null)
                     {
@@ -238,7 +247,11 @@ public class StationService
                         {
                             EV = state.SessionB.EV with { CurrentSoC = updatedSoC }
                         };
-                        _scheduler.CancelEvent(state.SessionB.EVId);
+
+                        if (state.SessionB!.EndChargingCancellationToken is { } token)
+                        {
+                            _scheduler.CancelEvent(token);
+                        }
 
                         if (updatedSoC >= state.SessionB.EV.TargetSoC)
                         {
@@ -251,7 +264,7 @@ public class StationService
                 {
                     dual.ChargingPoint.Disconnect(ChargingSide.Right);
                     state.SessionB = null;
-
+                    _eVStore.Get(e.EVId).IsCharging = false;
                     if (state.SessionA is not null && result is not null)
                     {
                         var updatedSoC = result.ASoCWhenBFinish;
@@ -259,7 +272,11 @@ public class StationService
                         {
                             EV = state.SessionA.EV with { CurrentSoC = updatedSoC }
                         };
-                        _scheduler.CancelEvent(state.SessionA.EVId);
+
+                        if (state.SessionA!.EndChargingCancellationToken is { } token)
+                        {
+                            _scheduler.CancelEvent(token);
+                        }
 
                         if (updatedSoC >= state.SessionA.EV.TargetSoC)
                         {
@@ -296,7 +313,7 @@ public class StationService
                         break;
                     }
 
-                    state.SessionA = new ChargingSession(next.EVId, next.EV, simNow, null);
+                    state.SessionA = new ChargingSession(next.EVId, next.EV, simNow, null, null);
 
                     var result = _integrator.IntegrateSingleToCompletion(
                         simNow, single.MaxPowerKW, single.ChargingPoint, state.SessionA.EV);
@@ -322,7 +339,7 @@ public class StationService
                         var side = dual.ChargingPoint.TryConnect(candidate.EV.Socket);
                         if (side is null) break;
                         state.Queue.Dequeue();
-                        var session = new ChargingSession(candidate.EVId, candidate.EV, simNow, side);
+                        var session = new ChargingSession(candidate.EVId, candidate.EV, simNow, side, null);
                         if (side == ChargingSide.Left) state.SessionA = session;
                         else state.SessionB = session;
                     }
@@ -331,9 +348,15 @@ public class StationService
                     if (!hadBothBefore && nowHasBoth && (wasAloneA || wasAloneB))
                     {
                         if (wasAloneA && oldFinishA is not null)
-                            _scheduler.CancelEvent(state.SessionA!.EVId);
+                        {
+                            if (state.SessionA!.EndChargingCancellationToken is { } token)
+                                _scheduler.CancelEvent(token);
+                        }
                         else if (wasAloneB && oldFinishB is not null)
-                            _scheduler.CancelEvent(state.SessionB!.EVId);
+                        {
+                            if (state.SessionB!.EndChargingCancellationToken is { } token)
+                                _scheduler.CancelEvent(token);
+                        }
                     }
 
                     if (state.SessionA is null && state.SessionB is null) break;
@@ -349,10 +372,16 @@ public class StationService
                     state.LastResult = dualResult;
 
                     if (state.SessionA is not null)
-                        _scheduler.ScheduleEvent(new EndCharging(state.SessionA.EVId, dual.Id, dualResult.FinishTimeA!.Value));
+                    {
+                        var token = _scheduler.ScheduleEvent(new EndCharging(state.SessionA.EVId, dual.Id, dualResult.FinishTimeA!.Value));
+                        state.SessionA = state.SessionA with { EndChargingCancellationToken = token };
+                    }
 
                     if (state.SessionB is not null)
-                        _scheduler.ScheduleEvent(new EndCharging(state.SessionB.EVId, dual.Id, dualResult.FinishTimeB!.Value));
+                    {
+                        var token = _scheduler.ScheduleEvent(new EndCharging(state.SessionB.EVId, dual.Id, dualResult.FinishTimeB!.Value));
+                        state.SessionB = state.SessionB with { EndChargingCancellationToken = token };
+                    }
 
                     break;
                 }

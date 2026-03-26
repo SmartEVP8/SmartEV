@@ -8,15 +8,15 @@ using Core.Shared;
 /// <param name="preProcessors">Middleware/Preprocessors that are fired on MiddlewareEvents if attatched.</param>
 public class EventScheduler(Dictionary<Type, Action<IMiddlewareEvent>> preProcessors)
 {
-    private readonly PriorityQueue<Event, (uint, uint)> _eventPriorityQueue = new();
+    private readonly PriorityQueue<Event, (Time, uint)> _eventPriorityQueue = new();
 
     /// <summary>
     /// Optional event handlers that can perform actions on scheduleEvent.
     /// </summary>
     private readonly Dictionary<Type, Action<IMiddlewareEvent>> _preProcessors = preProcessors;
-    private readonly HashSet<int> _canceledEvents = [];
+    private readonly HashSet<uint> _canceledEvents = [];
     private Time _currentTime = 0;
-    private Time _evSequeenceId = 0;
+    private uint _evSequeenceId = 0;
 
     /// <summary>
     /// Schedules the event <paramref name="e"/> at its Time attribute.
@@ -24,7 +24,8 @@ public class EventScheduler(Dictionary<Type, Action<IMiddlewareEvent>> preProces
     /// </summary>
     /// <param name="e">The event to be scheduled.</param>
     /// <exception cref="ArgumentOutOfRangeException">If the events timestamp is before current time.</exception>
-    public void ScheduleEvent(Event e)
+    /// <returns>The id to give to <see cref="CancelEvent(uint)"/> in order to cancel.</returns>
+    public uint ScheduleEvent(Event e)
     {
         var timestamp = e.Time;
         if (timestamp < _currentTime)
@@ -33,7 +34,9 @@ public class EventScheduler(Dictionary<Type, Action<IMiddlewareEvent>> preProces
         if (e is IMiddlewareEvent me && _preProcessors.TryGetValue(me.GetType(), out var handler))
             handler.Invoke(me);
 
-        _eventPriorityQueue.Enqueue(e, (timestamp, _evSequeenceId++));
+        var id = _evSequeenceId++;
+        _eventPriorityQueue.Enqueue(e, (timestamp, id));
+        return id;
     }
 
     /// <summary>
@@ -47,9 +50,9 @@ public class EventScheduler(Dictionary<Type, Action<IMiddlewareEvent>> preProces
 
         _eventPriorityQueue.TryDequeue(out var e, out var priority);
         _currentTime = priority.Item1;
-        if (e is CancelableEvent cancelableEvent && _canceledEvents.Contains(cancelableEvent.EVId))
+        if (_canceledEvents.Contains(priority.Item2))
         {
-            _canceledEvents.Remove(cancelableEvent.EVId);
+            _canceledEvents.Remove(priority.Item2);
             return GetNextEvent();
         }
 
@@ -64,15 +67,10 @@ public class EventScheduler(Dictionary<Type, Action<IMiddlewareEvent>> preProces
     /// Cancels a CancelableEvent by adding it to the set of canceled events.
     /// When the event is dequeued, it will be skipped.
     /// </summary>
-    /// <param name="evID">The evID from which a CancelableEvent should be cancelled bu.</param>
-    /// <exception cref="InvalidOperationException">
-    /// Thrown when attempting to cancel an event for an EV that already has a pending
-    /// cancellation, violating the invariant that an EV can only have one cancelable event at a time.
-    /// </exception>
-    public void CancelEvent(int evID)
+    /// <param name="cancelId">The id from which a event should be cancelled.</param>
+    public void CancelEvent(uint cancelId)
     {
-        if (_canceledEvents.Contains(evID))
-            throw new InvalidOperationException($"Event with EVId {evID} is already cancelled.");
-        _canceledEvents.Add(evID);
+        if (!_canceledEvents.Contains(cancelId))
+            _canceledEvents.Add(cancelId);
     }
 }
