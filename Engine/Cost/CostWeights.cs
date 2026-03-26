@@ -7,5 +7,6 @@ public record CostWeights(
     float Urgency = 0,
     float ExpectedWaitTime = 0,
     float AvailableChargerRatio = 0
+
 // ...
 );
