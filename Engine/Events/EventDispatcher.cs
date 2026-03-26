@@ -9,6 +9,7 @@ public class EventDispatcher(
         StationService stationService,
         CheckUrgencyHandler checkUrgencyHandler,
         SnapshotEventHandler snapshotEventHandler,
+        EVService evService,
         DestinationArrivalHandler destinationArrivalHandler)
 {
     /// <summary>
@@ -51,6 +52,10 @@ public class EventDispatcher(
 
             case SnapshotEvent ev:
                 snapshotEventHandler.Handle(ev);
+                break;
+
+            case SpawnEVS ev:
+                evService.Handle(ev);
                 break;
 
             default:
