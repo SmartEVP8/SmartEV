@@ -34,23 +34,23 @@ public readonly record struct Time(uint T) : IComparable<Time>
 
     /// <summary>
     /// Gets the 0-based day-of-week index for this timestamp.
-    /// 0 = Monday … 6 = Sunday (epoch is Monday).
+    /// 0 = Sunday … 6 = Saturday (epoch is Monday).
     /// </summary>
     public uint DayOfWeekIndex => (T / MinutesPerDay) % 7;
 
     /// <summary>
     /// Gets the day of the week for this timestamp.
-    /// Epoch (T = 0) is Monday.
+    /// Epoch (T = 0) is Sunday.
     /// </summary>
     public DayOfWeek DayOfWeek => DayOfWeekIndex switch
     {
-        0 => DayOfWeek.Monday,
-        1 => DayOfWeek.Tuesday,
-        2 => DayOfWeek.Wednesday,
-        3 => DayOfWeek.Thursday,
-        4 => DayOfWeek.Friday,
-        5 => DayOfWeek.Saturday,
-        6 => DayOfWeek.Sunday,
+        0 => DayOfWeek.Sunday,
+        1 => DayOfWeek.Monday,
+        2 => DayOfWeek.Tuesday,
+        3 => DayOfWeek.Wednesday,
+        4 => DayOfWeek.Thursday,
+        5 => DayOfWeek.Friday,
+        6 => DayOfWeek.Saturday,
         _ => throw new InvalidOperationException("Unreachable")
     };
 
@@ -82,7 +82,7 @@ public readonly record struct Time(uint T) : IComparable<Time>
     /// <summary>
     /// Constructs a <see cref="Time"/> from explicit day, hour, and minute components.
     /// </summary>
-    /// <param name="day">Zero-based day offset from the epoch (0 = Monday).</param>
+    /// <param name="day">Zero-based day offset from the epoch (0 = Sunday).</param>
     /// <param name="hour">Hour of day (0–23).</param>
     /// <param name="minute">Minute of hour (0–59).</param>
     /// <returns>A <see cref="Time"/> representing the given point in simulation time.</returns>

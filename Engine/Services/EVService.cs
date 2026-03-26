@@ -15,7 +15,7 @@ public class EVService(
     EVPopulator evPopulator,
     EventScheduler scheduler,
     Time distributionWindow,
-    int spawnFraction)
+    double spawnFraction)
 {
     private readonly CarsInPeriod _carsInPeriod = new(distributionWindow, spawnFraction);
 
