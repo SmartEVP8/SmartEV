@@ -57,16 +57,13 @@ public class ApplyNewPath(IOSRMRouter router)
                 waypointIndex = index + 1;
                 break;
             }
-            
+
             distanceCovered += length;
         }
 
         var pastJourney = ev.Journey.Path.Waypoints.Take(waypointIndex).ToList();
 
-        var newWaypoints = pastJourney
-            .Concat([currentPos])
-            .Concat(detourPath.Waypoints)
-            .ToList();
+        List<Position> newWaypoints = [..pastJourney, currentPos, ..detourPath.Waypoints];
 
         var newJourneyDuration = timeTravelled + duration;
 
