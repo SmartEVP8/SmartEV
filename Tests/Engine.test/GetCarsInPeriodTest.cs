@@ -13,8 +13,8 @@ public class GetCarsInPeriodTest
     [Fact]
     public void ZeroFraction_ReturnsZero()
     {
-        var sut = new CarsInPeriod(_spawnFrequency, 0.0);
-        var result = sut.GetCarsInPeriod(1);
+        var carsInPeriod = new CarsInPeriod(_spawnFrequency, 0.0);
+        var result = carsInPeriod.GetCarsInPeriod(1);
         Assert.Equal(0, result);
     }
 
