@@ -16,12 +16,14 @@ using Engine.Services;
 /// <param name="checkUrgencyHandler">Where the event <c>CheckUrgency</c> is handled.</param>
 /// <param name="snapshotEventHandler">Where the event <c>Snapshot</c> is handled.</param>
 /// <param name="destinationArrivalHandler">Where the event <c>ArriveAtDestination</c> is handled.</param>
+/// <param name="findCandidateStationsHandler">Where the event <c>FindCandidateStations</c> is handled.</param>
 /// <param name="evService">Where the event <c>SpawnEVS</c> is handled.</param>
 public class EventDispatcher(
         StationService stationService,
         CheckUrgencyHandler checkUrgencyHandler,
         SnapshotEventHandler snapshotEventHandler,
         DestinationArrivalHandler destinationArrivalHandler,
+        FindCandidateStationsHandler findCandidateStationsHandler,
         EVService evService)
 {
     /// <summary>
@@ -51,7 +53,7 @@ public class EventDispatcher(
                 break;
 
             case FindCandidateStations ev:
-                // TODO: Cost function here
+                findCandidateStationsHandler.Handle(ev);
                 break;
 
             case ArriveAtDestination ev:
