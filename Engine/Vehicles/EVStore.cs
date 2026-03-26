@@ -80,5 +80,8 @@ public class EVStore(int totalCapacity)
     /// <returns>A reference to the EV at the specified index.</returns>
     public ref EV Get(int index) => ref _evs[index];
 
+    /// <summary>
+    /// Gets the total capacity of the EVStore, which is the maximum number of EV instances it can hold.
+    /// </summary>
     public int Count => totalCapacity;
 }

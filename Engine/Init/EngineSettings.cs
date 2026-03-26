@@ -38,6 +38,7 @@ public class EngineSettings
     /// Gets the current amount of EVs in Denmark.
     /// </summary>
     required public int CurrentAmoutOfEVsInDenmark { get; init; }
+
     /// <summary>
     /// Gets the interval at which the event for updating EVs should happen at.
     /// </summary>

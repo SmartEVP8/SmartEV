@@ -110,11 +110,12 @@ public static class TestData
         Battery? battery = null,
         Preferences? preferences = null,
         ushort efficiency = 150,
-        Time originalDuration = default) =>
+        Time originalDuration = default,
+        Time departureTime = default) =>
         new(
             battery ?? Battery(),
             preferences ?? Preferences(),
-            Journey(waypoints, originalDuration: originalDuration),
+            Journey(waypoints, originalDuration: originalDuration, departure: departureTime),
             efficiency);
 
     public static SingleCharger SingleCharger(int id, int maxPowerKW = 150)

@@ -4,7 +4,13 @@ using Core.Shared;
 using Core.Vehicles;
 using Engine.Vehicles;
 
-
+/// <summary>
+/// Handles the CheckUrgency event by calculating the urgency of an
+/// EV's charge and scheduling a FindCandidate event if necessary.
+/// </summary>
+/// <param name="eventScheduler">The event scheduler used to schedule events.</param>
+/// <param name="evStore">The store containing information about electric vehicles.</param>
+/// <param name="random">The random number generator used for probabilistic decisions.</param>
 public class CheckUrgencyHandler(EventScheduler eventScheduler, EVStore evStore, Random random)
 {
     /// <summary>

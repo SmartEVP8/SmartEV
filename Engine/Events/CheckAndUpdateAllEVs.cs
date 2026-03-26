@@ -32,7 +32,7 @@ public class CheckAndUpdateAllEVsHandler(
         {
             ref var ev = ref evStore.Get(evID);
 
-            if (ev.Journey is null || ev.IsCharging) return;
+            if (ev.Journey is null || ev.IsCharging || !ev.HasDeparted(eventScheduler.CurrentTime)) return;
 
             var batteryLost = CalculateStateOfCharge(ev, intervalSize);
             ev.Battery.StateOfCharge -= batteryLost;
