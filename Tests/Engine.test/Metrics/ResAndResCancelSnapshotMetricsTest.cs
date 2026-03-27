@@ -2,14 +2,17 @@ namespace Engine.test.Metrics;
 
 using Core.Shared;
 using Engine.Events;
-using Engine.Metrics;
+using Engine.test.Builders;
 
 public class ReservationAndReservationCancellationSnapshotMetricsTests
 {
     [Fact]
     public void ReservationAndCancellationCounts_RecordedInSnapshot_ThenReset()
     {
-        var handler = Handler();
+        var handler = TestData.SnapshotHandler(
+            TestData.MetricsService(),
+            new EventScheduler([]),
+            []);
 
         handler.OnReservationMade();
         handler.OnReservationMade();
@@ -28,13 +31,4 @@ public class ReservationAndReservationCancellationSnapshotMetricsTests
         handler.OnReservationMade();
         Assert.Equal(1, handler.ReservationCount);
     }
-
-    private static SnapshotEventHandler Handler() =>
-        new(
-            rescheduleTime: new Time(3600),
-            startTime: DateTimeOffset.UtcNow,
-            stations: [],
-            metrics: new MetricsService(new MetricsConfig(), Guid.NewGuid()),
-            scheduler: new EventScheduler([]),
-            getDeliveredKW: _ => 0.0);
 }

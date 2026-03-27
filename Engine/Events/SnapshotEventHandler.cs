@@ -5,6 +5,7 @@ using Engine.Services;
 using Engine.Metrics.Snapshots;
 using Core.Shared;
 using Core.Charging;
+using Engine.Vehicles;
 
 /// <summary>
 /// Handles the <see cref="SnapshotEvent"/> by collecting metrics for all stations
@@ -14,6 +15,7 @@ public class SnapshotEventHandler(
     Time rescheduleTime,
     DateTimeOffset startTime,
     IReadOnlyList<Station> stations,
+    EVStore evStore,
     MetricsService metrics,
     EventScheduler scheduler,
     Func<ChargerBase, double> getDeliveredKW)
@@ -62,7 +64,7 @@ public class SnapshotEventHandler(
                 currentTime.DayOfWeek,
                 currentTime.Hour,
                 getDeliveredKW);
-            metrics.RecordSnapshot(metric);
+            metrics.RecordStationSnapshot(metric);
         }
 
         // Reservation snapshot

@@ -24,6 +24,7 @@ public sealed class MetricsService : IAsyncDisposable
     private readonly IMetricWriter<ReservationSnapshotMetric>? _reservations;
     private readonly IMetricWriter<ReservationCancellationSnapshotMetric>? _reservationCancellations;
     private readonly IMetricWriter<StationSnapshotMetric>? _stations;
+    private readonly IMetricWriter<EVWaitTimeMetric>? _waitTime;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MetricsService"/> class.
@@ -45,6 +46,8 @@ public sealed class MetricsService : IAsyncDisposable
             _reservations = new MetricWriter<ReservationSnapshotMetric>(config.BufferSize, files.GetMetricPath<ReservationSnapshotMetric>());
         if (config.RecordReservationCancellations)
             _reservationCancellations = new MetricWriter<ReservationCancellationSnapshotMetric>(config.BufferSize, files.GetMetricPath<ReservationCancellationSnapshotMetric>());
+        if (config.RecordEVWaitTime)
+            _waitTime = new MetricWriter<EVWaitTimeMetric>(config.BufferSize, files.GetMetricPath<EVWaitTimeMetric>());
     }
 
     /// <summary>Records a car snapshot. No-op if car snapshots are disabled in config.</summary>
@@ -57,7 +60,7 @@ public sealed class MetricsService : IAsyncDisposable
 
     /// <summary>Records a station snapshot metric. No-op if station snapshots are disabled in config.</summary>
     /// <param name="metric">The station snapshot metric to record.</param>
-    public void RecordSnapshot(StationSnapshotMetric metric) => _stations?.Record(metric);
+    public void RecordStationSnapshot(StationSnapshotMetric metric) => _stations?.Record(metric);
 
     /// <summary>
     /// Records a reservation snapshot metric. No-op if reservation snapshots are disabled in config.
@@ -84,6 +87,7 @@ public sealed class MetricsService : IAsyncDisposable
         if (_arrivals is not null) tasks.Add(_arrivals.DisposeAsync().AsTask());
         if (_reservations is not null) tasks.Add(_reservations.DisposeAsync().AsTask());
         if (_reservationCancellations is not null) tasks.Add(_reservationCancellations.DisposeAsync().AsTask());
+        if (_waitTime is not null) tasks.Add(_waitTime.DisposeAsync().AsTask());
         await Task.WhenAll(tasks);
     }
 }

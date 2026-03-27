@@ -13,6 +13,10 @@ using Engine.Parsers;
 using Engine.Utils;
 using Engine.StationFactory;
 using Engine.Cost;
+using Engine.Metrics;
+using Engine.Vehicles;
+using Engine.Events;
+using Engine.Services;
 
 /// <summary>
 /// Ugly file for construction of objects more easily where we do not have to specifiy all properties or think about paths.
@@ -42,6 +46,26 @@ public static class TestData
     }
 
     public static readonly SpatialGrid SpatialGrid = BuildSpatialGrid(AllStations);
+
+    public static MetricsService MetricsService()
+    {
+        var config = new MetricsConfig(); // Default config
+        return new MetricsService(config, Guid.NewGuid());
+    }
+
+    public static SnapshotEventHandler SnapshotHandler(
+        MetricsService metrics,
+        EventScheduler scheduler,
+        IReadOnlyList<Station> stations,
+        int evStoreCapacity = 10) =>
+        new(
+            rescheduleTime: new Time(3600),
+            startTime: DateTimeOffset.UtcNow,
+            stations: stations,
+            evStore: new EVStore(evStoreCapacity),
+            metrics: metrics,
+            scheduler: scheduler,
+            getDeliveredKW: _ => 0.0);
 
     public static Station Station(
         ushort id,

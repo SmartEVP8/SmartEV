@@ -8,7 +8,7 @@ using Core.Shared;
 public readonly struct ReservationCancellationSnapshotMetric
 {
     /// <summary>
-    /// Gets the simulation timestamp (seconds) when this snapshot was taken.
+    /// Gets the simulation timestamp when this snapshot was taken.
     /// </summary>
     required public Time SimTime { get; init; }
 

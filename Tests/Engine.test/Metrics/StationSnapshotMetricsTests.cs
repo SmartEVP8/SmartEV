@@ -23,5 +23,4 @@ public class StationSnapshotMetricTests
 
         Assert.Equal(expectedActive, metric.ActiveChargers);
     }
-
 }

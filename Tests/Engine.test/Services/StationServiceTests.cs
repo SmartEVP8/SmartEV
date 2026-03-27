@@ -115,6 +115,7 @@ public class StationServiceTests
             rescheduleTime: new Time(3600),
             startTime: DateTimeOffset.UtcNow,
             stations: stations,
+            evStore: new EVStore(10),
             metrics: metrics,
             scheduler: scheduler,
             getDeliveredKW: _ => 0.0);
