@@ -17,7 +17,7 @@ public class ApplyNewPathToEVTests()
         var fakeRouter = new FakeDestinationRouter();
         var applyNewPath = new ApplyNewPath(fakeRouter);
 
-        applyNewPath.ApplyNewPathToEV(ref ev, station, new Time(0));
+        applyNewPath.ApplyNewPathToEV(ref ev, station, new Time(0), new Time(0));
 
         var expectedCoordinates = new double[]
         {
@@ -60,7 +60,7 @@ public class ApplyNewPathToEVTests()
         var applyNewPath = new ApplyNewPath(fakeRouter);
         var currentTime = new Time(10);
 
-        applyNewPath.ApplyNewPathToEV(ref ev, station, currentTime);
+        applyNewPath.ApplyNewPathToEV(ref ev, station, currentTime, new Time(0));
 
         Assert.Equal(3U, (uint)ev.Journey.LastUpdatedDuration);
         Assert.Equal(10U, (uint)ev.Journey.LastUpdatedDeparture);
@@ -96,10 +96,10 @@ public class ApplyNewPathToEVTests()
         var station = TestData.Station(1, new Position(5, 5));
 
         Assert.Throws<ArgumentException>(() =>
-            applyNewPath.ApplyNewPathToEV(ref ev, station, new Time(99)));
+            applyNewPath.ApplyNewPathToEV(ref ev, station, new Time(99), new Time(0)));
 
         Assert.Throws<ArgumentException>(() =>
-            applyNewPath.ApplyNewPathToEV(ref ev, station, new Time(151)));
+            applyNewPath.ApplyNewPathToEV(ref ev, station, new Time(151), new Time(0)));
     }
 
     public class FakeDestinationRouter() : IDestinationRouter

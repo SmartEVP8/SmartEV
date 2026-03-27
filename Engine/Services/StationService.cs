@@ -312,9 +312,9 @@ public class StationService
                 break;
         }
     
+        StartCharging(state, e.Time);
         _scheduler.ScheduleEvent(
             new ArriveAtDestination(e.EVId, e.Time + ev.Journey.LastUpdatedDuration));
-        StartCharging(state, e.Time);
     }
 
     /// <summary>
