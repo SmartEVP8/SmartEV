@@ -9,6 +9,7 @@ public interface IDestinationRouter
     /// Queries the route from the electric vehicle's current position to a destination, potentially with stops in between.
     /// </summary>
     /// <param name="coords">A flat array of coordinates representing the route.</param>
+    /// <param name="indices">An array of station indices to query along the route.</param>
     /// <returns>A tuple containing the duration and polyline string for the route.</returns>
-    public (float duration, string polyline) QueryDestination(double[] coords);
+    public (float duration, string polyline) QueryDestination(double[] coords, ushort[]? indices = null);
 }

@@ -27,8 +27,8 @@ public class OsrmRouterBenchmark
     {
         var path = AppContext.GetData("OsrmDataPath") as string
             ?? throw new InvalidOperationException("OsrmDataPath not set in project.");
-        _router = new OSRMRouter(new FileInfo(path));
-        var csvPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "data", "energy_prices.csv");
+        var csvPath = AppContext.GetData("EnergyPricesPath") as string
+            ?? throw new InvalidOperationException("EnergyPricesPath not set in project.");
         var energyPrices = new EnergyPrices(new FileInfo(csvPath), new Random(42));
 
         var stations = new List<Station>(50);
@@ -43,6 +43,7 @@ public class OsrmRouterBenchmark
                 energyPrices: energyPrices));
         }
 
+        _router = new OSRMRouter(new FileInfo(path));
         _router.InitStations(stations);
         _stationIndices = [.. Enumerable.Range(0, 50).Select(i => (ushort)i)];
 
@@ -71,28 +72,28 @@ public class OsrmRouterBenchmark
     [GlobalCleanup]
     public void Cleanup() => _router?.Dispose();
 
-    /// <summary>
-    /// Benchmarks querying stations for 1000 cars in parallel.
-    /// </summary>
-    [Benchmark]
-    public void Query1000Cars50StationsParallel()
-    {
-        var options = new ParallelOptions
-        {
-            MaxDegreeOfParallelism = Environment.ProcessorCount,
-        };
-        Parallel.For(0, _evCoordinates.Length, options, i =>
-        {
-            var (lon, lat) = _evCoordinates[i];
-            _ = _router.QueryStations(lon, lat, _stationIndices);
-        });
-    }
+    // /// <summary>
+    // /// Benchmarks querying stations for 1000 cars in parallel.
+    // /// </summary>
+    // [Benchmark]
+    // public void Query1000Cars50StationsParallel()
+    // {
+    //     var options = new ParallelOptions
+    //     {
+    //         MaxDegreeOfParallelism = Environment.ProcessorCount,
+    //     };
+    //     Parallel.For(0, _evCoordinates.Length, options, i =>
+    //     {
+    //         var (lon, lat) = _evCoordinates[i];
+    //         _ = _router.QueryStations(lon, lat, _stationIndices);
+    //     });
+    // }
 
-    /// <summary>
-    /// Benchmarks bulk querying of 1000 cars to 50 stations.
-    /// </summary>
-    [Benchmark]
-    public void Query1000Cars50StationsBulk() => _ = _router.QueryPointsToPoints(_evCoordsFlat, _stationCoordsFlat);
+    // /// <summary>
+    // /// Benchmarks bulk querying of 1000 cars to 50 stations.
+    // /// </summary>
+    // [Benchmark]
+    // public void Query1000Cars50StationsBulk() => _ = _router.QueryPointsToPoints(_evCoordsFlat, _stationCoordsFlat);
 
     /// <summary>
     /// Benchmarks querying a single destination.
@@ -102,5 +103,45 @@ public class OsrmRouterBenchmark
     {
         var (lon, lat) = _evCoordinates[0];
         _ = _router.QuerySingleDestination(lon, lat, _stationCoordsFlat[0], _stationCoordsFlat[1]);
+    }
+
+    [Benchmark]
+    public void QueryDestinationEVtoDest()
+    {
+        var (lon, lat) = _evCoordinates[0];
+        _ = _router.QueryDestination([lon, lat, _stationCoordsFlat[0], _stationCoordsFlat[1]], null);
+    }
+
+    [Benchmark]
+    public void QueryDestinationEVtoDestWithStation()
+    {
+        var (lon, lat) = _evCoordinates[0];
+        _ = _router.QueryDestination([lon, lat, _stationCoordsFlat[0], _stationCoordsFlat[1], _stationCoordsFlat[2], _stationCoordsFlat[3]], [_stationIndices[0]]);
+    }
+
+    /// <summary>
+    /// Benchmarks querying 1000 EVs each routing through a random station to a destination.
+    /// This tests the benefit of pre-registered station indexing across many queries.
+    /// </summary>
+    [Benchmark]
+    public void Query1000EvsManyStations()
+    {
+        var random = new Random(42);
+        for (var i = 0; i < _evCoordinates.Length; i++)
+        {
+            var (lon, lat) = _evCoordinates[i];
+            var stationIdx = (ushort)random.Next(0, 50);
+            var destIdx = (ushort)random.Next(0, 50);
+            while (destIdx == stationIdx)
+                destIdx = (ushort)random.Next(0, 50);
+
+            var coords = new double[]
+            {
+                lon, lat,
+                _stationCoordsFlat[stationIdx * 2], _stationCoordsFlat[(stationIdx * 2) + 1],
+                _stationCoordsFlat[destIdx * 2], _stationCoordsFlat[(destIdx * 2) + 1]
+            };
+            _ = _router.QueryDestination(coords, [stationIdx]);
+        }
     }
 }
