@@ -68,6 +68,7 @@ public record StationSnapshotMetric
     /// <param name="day">Current day of week (for price lookup).</param>
     /// <param name="hour">Current hour 0–23 (for price lookup).</param>
     /// 
+    /// 
     /// A delegate that returns the actual power currently being delivered (in kW)
     /// for a given charger. Provided by the caller since power state lives outside
     /// this record. // TODO: Should be implemented somehow later.

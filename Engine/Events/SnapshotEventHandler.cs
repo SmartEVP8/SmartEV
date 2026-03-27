@@ -55,14 +55,15 @@ public class SnapshotEventHandler(
         var currentTime = startTime.AddSeconds(e.Time.T);
 
         foreach (var station in stations.Values)
-        {
-            var metric = StationSnapshotMetric.Collect(
-                station,
-                e.Time,
-                currentTime.DayOfWeek,
-                currentTime.Hour);
-            metrics.RecordStationSnapshot(metric);
-        }
+            foreach (var station in stations.Values)
+            {
+                var metric = StationSnapshotMetric.Collect(
+                    station,
+                    e.Time,
+                    currentTime.DayOfWeek,
+                    currentTime.Hour);
+                metrics.RecordStationSnapshot(metric);
+            }
 
         // Reservation snapshot
         metrics.RecordReservationSnapshot(new ReservationSnapshotMetric

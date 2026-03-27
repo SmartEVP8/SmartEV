@@ -15,6 +15,7 @@ using Engine.Services;
 using Engine.Vehicles;
 using Microsoft.Extensions.DependencyInjection;
 using Engine.Events.Middleware;
+using Engine.Events.Middleware;
 
 /// <summary>
 /// Initializes the Engine by setting up all necessary services and configurations.
@@ -27,7 +28,32 @@ public static class Init
     /// <param name="services">The service collection to initialize.</param>
     public static void InitEngine(IServiceCollection services)
     {
-        services.AddSingleton(sp => new EventScheduler([]));
+        services.AddSingleton(sp =>
+        {
+            return new EventScheduler([]);
+        });
+
+        services.AddSingleton(sp =>
+        {
+            var settings = sp.GetRequiredService<EngineSettings>();
+            var energyPrices = sp.GetRequiredService<EnergyPrices>();
+            var seed = settings.Seed;
+            var stationPath = settings.StationsPath;
+            var stationFactory = new StationFactory(settings.StationFactoryOptions, seed, energyPrices, stationPath);
+            return stationFactory.CreateStations();
+        });
+
+        services.AddSingleton(sp =>
+        {
+            return new Dictionary<ushort, Station>(sp.GetRequiredService<List<Station>>().ToDictionary(s => s.Id));
+        });
+
+        services.AddSingleton<IOSRMRouter>(sp =>
+     {
+         var settings = sp.GetRequiredService<EngineSettings>();
+         var stations = sp.GetRequiredService<List<Station>>();
+         return new OSRMRouter(settings.OsrmPath, stations);
+     });
 
         services.AddSingleton(sp =>
         {
