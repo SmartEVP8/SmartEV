@@ -30,7 +30,7 @@ public static class Program
             CostConfig = new CostWeights
             {
                 EffectiveQueueSize = 1,
-                PathDeviation = 1,
+                PathDeviation = 100,
                 PriceSensitivity = 1,
             },
 
@@ -62,7 +62,7 @@ public static class Program
 
             CurrentAmoutOfEVsInDenmark = 583320, // Based on the number of registered EVs in Denmark as of 2026-03-22 https://mobility.dk/nyheder/nu-koerer-hver-femte-personbil-i-danmark-paa-el/
 
-            ChargingStepSeconds = 60,
+            ChargingStepSeconds = 1,
 
             SimulationEndTime = 10000,
 
@@ -70,7 +70,7 @@ public static class Program
 
             EVDistributionWindowsSize = 10,
 
-            EVSpawnFraction = 0.25f,
+            EVSpawnFraction = 0.001f,
 
             EnergyPricesPath = new FileInfo(Path.Combine(dataPath.FullName, "energy_prices.csv")),
             OsrmPath = new FileInfo(Path.Combine(dataPath.FullName, "osrm/output.osrm")),

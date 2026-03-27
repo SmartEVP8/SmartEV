@@ -205,6 +205,7 @@ public class StationService
                 MaxChargeRateKW: ev.Battery.MaxChargeRate,
                 Socket: ev.Battery.Socket);
 
+        ev.IsCharging = true;
         target.Queue.Enqueue((e.EVId, connectedEV));
 
         if (target.IsFree)

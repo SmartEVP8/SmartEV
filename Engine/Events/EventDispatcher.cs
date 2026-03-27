@@ -28,6 +28,32 @@ public class EventDispatcher(
         DestinationArrivalHandler destinationArrivalHandler,
         CheckAndUpdateAllEVsHandler CheckAndUpdateAllEVsHandler)
 {
+    private Dictionary<Type, uint> _calledCount = [];
+
+
+    private void IncrementCount(Event e)
+    {
+        var type = e.GetType();
+
+        if (_calledCount.ContainsKey(type))
+        {
+            _calledCount[type]++;
+        }
+        else
+        {
+            _calledCount[type] = 1;
+        }
+    }
+
+    private void PrintCounts()
+    {
+        Console.WriteLine("Event counts:");
+        foreach (var kvp in _calledCount)
+        {
+            Console.WriteLine($"{kvp.Key.Name}: {kvp.Value}");
+        }
+    }
+
     /// <summary>
     /// Dispatches the event to the correct handler.
     /// Has a handler for every <c>Event</c>. If an event is dispatched for which there is no handler, an exception is thrown.
@@ -36,6 +62,7 @@ public class EventDispatcher(
     /// <exception cref="Exception">If a event handler is not registered.</exception>
     public void Dispatch(Event e)
     {
+        IncrementCount(e);
         switch (e)
         {
             case ReservationRequest ev:
@@ -81,5 +108,6 @@ public class EventDispatcher(
             default:
                 throw new Exception("This should never happen, add a handler");
         }
+        PrintCounts();
     }
 }
