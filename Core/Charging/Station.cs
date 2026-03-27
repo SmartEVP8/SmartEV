@@ -40,6 +40,16 @@ public class Station(ushort id,
     public string Address => address;
 
     /// <summary>
+    /// Gets the total number of reservation requests ever made to this station.
+    /// </summary>
+    public ushort TotalReservations { get; private set; }
+
+    /// <summary>
+    /// Gets the total number of cancellation requests ever made to this station.
+    /// </summary>
+    public ushort TotalCancellations { get; private set; }
+
+    /// <summary>
     /// Gets the current price of energy at the station.
     /// </summary>
     public float Price { get; private set; }
@@ -70,4 +80,26 @@ public class Station(ushort id,
 
         return Price;
     }
+
+    /// <summary>
+    /// Collects the reservation and cancellation counts since the last snapshot, then resets both counters.
+    /// </summary>
+    /// <returns> Returns the reservation and cancellation counts since the last snapshot.</returns>
+    public (ushort reservations, ushort cancellations) CountReservationsCancellations()
+    {
+        var reservationsAndCancellations = (TotalReservations, TotalCancellations);
+        TotalReservations = 0;
+        TotalCancellations = 0;
+        return reservationsAndCancellations;
+    }
+    
+    /// <summary>
+    /// Increments the amount of reservations on a station, and updates the total amount of reservations.
+    /// </summary>
+    public void IncrementReservations() => TotalReservations++;
+
+    /// <summary>
+    /// Decrements the amount of reservations on a station, and updates the total amount of cancellations.
+    /// </summary>
+    public void IncrementCancellations() => TotalCancellations++;
 }

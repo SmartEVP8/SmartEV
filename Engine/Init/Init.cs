@@ -141,7 +141,8 @@ public static class Init
             var integrator = sp.GetRequiredService<ChargingIntegrator>();
             var scheduler = sp.GetRequiredService<EventScheduler>();
             var evStore = sp.GetRequiredService<EVStore>();
-            return new StationService(stations.Values, integrator, scheduler, evStore);
+            var applyNewPath = sp.GetRequiredService<ApplyNewPath>();
+            return new StationService(stations.Values, integrator, scheduler, evStore, applyNewPath);
         });
 
         services.AddSingleton(sp =>

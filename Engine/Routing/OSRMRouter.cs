@@ -201,7 +201,7 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
         }
         else if (coords.Length > 4)
         {
-            resultPtr = ComputeSrcToDestWithStops(_osrm, coords, coords.Length);
+            resultPtr = ComputeSrcToDestWithStops(_osrm, coords, coords.Length / 2);
         }
         else
         {

@@ -51,17 +51,27 @@ public record SnapshotMetric
     required public int TotalChargers { get; init; }
 
     /// <summary>
+    /// Gets the number of reservations made to this station since the last snapshot.
+    /// </summary>
+    required public uint Reservations { get; init; }
+
+    /// <summary>
+    /// Gets the number of cancellations made to this station since the last snapshot.
+    /// </summary>
+    required public uint Cancellations { get; init; }
+
+    /// <summary>
     /// Collects a snapshot from a station at the given simulation time.
     /// </summary>
     /// <param name="station">The station to snapshot.</param>
     /// <param name="simTime">Current simulation time in seconds.</param>
     /// <param name="day">Current day of week (for price lookup).</param>
     /// <param name="hour">Current hour 0–23 (for price lookup).</param>
-    /// <param name="getDeliveredKW">
+    /// 
     /// A delegate that returns the actual power currently being delivered (in kW)
     /// for a given charger. Provided by the caller since power state lives outside
     /// this record. // TODO: Should be implemented somehow later.
-    /// </param>
+    /// 
     /// <returns>A <see cref="SnapshotMetric"/> containing the collected metrics for the station.</returns>
     public static SnapshotMetric Collect(
         Station station,
@@ -81,6 +91,8 @@ public record SnapshotMetric
             totalQueueSize += charger.Queue.Count;
             if (charger.Queue.Count > 0) activeChargers++;
         }
+        
+        var (reservations, cancellations) = station.CountReservationsCancellations();
 
         return new SnapshotMetric
         {
@@ -92,6 +104,8 @@ public record SnapshotMetric
             Price = station.UpdatePrice(day, hour),
             ActiveChargers = activeChargers,
             TotalChargers = station.Chargers.Count,
+            Reservations = reservations,
+            Cancellations = cancellations,
         };
     }
 }

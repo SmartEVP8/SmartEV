@@ -28,6 +28,11 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     public ushort Efficiency { get; } = efficiency;
 
     /// <summary>
+    /// Gets or sets a reservation at a station for the EV.
+    /// </summary>
+    public ushort? HasReservationAtStationId { get; set; }
+
+    /// <summary>
     /// Gets the journey of the EV.
     /// </summary>
     public Journey Journey { get; private set; } = journey;
@@ -43,5 +48,5 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     /// </summary>
     /// <param name="currentTime">The current time to compare against the EV's departure time.</param>
     /// <returns>True if the EV has departed; otherwise, false.</returns>
-    public readonly bool HasDeparted(Time currentTime) => Journey.Departure <= currentTime;
+    public readonly bool HasDeparted(Time currentTime) => Journey.JourneyStart <= currentTime;
 }

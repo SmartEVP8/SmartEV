@@ -109,7 +109,7 @@ public static class TestData
         Battery? battery = null,
         Preferences? preferences = null,
         ushort efficiency = 150,
-        Time originalDuration = default,
+        uint originalDuration = 100u,
         Time departureTime = default) =>
         new(
             battery ?? Battery(),

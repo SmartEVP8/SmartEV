@@ -1,10 +1,9 @@
 namespace Engine.test.Services;
 
-using Core.Charging;
 using Core.Charging.ChargingModel;
-using Core.Charging.ChargingModel.Chargepoint;
 using Core.Shared;
 using Engine.Events;
+using Engine.Routing;
 using Engine.Services;
 using Engine.test.Builders;
 using Engine.Vehicles;
@@ -101,8 +100,112 @@ public class StationServiceTests
         Assert.True(ev2Event.Time > ev1End.Time);
     }
 
+    [Fact]
+    public void HandleReservationRequest_SetsReservation()
+    {
+        var scheduler = new EventScheduler([]);
+        var evStore = new EVStore(1);
+        var router = TestData.OSRMRouter;
+
+        var stations = TestData.Stations((1, 5.0, 5.0));
+        var stationService = new StationService(
+            stations: [.. stations.Values],
+            integrator: null!,
+            scheduler: scheduler,
+            evStore: evStore,
+            applyNewPath: new ApplyNewPath(router));
+
+        var ev = TestData.EV();
+        evStore.Set(0, ref ev);
+
+        stationService.HandleReservationRequest(
+            new ReservationRequest(0, 1, new Time(0), 0));
+
+        Assert.Equal(1, (ushort)evStore.Get(0).HasReservationAtStationId!);
+    }
+
+    [Fact]
+    public void HandleReservationRequest_CancelsPreviousReservation()
+    {
+        var scheduler = new EventScheduler([]);
+        var evStore = new EVStore(1);
+        var router = TestData.OSRMRouter;
+
+        var stations = TestData.Stations(
+            (1, 1.0, 1.0),
+            (2, 2.0, 2.0));
+
+        var stationService = new StationService(
+            stations: [.. stations.Values],
+            integrator: null!,
+            scheduler: scheduler,
+            evStore: evStore,
+            applyNewPath: new ApplyNewPath(router));
+
+        var ev = TestData.EV();
+        ev.HasReservationAtStationId = 1;
+
+        evStore.Set(0, ref ev);
+
+        var oldStation = stations[1];
+        var newStation = stations[2];
+
+        oldStation.IncrementReservations();
+
+        Assert.Equal(0, oldStation.TotalCancellations);
+        Assert.Equal(0, newStation.TotalReservations);
+
+        stationService.HandleReservationRequest(
+            new ReservationRequest(0, 2, new Time(0), 10));
+
+        Assert.Equal(2, (ushort)evStore.Get(0).HasReservationAtStationId!);
+
+        Assert.Equal(1, oldStation.TotalCancellations);
+        Assert.Equal(1, newStation.TotalReservations);
+    }
+
+    [Fact]
+    public async Task CheckReservationOrderIsCorrect()
+    {
+        var totalRequest = 100;
+        var scheduler = new EventScheduler([]);
+        var evStore = new EVStore(totalRequest);
+        var router = TestData.OSRMRouter;
+
+        var staionId = (ushort)1;
+        var stations = TestData.Stations(
+            (staionId, 1.0, 1.0));
+
+        var stationService = new StationService(
+            stations: [.. stations.Values],
+            integrator: null!,
+            scheduler: scheduler,
+            evStore: evStore,
+            applyNewPath: new ApplyNewPath(router));
+
+        evStore.TryAllocate(totalRequest, (index, ref ev) =>
+        {
+            ev = TestData.EV();
+        });
+
+        for (var i = 0; i < totalRequest; i++)
+        {
+            var reservation = new ReservationRequest(i, staionId, 0, 1);
+            stationService.HandleReservationRequest(reservation);
+        }
+
+        await stationService.WaitForAllScheduled();
+
+        for (var i = 0; i < totalRequest; i++)
+        {
+            var ev = scheduler.GetNextEvent();
+            Assert.NotNull(ev);
+            Assert.IsType<ArriveAtStation>(ev);
+            Assert.Equal(i, ((ArriveAtStation)ev).EVId);
+        }
+    }
+
     private static (StationService service, EventScheduler scheduler, EVStore evStore) BuildSingle(
-        Socket socket = Socket.CCS2,
         int maxPowerKW = 150)
     {
         var charger = TestData.SingleCharger(1, maxPowerKW: maxPowerKW);
@@ -110,13 +213,13 @@ public class StationServiceTests
         var scheduler = new EventScheduler([]);
         var integrator = new ChargingIntegrator(stepSeconds: 60);
         var evStore = new EVStore(10);
-        var service = new StationService([station], integrator, scheduler, evStore);
+        var applyNewPath = new ApplyNewPath(TestData.OSRMRouter);
+        var service = new StationService([station], integrator, scheduler, evStore, applyNewPath);
 
         return (service, scheduler, evStore);
     }
 
     private static (StationService service, EventScheduler scheduler, EVStore evStore) BuildDual(
-        Socket socket = Socket.CCS2,
         int maxPowerKW = 150)
     {
         var charger = TestData.DualCharger(1, maxPowerKW: maxPowerKW);
@@ -124,7 +227,9 @@ public class StationServiceTests
         var scheduler = new EventScheduler([]);
         var integrator = new ChargingIntegrator(stepSeconds: 60);
         var evStore = new EVStore(10);
-        var service = new StationService([station], integrator, scheduler, evStore);
+        var applyNewPath = new ApplyNewPath(TestData.OSRMRouter);
+        var service = new StationService([station], integrator, scheduler, evStore, applyNewPath);
+
         return (service, scheduler, evStore);
     }
 
