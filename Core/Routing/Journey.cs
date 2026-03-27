@@ -18,7 +18,7 @@ public class Journey(Time departure, Time originalDuration, Paths path)
     /// <summary>
     /// Gets the time the journey was last updated.
     /// </summary>
-    public Time LastUpdatedDepature { get; private set; } = departure;
+    public Time LastUpdatedDeparture { get; private set; } = departure;
 
     /// <summary>
     /// Gets the original duration of the journey, i.e. the duration of A -> B without any detours.
@@ -53,13 +53,13 @@ public class Journey(Time departure, Time originalDuration, Paths path)
     /// <exception cref="ArgumentException">Thrown when the current time is before the journey starts or after it has completed.</exception>
     public Position CurrentPosition(Time currentTime)
     {
-        Time completedTime = LastUpdatedDepature + LastUpdatedDuration;
+        Time completedTime = LastUpdatedDeparture + LastUpdatedDuration;
         if (currentTime > completedTime)
             throw new ArgumentException("Current time is after the journey has completed.");
-        if (currentTime < LastUpdatedDepature)
+        if (currentTime < LastUpdatedDeparture)
             throw new ArgumentException("Current time is before the journey has started.");
 
-        var percentageCompleted = (currentTime - LastUpdatedDepature) / (double)LastUpdatedDuration;
+        var percentageCompleted = (currentTime - LastUpdatedDeparture) / (double)LastUpdatedDuration;
 
         var segments = Path
             .Waypoints.Zip(Path.Waypoints.Skip(1))
@@ -105,7 +105,7 @@ public class Journey(Time departure, Time originalDuration, Paths path)
     {
         Path = newRoute;
 
-        Time oldEta = LastUpdatedDepature + LastUpdatedDuration;
+        Time oldEta = LastUpdatedDeparture + LastUpdatedDuration;
         Time newEta = departure + duration;
 
         if (newEta > oldEta)
@@ -117,7 +117,7 @@ public class Journey(Time departure, Time originalDuration, Paths path)
             PathDeviation -= oldEta - newEta;
         }
 
-        LastUpdatedDepature = departure;
+        LastUpdatedDeparture = departure;
         LastUpdatedDuration = duration;
     }
 }
