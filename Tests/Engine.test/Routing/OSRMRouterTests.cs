@@ -17,11 +17,12 @@ public class OSRMRouterTests
 
     private OSRMRouter CreateRouter(params Position[] positions)
     {
-        var router = new OSRMRouter(new FileInfo(_osrmPath));
-        router.InitStations([.. positions.Select((pos, i) => TestData.Station(
-            id: (ushort)(i + 1),
-            pos: pos,
-            energyPrices: TestData.EnergyPrices))]);
+        List<Station> stations = [.. positions.Select((pos, i) =>
+            TestData.Station(
+                id: (ushort)(i + 1),
+                pos: pos,
+                energyPrices: TestData.EnergyPrices))];
+        var router = new OSRMRouter(new FileInfo(_osrmPath), stations);
         return router;
     }
 

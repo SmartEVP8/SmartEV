@@ -1,4 +1,3 @@
-using Core.Charging;
 namespace Engine.Benchmark;
 
 using BenchmarkDotNet.Attributes;
@@ -8,6 +7,7 @@ using Engine.Parsers;
 using Engine.Routing;
 using Engine.Spawning;
 using Engine.Vehicles;
+using Core.Charging;
 
 /// <summary>
 /// Benchmark suite for OSRM router performance testing.
