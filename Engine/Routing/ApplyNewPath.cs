@@ -37,6 +37,3 @@ public class ApplyNewPath(IDestinationRouter router)
         ev.Journey.UpdateRoute(newWaypoints, currentTime, (Time)roundedDuration);
     }
 }
-
-
-
