@@ -100,23 +100,6 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
     }
 
     /// <summary>
-    /// Initializes the router with a list of charging stations.
-    /// </summary>
-    /// <param name="stations">The list of charging stations to register.</param>
-    public void InitStations(List<Station> stations)
-    {
-        var coords = new double[stations.Count * 2];
-
-        for (var i = 0; i < stations.Count; i++)
-        {
-            coords[i * 2] = stations[i].Position.Longitude;
-            coords[(i * 2) + 1] = stations[i].Position.Latitude;
-        }
-
-        RegisterStations(_osrm, coords, stations.Count);
-    }
-
-    /// <summary>
     /// Queries the durations and distances from an electric vehicle to specified stations.
     /// </summary>
     /// <param name="evLon">The longitude coordinate of the electric vehicle.</param>
@@ -265,4 +248,21 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
     /// Disposes the OSRM router and releases unmanaged resources.
     /// </summary>
     public void Dispose() => DeleteOSRM(_osrm);
+
+    /// <summary>
+    /// Initializes the router with a list of charging stations.
+    /// </summary>
+    /// <param name="stations">The list of charging stations to register.</param>
+    private void InitStations(List<Station> stations)
+    {
+        var coords = new double[stations.Count * 2];
+
+        for (var i = 0; i < stations.Count; i++)
+        {
+            coords[i * 2] = stations[i].Position.Longitude;
+            coords[(i * 2) + 1] = stations[i].Position.Latitude;
+        }
+
+        RegisterStations(_osrm, coords, stations.Count);
+    }
 }

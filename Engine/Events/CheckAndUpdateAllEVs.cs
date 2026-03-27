@@ -46,7 +46,7 @@ public class CheckAndUpdateAllEVsHandler(
         foreach (var evID in evsThatNeedChecking)
         {
             if (evID == -1) continue;
-            eventScheduler.ScheduleEvent(new CheckUrgency(evID, checkAndUpdateAllEVs.Time + 1));
+            eventScheduler.ScheduleEvent(new CheckUrgency(evID, checkAndUpdateAllEVs.Time));
         }
 
         var nextCheckTime = checkAndUpdateAllEVs.Time + intervalSize;

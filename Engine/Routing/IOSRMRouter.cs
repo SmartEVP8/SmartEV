@@ -8,12 +8,6 @@ using Core.Charging;
 public interface IOSRMRouter : IMatrixRouter, IDisposable, IPointToPointRouter, IDestinationRouter
 {
     /// <summary>
-    /// Initializes the router with the given stations.
-    /// </summary>
-    /// <param name="stations">The list of stations to initialize the router with.</param>
-    void InitStations(List<Station> stations);
-
-    /// <summary>
     /// Queries the durations and distances from an electric vehicle to specified stations.
     /// </summary>
     /// <param name="evLon">The longitude coordinate of the electric vehicle.</param>
