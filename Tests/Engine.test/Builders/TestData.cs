@@ -13,6 +13,10 @@ using Engine.Parsers;
 using Engine.Utils;
 using Engine.StationFactory;
 using Engine.Cost;
+using Engine.Metrics;
+using Engine.Vehicles;
+using Engine.Events;
+using Engine.Services;
 
 /// <summary>
 /// Ugly file for construction of objects more easily where we do not have to specifiy all properties or think about paths.
@@ -41,6 +45,24 @@ public static class TestData
     }
 
     public static readonly SpatialGrid SpatialGrid = BuildSpatialGrid(AllStations);
+
+    public static MetricsService MetricsService()
+    {
+        var config = new MetricsConfig(); // Default config
+        return new MetricsService(config, Guid.NewGuid());
+    }
+
+    public static SnapshotEventHandler SnapshotHandler(
+        MetricsService metrics,
+        EventScheduler scheduler,
+        Dictionary<ushort, Station> stations,
+        int evStoreCapacity = 10) =>
+        new(
+            rescheduleTime: new Time(3600),
+            startTime: DateTimeOffset.UtcNow,
+            stations: stations,
+            metrics: metrics,
+            scheduler: scheduler);
 
     public static Station Station(
         ushort id,
@@ -139,7 +161,27 @@ public static class TestData
             TargetSoC: targetSoC,
             CapacityKWh: model.BatteryConfig.MaxCapacityKWh,
             MaxChargeRateKW: model.BatteryConfig.ChargeRateKW,
-            Socket: socket);
+            Socket: socket,
+            ArrivalTime: new Time(0));
+    }
+
+    public static StationService StationService(
+        Dictionary<ushort, Station> stations,
+        EventScheduler scheduler,
+        EVStore evStore,
+        ChargingIntegrator? integrator = null)
+    {
+        var metrics = MetricsService();
+        var actualIntegrator = integrator ?? new ChargingIntegrator(10);
+
+        return new StationService(
+            stations: [.. stations.Values],
+            integrator: actualIntegrator,
+            scheduler: scheduler,
+            evStore: evStore,
+            applyNewPath: new ApplyNewPath(OSRMRouter),
+            metrics: metrics,
+            snapshotHandler: SnapshotHandler(metrics, scheduler, stations));
     }
 
     internal sealed class FixedEnergyPrices(float fixedPrice) : EnergyPrices(new FileInfo("data/energy_prices.csv"), new Random(42))

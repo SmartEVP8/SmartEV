@@ -44,7 +44,7 @@ public static class Program
                 BufferSize = 5000,
                 OutputDirectory = new DirectoryInfo("Perkuet"),
                 RecordCarSnapshots = true,
-                RecordDeadlines = true,
+                RecordArrivals = true,
                 RecordStationSnapshots = true,
             },
 

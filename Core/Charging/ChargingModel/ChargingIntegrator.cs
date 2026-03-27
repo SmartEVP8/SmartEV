@@ -13,7 +13,8 @@ public record ConnectedEV(
     double TargetSoC,
     double CapacityKWh,
     double MaxChargeRateKW,
-    Socket Socket);
+    Socket Socket,
+    Time ArrivalTime);
 
 /// <summary>
 /// Returned by all integrator methods.
