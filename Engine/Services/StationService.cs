@@ -8,6 +8,8 @@ using Engine.Events;
 using Engine.Vehicles;
 using Engine.Routing;
 using Engine.Utils;
+using Engine.Metrics;
+using Engine.Metrics.Events;
 
 /// <summary>
 /// Tracks an active charging session at one side of a charger.
@@ -23,12 +25,17 @@ public record ChargingSession(
 /// <summary>
 /// Tracks the runtime state of a charger, active sessions, waiting queue, and last integration result.
 /// </summary>
-public class ChargerState(ChargerBase charger)
+public class ChargerState(ChargerBase charger, ushort stationId)
 {
     /// <summary>
     /// Gets charger this state belongs to.
     /// </summary>
     public ChargerBase Charger { get; } = charger;
+
+    /// <summary>
+    /// Gets the id of the station this charger belongs to for metrics tagging.
+    /// </summary>
+    public ushort StationId { get; } = stationId;
 
     /// <summary>
     /// Gets the queue of EVs waiting to charge at this charger, in order of arrival.
@@ -78,6 +85,8 @@ public class StationService
     private readonly EventScheduler _scheduler;
     private readonly EVStore _eVStore;
     private readonly ApplyNewPath _applyNewPath;
+    private readonly MetricsService _metrics;
+    private readonly SnapshotEventHandler _snapshotHandler;
     private SemaphoreSlim _lastGate = new(1, 1);
     private Task _lastTask = Task.CompletedTask;
 
@@ -89,22 +98,28 @@ public class StationService
     /// <param name="scheduler">The event scheduler to use for scheduling future events.</param>
     /// <param name="evStore">The storage of current EV's.</param>
     /// <param name="applyNewPath">The path deviator to use for calculating route deviations through charging stations.</param>
+    /// <param name="metrics">The metrics service to use for recording metrics.</param>
+    /// <param name="snapshotHandler">The snapshot event handler to use for handling snapshot events.</param>
     public StationService(
         ICollection<Station> stations,
         ChargingIntegrator integrator,
         EventScheduler scheduler,
         EVStore evStore,
-        ApplyNewPath applyNewPath)
+        ApplyNewPath applyNewPath,
+        MetricsService metrics,
+        SnapshotEventHandler snapshotHandler)
     {
         _integrator = integrator;
         _scheduler = scheduler;
         _eVStore = evStore;
         _applyNewPath = applyNewPath;
+        _metrics = metrics;
+        _snapshotHandler = snapshotHandler;
 
         foreach (var station in stations)
         {
             _stationIndex[station.Id] = station;
-            var states = station.Chargers.Select(c => new ChargerState(c)).ToList();
+            var states = station.Chargers.Select(c => new ChargerState(c, station.Id)).ToList();
             _stationChargers[station.Id] = states;
             foreach (var cs in states)
                 _chargerIndex[cs.Charger.Id] = cs;
@@ -217,7 +232,8 @@ public class StationService
                 TargetSoC: e.TargetSoC,
                 CapacityKWh: ev.Battery.Capacity,
                 MaxChargeRateKW: ev.Battery.MaxChargeRate,
-                Socket: ev.Battery.Socket);
+                Socket: ev.Battery.Socket,
+                ArrivalTime: e.Time);
 
         target.Queue.Enqueue((e.EVId, connectedEV));
 
@@ -230,6 +246,9 @@ public class StationService
     /// Uses the internally stored IntegrationResult to update remaining car SoC.
     /// </summary>
     /// <param name="e">The EndCharging event containing the EVId, ChargerId, and Time of the event.</param>
+    /// <summary>
+    /// Called when a charging session ends for a specific EV.
+    /// </summary>
     public void HandleEndCharging(EndCharging e)
     {
         if (!_chargerIndex.TryGetValue(e.ChargerId, out var state))
@@ -256,19 +275,13 @@ public class StationService
                     if (state.SessionB is not null && result is not null)
                     {
                         var updatedSoC = result.BSoCWhenAFinish;
-                        state.SessionB = state.SessionB with
-                        {
-                            EV = state.SessionB.EV with { CurrentSoC = updatedSoC }
-                        };
-
-                        if (state.SessionB!.EndChargingCancellationToken is { } token)
-                        {
-                            _scheduler.CancelEvent(token);
-                        }
+                        state.SessionB = state.SessionB with { EV = state.SessionB.EV with { CurrentSoC = updatedSoC } };
+                        if (state.SessionB.EndChargingCancellationToken is { } token) _scheduler.CancelEvent(token);
 
                         if (updatedSoC >= state.SessionB.EV.TargetSoC)
                         {
                             dual.ChargingPoint.Disconnect(ChargingSide.Right);
+                            _eVStore.Get(state.SessionB.EVId).IsCharging = false;
                             state.SessionB = null;
                         }
                     }
@@ -278,22 +291,17 @@ public class StationService
                     dual.ChargingPoint.Disconnect(ChargingSide.Right);
                     state.SessionB = null;
                     _eVStore.Get(e.EVId).IsCharging = false;
+
                     if (state.SessionA is not null && result is not null)
                     {
                         var updatedSoC = result.ASoCWhenBFinish;
-                        state.SessionA = state.SessionA with
-                        {
-                            EV = state.SessionA.EV with { CurrentSoC = updatedSoC }
-                        };
-
-                        if (state.SessionA!.EndChargingCancellationToken is { } token)
-                        {
-                            _scheduler.CancelEvent(token);
-                        }
+                        state.SessionA = state.SessionA with { EV = state.SessionA.EV with { CurrentSoC = updatedSoC } };
+                        if (state.SessionA.EndChargingCancellationToken is { } token) _scheduler.CancelEvent(token);
 
                         if (updatedSoC >= state.SessionA.EV.TargetSoC)
                         {
                             dual.ChargingPoint.Disconnect(ChargingSide.Left);
+                            _eVStore.Get(state.SessionA.EVId).IsCharging = false;
                             state.SessionA = null;
                         }
                     }
@@ -305,99 +313,110 @@ public class StationService
         StartCharging(state, e.Time);
     }
 
-    /// <summary>
-    /// Connects queued cars to free sides, runs the integrator, stores the result,
-    /// and schedules EndCharging events.
-    /// </summary>
-    /// <param name="state">The charger state.</param>
-    /// <param name="simNow">The current simulation time.</param>
     private void StartCharging(ChargerState state, Time simNow)
     {
+        if (_integrator == null) return;
+
         switch (state.Charger)
         {
             case SingleCharger single:
+                if (state.SessionA is not null) break;
+                if (!state.Queue.TryPeek(out var next)) break;
+
+                if (!single.ChargingPoint.TryConnect(next.EV.Socket))
                 {
-                    if (state.SessionA is not null) break;
-                    if (!state.Queue.TryDequeue(out var next)) break;
-
-                    if (!single.ChargingPoint.TryConnect(next.EV.Socket))
-                    {
-                        StartCharging(state, simNow);
-                        break;
-                    }
-
-                    state.SessionA = new ChargingSession(next.EVId, next.EV, simNow, null, null);
-
-                    var result = _integrator.IntegrateSingleToCompletion(
-                        simNow, single.MaxPowerKW, single.ChargingPoint, state.SessionA.EV);
-
-                    state.LastResult = result;
-
-                    _scheduler.ScheduleEvent(
-                        new EndCharging(next.EVId, single.Id, result.FinishTimeA!.Value));
-                    break;
+                    throw new InvalidOperationException(
+                        $"Logic Error: EV {next.EVId} reached Charger {single.Id} but TryConnect failed. " +
+                        "Check if HandleEndCharging is properly calling Disconnect() before StartCharging.");
                 }
+
+                state.Queue.Dequeue();
+
+                _metrics.RecordWaitTime(new EVWaitTimeMetric
+                {
+                    EVId = next.EVId,
+                    StationId = state.StationId,
+                    ArrivalAtStationTime = next.EV.ArrivalTime,
+                    StartChargingTime = simNow,
+                });
+
+                state.SessionA = new ChargingSession(next.EVId, next.EV, simNow, null, null);
+                _eVStore.Get(next.EVId).IsCharging = true; // Mark as charging
+
+                var result = _integrator.IntegrateSingleToCompletion(simNow, single.MaxPowerKW, single.ChargingPoint, state.SessionA.EV);
+                state.LastResult = result;
+
+                if (result?.FinishTimeA is not null)
+                {
+                    var token = _scheduler.ScheduleEvent(new EndCharging(next.EVId, single.Id, result.FinishTimeA.Value));
+                    state.SessionA = state.SessionA with { EndChargingCancellationToken = token };
+                }
+
+                break;
 
             case DualCharger dual:
+                var wasAloneA = state.SessionA is not null && state.SessionB is null;
+                var wasAloneB = state.SessionB is not null && state.SessionA is null;
+                var hadBothBefore = state.SessionA is not null && state.SessionB is not null;
+
+                while (state.Queue.TryPeek(out var candidate))
                 {
-                    var wasAloneA = state.SessionA is not null && state.SessionB is null;
-                    var wasAloneB = state.SessionB is not null && state.SessionA is null;
-                    var hadBothBefore = state.SessionA is not null && state.SessionB is not null;
-                    var oldFinishA = state.LastResult?.FinishTimeA;
-                    var oldFinishB = state.LastResult?.FinishTimeB;
+                    var side = dual.ChargingPoint.TryConnect(candidate.EV.Socket);
+                    if (side is null) break;
 
-                    // Fill empty sides from queue
-                    while (state.Queue.TryPeek(out var candidate))
+                    state.Queue.Dequeue();
+
+                    _metrics.RecordWaitTime(new EVWaitTimeMetric
                     {
-                        var side = dual.ChargingPoint.TryConnect(candidate.EV.Socket);
-                        if (side is null) break;
-                        state.Queue.Dequeue();
-                        var session = new ChargingSession(candidate.EVId, candidate.EV, simNow, side, null);
-                        if (side == ChargingSide.Left) state.SessionA = session;
-                        else state.SessionB = session;
-                    }
+                        EVId = candidate.EVId,
+                        StationId = state.StationId,
+                        ArrivalAtStationTime = candidate.EV.ArrivalTime,
+                        StartChargingTime = simNow,
+                    });
 
-                    var nowHasBoth = state.SessionA is not null && state.SessionB is not null;
-                    if (!hadBothBefore && nowHasBoth && (wasAloneA || wasAloneB))
-                    {
-                        if (wasAloneA && oldFinishA is not null)
-                        {
-                            if (state.SessionA!.EndChargingCancellationToken is { } token)
-                                _scheduler.CancelEvent(token);
-                        }
-                        else if (wasAloneB && oldFinishB is not null)
-                        {
-                            if (state.SessionB!.EndChargingCancellationToken is { } token)
-                                _scheduler.CancelEvent(token);
-                        }
-                    }
+                    var session = new ChargingSession(candidate.EVId, candidate.EV, simNow, side, null);
+                    _eVStore.Get(candidate.EVId).IsCharging = true;
 
-                    if (state.SessionA is null && state.SessionB is null) break;
-
-                    var carA = state.SessionA?.EV
-                        ?? state.SessionB!.EV with { CurrentSoC = state.SessionB.EV.TargetSoC };
-                    var carB = state.SessionB?.EV
-                        ?? state.SessionA!.EV with { CurrentSoC = state.SessionA.EV.TargetSoC };
-
-                    var dualResult = _integrator.IntegrateDualToCompletion(
-                        simNow, dual.MaxPowerKW, dual.ChargingPoint, carA, carB);
-
-                    state.LastResult = dualResult;
-
-                    if (state.SessionA is not null)
-                    {
-                        var token = _scheduler.ScheduleEvent(new EndCharging(state.SessionA.EVId, dual.Id, dualResult.FinishTimeA!.Value));
-                        state.SessionA = state.SessionA with { EndChargingCancellationToken = token };
-                    }
-
-                    if (state.SessionB is not null)
-                    {
-                        var token = _scheduler.ScheduleEvent(new EndCharging(state.SessionB.EVId, dual.Id, dualResult.FinishTimeB!.Value));
-                        state.SessionB = state.SessionB with { EndChargingCancellationToken = token };
-                    }
-
-                    break;
+                    if (side == ChargingSide.Left) state.SessionA = session;
+                    else state.SessionB = session;
                 }
+
+                if (state.SessionA is null && state.SessionB is null && state.Queue.Count > 0)
+                {
+                    var (eVId, eV) = state.Queue.Peek();
+                    throw new InvalidOperationException(
+                        $"Logic Error: DualCharger {dual.Id} is empty, but failed to connect EV {eVId}. " +
+                        $"Car Socket: {eV.Socket}. Check if Disconnect() was called in HandleEndCharging.");
+                }
+
+                var nowHasBoth = state.SessionA is not null && state.SessionB is not null;
+                if (!hadBothBefore && nowHasBoth)
+                {
+                    if (wasAloneA && state.SessionA?.EndChargingCancellationToken is { } tA) _scheduler.CancelEvent(tA);
+                    if (wasAloneB && state.SessionB?.EndChargingCancellationToken is { } tB) _scheduler.CancelEvent(tB);
+                }
+
+                if (state.SessionA is null && state.SessionB is null) break;
+
+                var carA = state.SessionA?.EV ?? state.SessionB!.EV with { CurrentSoC = state.SessionB.EV.TargetSoC };
+                var carB = state.SessionB?.EV ?? state.SessionA!.EV with { CurrentSoC = state.SessionA.EV.TargetSoC };
+
+                var dualResult = _integrator.IntegrateDualToCompletion(simNow, dual.MaxPowerKW, dual.ChargingPoint, carA, carB);
+                state.LastResult = dualResult;
+
+                if (state.SessionA is not null && dualResult?.FinishTimeA is not null)
+                {
+                    var token = _scheduler.ScheduleEvent(new EndCharging(state.SessionA.EVId, dual.Id, dualResult.FinishTimeA.Value));
+                    state.SessionA = state.SessionA with { EndChargingCancellationToken = token };
+                }
+
+                if (state.SessionB is not null && dualResult?.FinishTimeB is not null)
+                {
+                    var token = _scheduler.ScheduleEvent(new EndCharging(state.SessionB.EVId, dual.Id, dualResult.FinishTimeB.Value));
+                    state.SessionB = state.SessionB with { EndChargingCancellationToken = token };
+                }
+
+                break;
         }
     }
 }

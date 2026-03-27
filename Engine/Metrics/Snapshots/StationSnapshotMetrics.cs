@@ -8,7 +8,7 @@ using Core.Shared;
 /// A point-in-time snapshot of a single station's metrics.
 /// Collected once per simulation hour.
 /// </summary>
-public record SnapshotMetric
+public record StationSnapshotMetric
 {
     /// <summary>
     /// Gets the simulation timestamp (seconds) when this snapshot was taken.
@@ -68,12 +68,12 @@ public record SnapshotMetric
     /// <param name="day">Current day of week (for price lookup).</param>
     /// <param name="hour">Current hour 0–23 (for price lookup).</param>
     /// 
+    /// 
     /// A delegate that returns the actual power currently being delivered (in kW)
     /// for a given charger. Provided by the caller since power state lives outside
     /// this record. // TODO: Should be implemented somehow later.
-    /// 
-    /// <returns>A <see cref="SnapshotMetric"/> containing the collected metrics for the station.</returns>
-    public static SnapshotMetric Collect(
+    /// <returns>A <see cref="StationSnapshotMetric"/> containing the collected metrics for the station.</returns>
+    public static StationSnapshotMetric Collect(
         Station station,
         Time simTime,
         DayOfWeek day,
@@ -91,10 +91,10 @@ public record SnapshotMetric
             totalQueueSize += charger.Queue.Count;
             if (charger.Queue.Count > 0) activeChargers++;
         }
-        
+
         var (reservations, cancellations) = station.CountReservationsCancellations();
 
-        return new SnapshotMetric
+        return new StationSnapshotMetric
         {
             SimTime = simTime,
             StationId = station.Id,

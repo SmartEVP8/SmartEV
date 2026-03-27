@@ -1,9 +1,11 @@
 namespace Engine.Events;
 
 using Engine.Metrics;
+using Engine.Services;
 using Engine.Metrics.Snapshots;
 using Core.Shared;
 using Core.Charging;
+using Engine.Vehicles;
 
 /// <summary>
 /// Handles the <see cref="SnapshotEvent"/> by collecting metrics for all stations
@@ -17,7 +19,7 @@ public class SnapshotEventHandler(
     EventScheduler scheduler)
 {
     /// <summary>
-    /// Iterates over all stations, collects a <see cref="SnapshotMetric"/> for each,
+    /// Iterates over all stations, collects a <see cref="StationSnapshotMetric"/> for each,
     /// records them via the <see cref="MetricsService"/>, then reschedules the next
     /// snapshot one hour later.
     /// </summary>
@@ -26,20 +28,17 @@ public class SnapshotEventHandler(
     public void Handle(SnapshotEvent e)
     {
         var currentTime = startTime.AddSeconds(e.Time.T);
-        var day = currentTime.DayOfWeek;
-        var hour = currentTime.Hour;
 
         foreach (var station in stations.Values)
         {
-            var metric = SnapshotMetric.Collect(
+            var metric = StationSnapshotMetric.Collect(
                 station,
                 e.Time,
                 currentTime.DayOfWeek,
                 currentTime.Hour);
-            metrics.RecordSnapshot(metric);
+            metrics.RecordStationSnapshot(metric);
         }
 
-        var next = new SnapshotEvent(e.Time + rescheduleTime);
-        scheduler.ScheduleEvent(next);
+        scheduler.ScheduleEvent(new SnapshotEvent(e.Time + rescheduleTime));
     }
 }
