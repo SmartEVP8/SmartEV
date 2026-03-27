@@ -120,4 +120,19 @@ public class OSRMRouterTests
             Math.Abs(tableDurations[0] - routeSum) < 1f,
             $"Table={tableDurations[0]:F1}s RouteSum={routeSum:F1}s — likely wrong leg wired");
     }
+
+    [Fact]
+    public void AllOSRMQueryFunctions_ReturnsTheSameResult()
+    {
+        var stationOnRoute = new Position(10.182335, 56.156305);
+        var router = CreateRouter([_stationNearPosition, stationOnRoute, _stationFarPosition]);
+
+        var (duration2, _) = router.QueryPointsToPoints(_evPosition, _destPosition);
+        var (duration3, _) = router.QueryDestination([.. _evPosition, .. _destPosition]);
+        var (duration4, _) = router.QueryDestination([.. _evPosition, stationOnRoute.Longitude, stationOnRoute.Latitude, .. _destPosition]);
+
+        Assert.Equal(481.5f, duration2[0]);
+        Assert.Equal(481.5f, duration3);
+        Assert.Equal(481.5f, duration4);
+    }
 }
