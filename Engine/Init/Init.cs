@@ -15,7 +15,6 @@ using Engine.Services;
 using Engine.Vehicles;
 using Microsoft.Extensions.DependencyInjection;
 using Engine.Events.Middleware;
-using Engine.Events.Middleware;
 
 /// <summary>
 /// Initializes the Engine by setting up all necessary services and configurations.
