@@ -67,11 +67,11 @@ public record SnapshotMetric
     /// <param name="simTime">Current simulation time in seconds.</param>
     /// <param name="day">Current day of week (for price lookup).</param>
     /// <param name="hour">Current hour 0–23 (for price lookup).</param>
-    /// <param name="getDeliveredKW">
+    /// 
     /// A delegate that returns the actual power currently being delivered (in kW)
     /// for a given charger. Provided by the caller since power state lives outside
     /// this record. // TODO: Should be implemented somehow later.
-    /// </param>
+    /// 
     /// <returns>A <see cref="SnapshotMetric"/> containing the collected metrics for the station.</returns>
     public static SnapshotMetric Collect(
         Station station,
