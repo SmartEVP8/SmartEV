@@ -24,14 +24,9 @@ public class EventDispatcher(
         CheckUrgencyHandler checkUrgencyHandler,
         SnapshotEventHandler snapshotEventHandler,
         FindCandidateStationsHandler findCandidateStationsHandler,
-<<<<<<< CalculateNewPath
-        DestinationArrivalHandler destinationArrivalHandler,
-        EVService evService)
-=======
         EVService evService,
         DestinationArrivalHandler destinationArrivalHandler,
         CheckAndUpdateAllEVsHandler CheckAndUpdateAllEVsHandler)
->>>>>>> main
 {
     /// <summary>
     /// Dispatches the event to the correct handler.
