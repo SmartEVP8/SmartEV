@@ -76,7 +76,7 @@ public class StationService
     private readonly Dictionary<ushort, Station> _stationIndex = [];
     private readonly ChargingIntegrator _integrator;
     private readonly EventScheduler _scheduler;
-    private readonly EVStore _eVStore;
+    private readonly EVStore _evStore;
     private readonly ApplyNewPath _applyNewPath;
     private SemaphoreSlim _lastGate = new(1, 1);
     private Task _lastTask = Task.CompletedTask;
@@ -98,7 +98,7 @@ public class StationService
     {
         _integrator = integrator;
         _scheduler = scheduler;
-        _eVStore = evStore;
+        _evStore = evStore;
         _applyNewPath = applyNewPath;
 
         foreach (var station in stations)
@@ -128,7 +128,7 @@ public class StationService
     /// <param name="e">The reservation request event.</param>
     public void HandleReservationRequest(ReservationRequest e)
     {
-        ref var ev = ref _eVStore.Get(e.EVId);
+        ref var ev = ref _evStore.Get(e.EVId);
         if (!_stationIndex.TryGetValue(e.StationId, out var station))
             return;
 
@@ -136,6 +136,12 @@ public class StationService
         {
             HandleCancelRequest(
                 new CancelRequest(e.EVId, ev.HasReservationAtStationId.Value, e.Time));
+        }
+
+        if (ev.HasArriveAtDestinationEvent != null)
+        {
+            _scheduler.CancelEvent((uint)ev.HasArriveAtDestinationEvent);
+            ev.HasArriveAtDestinationEvent = null;
         }
 
         station.IncrementReservations();
@@ -147,9 +153,9 @@ public class StationService
 
         _lastTask = Task.Run(async () =>
         {
-            var ev = _eVStore.Get(e.EVId);
-            _applyNewPath.ApplyNewPathToEV(ref ev, station, e.Time);
-            _eVStore.Set(e.EVId, ref ev);
+            var ev = _evStore.Get(e.EVId);
+            _applyNewPath.ApplyNewPathToEV(ref ev, station, e.Time, e.DurationToStation);
+            _evStore.Set(e.EVId, ref ev);
 
             await previousGate.WaitAsync();
 
@@ -173,7 +179,7 @@ public class StationService
     /// <param name="e">The cancellation request event.</param>
     public void HandleCancelRequest(CancelRequest e)
     {
-        ref var ev = ref _eVStore.Get(e.EVId);
+        ref var ev = ref _evStore.Get(e.EVId);
         if (!_stationIndex.TryGetValue(e.StationId, out var station))
             return;
 
@@ -188,7 +194,7 @@ public class StationService
             throw new SkillissueException("Should never cancel without a reservation cancellation token");
         }
 
-        ev.HasReservationAtStationId = null;
+        ev.HasReservationAtStationId = null;      
     }
 
     /// <summary>
@@ -198,7 +204,7 @@ public class StationService
     /// <param name="e">The arrival event.</param>
     public void HandleArrivalAtStation(ArriveAtStation e)
     {
-        var ev = _eVStore.Get(e.EVId);
+        var ev = _evStore.Get(e.EVId);
         if (!_stationChargers.TryGetValue(e.StationId, out var chargers))
             return;
 
@@ -237,13 +243,15 @@ public class StationService
 
         var result = state.LastResult;
         state.LastResult = null;
+        ref var ev = ref _evStore.Get(e.EVId);
 
         switch (state.Charger)
         {
             case SingleCharger single:
                 single.ChargingPoint.Disconnect();
                 state.SessionA = null;
-                _eVStore.Get(e.EVId).IsCharging = false;
+                ev.IsCharging = false;
+                ev.Journey.UpdateRoute(ev.Journey.PathToDestination, e.Time, ev.Journey.PathToDestinationDuration);
                 break;
 
             case DualCharger dual:
@@ -251,7 +259,8 @@ public class StationService
                 {
                     dual.ChargingPoint.Disconnect(ChargingSide.Left);
                     state.SessionA = null;
-                    _eVStore.Get(e.EVId).IsCharging = false;
+                    ev.IsCharging = false;
+                    ev.Journey.UpdateRoute(ev.Journey.PathToDestination, e.Time, ev.Journey.PathToDestinationDuration);
 
                     if (state.SessionB is not null && result is not null)
                     {
@@ -277,7 +286,8 @@ public class StationService
                 {
                     dual.ChargingPoint.Disconnect(ChargingSide.Right);
                     state.SessionB = null;
-                    _eVStore.Get(e.EVId).IsCharging = false;
+                    ev.IsCharging = false;
+                    ev.Journey.UpdateRoute(ev.Journey.PathToDestination, e.Time, ev.Journey.PathToDestinationDuration);
                     if (state.SessionA is not null && result is not null)
                     {
                         var updatedSoC = result.ASoCWhenBFinish;
@@ -301,7 +311,9 @@ public class StationService
 
                 break;
         }
-
+    
+        _scheduler.ScheduleEvent(
+            new ArriveAtDestination(e.EVId, e.Time + ev.Journey.LastUpdatedDuration));
         StartCharging(state, e.Time);
     }
 

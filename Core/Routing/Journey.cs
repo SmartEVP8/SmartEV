@@ -36,6 +36,16 @@ public class Journey(Time departure, Time originalDuration, Paths path)
     public Paths Path { get; private set; } = path;
 
     /// <summary>
+    /// Gets or sets the current Path to Destination. Is used for splitting the path of an EV.
+    /// </summary>
+    public Paths PathToDestination { get; set; } = path;
+
+        /// <summary>
+    /// Gets or sets the current Path to Destination. Is used for splitting the path of an EV.
+    /// </summary>
+    public Time PathToDestinationDuration { get; set; } = originalDuration;
+
+    /// <summary>
     /// Gets the additional time has been added by rerouting/deviating from the original path.
     /// </summary>
     public Time PathDeviation { get; private set; } = 0;
@@ -119,5 +129,16 @@ public class Journey(Time departure, Time originalDuration, Paths path)
 
         LastUpdatedDeparture = departure;
         LastUpdatedDuration = duration;
+    }
+
+    /// <summary>
+    /// Updates the route of the second part of an EVs journey.
+    /// </summary>
+    /// <param name="newRoute">The new path/journey.</param>
+    /// <param name="duration">The duration of the new joruney.</param>
+    public void UpdateStationToDestinationRoute(Paths newRoute, Time duration)
+    {
+        PathToDestination = newRoute;
+        PathToDestinationDuration = duration;
     }
 }
