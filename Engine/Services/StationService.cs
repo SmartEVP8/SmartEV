@@ -177,7 +177,7 @@ public class StationService
         if (!_stationIndex.TryGetValue(e.StationId, out var station))
             return;
 
-        station.DecrementReservations();
+        station.IncrementCancellations();
 
         if (ev.HasReservationAtStationId != null)
         {

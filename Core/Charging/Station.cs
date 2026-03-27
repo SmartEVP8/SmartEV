@@ -101,5 +101,5 @@ public class Station(ushort id,
     /// <summary>
     /// Decrements the amount of reservations on a station, and updates the total amount of cancellations.
     /// </summary>
-    public void DecrementReservations() => TotalCancellations++;
+    public void IncrementCancellations() => TotalCancellations++;
 }
