@@ -26,11 +26,11 @@ public class FindCandidateStationsHandler(
     public void Handle(FindCandidateStations e)
     {
         findCandidateStationService.PreComputeCandidateStation()(e);
-
+        Console.WriteLine($"Trying to start Task.Run for FindCandidateStations with EV {e.EVId} at time {e.Time}");
         _ = Task.Run(async () =>
         {
+            Console.WriteLine($"Started Task.Run for FindCandidateStations with EV {e.EVId} at time {e.Time}");
             var stationCosts = await findCandidateStationService.ComputeCandidateStationFromCache(e.EVId);
-
             var ev = evStore.Get(e.EVId);
             var stations = stationCosts.Keys.ToArray();
             var journeyDurations = stationCosts.Values.ToArray();

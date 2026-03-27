@@ -60,7 +60,7 @@ public static class Program
 
             BatteryIntervalForCheckUrgency = 10,
 
-            CurrentAmoutOfEVsInDenmark = 583320, // Based on the number of registered EVs in Denmark as of 2026-03-22 https://mobility.dk/nyheder/nu-koerer-hver-femte-personbil-i-danmark-paa-el/
+            CurrentAmoutOfEVsInDenmark = 10000, // Based on the number of registered EVs in Denmark as of 2026-03-22 https://mobility.dk/nyheder/nu-koerer-hver-femte-personbil-i-danmark-paa-el/
 
             ChargingStepSeconds = 60,
 

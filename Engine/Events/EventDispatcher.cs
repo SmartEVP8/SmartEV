@@ -24,7 +24,7 @@ public class EventDispatcher(
         CheckUrgencyHandler checkUrgencyHandler,
         SnapshotEventHandler snapshotEventHandler,
         FindCandidateStationsHandler findCandidateStationsHandler,
-        EVService evService,  
+        EVService evService,
         DestinationArrivalHandler destinationArrivalHandler,
         CheckAndUpdateAllEVsHandler CheckAndUpdateAllEVsHandler)
 {

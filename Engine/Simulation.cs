@@ -21,7 +21,7 @@ public class Simulation(
     public void Run()
     {
         scheduler.ScheduleEvent(new SpawnEVS(0));
-        scheduler.ScheduleEvent(new CheckAndUpdateAllEVs(0));
+        scheduler.ScheduleEvent(new CheckAndUpdateAllEVs(1));
         while (true)
         {
             HandleNextEvent();
