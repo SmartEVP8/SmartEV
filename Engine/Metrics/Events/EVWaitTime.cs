@@ -5,20 +5,20 @@ using Core.Shared;
 /// <summary>
 /// Represents a metric captured when an EV stops waiting in a queue and begins a charging session.
 /// </summary>
-public readonly struct EVWaitTimeMetric
+public record EVWaitTimeMetric // Changed to record for better data semantics
 {
-    /// <summary>Gets the unique identifier of the EV.</summary>
+    /// <summary> Gets the ID of the EV that waited and started charging. </summary>
     required public int EVId { get; init; }
 
-    /// <summary>Gets the identifier of the station where the charging occurs.</summary>
+    /// <summary> Gets the ID of the station where the EV waited and started charging. </summary>
     required public int StationId { get; init; }
 
-    /// <summary>Gets the time the EV arrived at the station and joined the queue.</summary>
+    /// <summary> Gets the simulation time when the EV arrived at the station. </summary>
     required public Time ArrivalAtStationTime { get; init; }
 
-    /// <summary>Gets the time the EV actually connected to the charger and started drawing power.</summary>
+    /// <summary> Gets the simulation time when the EV started charging. </summary>
     required public Time StartChargingTime { get; init; }
 
-    /// <summary>Gets the total duration spent waiting in the queue.</summary>
-    public Time WaitTime => ArrivalAtStationTime - StartChargingTime;
+    /// <summary> Gets the total time the EV spent waiting in the queue before starting to charge. </summary>
+    public Time WaitTime => StartChargingTime - ArrivalAtStationTime;
 }

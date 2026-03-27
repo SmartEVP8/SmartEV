@@ -28,7 +28,4 @@ public sealed class MetricsConfig
 
     /// <summary> Gets a value indicating whether EV wait time metric are recorded. </summary>
     public bool RecordEVWaitTime { get; init; }
-
-    /// <summary>Gets a value indicating whether single station snapshots are recorded.</summary>
-    public bool RecordSingleStationSnapshot { get; init; }
 }

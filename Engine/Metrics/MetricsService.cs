@@ -21,8 +21,6 @@ public sealed class MetricsService : IAsyncDisposable
 {
     private readonly IMetricWriter<EVSnapshotMetric>? _cars;
     private readonly IMetricWriter<ArrivalAtDestinationMetric>? _arrivals;
-    private readonly IMetricWriter<ReservationSnapshotMetric>? _reservations;
-    private readonly IMetricWriter<ReservationCancellationSnapshotMetric>? _reservationCancellations;
     private readonly IMetricWriter<StationSnapshotMetric>? _stations;
     private readonly IMetricWriter<EVWaitTimeMetric>? _waitTime;
 
@@ -40,12 +38,8 @@ public sealed class MetricsService : IAsyncDisposable
             _cars = new MetricWriter<EVSnapshotMetric>(config.BufferSize, files.GetMetricPath<EVSnapshotMetric>());
         if (config.RecordArrivals)
             _arrivals = new MetricWriter<ArrivalAtDestinationMetric>(config.BufferSize, files.GetMetricPath<ArrivalAtDestinationMetric>());
-        if (config.RecordSingleStationSnapshot)
+        if (config.RecordStationSnapshots)
             _stations = new MetricWriter<StationSnapshotMetric>(config.BufferSize, files.GetMetricPath<StationSnapshotMetric>());
-        if (config.RecordReservations)
-            _reservations = new MetricWriter<ReservationSnapshotMetric>(config.BufferSize, files.GetMetricPath<ReservationSnapshotMetric>());
-        if (config.RecordReservationCancellations)
-            _reservationCancellations = new MetricWriter<ReservationCancellationSnapshotMetric>(config.BufferSize, files.GetMetricPath<ReservationCancellationSnapshotMetric>());
         if (config.RecordEVWaitTime)
             _waitTime = new MetricWriter<EVWaitTimeMetric>(config.BufferSize, files.GetMetricPath<EVWaitTimeMetric>());
     }
@@ -62,17 +56,9 @@ public sealed class MetricsService : IAsyncDisposable
     /// <param name="metric">The station snapshot metric to record.</param>
     public void RecordStationSnapshot(StationSnapshotMetric metric) => _stations?.Record(metric);
 
-    /// <summary>
-    /// Records a reservation snapshot metric. No-op if reservation snapshots are disabled in config.
-    /// </summary>
-    /// <param name="metric">The reservation snapshot metric to record.</param>
-    public void RecordReservationSnapshot(ReservationSnapshotMetric metric) => _reservations?.Record(metric);
-
-    /// <summary>
-    /// Records a reservation cancellation snapshot metric. No-op if reservation cancellation snapshots are disabled in config.
-    /// </summary>
-    /// <param name="metric">The reservation cancellation snapshot metric to record.</param>
-    public void RecordReservationCancellationSnapshot(ReservationCancellationSnapshotMetric metric) => _reservationCancellations?.Record(metric);
+    /// <summary> Records an EV wait time metric. No-op if EV wait time metrics are disabled in config. </summary>
+    /// <param name="metric">The EV wait time metric to record.</param>
+    public void RecordWaitTime(EVWaitTimeMetric metric) => _waitTime?.Record(metric);
 
     /// <summary>
     /// Signals all writers to stop, drains their channels, and flushes remaining
@@ -85,8 +71,6 @@ public sealed class MetricsService : IAsyncDisposable
         if (_cars is not null) tasks.Add(_cars.DisposeAsync().AsTask());
         if (_stations is not null) tasks.Add(_stations.DisposeAsync().AsTask());
         if (_arrivals is not null) tasks.Add(_arrivals.DisposeAsync().AsTask());
-        if (_reservations is not null) tasks.Add(_reservations.DisposeAsync().AsTask());
-        if (_reservationCancellations is not null) tasks.Add(_reservationCancellations.DisposeAsync().AsTask());
         if (_waitTime is not null) tasks.Add(_waitTime.DisposeAsync().AsTask());
         await Task.WhenAll(tasks);
     }

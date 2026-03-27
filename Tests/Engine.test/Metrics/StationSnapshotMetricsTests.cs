@@ -1,26 +1,30 @@
 namespace Engine.test.Metrics;
 
-using System;
-using Xunit;
 using Engine.test.Builders;
 using Engine.Metrics.Snapshots;
+using Core.Shared;
 
 public class StationSnapshotMetricTests
 {
-        [Theory]
-        [InlineData(0, 0, 0)]
-        [InlineData(1, 0, 1)]
-        [InlineData(1, 1, 2)]
-        public void ActiveChargers_IsCorrect(int enqueuedOnA, int enqueuedOnB, int expectedActive)
+        [Fact]
+        public void Collect_CapturesAndResetsStationCounters()
         {
-                var chargerA = TestData.SingleCharger(id: 1);
-                var chargerB = TestData.SingleCharger(id: 2);
-                for (var i = 0; i < enqueuedOnA; i++) chargerA.Queue.Enqueue(i);
-                for (var i = 0; i < enqueuedOnB; i++) chargerB.Queue.Enqueue(i);
-                var station = TestData.Station(1, chargers: [chargerA, chargerB]);
+                var station = TestData.Station(id: 1);
 
-                var metric = StationSnapshotMetric.Collect(station, 0, DayOfWeek.Monday, 0);
+                station.IncrementReservations();
+                station.IncrementReservations();
+                station.IncrementReservations(); // 3 total
+                station.IncrementCancellations(); // 1 total
 
-                Assert.Equal(expectedActive, metric.ActiveChargers);
+                var simTime = new Time(3600);
+
+                var metric = StationSnapshotMetric.Collect(station, simTime, DayOfWeek.Monday, 10);
+
+                Assert.Equal(3u, metric.Reservations);
+                Assert.Equal(1u, metric.Cancellations);
+
+                var (res, canc) = station.CountReservationsCancellations();
+                Assert.Equal(0, res);
+                Assert.Equal(0, canc);
         }
 }

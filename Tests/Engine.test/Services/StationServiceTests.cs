@@ -14,6 +14,8 @@ public class StationServiceTests
     [Fact]
     public void TwoCars_DualCharger_BothReceiveCharge()
     {
+        // Two cars arrive at a dual charger simultaneously.
+        // Both should start charging and have EndCharging events scheduled.
         var (service, scheduler, evStore) = BuildDual();
 
         evStore.TryAllocate((_, ref e) => { e = TestData.EV(); }, out var index1);
@@ -25,8 +27,11 @@ public class StationServiceTests
         var end1 = AsEndCharging(scheduler.GetNextEvent());
         var end2 = AsEndCharging(scheduler.GetNextEvent());
 
+        // Both cars are charging different EVIds, same charger
         Assert.NotEqual(end1.EVId, end2.EVId);
         Assert.Equal(end1.ChargerId, end2.ChargerId);
+
+        // Finish times should be in the future
         Assert.True(end1.Time > 0);
         Assert.True(end2.Time > 0);
     }
@@ -34,6 +39,8 @@ public class StationServiceTests
     [Fact]
     public void ThreeEVs_SingleCharger_FirstStartsRemainingQueues()
     {
+        // Single charger: first EV starts immediately, second and third queue.
+        // After first finishes, second should start.
         var (service, scheduler, evStore) = BuildSingle();
 
         evStore.TryAllocate((_, ref e) => { e = TestData.EV(); }, out var index1);
@@ -44,11 +51,13 @@ public class StationServiceTests
         service.HandleArrivalAtStation(new ArriveAtStation(EVId: index2, StationId: 1, TargetSoC: 0.8, Time: 0));
         service.HandleArrivalAtStation(new ArriveAtStation(EVId: index3, StationId: 1, TargetSoC: 0.8, Time: 0));
 
+        // Only ev1 should have an EndCharging scheduled — ev2 and ev3 are queued
         var firstEnd = AsEndCharging(scheduler.GetNextEvent());
         Assert.Equal(index1, firstEnd.EVId);
         Assert.Equal(2, service.GetChargerState(chargerId: 1)!.Queue.Count);
         Assert.Null(scheduler.GetNextEvent());
 
+        // ev1 finishes — service should start ev2
         service.HandleEndCharging(firstEnd);
         Assert.Single(service.GetChargerState(chargerId: 1)!.Queue);
 
@@ -59,6 +68,8 @@ public class StationServiceTests
     [Fact]
     public void ThreeEVs_DualCharger_TwoChargeTogetherThirdQueues()
     {
+        // Dual charger — first two EVs fill both sides, third queues.
+        // After one finishes, third should start and power is redistributed.
         var (service, scheduler, evStore) = BuildDual(maxPowerKW: 200);
 
         evStore.TryAllocate((_, ref e) => { e = TestData.EV(); }, out var index1);
@@ -69,12 +80,14 @@ public class StationServiceTests
         service.HandleArrivalAtStation(new ArriveAtStation(EVId: index2, StationId: 1, TargetSoC: 0.8, Time: 0));
         service.HandleArrivalAtStation(new ArriveAtStation(EVId: index3, StationId: 1, TargetSoC: 0.8, Time: 0));
 
+        // Both sides occupied — ev3 is queued
         var ev1End = AsEndCharging(scheduler.GetNextEvent());
         Assert.Equal(index1, ev1End.EVId);
         Assert.Single(service.GetChargerState(chargerId: 1)!.Queue);
 
         service.HandleEndCharging(ev1End);
 
+        // ev2 rescheduled + ev3 newly scheduled
         var nextA = AsEndCharging(scheduler.GetNextEvent());
         var nextB = AsEndCharging(scheduler.GetNextEvent());
         Assert.Empty(service.GetChargerState(chargerId: 1)!.Queue);
@@ -135,7 +148,7 @@ public class StationServiceTests
         var totalRequest = 100;
         var scheduler = new EventScheduler([]);
         var evStore = new EVStore(totalRequest);
-        var stationId = (ushort)1;
+        ushort stationId = 1;
         var stations = TestData.Stations((stationId, 1.0, 1.0));
         var service = TestData.StationService(stations, scheduler, evStore);
 

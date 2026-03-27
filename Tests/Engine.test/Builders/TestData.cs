@@ -61,7 +61,6 @@ public static class TestData
             rescheduleTime: new Time(3600),
             startTime: DateTimeOffset.UtcNow,
             stations: stations,
-            evStore: new EVStore(evStoreCapacity),
             metrics: metrics,
             scheduler: scheduler);
 
@@ -162,7 +161,8 @@ public static class TestData
             TargetSoC: targetSoC,
             CapacityKWh: model.BatteryConfig.MaxCapacityKWh,
             MaxChargeRateKW: model.BatteryConfig.ChargeRateKW,
-            Socket: socket);
+            Socket: socket,
+            ArrivalTime: new Time(0));
     }
 
     public static StationService StationService(

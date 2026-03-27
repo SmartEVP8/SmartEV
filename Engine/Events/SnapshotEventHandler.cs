@@ -15,34 +15,9 @@ public class SnapshotEventHandler(
     Time rescheduleTime,
     DateTimeOffset startTime,
     Dictionary<ushort, Station> stations,
-    EVStore evStore,
     MetricsService metrics,
     EventScheduler scheduler)
 {
-    private int _reservationCount = 0;
-
-    private int _reservationCancelledCount = 0;
-
-    /// <summary>
-    /// Increments the reservation count, which will be recorded in the next snapshot. Called by the <see cref="StationService"/> whenever a reservation is made.
-    /// </summary>
-    public void OnReservationMade() => _reservationCount++;
-
-    /// <summary>
-    /// Increments the reservation cancelled count, which will be recorded in the next snapshot. Called by the <see cref="StationService"/> whenever a reservation is cancelled.
-    /// </summary>
-    public void OnReservationCancelled() => _reservationCancelledCount++;
-
-    /// <summary>
-    /// Gets the current count of reservations made since the last snapshot. Used for testing to verify that counts are reset after each snapshot.
-    /// </summary>
-    internal int ReservationCount => _reservationCount;
-
-    /// <summary>
-    /// Gets the current count of reservations cancelled since the last snapshot. Used for testing to verify that counts are reset after each snapshot.
-    /// </summary>
-    internal int ReservationCancelledCount => _reservationCancelledCount;
-
     /// <summary>
     /// Iterates over all stations, collects a <see cref="StationSnapshotMetric"/> for each,
     /// records them via the <see cref="MetricsService"/>, then reschedules the next
@@ -63,22 +38,6 @@ public class SnapshotEventHandler(
                 currentTime.Hour);
             metrics.RecordStationSnapshot(metric);
         }
-
-        // Reservation snapshot
-        metrics.RecordReservationSnapshot(new ReservationSnapshotMetric
-        {
-            SimTime = e.Time,
-            TotalReservations = _reservationCount,
-        });
-        _reservationCount = 0;
-
-        // Reservation cancellation snapshot
-        metrics.RecordReservationCancellationSnapshot(new ReservationCancellationSnapshotMetric
-        {
-            SimTime = e.Time,
-            TotalReservationCancellations = _reservationCancelledCount,
-        });
-        _reservationCancelledCount = 0;
 
         scheduler.ScheduleEvent(new SnapshotEvent(e.Time + rescheduleTime));
     }

@@ -9,7 +9,7 @@ using Engine.Vehicles;
 using Engine.Routing;
 using Engine.Utils;
 using Engine.Metrics;
-using Engine.Metrics.Snapshots;
+using Engine.Metrics.Events;
 
 /// <summary>
 /// Tracks an active charging session at one side of a charger.
@@ -25,12 +25,17 @@ public record ChargingSession(
 /// <summary>
 /// Tracks the runtime state of a charger, active sessions, waiting queue, and last integration result.
 /// </summary>
-public class ChargerState(ChargerBase charger)
+public class ChargerState(ChargerBase charger, ushort stationId)
 {
     /// <summary>
     /// Gets charger this state belongs to.
     /// </summary>
     public ChargerBase Charger { get; } = charger;
+
+    /// <summary>
+    /// Gets the id of the station this charger belongs to for metrics tagging.
+    /// </summary>
+    public ushort StationId { get; } = stationId;
 
     /// <summary>
     /// Gets the queue of EVs waiting to charge at this charger, in order of arrival.
@@ -114,7 +119,7 @@ public class StationService
         foreach (var station in stations)
         {
             _stationIndex[station.Id] = station;
-            var states = station.Chargers.Select(c => new ChargerState(c)).ToList();
+            var states = station.Chargers.Select(c => new ChargerState(c, station.Id)).ToList();
             _stationChargers[station.Id] = states;
             foreach (var cs in states)
                 _chargerIndex[cs.Charger.Id] = cs;
@@ -148,7 +153,6 @@ public class StationService
                 new CancelRequest(e.EVId, ev.HasReservationAtStationId.Value, e.Time));
         }
 
-        _snapshotHandler.OnReservationMade();
         station.IncrementReservations();
         ev.HasReservationAtStationId = e.StationId;
 
@@ -189,7 +193,6 @@ public class StationService
             return;
 
         station.IncrementCancellations();
-        _snapshotHandler.OnReservationCancelled();
 
         if (ev.HasReservationAtStationId != null)
         {
@@ -229,7 +232,8 @@ public class StationService
                 TargetSoC: e.TargetSoC,
                 CapacityKWh: ev.Battery.Capacity,
                 MaxChargeRateKW: ev.Battery.MaxChargeRate,
-                Socket: ev.Battery.Socket);
+                Socket: ev.Battery.Socket,
+                ArrivalTime: e.Time);
 
         target.Queue.Enqueue((e.EVId, connectedEV));
 
@@ -321,12 +325,21 @@ public class StationService
 
                 if (!single.ChargingPoint.TryConnect(next.EV.Socket))
                 {
-                    state.Queue.Dequeue(); // Skip incompatible
-                    StartCharging(state, simNow);
-                    break;
+                    throw new InvalidOperationException(
+                        $"Logic Error: EV {next.EVId} reached Charger {single.Id} but TryConnect failed. " +
+                        "Check if HandleEndCharging is properly calling Disconnect() before StartCharging.");
                 }
 
                 state.Queue.Dequeue();
+
+                _metrics.RecordWaitTime(new EVWaitTimeMetric
+                {
+                    EVId = next.EVId,
+                    StationId = state.StationId,
+                    ArrivalAtStationTime = next.EV.ArrivalTime,
+                    StartChargingTime = simNow,
+                });
+
                 state.SessionA = new ChargingSession(next.EVId, next.EV, simNow, null, null);
                 _eVStore.Get(next.EVId).IsCharging = true; // Mark as charging
 
@@ -352,11 +365,28 @@ public class StationService
                     if (side is null) break;
 
                     state.Queue.Dequeue();
+
+                    _metrics.RecordWaitTime(new EVWaitTimeMetric
+                    {
+                        EVId = candidate.EVId,
+                        StationId = state.StationId,
+                        ArrivalAtStationTime = candidate.EV.ArrivalTime,
+                        StartChargingTime = simNow,
+                    });
+
                     var session = new ChargingSession(candidate.EVId, candidate.EV, simNow, side, null);
-                    _eVStore.Get(candidate.EVId).IsCharging = true; // Mark as charging
+                    _eVStore.Get(candidate.EVId).IsCharging = true;
 
                     if (side == ChargingSide.Left) state.SessionA = session;
                     else state.SessionB = session;
+                }
+
+                if (state.SessionA is null && state.SessionB is null && state.Queue.Count > 0)
+                {
+                    var (eVId, eV) = state.Queue.Peek();
+                    throw new InvalidOperationException(
+                        $"Logic Error: DualCharger {dual.Id} is empty, but failed to connect EV {eVId}. " +
+                        $"Car Socket: {eV.Socket}. Check if Disconnect() was called in HandleEndCharging.");
                 }
 
                 var nowHasBoth = state.SessionA is not null && state.SessionB is not null;
