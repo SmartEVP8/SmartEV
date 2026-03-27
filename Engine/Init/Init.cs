@@ -137,6 +137,12 @@ public static class Init
 
         services.AddSingleton(sp =>
         {
+            var router = sp.GetRequiredService<IOSRMRouter>();
+            return new ApplyNewPath(router);
+        });
+
+        services.AddSingleton(sp =>
+        {
             var stations = sp.GetRequiredService<Dictionary<ushort, Station>>();
             var integrator = sp.GetRequiredService<ChargingIntegrator>();
             var scheduler = sp.GetRequiredService<EventScheduler>();
