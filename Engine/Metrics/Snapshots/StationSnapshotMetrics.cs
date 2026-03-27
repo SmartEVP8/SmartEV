@@ -1,7 +1,6 @@
 namespace Engine.Metrics.Snapshots;
 
 using Core.Charging;
-using System;
 using Core.Shared;
 
 /// <summary>
