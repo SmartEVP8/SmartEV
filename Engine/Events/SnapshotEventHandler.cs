@@ -26,8 +26,6 @@ public class SnapshotEventHandler(
     public void Handle(SnapshotEvent e)
     {
         var currentTime = startTime.AddSeconds(e.Time.T);
-        var day = currentTime.DayOfWeek;
-        var hour = currentTime.Hour;
 
         foreach (var station in stations.Values)
         {

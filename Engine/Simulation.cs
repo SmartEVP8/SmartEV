@@ -20,6 +20,7 @@ public class Simulation(
     /// </summary>
     public void Run()
     {
+        Console.WriteLine("Starting Simulation");
         scheduler.ScheduleEvent(new SpawnEVS(0));
         scheduler.ScheduleEvent(new CheckAndUpdateAllEVs(0));
         while (true)
@@ -37,7 +38,6 @@ public class Simulation(
 
         if (nextEvent != null)
         {
-            Console.WriteLine($"Handling event: {nextEvent.GetType().Name} at time {nextEvent.Time}");
             if (nextEvent.Time > runUntilStop)
             {
                 Console.WriteLine("Reached end of simulation time.");

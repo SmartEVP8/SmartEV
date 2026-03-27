@@ -62,7 +62,7 @@ public class ApplyNewPathToEVTests()
 
         applyNewPath.ApplyNewPathToEV(ref ev, station, currentTime);
 
-        Assert.Equal(3U, (uint)ev.Journey.LastUpdatedDuration);
+        Assert.Equal(150.0f, (uint)ev.Journey.LastUpdatedDuration);
         Assert.Equal(10U, (uint)ev.Journey.LastUpdatedDeparture);
     }
 

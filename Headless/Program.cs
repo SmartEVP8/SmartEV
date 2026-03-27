@@ -56,7 +56,7 @@ public static class Program
                 TotalChargers = 10000,
             },
 
-            IntervalToUpdateEVs = 10,
+            IntervalToUpdateEVs = 10 * 60,
 
             BatteryIntervalForCheckUrgency = 10,
 
@@ -64,13 +64,13 @@ public static class Program
 
             ChargingStepSeconds = 1,
 
-            SimulationEndTime = 10000,
+            SimulationEndTime = 10000 * 60,
 
-            SnapshotInterval = 1000,
+            SnapshotInterval = 1000 * 60,
 
-            EVDistributionWindowsSize = 10,
+            EVDistributionWindowsSize = 10 * 60,
 
-            EVSpawnFraction = 0.001f,
+            EVSpawnFraction = 0.01f,
 
             EnergyPricesPath = new FileInfo(Path.Combine(dataPath.FullName, "energy_prices.csv")),
             OsrmPath = new FileInfo(Path.Combine(dataPath.FullName, "osrm/output.osrm")),

@@ -320,6 +320,8 @@ public class StationService
 
                     state.LastResult = result;
 
+
+                    Console.WriteLine(result.FinishTimeA!.Value);
                     _scheduler.ScheduleEvent(
                         new EndCharging(next.EVId, single.Id, result.FinishTimeA!.Value));
                     break;

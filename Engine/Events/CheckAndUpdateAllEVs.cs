@@ -10,7 +10,7 @@ using Core.Vehicles;
 /// </summary>
 /// <param name="eventScheduler">Simulation event scheduler.</param>
 /// <param name="evStore">EV store of entities.</param>
-/// <param name="intervalSize">How often we check all EV's soc level.</param>
+/// <param name="intervalSize">How often we check all EV's soc level in seconds.</param>
 /// <param name="BatteryInterval">The SoC% change.</param>
 public class CheckAndUpdateAllEVsHandler(
     EventScheduler eventScheduler,
@@ -38,8 +38,11 @@ public class CheckAndUpdateAllEVsHandler(
 
             var batteryLost = CalculateStateOfCharge(ev, intervalSize);
             ev.Battery.StateOfCharge -= batteryLost;
-            var currentBucket = (int)(ev.Battery.StateOfCharge / BatteryInterval);
-            var prevBucket = (int)((ev.Battery.StateOfCharge + batteryLost) / BatteryInterval);
+            var socPercenct = ev.Battery.StateOfCharge / ev.Battery.Capacity * 100;
+            var prevSocPercent = socPercenct + (batteryLost / ev.Battery.Capacity * 100);
+
+            var currentBucket = (int)(socPercenct / BatteryInterval);
+            var prevBucket = (int)(prevSocPercent / BatteryInterval);
 
             if (currentBucket != prevBucket)
                 evsThatNeedChecking[evID] = evID;
@@ -66,7 +69,7 @@ public class CheckAndUpdateAllEVsHandler(
         }
 
         var avgSpeed = totalDistance / ev.Journey.OriginalDuration;
-        var totalDrivingTimeInInterval = interval * avgSpeed / 60;
-        return (float)(totalDrivingTimeInInterval / 60) * ev.Efficiency;
+        var totalDrivingTimeInInterval = interval * avgSpeed / (60 * 60);
+        return (float)(totalDrivingTimeInInterval * (ev.Efficiency / 1000));
     }
 }

@@ -33,7 +33,7 @@ public class ApplyNewPath(IDestinationRouter router)
 
         var detourPath = Polyline6ToPoints.DecodePolyline(polyline);
         var newWaypoints = new Paths([currentPos, .. detourPath.Waypoints]);
-        var roundedDuration = (uint)Math.Ceiling(duration / 60);
+        var roundedDuration = (uint)Math.Ceiling(duration);
         ev.Journey.UpdateRoute(newWaypoints, currentTime, (Time)roundedDuration);
     }
 }

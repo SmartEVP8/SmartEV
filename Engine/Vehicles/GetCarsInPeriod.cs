@@ -11,7 +11,7 @@ using Engine.DayCycles;
 /// <param name="SpawnFraction"> A fraction of the total EVs that are supposed to be on the road, to avoid overpopulating the system.</param>
 public class CarsInPeriod(Time SpawningFrequency, double SpawnFraction)
 {
-    private readonly double _fractionPerPeriod = SpawnFraction / (60.0 / SpawningFrequency);
+    private readonly double _fractionPerPeriod = SpawnFraction / (60.0 * 60 / SpawningFrequency);
 
     /// <summary>
     /// Gets the estimated number of cars to spawn in the current period based on the

@@ -29,7 +29,7 @@ public class EventDispatcher(
         CheckAndUpdateAllEVsHandler CheckAndUpdateAllEVsHandler)
 {
     private Dictionary<Type, uint> _calledCount = [];
-
+    private int _eventCount;
 
     private void IncrementCount(Event e)
     {
@@ -43,6 +43,9 @@ public class EventDispatcher(
         {
             _calledCount[type] = 1;
         }
+
+
+        _eventCount++;
     }
 
     private void PrintCounts()
@@ -108,6 +111,8 @@ public class EventDispatcher(
             default:
                 throw new Exception("This should never happen, add a handler");
         }
-        PrintCounts();
+
+        if (_eventCount % 10 == 0)
+            PrintCounts();
     }
 }
