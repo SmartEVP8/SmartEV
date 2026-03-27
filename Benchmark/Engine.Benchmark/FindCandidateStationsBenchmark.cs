@@ -41,7 +41,7 @@ public class FindCandidateStationsBenchmark
         var csvPath = AppContext.GetData("EnergyPricesPath") as string
             ?? throw new InvalidOperationException("EnergyPricesPath not set in project.");
         var energyPrices = new EnergyPrices(new FileInfo(csvPath), new Random(42));
-        var router = new OSRMRouter(new FileInfo(path));
+        var router = new OSRMRouter(new FileInfo(path), new List<Station>());
 
         var stations = new Dictionary<ushort, Station>();
         var rand = new Random(321);
