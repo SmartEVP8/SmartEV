@@ -2,6 +2,7 @@ namespace Headless.Benchmark;
 
 using BenchmarkDotNet.Attributes;
 using Engine.Routing;
+using Core.Charging;
 
 /// <summary>
 /// Evaluates the performance of the OSRMRouter's QuerySingleDestination method under different levels of parallelism.
@@ -27,7 +28,7 @@ public class OSRMRouterBenchmark
     {
         var path = AppContext.GetData("OsrmDataPath") as string
                         ?? throw new InvalidOperationException("OsrmDataPath not set in project.");
-        _router = new OSRMRouter(new FileInfo(path));
+        _router = new OSRMRouter(new FileInfo(path), new List<Station>());
     }
 
     /// <summary>

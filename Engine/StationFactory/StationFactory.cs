@@ -91,7 +91,7 @@ public class StationFactory
     /// Throws exceptions if the file does not exist or if there are not enough chargers to assign at least one to each station.
     /// </summary>
     /// <returns> Returns a list of created stations. </returns>
-    public Dictionary<ushort, Station> CreateStations()
+    public List<Station> CreateStations()
     {
         var json = File.ReadAllText(_stationsFile.FullName);
         var locations = JsonSerializer.Deserialize<List<StationLocationDTO>>(json, new JsonSerializerOptions
@@ -107,8 +107,8 @@ public class StationFactory
 
         var chargerCountsPerStation = DistributeChargersAcrossStations(locations.Count, _options.TotalChargers);
 
-        var stations = new Dictionary<ushort, Station>(locations.Count);
-        ushort nextStationId = 1;
+        var stations = new List<Station>(locations.Count);
+        ushort nextStationId = 0;
         var socketIndex = 0;
 
         for (var i = 0; i < locations.Count; i++)
@@ -122,7 +122,7 @@ public class StationFactory
                 chargers.Add(CreateCharger(chargerId, socket));
             }
 
-            stations.Add(nextStationId, CreateStation(nextStationId++, locations[i], chargers));
+            stations.Add(CreateStation(nextStationId++, locations[i], chargers));
         }
 
         return stations;

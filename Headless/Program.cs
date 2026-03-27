@@ -64,6 +64,14 @@ public static class Program
 
             ChargingStepSeconds = 60,
 
+            SimulationEndTime = 10000,
+
+            SnapshotInterval = 1000,
+
+            EVDistributionWindowsSize = 100,
+
+            EVSpawnFraction = 0.01f,
+
             EnergyPricesPath = new FileInfo(Path.Combine(dataPath.FullName, "energy_prices.csv")),
             OsrmPath = new FileInfo(Path.Combine(dataPath.FullName, "osrm/output.osrm")),
             CitiesPath = new FileInfo(Path.Combine(dataPath.FullName, "CityInfo.csv")),
@@ -83,5 +91,8 @@ public static class Program
         provider.GetRequiredService<SpatialGrid>();
         provider.GetRequiredService<IJourneySamplerProvider>();
         provider.GetRequiredService<StationService>();
+
+        var coordinator = provider.GetRequiredService<Simulation>();
+        coordinator.Run();
     }
 }

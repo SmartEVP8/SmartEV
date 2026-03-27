@@ -14,6 +14,7 @@ using Engine.StationFactory;
 using Engine.Services;
 using Engine.Vehicles;
 using Microsoft.Extensions.DependencyInjection;
+using Engine.Events.Middleware;
 
 /// <summary>
 /// Initializes the Engine by setting up all necessary services and configurations.
@@ -26,10 +27,9 @@ public static class Init
     /// <param name="services">The service collection to initialize.</param>
     public static void InitEngine(IServiceCollection services)
     {
-        services.AddSingleton<IOSRMRouter>(sp =>
+        services.AddSingleton(sp =>
         {
-            var settings = sp.GetRequiredService<EngineSettings>();
-            return new OSRMRouter(settings.OsrmPath);
+            return new EventScheduler([]);
         });
 
         services.AddSingleton(sp =>
@@ -41,6 +41,18 @@ public static class Init
             var stationFactory = new StationFactory(settings.StationFactoryOptions, seed, energyPrices, stationPath);
             return stationFactory.CreateStations();
         });
+
+        services.AddSingleton(sp =>
+        {
+            return new Dictionary<ushort, Station>(sp.GetRequiredService<List<Station>>().ToDictionary(s => s.Id));
+        });
+
+        services.AddSingleton<IOSRMRouter>(sp =>
+     {
+         var settings = sp.GetRequiredService<EngineSettings>();
+         var stations = sp.GetRequiredService<List<Station>>();
+         return new OSRMRouter(settings.OsrmPath, stations);
+     });
 
         services.AddSingleton(sp =>
         {
@@ -130,6 +142,95 @@ public static class Init
             var scheduler = sp.GetRequiredService<EventScheduler>();
             var evStore = sp.GetRequiredService<EVStore>();
             return new StationService(stations.Values, integrator, scheduler, evStore);
+        });
+
+        services.AddSingleton(sp =>
+        {
+            var evFactory = sp.GetRequiredService<EVFactory>();
+            var evStore = sp.GetRequiredService<EVStore>();
+            var eventScheduler = sp.GetRequiredService<EventScheduler>();
+            return new EVPopulator(evFactory, evStore, eventScheduler);
+        });
+
+        services.AddSingleton(sp =>
+        {
+            var evPopulator = sp.GetRequiredService<EVPopulator>();
+            var scheduler = sp.GetRequiredService<EventScheduler>();
+            var settings = sp.GetRequiredService<EngineSettings>();
+            var distributionWindow = settings.EVDistributionWindowsSize;
+            var spawnFraction = settings.EVSpawnFraction;
+            return new EVService(evPopulator, scheduler, distributionWindow, spawnFraction);
+        });
+
+        services.AddSingleton(sp =>
+        {
+            var scheduler = sp.GetRequiredService<EventScheduler>();
+            var metrics = sp.GetRequiredService<MetricsService>();
+            var settings = sp.GetRequiredService<EngineSettings>();
+            var snapshotInterval = settings.SnapshotInterval;
+            var stations = sp.GetRequiredService<Dictionary<ushort, Station>>();
+            return new SnapshotEventHandler(snapshotInterval, DateTimeOffset.UtcNow, stations, metrics, scheduler); // TODO: Look into how we can remove DateTime
+        });
+
+        services.AddSingleton(sp =>
+        {
+            var stationService = sp.GetRequiredService<StationService>();
+            var checkUrgencyHandler = sp.GetRequiredService<CheckUrgencyHandler>();
+            var snapshotHandler = sp.GetRequiredService<SnapshotEventHandler>();
+            return new CheckAndUpdateAllEVsHandler(sp.GetRequiredService<EventScheduler>(), sp.GetRequiredService<EVStore>(), sp.GetRequiredService<EngineSettings>().IntervalToUpdateEVs, sp.GetRequiredService<EngineSettings>().BatteryIntervalForCheckUrgency);
+        });
+
+        services.AddSingleton(sp =>
+        {
+            var metrics = sp.GetRequiredService<MetricsService>();
+            var evstore = sp.GetRequiredService<EVStore>();
+            return new DestinationArrivalHandler(metrics, evstore);
+        });
+
+        services.AddSingleton(sp =>
+        {
+            var costStore = sp.GetRequiredService<ICostStore>();
+            return new ComputeCost(costStore);
+        });
+
+        services.AddSingleton(sp =>
+        {
+            var router = sp.GetRequiredService<IOSRMRouter>();
+            var stations = sp.GetRequiredService<Dictionary<ushort, Station>>();
+            var grid = sp.GetRequiredService<SpatialGrid>();
+            var evStore = sp.GetRequiredService<EVStore>();
+            return new FindCandidateStationService(router, stations, grid, evStore);
+        });
+
+        services.AddSingleton(sp =>
+        {
+            var findCandidateStationService = sp.GetRequiredService<FindCandidateStationService>();
+            var computeCost = sp.GetRequiredService<ComputeCost>();
+            var scheduler = sp.GetRequiredService<EventScheduler>();
+            var evStore = sp.GetRequiredService<EVStore>();
+            return new FindCandidateStationsHandler(findCandidateStationService, computeCost, scheduler, evStore);
+        });
+
+        services.AddSingleton(sp =>
+        {
+            var stationService = sp.GetRequiredService<StationService>();
+            var checkUrgencyHandler = sp.GetRequiredService<CheckUrgencyHandler>();
+            var snapshotHandler = sp.GetRequiredService<SnapshotEventHandler>();
+            var evService = sp.GetRequiredService<EVService>();
+            var checkAndUpdateAllEVsHandler = sp.GetRequiredService<CheckAndUpdateAllEVsHandler>();
+            var destinationArrivalHandler = sp.GetRequiredService<DestinationArrivalHandler>();
+            var findCandidateStationsHandler = sp.GetRequiredService<FindCandidateStationsHandler>();
+            return new EventDispatcher(stationService, checkUrgencyHandler, snapshotHandler, findCandidateStationsHandler, evService, destinationArrivalHandler, checkAndUpdateAllEVsHandler);
+        });
+
+        services.AddSingleton(sp =>
+        {
+            var scheduler = sp.GetRequiredService<EventScheduler>();
+            var dispatcher = sp.GetRequiredService<EventDispatcher>();
+            var settings = sp.GetRequiredService<EngineSettings>();
+            var simulationEndTime = settings.SimulationEndTime;
+            var intervalToUpdateEVs = settings.IntervalToUpdateEVs;
+            return new Simulation(dispatcher, scheduler, simulationEndTime);
         });
     }
 
