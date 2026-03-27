@@ -27,7 +27,7 @@ public class OsrmRouterBenchmark
     {
         var path = AppContext.GetData("OsrmDataPath") as string
             ?? throw new InvalidOperationException("OsrmDataPath not set in project.");
-        _router = new OSRMRouter(new FileInfo(path));
+
         var csvPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "data", "energy_prices.csv");
         var energyPrices = new EnergyPrices(new FileInfo(csvPath), new Random(42));
 
@@ -43,7 +43,7 @@ public class OsrmRouterBenchmark
                 energyPrices: energyPrices));
         }
 
-        _router.InitStations(stations);
+        _router = new OSRMRouter(new FileInfo(path), stations);
         _stationIndices = [.. Enumerable.Range(0, 50).Select(i => (ushort)i)];
 
         _evCoordinates = new (double Lon, double Lat)[1000];

@@ -7,6 +7,7 @@ using Engine.Parsers;
 using Engine.Routing;
 using Engine.Spawning;
 using Engine.Vehicles;
+using Core.Charging;
 
 /// <summary>
 /// Benchmark suite for OSRM router performance testing.
@@ -30,7 +31,7 @@ public class EVPopulatorBenchMark
         var cityPath = AppContext.GetData("CityDataPath") as string
                     ?? throw new InvalidOperationException("GridPath not set in project.");
 
-        var router = new OSRMRouter(new FileInfo(osrmPath));
+        var router = new OSRMRouter(new FileInfo(osrmPath), new List<Station>());
         var cities = CityParser.Parse(new FileInfo(cityPath));
         var polygons = PolygonParser.Parse(File.ReadAllText(polygonPath));
         var grid = Polygooner.GenerateGrid(0.1, polygons);

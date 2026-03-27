@@ -34,10 +34,9 @@ public static class TestData
     {
         get
         {
-            var router = new OSRMRouter(new FileInfo(AppContext.GetData("OsrmDataPath") as string
-                        ?? throw new InvalidDataException("OSRMPath not set")));
-            router.InitStations([.. AllStations.Values]);
-            return router;
+            return new OSRMRouter(
+                new FileInfo(AppContext.GetData("OsrmDataPath") as string
+                        ?? throw new InvalidDataException("OSRMPath not set")), [.. AllStations.Values]);
         }
     }
 
@@ -173,7 +172,7 @@ public static class TestData
             _random,
             EnergyPrices,
             new FileInfo(AppContext.GetData("ChargersPath") as string ?? throw new SkillissueException()));
-        return stationFactory.CreateStations();
+        return stationFactory.CreateStations().ToDictionary(s => s.Id, s => s);
     }
 
     private static ChargerBase CreateFakeChargerWithQueue(int queueSize)
