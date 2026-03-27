@@ -1,5 +1,6 @@
 namespace Engine.Events;
 
+using Core.Shared;
 using Engine.Cost;
 using Engine.Events.Middleware;
 using Engine.Vehicles;
@@ -34,7 +35,8 @@ public class FindCandidateStationsHandler(
             var journeyDurations = stationCosts.Values.ToArray();
 
             var bestStation = computeCost.Compute(ref ev, stations, journeyDurations);
-            var reservationRequest = new ReservationRequest(e.EVId, bestStation.Id, e.Time);
+            var durationToStation = Math.Ceiling(stationCosts[bestStation]);
+            var reservationRequest = new ReservationRequest(e.EVId, bestStation.Id, e.Time, (Time)(uint)durationToStation);
             eventScheduler.ScheduleEvent(reservationRequest);
         });
     }

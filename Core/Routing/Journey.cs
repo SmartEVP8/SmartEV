@@ -13,7 +13,12 @@ public class Journey(Time departure, Time originalDuration, Paths path)
     /// <summary>
     /// Gets the time the journey started.
     /// </summary>
-    public Time Departure { get; } = departure;
+    public Time JourneyStart { get; } = departure;
+
+    /// <summary>
+    /// Gets the time the journey was last updated.
+    /// </summary>
+    public Time LastUpdatedDeparture { get; private set; } = departure;
 
     /// <summary>
     /// Gets the original duration of the journey, i.e. the duration of A -> B without any detours.
@@ -21,13 +26,24 @@ public class Journey(Time departure, Time originalDuration, Paths path)
     public Time OriginalDuration { get; } = originalDuration;
 
     /// <summary>
-    /// Gets the path as it is currently. 
-    /// This can be updated as the journey progresses, e.g. if the EV is rerouted to a different station.
-    /// Represented by waypoints that are mutated as the journey progresses.
+    /// Gets the duration of an EVs journey, after it has been altered, i.e the duration of Start -> Station -> Detour.
+    /// </summary>
+    public Time LastUpdatedDuration { get; private set; } = originalDuration;
+
+    /// <summary>
+    /// Gets the current Path.
     /// </summary>
     public Paths Path { get; private set; } = path;
 
-    private Time _runningSumDeviation;
+    /// <summary>
+    /// Gets the additional time has been added by rerouting/deviating from the original path.
+    /// </summary>
+    public Time PathDeviation { get; private set; } = 0;
+
+    /// <summary>Calculates the time elapsed since the journey started.</summary>
+    /// <param name="currentTime">The current time.</param>
+    /// <returns>The elapsed time.</returns>
+    public Time TimeElapsed(Time currentTime) => currentTime - JourneyStart;
 
     /// <summary>
     /// Calucates the EV's current position. Assumes the speed is always the same.
@@ -37,13 +53,13 @@ public class Journey(Time departure, Time originalDuration, Paths path)
     /// <exception cref="ArgumentException">Thrown when the current time is before the journey starts or after it has completed.</exception>
     public Position CurrentPosition(Time currentTime)
     {
-        Time completedTime = Departure + OriginalDuration;
+        Time completedTime = LastUpdatedDeparture + LastUpdatedDuration;
         if (currentTime > completedTime)
             throw new ArgumentException("Current time is after the journey has completed.");
-        if (currentTime < Departure)
+        if (currentTime < LastUpdatedDeparture)
             throw new ArgumentException("Current time is before the journey has started.");
 
-        var percentageCompleted = (double)(currentTime - Departure) / (double)OriginalDuration;
+        var percentageCompleted = (currentTime - LastUpdatedDeparture) / (double)LastUpdatedDuration;
 
         var segments = Path
             .Waypoints.Zip(Path.Waypoints.Skip(1))
@@ -79,24 +95,29 @@ public class Journey(Time departure, Time originalDuration, Paths path)
         return new Position(longitude: last.Longitude, latitude: last.Latitude);
     }
 
-    /// <summary>Calculates the times elapsed since the journey started.</summary>
-    /// <param name="currentTime">The current time.</param>
-    /// <returns>The elapsed time.</returns>
-    public Time TimeElapsed(Time currentTime) => currentTime - Departure;
-
     /// <summary>
-    /// Gets the running sum of deviations for this journey. 
-    /// Can be updated as the journey progresses using the UpdateRunningSumDeviation method.
+    /// Updates the route of the journey and calculates the new path deviation based on the new estimated time of arrival (ETA) compared to the old ETA.
     /// </summary>
-    public Time RunningSumDeviation => _runningSumDeviation;
+    /// <param name="newRoute">The new path/journey.</param>
+    /// <param name="departure">The the journey takes affect/is updated.</param>
+    /// <param name="duration">The duration of the new joruney.</param>
+    public void UpdateRoute(Paths newRoute, Time departure, Time duration)
+    {
+        Path = newRoute;
 
-    /// <summary> Updates the running sum deviation for this journey.</summary>
-    /// <param name="deviation">The new deviation to set.</param>
-    public void UpdateRunningSumDeviation(Time deviation) => _runningSumDeviation = deviation;
+        Time oldEta = LastUpdatedDeparture + LastUpdatedDuration;
+        Time newEta = departure + duration;
 
-    /// <summary>
-    /// Updates the path of the journey. This can be used to update the path as the journey progresses, e.g. if the EV is rerouted to a different station.
-    /// </summary>
-    /// <param name="newPath">The new path for the journey.</param>
-    public void UpdatePath(Paths newPath) => Path = newPath;
+        if (newEta > oldEta)
+        {
+            PathDeviation += newEta - oldEta;
+        }
+        else if (oldEta > newEta)
+        {
+            PathDeviation -= oldEta - newEta;
+        }
+
+        LastUpdatedDeparture = departure;
+        LastUpdatedDuration = duration;
+    }
 }

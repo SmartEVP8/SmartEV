@@ -3,9 +3,11 @@ namespace Engine.Services;
 using Core.Charging;
 using Core.Charging.ChargingModel;
 using Core.Charging.ChargingModel.Chargepoint;
-using Engine.Events;
 using Core.Shared;
+using Engine.Events;
 using Engine.Vehicles;
+using Engine.Routing;
+using Engine.Utils;
 using Engine.Metrics;
 using Engine.Metrics.Snapshots;
 
@@ -73,9 +75,13 @@ public class StationService
 {
     private readonly Dictionary<int, List<ChargerState>> _stationChargers = [];
     private readonly Dictionary<int, ChargerState> _chargerIndex = [];
+    private readonly Dictionary<ushort, Station> _stationIndex = [];
     private readonly ChargingIntegrator _integrator;
     private readonly EventScheduler _scheduler;
     private readonly EVStore _eVStore;
+    private readonly ApplyNewPath _applyNewPath;
+    private SemaphoreSlim _lastGate = new(1, 1);
+    private Task _lastTask = Task.CompletedTask;
     private readonly MetricsService _metrics;
     private readonly SnapshotEventHandler _snapshotHandler;
 
@@ -86,6 +92,7 @@ public class StationService
     /// <param name="integrator">The charging integrator to use for simulating charging sessions.</param>
     /// <param name="scheduler">The event scheduler to use for scheduling future events.</param>
     /// <param name="evStore">The storage of current EV's.</param>
+    /// <param name="applyNewPath">The path deviator to use for calculating route deviations through charging stations.</param>
     /// <param name="metrics">The metrics service to use for recording metrics.</param>
     /// <param name="snapshotHandler">The snapshot event handler to use for handling snapshot events.</param>
     public StationService(
@@ -93,17 +100,20 @@ public class StationService
         ChargingIntegrator integrator,
         EventScheduler scheduler,
         EVStore evStore,
+        ApplyNewPath applyNewPath,
         MetricsService metrics,
         SnapshotEventHandler snapshotHandler)
     {
         _integrator = integrator;
         _scheduler = scheduler;
         _eVStore = evStore;
+        _applyNewPath = applyNewPath;
         _metrics = metrics;
         _snapshotHandler = snapshotHandler;
 
         foreach (var station in stations)
         {
+            _stationIndex[station.Id] = station;
             var states = station.Chargers.Select(c => new ChargerState(c)).ToList();
             _stationChargers[station.Id] = states;
             foreach (var cs in states)
@@ -119,28 +129,78 @@ public class StationService
     public ChargerState? GetChargerState(int chargerId)
         => _chargerIndex.TryGetValue(chargerId, out var state) ? state : null;
 
-    // RESERVATION AND CANCEL NEEDS TO BE MERGED INTO NICKLAS' STUFF BUT THE SNAPSHOT HANDLER IS PROBABLY LIKE THIS
-
     /// <summary>
-    /// Called when an EV makes a reservation request for a station.
+    /// Handles a reservation request from an EV to a station.
+    /// If the EV already has an active reservation, the existing arrival event is cancelled before proceeding.
+    /// Calculates the detoured path through the station, updates the EV's journey, and schedules a new
+    /// arrival event.
     /// </summary>
     /// <param name="e">The reservation request event.</param>
     public void HandleReservationRequest(ReservationRequest e)
     {
-        _scheduler.ScheduleEvent(new ArriveAtStation(e.EVId, e.StationId, 0.5f, e.Time)); // TODO: FIGURE OUT HOW TO CALC THE WANTED SOC TO CHARGE TO
+        ref var ev = ref _eVStore.Get(e.EVId);
+        if (!_stationIndex.TryGetValue(e.StationId, out var station))
+            return;
+
+        if (ev.HasReservationAtStationId.HasValue)
+        {
+            HandleCancelRequest(
+                new CancelRequest(e.EVId, ev.HasReservationAtStationId.Value, e.Time));
+        }
+
         _snapshotHandler.OnReservationMade();
+        station.IncrementReservations();
+        ev.HasReservationAtStationId = e.StationId;
+
+        var previousGate = _lastGate;
+        var myGate = new SemaphoreSlim(0, 1);
+        _lastGate = myGate;
+
+        _lastTask = Task.Run(async () =>
+        {
+            var ev = _eVStore.Get(e.EVId);
+            _applyNewPath.ApplyNewPathToEV(ref ev, station, e.Time);
+            _eVStore.Set(e.EVId, ref ev);
+
+            await previousGate.WaitAsync();
+
+            _scheduler.ScheduleEvent(
+                new ArriveAtStation(e.EVId, e.StationId, ev.Battery.Capacity, e.Time + e.DurationToStation));
+
+            myGate.Release();
+        });
     }
 
-    // RESERVATION AND CANCEL (FOR RESERVATION) NEEDS TO BE MERGED INTO NICKLAS' STUFF BUT THE SNAPSHOT HANDLER IS PROBABLY LIKE THIS
+    /// <summary>
+    /// Waits for all currently scheduled reservation requests to complete.
+    /// </summary>
+    /// <returns>A task that completes when all reservation request handling has completed.</returns>
+    public Task WaitForAllScheduled() => _lastTask;
 
     /// <summary>
-    /// Called when an EV cancels its reservation.
+    /// Handles a cancellation request from an EV, decrementing the station's active reservation count,
+    /// clearing the reservation from the EV, and cancelling the scheduled arrival event.
     /// </summary>
-    /// <param name="e">The cancel request event.</param>
+    /// <param name="e">The cancellation request event.</param>
     public void HandleCancelRequest(CancelRequest e)
     {
-        _scheduler.CancelEvent((uint)e.EVId);
+        ref var ev = ref _eVStore.Get(e.EVId);
+        if (!_stationIndex.TryGetValue(e.StationId, out var station))
+            return;
+
+        station.IncrementCancellations();
         _snapshotHandler.OnReservationCancelled();
+
+        if (ev.HasReservationAtStationId != null)
+        {
+            _scheduler.CancelEvent((uint)ev.HasReservationAtStationId);
+        }
+        else
+        {
+            throw new SkillissueException("Should never cancel without a reservation cancellation token");
+        }
+
+        ev.HasReservationAtStationId = null;
     }
 
     /// <summary>

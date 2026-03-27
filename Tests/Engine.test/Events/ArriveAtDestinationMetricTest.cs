@@ -4,6 +4,7 @@ using Engine.Metrics.Events;
 using Core.Vehicles;
 using Engine.test.Builders;
 using Core.Shared;
+using Core.Shared;
 
 public class ArriveAtDestinationMetricTest
 {
@@ -20,7 +21,8 @@ public class ArriveAtDestinationMetricTest
 
         var battery = TestData.Battery();
         var preferences = TestData.Preferences();
-        var journey = TestData.Journey(waypoints: null, departure: departure, originalDuration: originalDuration);
+        var journey = TestData.Journey(waypoints: null, departure: 100U, originalDuration: 50U);
+        journey.UpdateRoute(new Paths([]), departure: 100, duration: 62U);
         journey.UpdateRunningSumDeviation(deviation);
         var ev = new EV(battery, preferences, journey, 150);
 
