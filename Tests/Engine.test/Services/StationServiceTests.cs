@@ -1,13 +1,13 @@
 namespace Engine.test.Services;
 
-using Core.Charging;
 using Core.Charging.ChargingModel;
-using Core.Charging.ChargingModel.Chargepoint;
+using Core.Charging;
 using Core.Shared;
 using Engine.Events;
 using Engine.Services;
 using Engine.test.Builders;
 using Engine.Vehicles;
+using Engine.Metrics;
 
 public class StationServiceTests
 {
@@ -101,8 +101,25 @@ public class StationServiceTests
         Assert.True(ev2Event.Time > ev1End.Time);
     }
 
+    private static MetricsService MetricsService()
+    {
+        var config = new MetricsConfig();
+        return new MetricsService(config, Guid.NewGuid());
+    }
+
+    private static SnapshotEventHandler SnapshotHandler(
+        MetricsService metrics,
+        EventScheduler scheduler,
+        IReadOnlyList<Station> stations) =>
+        new SnapshotEventHandler(
+            rescheduleTime: new Time(3600),
+            startTime: DateTimeOffset.UtcNow,
+            stations: stations,
+            metrics: metrics,
+            scheduler: scheduler,
+            getDeliveredKW: _ => 0.0);
+
     private static (StationService service, EventScheduler scheduler, EVStore evStore) BuildSingle(
-        Socket socket = Socket.CCS2,
         int maxPowerKW = 150)
     {
         var charger = TestData.SingleCharger(1, maxPowerKW: maxPowerKW);
@@ -110,13 +127,13 @@ public class StationServiceTests
         var scheduler = new EventScheduler([]);
         var integrator = new ChargingIntegrator(stepSeconds: 60);
         var evStore = new EVStore(10);
-        var service = new StationService([station], integrator, scheduler, evStore);
-
+        var metrics = MetricsService();
+        var snapshotHandler = SnapshotHandler(metrics, scheduler, [station]);
+        var service = new StationService([station], integrator, scheduler, evStore, metrics, snapshotHandler);
         return (service, scheduler, evStore);
     }
 
     private static (StationService service, EventScheduler scheduler, EVStore evStore) BuildDual(
-        Socket socket = Socket.CCS2,
         int maxPowerKW = 150)
     {
         var charger = TestData.DualCharger(1, maxPowerKW: maxPowerKW);
@@ -124,7 +141,9 @@ public class StationServiceTests
         var scheduler = new EventScheduler([]);
         var integrator = new ChargingIntegrator(stepSeconds: 60);
         var evStore = new EVStore(10);
-        var service = new StationService([station], integrator, scheduler, evStore);
+        var metrics = MetricsService();
+        var snapshotHandler = SnapshotHandler(metrics, scheduler, [station]);
+        var service = new StationService([station], integrator, scheduler, evStore, metrics, snapshotHandler);
         return (service, scheduler, evStore);
     }
 

@@ -129,7 +129,9 @@ public static class Init
             var integrator = sp.GetRequiredService<ChargingIntegrator>();
             var scheduler = sp.GetRequiredService<EventScheduler>();
             var evStore = sp.GetRequiredService<EVStore>();
-            return new StationService(stations.Values, integrator, scheduler, evStore);
+            var metrics = sp.GetRequiredService<MetricsService>();
+            var snapshotHandler = sp.GetRequiredService<SnapshotEventHandler>();
+            return new StationService(stations.Values, integrator, scheduler, evStore, metrics, snapshotHandler);
         });
     }
 

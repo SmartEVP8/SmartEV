@@ -2,7 +2,6 @@ namespace Engine.Metrics.Events;
 
 using Core.Shared;
 using Core.Vehicles;
-using Engine.Events;
 
 /// <summary>
 /// Represents a metric related to deadlines, which can be used to track and analyze the timing of events and actions within the Engine.
@@ -32,7 +31,7 @@ public readonly struct ArrivalAtDestinationMetric
     /// <summary>
     /// Gets a value indicating whether the expected arrival time was missed.
     /// </summary>
-    public bool MissedDeadline => DeltaArrivalTime > 0;
+    required public bool MissedDeadline { get; init; }
 
     /// <summary>
     /// Collects a ArrivalAtDestinationMetric for a given EV.
@@ -44,13 +43,13 @@ public readonly struct ArrivalAtDestinationMetric
     {
         var expectedArrivalTime = ev.Journey.OriginalDuration;
         var actualArrivalTime = simNow - ev.Journey.Departure;
-        var pathDeviation = ev.Journey.RunningSumDeviation;
 
         return new ArrivalAtDestinationMetric
         {
             ExpectedArrivalTime = expectedArrivalTime,
             ActualArrivalTime = actualArrivalTime,
-            PathDeviation = pathDeviation,
+            PathDeviation = ev.Journey.RunningSumDeviation,
+            MissedDeadline = actualArrivalTime > expectedArrivalTime,
         };
     }
 }

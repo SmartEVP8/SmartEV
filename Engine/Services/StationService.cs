@@ -6,6 +6,8 @@ using Core.Charging.ChargingModel.Chargepoint;
 using Engine.Events;
 using Core.Shared;
 using Engine.Vehicles;
+using Engine.Metrics;
+using Engine.Metrics.Snapshots;
 
 /// <summary>
 /// Tracks an active charging session at one side of a charger.
@@ -74,6 +76,8 @@ public class StationService
     private readonly ChargingIntegrator _integrator;
     private readonly EventScheduler _scheduler;
     private readonly EVStore _eVStore;
+    private readonly MetricsService _metrics;
+    private readonly SnapshotEventHandler _snapshotHandler;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="StationService"/> class.
@@ -82,15 +86,21 @@ public class StationService
     /// <param name="integrator">The charging integrator to use for simulating charging sessions.</param>
     /// <param name="scheduler">The event scheduler to use for scheduling future events.</param>
     /// <param name="evStore">The storage of current EV's.</param>
+    /// <param name="metrics">The metrics service to use for recording metrics.</param>
+    /// <param name="snapshotHandler">The snapshot event handler to use for handling snapshot events.</param>
     public StationService(
         ICollection<Station> stations,
         ChargingIntegrator integrator,
         EventScheduler scheduler,
-        EVStore evStore)
+        EVStore evStore,
+        MetricsService metrics,
+        SnapshotEventHandler snapshotHandler)
     {
         _integrator = integrator;
         _scheduler = scheduler;
         _eVStore = evStore;
+        _metrics = metrics;
+        _snapshotHandler = snapshotHandler;
 
         foreach (var station in stations)
         {
@@ -109,23 +119,29 @@ public class StationService
     public ChargerState? GetChargerState(int chargerId)
         => _chargerIndex.TryGetValue(chargerId, out var state) ? state : null;
 
-    // TODO: Handle reservationrequest
+    // RESERVATION AND CANCEL NEEDS TO BE MERGED INTO NICKLAS' STUFF BUT THE SNAPSHOT HANDLER IS PROBABLY LIKE THIS
 
     /// <summary>
     /// Called when an EV makes a reservation request for a station.
     /// </summary>
     /// <param name="e">The reservation request event.</param>
     public void HandleReservationRequest(ReservationRequest e)
-        => _scheduler.ScheduleEvent(new ArriveAtStation(e.EVId, e.StationId, 0.5f, e.Time)); // TODO: FIGURE OUT HOW TO CALC THE WANTED SOC TO CHARGE TO
+    {
+        _scheduler.ScheduleEvent(new ArriveAtStation(e.EVId, e.StationId, 0.5f, e.Time)); // TODO: FIGURE OUT HOW TO CALC THE WANTED SOC TO CHARGE TO
+        _snapshotHandler.OnReservationMade();
+    }
 
-    // TODO: handle cancelrequest
+    // RESERVATION AND CANCEL (FOR RESERVATION) NEEDS TO BE MERGED INTO NICKLAS' STUFF BUT THE SNAPSHOT HANDLER IS PROBABLY LIKE THIS
 
     /// <summary>
     /// Called when an EV cancels its reservation.
     /// </summary>
     /// <param name="e">The cancel request event.</param>
     public void HandleCancelRequest(CancelRequest e)
-        => _scheduler.CancelEvent((uint)e.EVId);
+    {
+        _scheduler.CancelEvent((uint)e.EVId);
+        _snapshotHandler.OnReservationCancelled();
+    }
 
     /// <summary>
     /// Called when an EV arrives at a station.
