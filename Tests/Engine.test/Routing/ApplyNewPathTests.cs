@@ -3,93 +3,119 @@ namespace Engine.test.Routing;
 using Core.Shared;
 using Engine.Routing;
 using Engine.test.Builders;
-using Xunit.Abstractions;
 
-public class ApplyNewPathToEVTests(ITestOutputHelper output)
+public class ApplyNewPathToEVTests()
 {
     [Fact]
-    public void ApplyNewPathToEV_UpdatesJourneyPath()
+    public void ApplyNewPathToEV_PassesCorrectCoordinatesToRouter()
+    {
+        var ev = TestData.EV(waypoints: [
+            new Position(longitude: 0, latitude: 0),
+        new Position(longitude: 10, latitude: 10)
+        ]);
+        var station = TestData.Station(1, new Position(longitude: 5, latitude: 5));
+        var fakeRouter = new FakeDestinationRouter();
+        var applyNewPath = new ApplyNewPath(fakeRouter);
+
+        applyNewPath.ApplyNewPathToEV(ref ev, station, new Time(0));
+
+        var expectedCoordinates = new double[]
+        {
+            0, 0,   // Current position (time 0 = start)
+            5, 5,   // Station position
+            10, 10, // Destination position
+        };
+
+        Assert.NotNull(fakeRouter.ReceivedCoordinates);
+        Assert.Equal(expectedCoordinates, fakeRouter.ReceivedCoordinates);
+    }
+
+    [Fact]
+    public void ApplyNewPath_WhenApplyingSamePath_IsSame()
+    {
+        var journey = TestData.Journey(
+            waypoints: null,
+            departure: new Time(0),
+            originalDuration: 60U);
+
+        var dummyRoute = new Paths([new Position(0, 0), new Position(5, 5)]);
+        journey.UpdateRoute(dummyRoute, departure: new Time(0), duration: new Time(60));
+        journey.UpdateRoute(dummyRoute, departure: new Time(20), duration: new Time(40));
+
+        Assert.Equal(0U, (uint)journey.PathDeviation);
+    }
+
+    [Fact]
+    public void ApplyNewPathToEV_ConvertsAndRoundsDurationCorrectly()
     {
         var ev = TestData.EV(waypoints: [
             new Position(0, 0),
             new Position(10, 10)
         ]);
-
         var station = TestData.Station(1, new Position(5, 5));
-        var router = TestData.OSRMRouter;
-        var applyNewPath = new ApplyNewPath(router);
-
-        var originalWaypoints = ev.Journey.Path.Waypoints.ToList();
-
-        applyNewPath.ApplyNewPathToEV(ref ev, station, new Time(0));
-
-        Assert.NotEqual(originalWaypoints, ev.Journey.Path.Waypoints);
-    }
-
-    [Fact]
-    public void ApplyNewPathToEV_PreservesTravelledWaypoints()
-    {
-        var waypoints = new List<Position>
+        var fakeRouter = new FakeDestinationRouter
         {
-            new(0, 0),
-            new(5, 5),
-            new(10, 10),
+            ReturnedDuration = 150.0f, // 2.5 minutes, should round to 2
         };
-
-        var ev = TestData.EV(
-            waypoints: waypoints,
-            originalDuration: new Time(100));
-
-        var station = TestData.Station(1, new Position(7, 7));
-        var router = TestData.OSRMRouter;
-        var applyNewPath = new ApplyNewPath(router);
-
-        var currentTime = new Time(50);
+        var applyNewPath = new ApplyNewPath(fakeRouter);
+        var currentTime = new Time(10);
 
         applyNewPath.ApplyNewPathToEV(ref ev, station, currentTime);
 
-        var newWaypoints = ev.Journey.Path.Waypoints;
-
-        Assert.Contains(waypoints[0], newWaypoints);
-
-        Assert.Contains(waypoints[1], newWaypoints);
+        Assert.Equal(3U, (uint)ev.Journey.LastUpdatedDuration);
+        Assert.Equal(10U, (uint)ev.Journey.LastUpdatedDepature);
     }
 
     [Fact]
-    public void ApplyNewPath_DoesNotMoveEV()
+    public void UpdateRoute_AccumulatesPathDeviationCorrectly()
     {
-        var ev = TestData.EV(
-            waypoints: [
-                new Position(9.94564, 57.27760),
-                new Position(9.97161, 57.12783),
-                new Position(9.92063, 57.04893)
-            ],
-            originalDuration: new Time(100));
+        var journey = TestData.Journey(
+            waypoints: null,
+            departure: new Time(100),
+            originalDuration: 50U);
 
-        var station = TestData.Station(1, new Position(9.97140, 57.08917));
-        var applyNewPath = new ApplyNewPath(TestData.OSRMRouter);
+        var dummyRoute = new Paths([]);
 
-        var currentTime = new Time(50);
+        journey.UpdateRoute(dummyRoute, departure: new Time(100), duration: new Time(60));
+        Assert.Equal(10U, (uint)journey.PathDeviation);
 
-        var beforePos = ev.Journey.CurrentPosition(currentTime);
-
-        applyNewPath.ApplyNewPathToEV(ref ev, station, currentTime);
-
-        var afterPos = ev.Journey.CurrentPosition(currentTime);
-
-        _output.WriteLine($"Before:  {beforePos.Latitude:F10}, {beforePos.Longitude:F10}");
-        _output.WriteLine($"After:   {afterPos.Latitude:F10}, {afterPos.Longitude:F10}");
-
-        var latDiff = Math.Abs(beforePos.Latitude - afterPos.Latitude);
-        var lonDiff = Math.Abs(beforePos.Longitude - afterPos.Longitude);
-
-        _output.WriteLine($"ΔLat: {latDiff}");
-        _output.WriteLine($"ΔLon: {lonDiff}");
-
-        Assert.True(
-            latDiff < 1e-6 && lonDiff < 1e-6,
-            $"EV moved! Before: ({beforePos.Latitude}, {beforePos.Longitude}) " + $"After: ({afterPos.Latitude}, {afterPos.Longitude})");
+        journey.UpdateRoute(dummyRoute, departure: new Time(110), duration: new Time(40));
+        Assert.Equal(0U, (uint)journey.PathDeviation);
     }
 
-    private readonly ITestOutputHelper _output = output;
+    [Fact]
+    public void ApplyNewPathToEV_ThrowsArgumentException_WhenTimeIsOutOfBounds()
+    {
+        var ev = TestData.EV(
+            waypoints: [new Position(0, 0), new Position(10, 10)],
+            departureTime: new Time(100),
+            originalDuration: 50U);
+
+        var fakeRouter = new FakeDestinationRouter();
+        var applyNewPath = new ApplyNewPath(fakeRouter);
+        var station = TestData.Station(1, new Position(5, 5));
+
+        Assert.Throws<ArgumentException>(() =>
+            applyNewPath.ApplyNewPathToEV(ref ev, station, new Time(99)));
+
+        Assert.Throws<ArgumentException>(() =>
+            applyNewPath.ApplyNewPathToEV(ref ev, station, new Time(151)));
+    }
+
+    public class FakeDestinationRouter() : IDestinationRouter
+    {
+        private const float _tenMinutesInSeconds = 600.0f;
+
+        public float ReturnedDuration { get; set; } = _tenMinutesInSeconds; // 10 minutes default
+
+        public string ReturnedPolyline { get; set; } = "_p~iF~ps|U_ulLnnqC_mqNvxq`@"; // Arbitrary valid polyline
+
+        public double[]? ReceivedCoordinates { get; private set; }
+
+        public (float duration, string polyline) QueryDestination(double[] coords)
+        {
+            ReceivedCoordinates = coords;
+            return (ReturnedDuration, ReturnedPolyline);
+        }
+    }
 }

@@ -3,6 +3,7 @@ namespace Testing;
 using Engine.Metrics.Events;
 using Core.Vehicles;
 using Engine.test.Builders;
+using Core.Shared;
 
 public class DeadlineMetricTest
 {
@@ -20,7 +21,7 @@ public class DeadlineMetricTest
         var battery = TestData.Battery();
         var preferences = TestData.Preferences();
         var journey = TestData.Journey(waypoints: null, departure: 100U, originalDuration: 50U);
-        journey.UpdateRunningSumDeviation(deviation: 12U);
+        journey.UpdateRoute(new Paths([]), departure: 100, duration: 62U);
         var ev = new EV(battery, preferences, journey, 150);
 
         var metric = DeadlineMetric.Collect(ref ev, simNow);

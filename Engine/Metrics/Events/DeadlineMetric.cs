@@ -41,13 +41,13 @@ public readonly struct DeadlineMetric
     /// <returns>The collected deadline metric.</returns>
     public static DeadlineMetric Collect(ref EV ev, Time simNow)
     {
-        var expectedDeadline = ev.Journey.Departure + ev.Journey.OriginalDuration;
+        var expectedDeadline = ev.Journey.OriginalDeparture + ev.Journey.OriginalDuration;
 
         return new DeadlineMetric
         {
             ExpectedDeadline = expectedDeadline,
             ActualArrivalTime = simNow,
-            PathDeviation = ev.Journey.RunningSumDeviation,
+            PathDeviation = ev.Journey.PathDeviation,
         };
     }
 }
