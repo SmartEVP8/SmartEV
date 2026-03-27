@@ -21,5 +21,6 @@ public static class Program
         BenchmarkRunner.Run<OsrmRouterBenchmark>();
         BenchmarkRunner.Run<OsrmRouterOneToManyBenchmark>();
         BenchmarkRunner.Run<UpdateAllEVsBenchMark>();
+        BenchmarkRunner.Run<FindCandidateStationsBenchmark>();
     }
 }

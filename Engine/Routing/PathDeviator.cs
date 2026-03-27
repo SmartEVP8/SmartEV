@@ -13,11 +13,11 @@ public static class PathDeviator
     /// relative to the original remaining journey time.
     /// </summary>
     /// <param name="ev" >The EV for which to calculate the detour deviation.</param>
-    /// <param name="journey">The original journey.</param>
+    /// <param name="detourDuration">The original journey.</param>
     /// <returns>The deviation and detoured route.</returns>
-    public static float CalculateDetourDeviation(ref EV ev, (float duration, string polyline) journey)
+    public static float CalculateDetourDeviation(ref EV ev, float detourDuration)
     {
-        var detourDeviation = MathF.Max(0, journey.duration - ev.Journey.OriginalDuration);
+        var detourDeviation = Math.Max(0, detourDuration - ev.Journey.OriginalDuration);
         return detourDeviation;
     }
 }
