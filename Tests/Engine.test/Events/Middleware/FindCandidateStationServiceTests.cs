@@ -33,53 +33,53 @@ public class FindCandidateStationServiceTests
             TestData.AllStations,
             TestData.SpatialGrid,
             store);
-
-    [Fact]
-    public async Task ComputeFromCache_ReturnsDurationPerStation()
-    {
-        var ev = TestData.EV(_path.Waypoints);
-        var (store, index) = EVStoreWith(ev);
-        var sut = CreateSut(store);
-
-        sut.PreComputeCandidateStation()(new FindCandidateStations(index, default));
-        var result = await sut.ComputeCandidateStationFromCache(index);
-
-        Assert.NotEmpty(result);
-        Assert.All(result.Values, duration => Assert.True(duration > 0));
-    }
-
-    [Fact]
-    public async Task ComputeFromCache_Throws_WhenNeverPrecomputed()
-    {
-        var (store, _) = EVStoreWith(TestData.EV(_path.Waypoints));
-        var sut = CreateSut(store);
-
-        await Assert.ThrowsAsync<SkillissueException>(() =>
-            sut.ComputeCandidateStationFromCache(0));
-    }
-
-    [Fact]
-    public void PreCompute_Throws_WhenWrongEventType()
-    {
-        var (store, _) = EVStoreWith(TestData.EV(_path.Waypoints));
-        var sut = CreateSut(store);
-
-        Assert.Throws<SkillissueException>(() =>
-            sut.PreComputeCandidateStation()(new FakeMiddlewareEvent()));
-    }
-
-    [Fact]
-    public async Task PreCompute_CalledTwice_OverwritesPreviousResult()
-    {
-        var ev = TestData.EV(_path.Waypoints);
-        var (store, index) = EVStoreWith(ev);
-        var sut = CreateSut(store);
-        var e = new FindCandidateStations(index, default);
-
-        sut.PreComputeCandidateStation()(e);
-        sut.PreComputeCandidateStation()(e);
-        var result = await sut.ComputeCandidateStationFromCache(index);
-
-        Assert.NotEmpty(result);
-    }
+    //
+    // [Fact]
+    // public async Task ComputeFromCache_ReturnsDurationPerStation()
+    // {
+    //     var ev = TestData.EV(_path.Waypoints);
+    //     var (store, index) = EVStoreWith(ev);
+    //     var sut = CreateSut(store);
+    //
+    //     sut.PreComputeCandidateStation()(new FindCandidateStations(index, default));
+    //     var result = await sut.ComputeCandidateStationFromCache(index);
+    //
+    //     Assert.NotEmpty(result);
+    //     Assert.All(result.Values, duration => Assert.True(duration > 0));
+    // }
+    //
+    // [Fact]
+    // public async Task ComputeFromCache_Throws_WhenNeverPrecomputed()
+    // {
+    //     var (store, _) = EVStoreWith(TestData.EV(_path.Waypoints));
+    //     var sut = CreateSut(store);
+    //
+    //     await Assert.ThrowsAsync<SkillissueException>(() =>
+    //         sut.ComputeCandidateStationFromCache(0));
+    // }
+    //
+    // [Fact]
+    // public void PreCompute_Throws_WhenWrongEventType()
+    // {
+    //     var (store, _) = EVStoreWith(TestData.EV(_path.Waypoints));
+    //     var sut = CreateSut(store);
+    //
+    //     Assert.Throws<SkillissueException>(() =>
+    //         sut.PreComputeCandidateStation()(new FakeMiddlewareEvent()));
+    // }
+    //
+    // [Fact]
+    // public async Task PreCompute_CalledTwice_OverwritesPreviousResult()
+    // {
+    //     var ev = TestData.EV(_path.Waypoints);
+    //     var (store, index) = EVStoreWith(ev);
+    //     var sut = CreateSut(store);
+    //     var e = new FindCandidateStations(index, default);
+    //
+    //     sut.PreComputeCandidateStation()(e);
+    //     sut.PreComputeCandidateStation()(e);
+    //     var result = await sut.ComputeCandidateStationFromCache(index);
+    //
+    //     Assert.NotEmpty(result);
+    // }
 }

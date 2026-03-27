@@ -17,8 +17,7 @@ public class FindCandidateStationService(
     SpatialGrid spatialGrid,
     EVStore evStore)
 {
-    private record StationQuery(Station[] Stations, Task<(float[] Durations, float[] Distances)> Task);
-
+    private record StationQuery(Station[] Stations, (float[] Durations, float[] Distances) Result);
     private readonly Dictionary<int, StationQuery> _evStationPaths = [];
 
     /// <summary>
@@ -45,28 +44,30 @@ public class FindCandidateStationService(
             var pos = ev.Journey.CurrentPosition(fcse.Time);
             var dest = ev.Journey.Path.Waypoints.Last();
 
-            _evStationPaths[fcse.EVId] = new StationQuery(
-                    [.. reachableStationsIds.Select(id => stations[id])],
-                    Task.Run(() => router.QueryStationsWithDest(
+            var result = router.QueryStationsWithDest(
                 pos.Longitude,
                 pos.Latitude,
                 dest.Longitude,
                 dest.Latitude,
-                reachableStationsIds)));
+                reachableStationsIds);
+
+            _evStationPaths[fcse.EVId] = new StationQuery(
+                [.. reachableStationsIds.Select(id => stations[id])],
+                result);
         };
     }
 
-    /// <summary>Gets the pre-computed candidate stations. Awaits result if it's not yet ready.</summary>
+    /// <summary>Gets the pre-computed candidate stations.</summary>
     /// <param name="evId">The EV's id.</param>
     /// <returns>The pre-computed candidate stations.</returns>
     /// <exception cref="SkillissueException">If you try and get a cached candidate which was never precomputed.</exception>
-    public async Task<Dictionary<Station, float>> ComputeCandidateStationFromCache(int evId)
+    public Dictionary<Station, float> ComputeCandidateStationFromCache(int evId)
     {
         if (!_evStationPaths.TryGetValue(evId, out var query))
             throw new SkillissueException($"No pre-computed station query found for EV {evId}. Ensure PreComputeCandidateStation is called first.");
 
-        var (stationIds, task) = query;
-        var (durations, _) = await task;
+        var (stationIds, result) = query;
+        var (durations, _) = result;
         return stationIds.Zip(durations).ToDictionary(x => x.First, x => x.Second);
     }
 }

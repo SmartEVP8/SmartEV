@@ -55,9 +55,9 @@ public class Journey(Time departure, Time originalDuration, Paths path)
     {
         Time completedTime = LastUpdatedDeparture + LastUpdatedDuration;
         if (currentTime > completedTime)
-            throw new ArgumentException("Current time is after the journey has completed.");
+            throw new ArgumentException($"Current time: {currentTime} is after the journey has completed: {completedTime}.");
         if (currentTime < LastUpdatedDeparture)
-            throw new ArgumentException("Current time is before the journey has started.");
+            throw new ArgumentException($"Current time: {currentTime} is before the journey has started: {JourneyStart}.");
 
         var percentageCompleted = (currentTime - LastUpdatedDeparture) / (double)LastUpdatedDuration;
 

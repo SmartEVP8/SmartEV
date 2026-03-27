@@ -140,24 +140,10 @@ public class StationService
 
         station.IncrementReservations();
         ev.HasReservationAtStationId = e.StationId;
-
-        var previousGate = _lastGate;
-        var myGate = new SemaphoreSlim(0, 1);
-        _lastGate = myGate;
-
-        _lastTask = Task.Run(async () =>
-        {
-            var ev = _eVStore.Get(e.EVId);
-            _applyNewPath.ApplyNewPathToEV(ref ev, station, e.Time);
-            _eVStore.Set(e.EVId, ref ev);
-
-            await previousGate.WaitAsync();
-
-            _scheduler.ScheduleEvent(
-                new ArriveAtStation(e.EVId, e.StationId, ev.Battery.Capacity, e.Time + e.DurationToStation));
-
-            myGate.Release();
-        });
+        _applyNewPath.ApplyNewPathToEV(ref ev, station, e.Time);
+        _eVStore.Set(e.EVId, ref ev);
+        _scheduler.ScheduleEvent(
+            new ArriveAtStation(e.EVId, e.StationId, ev.Battery.Capacity, e.Time + e.DurationToStation));
     }
 
     /// <summary>

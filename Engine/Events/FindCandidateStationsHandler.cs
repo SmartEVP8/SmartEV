@@ -27,17 +27,15 @@ public class FindCandidateStationsHandler(
     public void Handle(FindCandidateStations e)
     {
         findCandidateStationService.PreComputeCandidateStation()(e);
-        _ = Task.Run(async () =>
-        {
-            var stationCosts = await findCandidateStationService.ComputeCandidateStationFromCache(e.EVId);
-            var ev = evStore.Get(e.EVId);
-            var stations = stationCosts.Keys.ToArray();
-            var journeyDurations = stationCosts.Values.ToArray();
 
-            var bestStation = computeCost.Compute(ref ev, stations, journeyDurations);
-            var durationToStation = Math.Ceiling(stationCosts[bestStation]);
-            var reservationRequest = new ReservationRequest(e.EVId, bestStation.Id, e.Time, (Time)(uint)durationToStation);
-            eventScheduler.ScheduleEvent(reservationRequest);
-        });
+        var stationCosts = findCandidateStationService.ComputeCandidateStationFromCache(e.EVId);
+        var ev = evStore.Get(e.EVId);
+        var stations = stationCosts.Keys.ToArray();
+        var journeyDurations = stationCosts.Values.ToArray();
+
+        var bestStation = computeCost.Compute(ref ev, stations, journeyDurations);
+        var durationToStation = Math.Ceiling(stationCosts[bestStation]);
+        var reservationRequest = new ReservationRequest(e.EVId, bestStation.Id, e.Time, (Time)(uint)durationToStation);
+        eventScheduler.ScheduleEvent(reservationRequest);
     }
 }

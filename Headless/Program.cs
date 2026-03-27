@@ -68,9 +68,9 @@ public static class Program
 
             SnapshotInterval = 1000,
 
-            EVDistributionWindowsSize = 100,
+            EVDistributionWindowsSize = 10,
 
-            EVSpawnFraction = 0.01f,
+            EVSpawnFraction = 0.25f,
 
             EnergyPricesPath = new FileInfo(Path.Combine(dataPath.FullName, "energy_prices.csv")),
             OsrmPath = new FileInfo(Path.Combine(dataPath.FullName, "osrm/output.osrm")),
