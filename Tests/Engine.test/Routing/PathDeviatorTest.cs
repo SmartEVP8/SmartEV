@@ -14,7 +14,7 @@ public class PathDeviatorTest
             waypoints: [new Position(0, 0), new Position(1, 1)],
             originalDuration: new Time(500));
         var ev = new EV(TestData.Battery(), TestData.Preferences(), journey, efficiency: 150);
-        var detourJourney = (duration: 700f, polyline: "encoded_polyline");
+        var detourJourney = 700u;
 
         var deviation = PathDeviator.CalculateDetourDeviation(ref ev, detourJourney);
 
@@ -28,7 +28,7 @@ public class PathDeviatorTest
             waypoints: [new Position(0, 0), new Position(1, 1)],
             originalDuration: new Time(500));
         var ev = new EV(TestData.Battery(), TestData.Preferences(), journey, efficiency: 150);
-        var detourJourney = (duration: 400f, polyline: "encoded_polyline");
+        var detourJourney = 400u;
 
         var deviation = PathDeviator.CalculateDetourDeviation(ref ev, detourJourney);
 
@@ -42,7 +42,7 @@ public class PathDeviatorTest
             waypoints: [new Position(0, 0), new Position(1, 1)],
             originalDuration: new Time(500));
         var ev = new EV(TestData.Battery(), TestData.Preferences(), journey, efficiency: 150);
-        var detourJourney = (duration: 500f, polyline: "encoded_polyline");
+        var detourJourney = 500u;
 
         var deviation = PathDeviator.CalculateDetourDeviation(ref ev, detourJourney);
 
