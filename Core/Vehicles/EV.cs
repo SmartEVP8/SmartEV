@@ -48,5 +48,5 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     /// </summary>
     /// <param name="currentTime">The current time to compare against the EV's departure time.</param>
     /// <returns>True if the EV has departed; otherwise, false.</returns>
-    public readonly bool HasDeparted(Time currentTime) => Journey.OriginalDeparture <= currentTime;
+    public readonly bool HasDeparted(Time currentTime) => Journey.JourneyStart <= currentTime;
 }

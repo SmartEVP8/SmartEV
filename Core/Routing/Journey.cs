@@ -13,7 +13,7 @@ public class Journey(Time departure, Time originalDuration, Paths path)
     /// <summary>
     /// Gets the time the journey started.
     /// </summary>
-    public Time OriginalDeparture { get; } = departure;
+    public Time JourneyStart { get; } = departure;
 
     /// <summary>
     /// Gets the time the journey was last updated.
@@ -40,10 +40,10 @@ public class Journey(Time departure, Time originalDuration, Paths path)
     /// </summary>
     public Time PathDeviation { get; private set; } = 0;
 
-    /// <summary>Calculates the times elapsed since the journey started.</summary>
+    /// <summary>Calculates the time elapsed since the journey started.</summary>
     /// <param name="currentTime">The current time.</param>
     /// <returns>The elapsed time.</returns>
-    public Time TimeElapsed(Time currentTime) => currentTime - OriginalDeparture;
+    public Time TimeElapsed(Time currentTime) => currentTime - JourneyStart;
 
     /// <summary>
     /// Calucates the EV's current position. Assumes the speed is always the same.
