@@ -42,13 +42,13 @@ public readonly struct ArrivalAtDestinationMetric
     public static ArrivalAtDestinationMetric Collect(ref EV ev, Time simNow)
     {
         var expectedArrivalTime = ev.Journey.OriginalDuration;
-        var actualArrivalTime = simNow - ev.Journey.Departure;
+        var actualArrivalTime = simNow - ev.Journey.JourneyStart;
 
         return new ArrivalAtDestinationMetric
         {
             ExpectedArrivalTime = expectedArrivalTime,
             ActualArrivalTime = actualArrivalTime,
-            PathDeviation = ev.Journey.RunningSumDeviation,
+            PathDeviation = ev.Journey.PathDeviation,
             MissedDeadline = actualArrivalTime > expectedArrivalTime,
         };
     }

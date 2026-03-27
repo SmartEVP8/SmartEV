@@ -15,11 +15,9 @@ public class SnapshotEventHandler(
     Time rescheduleTime,
     DateTimeOffset startTime,
     Dictionary<ushort, Station> stations,
-    IReadOnlyList<Station> stations,
     EVStore evStore,
     MetricsService metrics,
-    EventScheduler scheduler,
-    Func<ChargerBase, double> getDeliveredKW)
+    EventScheduler scheduler)
 {
     private int _reservationCount = 0;
 

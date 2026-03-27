@@ -55,7 +55,7 @@ public static class TestData
     public static SnapshotEventHandler SnapshotHandler(
         MetricsService metrics,
         EventScheduler scheduler,
-        IReadOnlyList<Station> stations,
+        Dictionary<ushort, Station> stations,
         int evStoreCapacity = 10) =>
         new(
             rescheduleTime: new Time(3600),
@@ -63,8 +63,7 @@ public static class TestData
             stations: stations,
             evStore: new EVStore(evStoreCapacity),
             metrics: metrics,
-            scheduler: scheduler,
-            getDeliveredKW: _ => 0.0);
+            scheduler: scheduler);
 
     public static Station Station(
         ushort id,
@@ -164,6 +163,25 @@ public static class TestData
             CapacityKWh: model.BatteryConfig.MaxCapacityKWh,
             MaxChargeRateKW: model.BatteryConfig.ChargeRateKW,
             Socket: socket);
+    }
+
+    public static StationService StationService(
+        Dictionary<ushort, Station> stations,
+        EventScheduler scheduler,
+        EVStore evStore,
+        ChargingIntegrator? integrator = null)
+    {
+        var metrics = MetricsService();
+        var actualIntegrator = integrator ?? new ChargingIntegrator(10);
+
+        return new StationService(
+            stations: [.. stations.Values],
+            integrator: actualIntegrator,
+            scheduler: scheduler,
+            evStore: evStore,
+            applyNewPath: new ApplyNewPath(OSRMRouter),
+            metrics: metrics,
+            snapshotHandler: SnapshotHandler(metrics, scheduler, stations));
     }
 
     internal sealed class FixedEnergyPrices(float fixedPrice) : EnergyPrices(new FileInfo("data/energy_prices.csv"), new Random(42))

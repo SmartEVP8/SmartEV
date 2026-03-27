@@ -16,7 +16,9 @@ using Engine.Services;
 /// <param name="checkUrgencyHandler">Where the event <c>CheckUrgency</c> is handled.</param>
 /// <param name="snapshotEventHandler">Where the event <c>Snapshot</c> is handled.</param>
 /// <param name="destinationArrivalHandler">Where the event <c>ArriveAtDestination</c> is handled.</param>
+/// <param name="findCandidateStationsHandler">Where the event <c>FindCandidateStations</c> is handled.</param>
 /// <param name="evService">Where the event <c>SpawnEVS</c> is handled.</param>
+/// <param name="CheckAndUpdateAllEVsHandler">Where the event <c>CheckAndUpdateAllEVs</c> is handled.</param>
 public class EventDispatcher(
         StationService stationService,
         CheckUrgencyHandler checkUrgencyHandler,
@@ -24,7 +26,7 @@ public class EventDispatcher(
         FindCandidateStationsHandler findCandidateStationsHandler,
         EVService evService,
         DestinationArrivalHandler destinationArrivalHandler,
-        EVService evService)
+        CheckAndUpdateAllEVsHandler CheckAndUpdateAllEVsHandler)
 {
     /// <summary>
     /// Dispatches the event to the correct handler.
