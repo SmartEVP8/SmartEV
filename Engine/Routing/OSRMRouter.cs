@@ -89,6 +89,7 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
     /// Initializes a new instance of the <see cref="OSRMRouter"/> class.
     /// </summary>
     /// <param name="mapPath">The path to the OSRM map data file.</param>
+    /// <param name="stations">A list of charging stations to register with the router.</param>
     /// <exception cref="InvalidOperationException">Thrown when OSRM initialization fails.</exception>
     public OSRMRouter(FileInfo mapPath, List<Station> stations)
     {
