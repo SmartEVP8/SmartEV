@@ -90,11 +90,12 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
     /// </summary>
     /// <param name="mapPath">The path to the OSRM map data file.</param>
     /// <exception cref="InvalidOperationException">Thrown when OSRM initialization fails.</exception>
-    public OSRMRouter(FileInfo mapPath)
+    public OSRMRouter(FileInfo mapPath, List<Station> stations)
     {
         _osrm = InitializeOSRM(mapPath.ToString());
         if (_osrm == IntPtr.Zero)
             throw new Exception("OSRM initialization failed.");
+        InitStations(stations);
     }
 
     /// <summary>

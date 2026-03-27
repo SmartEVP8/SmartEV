@@ -32,12 +32,6 @@ public static class Init
             return new EventScheduler([]);
         });
 
-        services.AddSingleton<IOSRMRouter>(sp =>
-        {
-            var settings = sp.GetRequiredService<EngineSettings>();
-            return new OSRMRouter(settings.OsrmPath);
-        });
-
         services.AddSingleton(sp =>
         {
             var settings = sp.GetRequiredService<EngineSettings>();
@@ -47,6 +41,18 @@ public static class Init
             var stationFactory = new StationFactory(settings.StationFactoryOptions, seed, energyPrices, stationPath);
             return stationFactory.CreateStations();
         });
+
+        services.AddSingleton(sp =>
+        {
+            return new Dictionary<ushort, Station>(sp.GetRequiredService<List<Station>>().ToDictionary(s => s.Id));
+        });
+
+        services.AddSingleton<IOSRMRouter>(sp =>
+     {
+         var settings = sp.GetRequiredService<EngineSettings>();
+         var stations = sp.GetRequiredService<List<Station>>();
+         return new OSRMRouter(settings.OsrmPath, stations);
+     });
 
         services.AddSingleton(sp =>
         {
