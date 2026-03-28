@@ -2,18 +2,13 @@ namespace Engine.Events;
 
 using Core.Shared;
 
-/// <summary>
-/// The EventScheduler is responsible for managing and scheduling events in the system.
-/// </summary>
-/// <param name="preProcessors">Middleware/Preprocessors that are fired on MiddlewareEvents if attatched.</param>
-public class EventScheduler(Dictionary<Type, Action<IMiddlewareEvent>> preProcessors)
+public class EventScheduler()
 {
     private readonly PriorityQueue<Event, (Time, uint)> _eventPriorityQueue = new();
 
     /// <summary>
     /// Optional event handlers that can perform actions on scheduleEvent.
     /// </summary>
-    private readonly Dictionary<Type, Action<IMiddlewareEvent>> _preProcessors = preProcessors;
     private readonly HashSet<uint> _canceledEvents = [];
     private Time _currentTime = 0;
     private uint _evSequeenceId = 0;
@@ -30,9 +25,6 @@ public class EventScheduler(Dictionary<Type, Action<IMiddlewareEvent>> preProces
         var timestamp = e.Time;
         if (timestamp < _currentTime)
             throw new ArgumentOutOfRangeException($"Event timestamp {timestamp} is in the past (current time: {_currentTime})");
-
-        if (e is IMiddlewareEvent me && _preProcessors.TryGetValue(me.GetType(), out var handler))
-            handler.Invoke(me);
 
         var id = _evSequeenceId++;
         _eventPriorityQueue.Enqueue(e, (timestamp, id));

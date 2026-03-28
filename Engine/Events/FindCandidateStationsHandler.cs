@@ -26,9 +26,7 @@ public class FindCandidateStationsHandler(
     /// <param name="e">The <see cref="FindCandidateStations"/> event.</param>
     public void Handle(FindCandidateStations e)
     {
-        findCandidateStationService.PreComputeCandidateStation()(e);
-
-        var stationCosts = findCandidateStationService.ComputeCandidateStationFromCache(e.EVId);
+        var stationCosts = findCandidateStationService.GetCandidateStations(e);
         var ev = evStore.Get(e.EVId);
         var stations = stationCosts.Keys.ToArray();
         var journeyDurations = stationCosts.Values.ToArray();
