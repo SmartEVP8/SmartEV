@@ -9,7 +9,7 @@ using Core.GeoMath;
 /// <param name="departure">The time the journey started.</param>
 /// <param name="originalDuration">The original duration of the journey.</param>
 /// <param name="path">The path of the journey.</param>
-public class Journey(Time departure, Time originalDuration, Paths path)
+public class Journey(Time departure, Time originalDuration, float originalDistance, Paths path)
 {
     /// <summary>
     /// Gets the time the journey started.
@@ -45,6 +45,16 @@ public class Journey(Time departure, Time originalDuration, Paths path)
     /// <param name="currentTime">The current time.</param>
     /// <returns>The elapsed time.</returns>
     public Time TimeElapsed(Time currentTime) => currentTime - JourneyStart;
+
+    /// <summary>
+    /// Gets the original distance of the journey, i.e. the distance of A -> B without any detours.
+    /// </summary>
+    public float OriginalDistance { get; } = originalDistance;
+
+    /// <summary>
+    /// Gets the distance of an EVs journey, after it has been altered, i.e the distance of Start -> Station -> Detour.
+    /// </summary>
+    public float LastUpdatedDistance { get; private set; } = originalDistance;
 
     /// <summary>
     /// Calucates the EV's current position. Assumes the speed is always the same.

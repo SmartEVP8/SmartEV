@@ -17,7 +17,7 @@ public class ComputeCostTest
         var ev = new EV(
             TestData.Battery(stateOfCharge: 100),
             TestData.Preferences(PriceSensitivity: 0.0f, MinAcceptableCharge: 0f),
-            new Journey(new Time(0), new Time(500), new Paths([new Position(0, 0), new Position(1, 1)])),
+            new Journey(new Time(0), new Time(500), 100, new Paths([new Position(0, 0), new Position(1, 1)])),
             150);
 
         var stationA = TestData.Station(id: 1, pos: new Position(0, 0));
@@ -39,7 +39,7 @@ public class ComputeCostTest
         var ev = new EV(
             TestData.Battery(stateOfCharge: 100),
             TestData.Preferences(PriceSensitivity: 0.0f, MinAcceptableCharge: 0f),
-            new Journey(new Time(0), new Time(500), new Paths([new Position(0, 0), new Position(1, 1)])),
+            new Journey(new Time(0), new Time(500), 100, new Paths([new Position(0, 0), new Position(1, 1)])),
             150);
 
         var lowQueueStation = TestData.Station(id: 1, queueSize: 1);
@@ -64,7 +64,7 @@ public class ComputeCostTest
         var ev = new EV(
             TestData.Battery(stateOfCharge: 100),
             TestData.Preferences(PriceSensitivity: 0.0f, MinAcceptableCharge: 0f),
-            new Journey(new Time(0), new Time(500), new Paths([new Position(0, 0), new Position(1, 1)])),
+            new Journey(new Time(0), new Time(500), 100, new Paths([new Position(0, 0), new Position(1, 1)])),
             150);
 
         var stationA = TestData.Station(id: 1, queueSize: 5);
@@ -88,7 +88,7 @@ public class ComputeCostTest
         var ev = new EV(
             TestData.Battery(stateOfCharge: 100),
             TestData.Preferences(PriceSensitivity: 0.0f, MinAcceptableCharge: 0f),
-            new Journey(new Time(0), new Time(500), new Paths([new Position(0, 0), new Position(1, 1)])),
+            new Journey(new Time(0), new Time(500), 100, new Paths([new Position(0, 0), new Position(1, 1)])),
             150);
 
         var stationA = TestData.Station(id: 1, queueSize: 0);
@@ -111,7 +111,7 @@ public class ComputeCostTest
         var ev = new EV(
             TestData.Battery(stateOfCharge: 50),
             TestData.Preferences(PriceSensitivity: 1.0f, MinAcceptableCharge: 20f),
-            new Journey(new Time(0), new Time(500), new Paths([new Position(0, 0), new Position(1, 1)])),
+            new Journey(new Time(0), new Time(500), 100, new Paths([new Position(0, 0), new Position(1, 1)])),
             150);
 
         // Use deterministic energy prices to control station costs
@@ -142,7 +142,7 @@ public class ComputeCostTest
         var ev = new EV(
             TestData.Battery(stateOfCharge: 100),
             TestData.Preferences(PriceSensitivity: 0.0f, MinAcceptableCharge: 0f),
-            new Journey(new Time(0), new Time(500), new Paths([new Position(0, 0), new Position(1, 1)])),
+            new Journey(new Time(0), new Time(500), 100, new Paths([new Position(0, 0), new Position(1, 1)])),
             150);
 
         var stations = Array.Empty<Station>();

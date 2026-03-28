@@ -45,7 +45,7 @@ public class StationsAroundPolyline
         var route = _router.QuerySingleDestination(9.935932, 57.046707, 12.5683, 55.6761);
         var polyline = route.Polyline;
         _path = Polyline6ToPoints.DecodePolyline(polyline);
-        var journey = new Journey(0, 0, _path);
+        var journey = new Journey(0, 0, 0, _path);
 
         _ev = new EV(new Battery(100, 100, 15, Socket.CCS2), new Preferences(1f, 0.1f, 10.0f), journey, 150);
 

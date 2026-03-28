@@ -85,10 +85,10 @@ public static class TestData
     {
         if (waypoints == null)
         {
-            return new(departure, originalDuration, new Paths([new Position(0, 0), new Position(1, 1)]));
+            return new(departure, originalDuration, 100, new Paths([new Position(0, 0), new Position(1, 1)]));
         }
 
-        return new(departure, originalDuration, new Paths(waypoints));
+        return new(departure, originalDuration, 100, new Paths(waypoints));
     }
 
     public static Battery Battery(
