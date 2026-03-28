@@ -12,10 +12,10 @@ using Core.Shared;
 public class Battery(ushort capacity, ushort maxChargeRate, float stateOfCharge, Socket socket)
 {
     /// <summary>Gets the capacity of the battery.</summary>
-    public ushort Capacity { get; } = capacity;
+    public ushort MaxCapacityKWh { get; } = capacity;
 
     /// <summary>Gets the maximum charge rate of the battery.</summary>
-    public ushort MaxChargeRate { get; } = maxChargeRate;
+    public ushort MaxChargeRateKW { get; } = maxChargeRate;
 
     /// <summary>Gets or sets the current state of charge of the battery.</summary>
     public float StateOfCharge { get; set; } = stateOfCharge;

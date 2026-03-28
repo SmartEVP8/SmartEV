@@ -1,6 +1,7 @@
 namespace Core.Routing;
 
 using Core.Shared;
+using Core.GeoMath;
 
 /// <summary>
 /// Represents a journey for an electric vehicle.
@@ -67,9 +68,7 @@ public class Journey(Time departure, Time originalDuration, Paths path)
                 (
                     p.First,
                     p.Second,
-                    Length: Math.Sqrt(
-                        Math.Pow(p.Second.Latitude - p.First.Latitude, 2)
-                            + Math.Pow(p.Second.Longitude - p.First.Longitude, 2))
+                    Length: GeoMath.EquirectangularDistance(p.First, p.Second)
                 ))
             .ToList();
 

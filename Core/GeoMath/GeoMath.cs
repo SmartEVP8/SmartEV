@@ -1,4 +1,4 @@
-namespace Engine.GeoMath;
+namespace Core.GeoMath;
 
 using Core.Shared;
 
@@ -113,7 +113,7 @@ public static class GeoMath
     /// </summary>
     /// <param name="a">Position of the first location.</param>
     /// <param name="b">Position of the second location.</param>
-    /// <returns>The distance between two points.</returns>
+    /// <returns>The distance between two points in km.</returns>
     public static double EquirectangularDistance(Position a, Position b)
     {
         var lat1 = a.Latitude * DegToRad;

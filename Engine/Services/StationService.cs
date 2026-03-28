@@ -143,7 +143,7 @@ public class StationService
         _applyNewPath.ApplyNewPathToEV(ref ev, station, e.Time);
         _eVStore.Set(e.EVId, ref ev);
         _scheduler.ScheduleEvent(
-            new ArriveAtStation(e.EVId, e.StationId, ev.Battery.Capacity, e.Time + e.DurationToStation));
+            new ArriveAtStation(e.EVId, e.StationId, ev.Battery.MaxCapacityKWh, e.Time + e.DurationToStation));
     }
 
     /// <summary>
@@ -201,8 +201,8 @@ public class StationService
                 EVId: e.EVId,
                 CurrentSoC: ev.Battery.StateOfCharge,
                 TargetSoC: e.TargetSoC,
-                CapacityKWh: ev.Battery.Capacity,
-                MaxChargeRateKW: ev.Battery.MaxChargeRate,
+                CapacityKWh: ev.Battery.MaxCapacityKWh,
+                MaxChargeRateKW: ev.Battery.MaxChargeRateKW,
                 Socket: ev.Battery.Socket);
 
         ev.IsCharging = true;

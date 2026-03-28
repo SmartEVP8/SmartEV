@@ -1,7 +1,7 @@
 namespace Engine.Events;
 
 using Engine.Vehicles;
-using Engine.GeoMath;
+using Core.GeoMath;
 using Core.Shared;
 using Core.Vehicles;
 
@@ -22,38 +22,38 @@ public class CheckAndUpdateAllEVsHandler(
     /// Handles the CheckAndUpdateAllEVs event by scheduling a CheckUrgency event for each EV in the store.
     /// It also schedules the next CheckAndUpdateAllEVs event based on the specified interval size.
     /// </summary>
-    /// <param name="checkAndUpdateAllEVs">The event for checking and updating all EVs.</param>
-    public void Handle(CheckAndUpdateAllEVs checkAndUpdateAllEVs)
+    /// <param name="e">The event for checking and updating all EVs.</param>
+    public void Handle(CheckAndUpdateAllEVs e)
     {
         var evsThatNeedChecking = new int[evStore.Count];
         Array.Fill(evsThatNeedChecking, -1);
 
-        Parallel.For(0, evStore.Count, evID =>
+        for (var evID = 0; evID < evStore.Count; evID++)
         {
             ref var ev = ref evStore.Get(evID);
 
             var currentTime = eventScheduler.CurrentTime;
-            if (ev.Journey is null || ev.IsCharging || !ev.HasDeparted(currentTime) || ev.HasArrived(currentTime)) return;
-            Console.WriteLine($"Checking EV {evID} at time {currentTime}");
+            if (ev.Journey is null || ev.IsCharging || !ev.HasDeparted(currentTime) || ev.HasArrived(currentTime)) continue;
+
             var batteryLost = CalculateStateOfCharge(ev, intervalSize);
-            var socLost = batteryLost / ev.Battery.Capacity * 100;
-            Console.WriteLine($"EV {evID} lost {socLost}% SoC in the last interval, current SoC: {ev.Battery.StateOfCharge}%");
+            var socLost = batteryLost / ev.Battery.MaxCapacityKWh * 100;
+
             ev.Battery.StateOfCharge -= socLost;
-            Console.WriteLine($"EV {evID} new SoC: {ev.Battery.StateOfCharge}% \n");
+
             var currentBucket = (int)(ev.Battery.StateOfCharge / BatteryInterval);
             var prevBucket = (int)((ev.Battery.StateOfCharge + socLost) / BatteryInterval);
-            //Console.WriteLine($"EV {evID} lost {socLost}% SoC, current SoC: {ev.Battery.StateOfCharge}%, bucket: {currentBucket}, previous bucket: {prevBucket}");
+
             if (currentBucket != prevBucket)
                 evsThatNeedChecking[evID] = evID;
-        });
+        }
 
         foreach (var evID in evsThatNeedChecking)
         {
             if (evID == -1) continue;
-            eventScheduler.ScheduleEvent(new CheckUrgency(evID, checkAndUpdateAllEVs.Time));
+            eventScheduler.ScheduleEvent(new CheckUrgency(evID, e.Time));
         }
 
-        var nextCheckTime = checkAndUpdateAllEVs.Time + intervalSize;
+        var nextCheckTime = e.Time + intervalSize;
         var nextCheckEvent = new CheckAndUpdateAllEVs(nextCheckTime);
         eventScheduler.ScheduleEvent(nextCheckEvent);
     }
@@ -61,16 +61,16 @@ public class CheckAndUpdateAllEVsHandler(
     private float CalculateStateOfCharge(EV ev, Time interval)
     {
         var waypoints = ev.Journey.Path.Waypoints;
-        var totalDistance = 0.0d;
+        var totalDistancekm = 0.0d;
         for (var i = 0; i < waypoints.Count - 1; i++)
         {
-            totalDistance +=
+            totalDistancekm +=
                 GeoMath.EquirectangularDistance(waypoints[i], waypoints[i + 1]);
         }
 
         var distanceInInterval =
-            totalDistance * (interval / (double)ev.Journey.OriginalDuration);
-        Console.WriteLine($"totalDistance: {totalDistance}km, duration: {ev.Journey.OriginalDuration}s, interval: {interval}s, efficiency: {ev.Efficiency}Wh/km, capacity: {ev.Battery.Capacity}kWh");
-        return (float)(distanceInInterval * ev.Efficiency / 1000.0);
+            totalDistancekm * (interval / (double)ev.Journey.LastUpdatedDuration);
+
+        return (float)(distanceInInterval * ev.ConsumptionWhPerKm / 1000.0);
     }
 }

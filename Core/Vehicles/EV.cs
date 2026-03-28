@@ -23,9 +23,9 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     public Battery Battery { get; } = battery;
 
     /// <summary>
-    /// Gets the efficiency rating of the EV.
+    /// Gets the energy consumption of this model in Wh/km.
     /// </summary>
-    public ushort Efficiency { get; } = efficiency;
+    public ushort ConsumptionWhPerKm { get; } = efficiency;
 
     /// <summary>
     /// Gets or sets a reservation at a station for the EV.
