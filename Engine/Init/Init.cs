@@ -29,7 +29,7 @@ public static class Init
     {
         services.AddSingleton(sp =>
         {
-            return new EventScheduler([]);
+            return new EventScheduler();
         });
 
         services.AddSingleton(sp =>

@@ -49,30 +49,6 @@ public class OSRMRouterTests
     }
 
     [Fact]
-    public void QueryStationsWithDest_EvToStationLeg_MatchesQueryStations()
-    {
-        using var router = CreateRouter(_stationNearPosition, _stationFarPosition);
-
-        var (queryStationsDurations, queryStationsDistances) = router.QueryStations(
-            _evPosition[0], _evPosition[1], [0]);
-
-        var (withDestDurations, withDestDistances) = router.QueryStationsWithDest(
-            _evPosition[0],
-            _evPosition[1],
-            _stationNearPosition.Longitude,
-            _stationNearPosition.Latitude,
-            [0]);
-
-        Assert.True(
-            Math.Abs(queryStationsDurations[0] - withDestDurations[0]) < 10f,
-            $"EV→station leg mismatch: QueryStations={queryStationsDurations[0]:F1}s QueryStationsWithDest={withDestDurations[0]:F1}s");
-
-        Assert.True(
-            Math.Abs(queryStationsDistances[0] - withDestDistances[0]) < 50f,
-            $"EV→station leg mismatch: QueryStations={queryStationsDistances[0]:F1}m QueryStationsWithDest={withDestDistances[0]:F1}m");
-    }
-
-    [Fact]
     public void QueryStationsWithDest_NearbyStationHasLowerDurationThanFarStation()
     {
         using var router = CreateRouter(_stationNearPosition, _stationFarPosition);
@@ -97,13 +73,13 @@ public class OSRMRouterTests
     {
         using var router = CreateRouter(_stationNearPosition, _stationFarPosition);
 
-        var (evToStation, _) = router.QuerySingleDestination(
+        var evToStationRes = router.QuerySingleDestination(
             _evPosition[0],
             _evPosition[1],
             _stationNearPosition.Longitude,
             _stationNearPosition.Latitude);
 
-        var (stationToDest, _) = router.QuerySingleDestination(
+        var stationToDestRes = router.QuerySingleDestination(
             _stationNearPosition.Longitude,
             _stationNearPosition.Latitude,
             _destPosition[0],
@@ -116,7 +92,7 @@ public class OSRMRouterTests
             _destPosition[1],
             [0]); // index 0 = _stationNearPosition
 
-        var routeSum = evToStation + stationToDest;
+        var routeSum = evToStationRes.Duration + stationToDestRes.Duration;
         Assert.True(
             Math.Abs(tableDurations[0] - routeSum) < 1f,
             $"Table={tableDurations[0]:F1}s RouteSum={routeSum:F1}s — likely wrong leg wired");

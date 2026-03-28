@@ -8,7 +8,7 @@ using Engine.test.Builders;
 
 public class CheckUrgencyHandlerTest
 {
-    private readonly EventScheduler _scheduler = new([]);
+    private readonly EventScheduler _scheduler = new();
     private readonly EVStore _evStore = new(10);
 
     private EV MakeEV(float stateOfCharge) =>

@@ -42,7 +42,7 @@ public class FindCandidateStationsBenchmark
             ?? throw new InvalidOperationException("EnergyPricesPath not set in project.");
         var energyPrices = new EnergyPrices(new FileInfo(csvPath), new Random(42));
 
-        var router = new OSRMRouter(new FileInfo(path), new List<Station>());
+        var router = new OSRMRouter(new FileInfo(path), []);
         var stations = new Dictionary<ushort, Station>();
         var rand = new Random(321);
         for (var i = 0; i < 4000; i++)
@@ -60,7 +60,7 @@ public class FindCandidateStationsBenchmark
         var costStore = new CostStore(costWeigths);
         var computeCost = new ComputeCost(costStore);
 
-        _eventScheduler = new EventScheduler([]);
+        _eventScheduler = new EventScheduler();
         _evStore = new EVStore(_count);
 
         var findCandidateStationService = new FindCandidateStationService(router, stations, spatialGrid, _evStore);
@@ -81,7 +81,7 @@ public class FindCandidateStationsBenchmark
     /// Ensure that we have a clean EventScheduler for each iteration of the benchmark.
     /// </summary>
     [IterationCleanup]
-    public void IterationCleanup() => _eventScheduler = new EventScheduler([]);
+    public void IterationCleanup() => _eventScheduler = new EventScheduler();
 
     /// <summary>
     /// Benchmarks the FindCandidateStationsHandler by invoking its Handle method with FindCandidateStations events.

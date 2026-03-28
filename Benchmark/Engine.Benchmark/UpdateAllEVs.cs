@@ -29,7 +29,7 @@ public class UpdateAllEVsBenchMark
     [GlobalSetup]
     public void Setup()
     {
-        _eventScheduler = new EventScheduler([]);
+        _eventScheduler = new EventScheduler();
         _evStore = new EVStore(_count);
         var random = new Random(1);
         for (var i = 0; i < _count; i++)
@@ -48,7 +48,7 @@ public class UpdateAllEVsBenchMark
     /// Ensure that we have a clean EventScheduler for each iteration of the benchmark.
     /// </summary>
     [IterationCleanup]
-    public void IterationCleanup() => _eventScheduler = new EventScheduler([]);
+    public void IterationCleanup() => _eventScheduler = new EventScheduler();
 
     /// <summary>
     /// Benchmarks the CheckAndUpdateAllEVsHandler by invoking its Handle method with a CheckAndUpdateAllEVs event,

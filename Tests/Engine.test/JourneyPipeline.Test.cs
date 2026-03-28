@@ -77,7 +77,6 @@ public class JourneyPipelineTests
     {
         private readonly float[] _distances = distances;
 
-        public (float[], float[]) QueryPointsToPoints(double[] origins, double[] destinations)
-            => ([], _distances);
+        RoutingResult IMatrixRouter.QueryPointsToPoints(double[] srcCoords, double[] dstCoords) => new([], _distances);
     }
 }

@@ -10,5 +10,5 @@ public interface IDestinationRouter
     /// </summary>
     /// <param name="coords">A flat array of coordinates representing the route.</param>
     /// <returns>A tuple containing the duration and polyline string for the route.</returns>
-    public (float duration, string polyline) QueryDestination(double[] coords);
+    public RouteSegment QueryDestination(double[] coords);
 }

@@ -117,5 +117,11 @@ public class ApplyNewPathToEVTests()
             ReceivedCoordinates = coords;
             return (ReturnedDuration, ReturnedPolyline);
         }
+
+        RouteSegment IDestinationRouter.QueryDestination(double[] coords)
+        {
+            ReceivedCoordinates = coords;
+            return new RouteSegment(ReturnedDuration, 0, ReturnedPolyline);
+        }
     }
 }

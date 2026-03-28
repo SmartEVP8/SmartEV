@@ -41,9 +41,9 @@ public class StationsAroundPolyline
         var csvPath = AppContext.GetData("CSVPath") as string
             ?? throw new InvalidOperationException("CSVPath not set in project.");
         var energyPrices = new EnergyPrices(new FileInfo(csvPath), new Random(42));
-        _router = new OSRMRouter(new FileInfo(path), new List<Station>());
+        _router = new OSRMRouter(new FileInfo(path), []);
         var route = _router.QuerySingleDestination(9.935932, 57.046707, 12.5683, 55.6761);
-        var polyline = route.polyline;
+        var polyline = route.Polyline;
         _path = Polyline6ToPoints.DecodePolyline(polyline);
         var journey = new Journey(0, 0, _path);
 

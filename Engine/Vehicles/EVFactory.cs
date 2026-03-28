@@ -43,14 +43,14 @@ public class EVFactory(Random random, IJourneySamplerProvider samplersProvider, 
     private Journey CreateJourney(Time departure)
     {
         var (source, destination) = samplersProvider.Current.SampleSourceToDest(random);
-        var (duration, polyline) = pointToPointRouter.QuerySingleDestination(
+        var queryResult = pointToPointRouter.QuerySingleDestination(
                         source.Longitude,
                         source.Latitude,
                         destination.Longitude,
                         destination.Latitude);
 
-        var res = Polyline6ToPoints.DecodePolyline(polyline);
-        return new Journey(departure, (Time)(uint)duration, res);
+        var res = Polyline6ToPoints.DecodePolyline(queryResult.Polyline);
+        return new Journey(departure, (Time)(uint)queryResult.Duration, res);
     }
 
     /// <summary>

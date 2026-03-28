@@ -103,7 +103,7 @@ public class StationServiceTests
     [Fact]
     public void HandleReservationRequest_SetsReservation()
     {
-        var scheduler = new EventScheduler([]);
+        var scheduler = new EventScheduler();
         var evStore = new EVStore(1);
         var router = TestData.OSRMRouter;
 
@@ -127,7 +127,7 @@ public class StationServiceTests
     [Fact]
     public void HandleReservationRequest_CancelsPreviousReservation()
     {
-        var scheduler = new EventScheduler([]);
+        var scheduler = new EventScheduler();
         var evStore = new EVStore(1);
         var router = TestData.OSRMRouter;
 
@@ -168,7 +168,7 @@ public class StationServiceTests
     public async Task CheckReservationOrderIsCorrect()
     {
         var totalRequest = 100;
-        var scheduler = new EventScheduler([]);
+        var scheduler = new EventScheduler();
         var evStore = new EVStore(totalRequest);
         var router = TestData.OSRMRouter;
 
@@ -210,7 +210,7 @@ public class StationServiceTests
     {
         var charger = TestData.SingleCharger(1, maxPowerKW: maxPowerKW);
         var station = TestData.Station(1, chargers: [charger]);
-        var scheduler = new EventScheduler([]);
+        var scheduler = new EventScheduler();
         var integrator = new ChargingIntegrator(stepSeconds: 60);
         var evStore = new EVStore(10);
         var applyNewPath = new ApplyNewPath(TestData.OSRMRouter);
@@ -224,7 +224,7 @@ public class StationServiceTests
     {
         var charger = TestData.DualCharger(1, maxPowerKW: maxPowerKW);
         var station = TestData.Station(1, chargers: [charger]);
-        var scheduler = new EventScheduler([]);
+        var scheduler = new EventScheduler();
         var integrator = new ChargingIntegrator(stepSeconds: 60);
         var evStore = new EVStore(10);
         var applyNewPath = new ApplyNewPath(TestData.OSRMRouter);
@@ -237,6 +237,6 @@ public class StationServiceTests
     {
         Assert.NotNull(e);
         Assert.IsType<EndCharging>(e);
-        return (EndCharging)e!;
+        return (EndCharging)e;
     }
 }

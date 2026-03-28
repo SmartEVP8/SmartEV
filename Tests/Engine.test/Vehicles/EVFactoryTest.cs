@@ -34,7 +34,7 @@ public class EVFactoryTest
 
     private class FakeRouter : IPointToPointRouter
     {
-        public (float duration, string polyline) QuerySingleDestination(double evLon, double evLat, double destLon, double destLat) => (10, "_p~iF~ps|U_ulLnnqC_mqNvxq`@");
+        RouteSegment IPointToPointRouter.QuerySingleDestination(double evLon, double evLat, double destLon, double destLat) => new(10, 0, "_p~iF~ps|U_ulLnnqC_mqNvxq`@");
     }
 
     /// <summary>

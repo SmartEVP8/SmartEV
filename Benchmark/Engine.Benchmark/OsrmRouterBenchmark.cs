@@ -72,23 +72,6 @@ public class OsrmRouterBenchmark
     public void Cleanup() => _router?.Dispose();
 
     /// <summary>
-    /// Benchmarks querying stations for 1000 cars in parallel.
-    /// </summary>
-    [Benchmark]
-    public void Query1000Cars50StationsParallel()
-    {
-        var options = new ParallelOptions
-        {
-            MaxDegreeOfParallelism = Environment.ProcessorCount,
-        };
-        Parallel.For(0, _evCoordinates.Length, options, i =>
-        {
-            var (lon, lat) = _evCoordinates[i];
-            _ = _router.QueryStations(lon, lat, _stationIndices);
-        });
-    }
-
-    /// <summary>
     /// Benchmarks bulk querying of 1000 cars to 50 stations.
     /// </summary>
     [Benchmark]

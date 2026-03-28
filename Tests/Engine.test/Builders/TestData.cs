@@ -77,8 +77,8 @@ public static class TestData
 
     public static Paths Route(double fromLon, double fromLat, double toLon, double toLat)
     {
-        var (_, polyline) = OSRMRouter.QuerySingleDestination(fromLon, fromLat, toLon, toLat);
-        return Polyline6ToPoints.DecodePolyline(polyline);
+        var result = OSRMRouter.QuerySingleDestination(fromLon, fromLat, toLon, toLat);
+        return Polyline6ToPoints.DecodePolyline(result.Polyline);
     }
 
     public static Journey Journey(List<Position>? waypoints, Time departure = default, Time originalDuration = default)
