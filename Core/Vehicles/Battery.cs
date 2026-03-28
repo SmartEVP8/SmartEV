@@ -22,4 +22,15 @@ public class Battery(ushort capacity, ushort maxChargeRate, float stateOfCharge,
 
     /// <summary>Gets the socket type of the battery.</summary>
     public Socket Socket { get; } = socket;
+
+    /// <summary>Gets the current usable energy in the battery.</summary>
+    public float CurrentChargeKWh => MaxCapacityKWh * (StateOfCharge / 100f);
+
+    /// <summary>Gets how much capacity remains to be filled.</summary>
+    public float RemainingCapacityKWh => MaxCapacityKWh - CurrentChargeKWh;
+
+    /// <summary>True when SoC is at or above the given threshold (default 20 %).</summary>
+    /// <param name="thresholdPercent">The threshold percentage to compare the state of charge against.</param>
+    /// <returns>If the battery % is above the <paramref name="thresholdPercent"/>.</returns>
+    public bool IsAboveThreshold(float thresholdPercent = 20f) => StateOfCharge >= thresholdPercent;
 }

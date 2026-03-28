@@ -34,6 +34,6 @@ public class ApplyNewPath(IDestinationRouter router)
         var detourPath = Polyline6ToPoints.DecodePolyline(res.Polyline);
         var newWaypoints = new Paths([currentPos, .. detourPath.Waypoints]);
         var roundedDuration = (uint)Math.Ceiling(res.Duration);
-        ev.Journey.UpdateRoute(newWaypoints, currentTime, (Time)roundedDuration);
+        ev.Journey.UpdateRoute(newWaypoints, station.Position, currentTime, (Time)roundedDuration, res.Distance);
     }
 }

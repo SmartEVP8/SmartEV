@@ -50,5 +50,53 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     /// <returns>True if the EV has departed; otherwise, false.</returns>
     public readonly bool HasDeparted(Time currentTime) => Journey.JourneyStart <= currentTime;
 
+    /// <summary>
+    /// Determines whether the EV has arrived at its destination based on the current time.
+    /// </summary>
+    /// <param name="currentTime">Timestamp.</param>
+    /// <returns>True of false based on if the EV has arrived at its journeys end.</returns>
     public readonly bool HasArrived(Time currentTime) => Journey.JourneyStart + Journey.LastUpdatedDuration <= currentTime;
+
+    /// <summary>
+    /// Whether the EV can complete its current journey and still have at least
+    /// <paramref name="reservePercent"/> SoC remaining on arrival.
+    /// </summary>
+    /// <param name="reservePercent">Minimum SoC (%) required on arrival. Defaults to 10%.</param>
+    /// <returns>True if the EV can complete its current journey with the specified reserve; otherwise, false.</returns>
+    public readonly bool CanCompleteJourney(float reservePercent = 10f) =>
+        CanReach(Journey.LastUpdatedDistancekm, reservePercent);
+
+    /// <summary>
+    /// Whether the EV can reach a point <paramref name="distanceKm"/> away and still
+    /// have at least <paramref name="reservePercent"/> SoC remaining on arrival.
+    /// </summary>
+    /// <param name="distanceKm">Distance to the target in km.</param>
+    /// <param name="reservePercent">Minimum SoC (%) required on arrival. Defaults to 10%.</param>
+    /// <returns>True if the EV can reach the target with the specified reserve; otherwise, false.</returns>
+    public readonly bool CanReach(float distanceKm, float reservePercent = 10f)
+    {
+        var reserveKWh = Battery.MaxCapacityKWh * (reservePercent / 100f);
+        var usableKWh = Battery.CurrentChargeKWh - reserveKWh;
+        return EnergyForDistanceKWh(distanceKm) <= usableKWh;
+    }
+
+    /// <summary>
+    /// Consumes energy based on the distance traveled between <paramref name="from"/> and <paramref name="to"/>.
+    /// </summary>
+    /// <param name="from">The starting time of the interval which to calculate energy consumption.
+    /// Should be between the journey's departure and arrival times.</param>
+    /// <param name="to">The ending time of the interval which to calculate energy consumption.
+    /// Should be between the journey's departure and arrival times, and greater than <paramref name="from"/>.</param>
+    public readonly void ConsumeEnergy(Time from, Time to)
+    {
+        var fractionTraveled = (to - from) / (double)Journey.LastUpdatedDuration;
+        var distanceKm = Journey.LastUpdatedDistancekm * fractionTraveled;
+        var energyKWh = EnergyForDistanceKWh((float)distanceKm);
+        var socLost = energyKWh / Battery.MaxCapacityKWh * 100f;
+        Battery.StateOfCharge = Math.Clamp(Battery.StateOfCharge - socLost, 0f, 100f);
+    }
+
+    /// <summary>Calculates the energy required to travel <paramref name="distanceKm"/>.</summary>
+    private readonly float EnergyForDistanceKWh(float distanceKm) =>
+        distanceKm * ConsumptionWhPerKm / 1000f;
 }
