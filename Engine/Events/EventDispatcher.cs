@@ -44,7 +44,6 @@ public class EventDispatcher(
             _calledCount[type] = 1;
         }
 
-
         _eventCount++;
     }
 
@@ -112,7 +111,7 @@ public class EventDispatcher(
                 throw new Exception("This should never happen, add a handler");
         }
 
-        if (_eventCount % 10 == 0)
+        if (_eventCount % 1000 == 0)
             PrintCounts();
     }
 }

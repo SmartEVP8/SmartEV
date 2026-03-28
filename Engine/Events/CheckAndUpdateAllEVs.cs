@@ -1,9 +1,7 @@
 namespace Engine.Events;
 
 using Engine.Vehicles;
-using Core.GeoMath;
 using Core.Shared;
-using Core.Vehicles;
 
 /// <summary>
 /// Service handler that checks if EV's need to update their charge level.
@@ -28,20 +26,24 @@ public class CheckAndUpdateAllEVsHandler(
         var evsThatNeedChecking = new int[evStore.Count];
         Array.Fill(evsThatNeedChecking, -1);
 
+        var currentTime = eventScheduler.CurrentTime;
+
         for (var evID = 0; evID < evStore.Count; evID++)
         {
             ref var ev = ref evStore.Get(evID);
 
-            var currentTime = eventScheduler.CurrentTime;
-            if (ev.Journey is null || ev.IsCharging || !ev.HasDeparted(currentTime) || ev.HasArrived(currentTime)) continue;
+            if (ev.Journey is null || ev.IsCharging || !ev.HasDeparted(currentTime) || ev.HasArrived(currentTime))
+                continue;
 
-            var batteryLost = CalculateStateOfCharge(ev, intervalSize);
-            var socLost = batteryLost / ev.Battery.MaxCapacityKWh * 100;
 
-            ev.Battery.StateOfCharge -= socLost;
+            Console.WriteLine($"Time: {e.Time}, EvID: {evID}, Stats: {ev}");
 
-            var currentBucket = (int)(ev.Battery.StateOfCharge / BatteryInterval);
-            var prevBucket = (int)((ev.Battery.StateOfCharge + socLost) / BatteryInterval);
+            var socBefore = ev.Battery.StateOfCharge;
+            ev.ConsumeEnergy(currentTime, currentTime + intervalSize);
+            var socAfter = ev.Battery.StateOfCharge;
+
+            var prevBucket = (int)(socBefore / BatteryInterval);
+            var currentBucket = (int)(socAfter / BatteryInterval);
 
             if (currentBucket != prevBucket)
                 evsThatNeedChecking[evID] = evID;
@@ -53,24 +55,6 @@ public class CheckAndUpdateAllEVsHandler(
             eventScheduler.ScheduleEvent(new CheckUrgency(evID, e.Time));
         }
 
-        var nextCheckTime = e.Time + intervalSize;
-        var nextCheckEvent = new CheckAndUpdateAllEVs(nextCheckTime);
-        eventScheduler.ScheduleEvent(nextCheckEvent);
-    }
-
-    private float CalculateStateOfCharge(EV ev, Time interval)
-    {
-        var waypoints = ev.Journey.Path.Waypoints;
-        var totalDistancekm = 0.0d;
-        for (var i = 0; i < waypoints.Count - 1; i++)
-        {
-            totalDistancekm +=
-                GeoMath.EquirectangularDistance(waypoints[i], waypoints[i + 1]);
-        }
-
-        var distanceInInterval =
-            totalDistancekm * (interval / (double)ev.Journey.LastUpdatedDuration);
-
-        return (float)(distanceInInterval * ev.ConsumptionWhPerKm / 1000.0);
+        eventScheduler.ScheduleEvent(new CheckAndUpdateAllEVs(e.Time + intervalSize));
     }
 }

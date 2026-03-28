@@ -30,7 +30,7 @@ public static class Program
             CostConfig = new CostWeights
             {
                 EffectiveQueueSize = 1,
-                PathDeviation = 100,
+                PathDeviation = 1,
                 PriceSensitivity = 1,
             },
 
@@ -56,7 +56,7 @@ public static class Program
                 TotalChargers = 10000,
             },
 
-            IntervalToUpdateEVs = 5 * 60,
+            IntervalToUpdateEVs = 1 * 60,
 
             BatteryIntervalForCheckUrgency = 5,
 

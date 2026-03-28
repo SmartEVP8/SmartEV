@@ -19,6 +19,8 @@ public class FindCandidateStationsHandler(
     EventScheduler eventScheduler,
     EVStore evStore)
 {
+    private uint _numberOfNoStations = 0;
+
     /// <summary>
     /// Handles the <see cref="FindCandidateStations"/> event by pre-computing candidate stations,
     /// computing their costs, selecting the best station, and scheduling a <see cref="ReservationRequest"/> event.
@@ -26,10 +28,18 @@ public class FindCandidateStationsHandler(
     /// <param name="e">The <see cref="FindCandidateStations"/> event.</param>
     public void Handle(FindCandidateStations e)
     {
-        var stationCosts = findCandidateStationService.GetCandidateStations(e);
         var ev = evStore.Get(e.EVId);
+        var stationCosts = findCandidateStationService.GetCandidateStations(e);
         var stations = stationCosts.Keys.ToArray();
         var journeyDurations = stationCosts.Values.ToArray();
+
+        if (stations.Length == 0)
+        {
+            _numberOfNoStations++;
+            Console.WriteLine($"[EV {e.EVId}] has no stations. {ev}. Total number of failed EV's {_numberOfNoStations}");
+            evStore.Free(e.EVId);
+            return;
+        }
 
         var bestStation = computeCost.Compute(ref ev, stations, journeyDurations);
         var durationToStation = Math.Ceiling(stationCosts[bestStation]);
