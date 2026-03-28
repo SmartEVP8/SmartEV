@@ -1,6 +1,5 @@
 namespace Engine.Events;
 
-using Core.Shared;
 using Core.Vehicles;
 using Engine.Vehicles;
 

@@ -60,27 +60,27 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
 
     /// <inheritdoc/>
     public override readonly string ToString() =>
-        $"EV(SoC: {Battery.StateOfCharge:F1}%, Distance left: {Journey.LastUpdatedDistancekm:F1}km, Energy: {Battery.CurrentChargeKWh:F1}kWh, Efficiency: {ConsumptionWhPerKm}Wh/km)";
+        $"EV(SoC: {Battery.StateOfCharge:P1}, Distance left: {Journey.LastUpdatedDistancekm:F1}km, Energy: {Battery.CurrentChargeKWh:F1}kWh, Efficiency: {ConsumptionWhPerKm}Wh/km)";
 
     /// <summary>
     /// Whether the EV can complete its current journey and still have at least
-    /// <paramref name="reservePercent"/> SoC remaining on arrival.
+    /// <paramref name="reserve"/> SoC remaining on arrival.
     /// </summary>
-    /// <param name="reservePercent">Minimum SoC (%) required on arrival. Defaults to 10%.</param>
+    /// <param name="reserve">Minimum SoC required on arrival. Defaults to 0.1.</param>
     /// <returns>True if the EV can complete its current journey with the specified reserve; otherwise, false.</returns>
-    public readonly bool CanCompleteJourney(float reservePercent = 10f) =>
-        CanReach(Journey.LastUpdatedDistancekm, reservePercent);
+    public readonly bool CanCompleteJourney(float reserve = 0.1f) =>
+        CanReach(Journey.LastUpdatedDistancekm, reserve);
 
     /// <summary>
     /// Whether the EV can reach a point <paramref name="distanceKm"/> away and still
-    /// have at least <paramref name="reservePercent"/> SoC remaining on arrival.
+    /// have at least <paramref name="reserve"/> SoC remaining on arrival.
     /// </summary>
     /// <param name="distanceKm">Distance to the target in km.</param>
-    /// <param name="reservePercent">Minimum SoC (%) required on arrival. Defaults to 10%.</param>
+    /// <param name="reserve">Minimum SoC required on arrival. Defaults to 0.1.</param>
     /// <returns>True if the EV can reach the target with the specified reserve; otherwise, false.</returns>
-    public readonly bool CanReach(float distanceKm, float reservePercent = 10f)
+    public readonly bool CanReach(float distanceKm, float reserve = 0.1f)
     {
-        var reserveKWh = Battery.MaxCapacityKWh * (reservePercent / 100f);
+        var reserveKWh = Battery.MaxCapacityKWh * reserve;
         var usableKWh = Battery.CurrentChargeKWh - reserveKWh;
         return EnergyForDistanceKWh(distanceKm) <= usableKWh;
     }
@@ -97,8 +97,8 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
         var fractionTraveled = (to - from) / (double)Journey.LastUpdatedDuration;
         var distanceKm = Journey.LastUpdatedDistancekm * fractionTraveled;
         var energyKWh = EnergyForDistanceKWh((float)distanceKm);
-        var socLost = energyKWh / Battery.MaxCapacityKWh * 100f;
-        Battery.StateOfCharge = Math.Clamp(Battery.StateOfCharge - socLost, 0f, 100f);
+        var socLost = energyKWh / Battery.MaxCapacityKWh;
+        Battery.StateOfCharge = Math.Clamp(Battery.StateOfCharge - socLost, 0f, 1f);
     }
 
     /// <summary>Calculates the energy required to travel <paramref name="distanceKm"/>.</summary>

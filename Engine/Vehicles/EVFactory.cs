@@ -28,7 +28,7 @@ public class EVFactory(Random random, IJourneySamplerProvider samplersProvider, 
         var batteryConfig = config.BatteryConfig;
         var maxCapacity = batteryConfig.MaxCapacityKWh;
         var chargeRate = batteryConfig.ChargeRateKW;
-        var currCharge = maxCapacity * NextFloatInRange(0.4f, 1f);
+        var currCharge = NextFloatInRange(0.4f, 1f);
         var battery = new Battery(maxCapacity, chargeRate, currCharge, batteryConfig.Socket);
 
         var priceSensPref = random.NextSingle();

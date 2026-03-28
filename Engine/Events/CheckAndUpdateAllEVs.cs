@@ -9,12 +9,12 @@ using Core.Shared;
 /// <param name="eventScheduler">Simulation event scheduler.</param>
 /// <param name="evStore">EV store of entities.</param>
 /// <param name="intervalSize">How often we check all EV's soc level in seconds.</param>
-/// <param name="BatteryInterval">The SoC% change.</param>
+/// <param name="BatteryInterval">The SoC e.g 0.05 for 5% change in SoC. If an EV's SoC changes by this amount or more, we will check if it needs to charge.</param>
 public class CheckAndUpdateAllEVsHandler(
     EventScheduler eventScheduler,
     EVStore evStore,
     Time intervalSize,
-    ushort BatteryInterval)
+    float BatteryInterval)
 {
     /// <summary>
     /// Handles the CheckAndUpdateAllEVs event by scheduling a CheckUrgency event for each EV in the store.
@@ -36,7 +36,6 @@ public class CheckAndUpdateAllEVsHandler(
                 continue;
 
 
-            Console.WriteLine($"Time: {e.Time}, EvID: {evID}, Stats: {ev}");
 
             var socBefore = ev.Battery.StateOfCharge;
             ev.ConsumeEnergy(currentTime, currentTime + intervalSize);

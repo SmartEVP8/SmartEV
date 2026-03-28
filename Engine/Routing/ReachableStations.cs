@@ -22,7 +22,7 @@ public class ReachableStations
     public static List<ushort> FindReachableStations(Paths path, EV ev, Dictionary<ushort, Station> stations, List<ushort> nearbyStations, double radius)
     {
         var evBattery = ev.Battery;
-        var reach = (double)evBattery.StateOfCharge / ((double)ev.ConsumptionWhPerKm / 1000);
+        var reach = evBattery.StateOfCharge * evBattery.MaxCapacityKWh / ((double)ev.ConsumptionWhPerKm / 1000);
         return [.. nearbyStations.Where(id =>
             {
                 var dist = GeoMath.DistancesThroughPath(path, stations[id].Position, radius);

@@ -79,15 +79,7 @@ public sealed class ChargingIntegrator(uint stepSeconds)
         Time simNow,
         double maxKW,
         ISingleChargingPoint point,
-        ConnectedEV ev)
-    {
-
-        Console.WriteLine("INTEGRATING");
-        var res = IntegrateSingle(simNow, maxKW, point, ev, runUntilSeconds: null);
-        Console.WriteLine("DONE INTEGRATING");
-
-        return res;
-    }
+        ConnectedEV ev) => IntegrateSingle(simNow, maxKW, point, ev, runUntilSeconds: null);
 
     /// <summary>
     /// Integrates the charging sessions of two cars until both reach their target SoC.
@@ -103,13 +95,7 @@ public sealed class ChargingIntegrator(uint stepSeconds)
         double maxKW,
         IDualChargingPoint point,
         ConnectedEV evA,
-        ConnectedEV evB)
-    {
-        Console.WriteLine("INTEGRATING");
-        var res = IntegrateDual(simNow, maxKW, point, evA, evB, runUntilSeconds: null);
-        Console.WriteLine("DONE INTEGRATING");
-        return res;
-    }
+        ConnectedEV evB) => IntegrateDual(simNow, maxKW, point, evA, evB, runUntilSeconds: null);
 
     private IntegrationResult IntegrateSingle(
         Time simNow,
