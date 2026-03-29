@@ -176,7 +176,7 @@ public static class Init
             var settings = sp.GetRequiredService<EngineSettings>();
             var snapshotInterval = settings.SnapshotInterval;
             var stations = sp.GetRequiredService<Dictionary<ushort, Station>>();
-            return new SnapshotEventHandler(snapshotInterval, DateTimeOffset.UtcNow, stations, metrics, scheduler); // TODO: Look into how we can remove DateTime
+            return new SnapshotEventHandler(snapshotInterval, stations, metrics, scheduler); // TODO: Look into how we can remove DateTime
         });
 
         services.AddSingleton(sp =>

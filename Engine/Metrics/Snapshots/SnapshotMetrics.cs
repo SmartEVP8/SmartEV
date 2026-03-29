@@ -65,19 +65,15 @@ public record SnapshotMetric
     /// </summary>
     /// <param name="station">The station to snapshot.</param>
     /// <param name="simTime">Current simulation time in seconds.</param>
-    /// <param name="day">Current day of week (for price lookup).</param>
-    /// <param name="hour">Current hour 0–23 (for price lookup).</param>
-    /// 
+    ///
     /// A delegate that returns the actual power currently being delivered (in kW)
     /// for a given charger. Provided by the caller since power state lives outside
     /// this record. // TODO: Should be implemented somehow later.
-    /// 
+    ///
     /// <returns>A <see cref="SnapshotMetric"/> containing the collected metrics for the station.</returns>
     public static SnapshotMetric Collect(
         Station station,
-        Time simTime,
-        DayOfWeek day,
-        int hour)
+        Time simTime)
     {
         var totalDeliveredKW = 0f;
         var totalMaxKW = 0f;
@@ -91,7 +87,7 @@ public record SnapshotMetric
             totalQueueSize += charger.Queue.Count;
             if (charger.Queue.Count > 0) activeChargers++;
         }
-        
+
         var (reservations, cancellations) = station.CountReservationsCancellations();
 
         return new SnapshotMetric
@@ -101,7 +97,7 @@ public record SnapshotMetric
             TotalDeliveredKW = totalDeliveredKW,
             TotalMaxKW = totalMaxKW,
             TotalQueueSize = totalQueueSize,
-            Price = station.UpdatePrice(day, hour),
+            Price = station.GetPrice(simTime),
             ActiveChargers = activeChargers,
             TotalChargers = station.Chargers.Count,
             Reservations = reservations,

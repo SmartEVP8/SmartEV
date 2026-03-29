@@ -41,7 +41,7 @@ public class FindCandidateStationsHandler(
             return;
         }
 
-        var bestStation = computeCost.Compute(ref ev, stations, journeyDurations);
+        var bestStation = computeCost.Compute(ref ev, stations, journeyDurations, e.Time);
         var durationToStation = Math.Ceiling(stationCosts[bestStation]);
         var reservationRequest = new ReservationRequest(e.EVId, bestStation.Id, e.Time, (Time)(uint)durationToStation);
         eventScheduler.ScheduleEvent(reservationRequest);

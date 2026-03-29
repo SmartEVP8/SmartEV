@@ -224,7 +224,6 @@ public class StationService
             case SingleCharger single:
                 single.ChargingPoint.Disconnect();
 
-                Console.WriteLine($"EV {e.EVId} finished charging at time {e.Time} started at {startTime}, SoC {state.SessionA?.EV.CurrentSoC:P0}→{state.SessionA?.EV.TargetSoC:P0}");
                 state.SessionA = null;
                 _eVStore.Get(e.EVId).IsCharging = false;
                 break;

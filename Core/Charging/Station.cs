@@ -50,11 +50,22 @@ public class Station(ushort id,
     public ushort TotalCancellations { get; private set; }
 
     /// <summary>
-    /// Gets the current price of energy at the station.
+    /// Gets the current price of energy at this station based on the time of day.
     /// </summary>
-    public float Price { get; private set; }
+    /// <param name="time">The current time.</param>
+    /// <returns>The price at the current day and hour.</returns>
+    public float GetPrice(Time time)
+    {
+        var key = (Day: time.DayOfWeek, Hour: (int)time.Hour);
 
-    private (DayOfWeek Day, int Hour) _lastPriceUpdate = ((DayOfWeek)(-1), -1);
+        if (key != _lastPriceUpdate)
+        {
+            _lastPriceUpdate = key;
+            _price = energyPrices.CalculatePrice(key.Day, key.Hour);
+        }
+
+        return _price;
+    }
 
     /// <summary>
     /// Gets the list of chargers on a station.
@@ -63,23 +74,9 @@ public class Station(ushort id,
 
     private readonly List<ChargerBase> _chargers = chargers;
 
-    /// <summary>
-    /// Updates and caches the price for the given day and hour. If changed
-    /// since the last update, recalculates; otherwise uses the cached price.
-    /// </summary>
-    /// <param name="day">The day of the week.</param>
-    /// <param name="hour">The hour of the day (0–23).</param>
-    /// <returns>The current price at the station.</returns>
-    public float UpdatePrice(DayOfWeek day, int hour)
-    {
-        if ((day, hour) != _lastPriceUpdate)
-        {
-            _lastPriceUpdate = (day, hour);
-            Price = energyPrices.CalculatePrice(day, hour);
-        }
+    private (DayOfWeek Day, int Hour) _lastPriceUpdate = ((DayOfWeek)(-1), -1);
 
-        return Price;
-    }
+    private float _price;
 
     /// <summary>
     /// Collects the reservation and cancellation counts since the last snapshot, then resets both counters.
@@ -92,7 +89,7 @@ public class Station(ushort id,
         TotalCancellations = 0;
         return reservationsAndCancellations;
     }
-    
+
     /// <summary>
     /// Increments the amount of reservations on a station, and updates the total amount of reservations.
     /// </summary>

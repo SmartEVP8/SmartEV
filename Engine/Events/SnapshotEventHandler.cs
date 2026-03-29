@@ -11,7 +11,6 @@ using Core.Charging;
 /// </summary>
 public class SnapshotEventHandler(
     Time rescheduleTime,
-    DateTimeOffset startTime,
     Dictionary<ushort, Station> stations,
     MetricsService metrics,
     EventScheduler scheduler)
@@ -25,15 +24,11 @@ public class SnapshotEventHandler(
     /// scheduler, and power delivery.</param>
     public void Handle(SnapshotEvent e)
     {
-        var currentTime = startTime.AddSeconds(e.Time.T);
-
         foreach (var station in stations.Values)
         {
             var metric = SnapshotMetric.Collect(
                 station,
-                e.Time,
-                currentTime.DayOfWeek,
-                currentTime.Hour);
+                e.Time);
             metrics.RecordSnapshot(metric);
         }
 

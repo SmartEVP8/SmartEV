@@ -1,6 +1,5 @@
 namespace Engine.test.Metrics;
 
-using System;
 using Xunit;
 using Engine.test.Builders;
 using Engine.Metrics.Snapshots;
@@ -19,7 +18,7 @@ public class SnapshotMetricTests
         for (var i = 0; i < enqueuedOnB; i++) chargerB.Queue.Enqueue(i);
         var station = TestData.Station(1, chargers: [chargerA, chargerB]);
 
-        var metric = SnapshotMetric.Collect(station, 0, DayOfWeek.Monday, 0);
+        var metric = SnapshotMetric.Collect(station, 0);
 
         Assert.Equal(expectedActive, metric.ActiveChargers);
     }

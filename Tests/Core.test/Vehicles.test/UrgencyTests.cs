@@ -7,9 +7,9 @@ public class UrgencyTests
     [Fact]
     public void CalculateChargeUrgency_ReturnsZero_WhenStateOfChargeIsAtUpperBound()
     {
-        var minCharge = 20f;
+        var minCharge = 0.2f;
 
-        var stateOfCharge = 80f;
+        var stateOfCharge = 0.8f;
 
         var urgency = Urgency.CalculateChargeUrgency(stateOfCharge, minCharge);
 
@@ -19,9 +19,9 @@ public class UrgencyTests
     [Fact]
     public void CalculateChargeUrgency_ReturnsOne_WhenStateOfChargeIsAtMinimumAcceptableCharge()
     {
-        var minCharge = 20f;
+        var minCharge = 0.2f;
 
-        var stateOfCharge = 20f;
+        var stateOfCharge = 0.2f;
 
         var urgency = Urgency.CalculateChargeUrgency(stateOfCharge, minCharge);
 

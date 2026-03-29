@@ -20,9 +20,10 @@ public class ComputeCost(ICostStore costStore)
     /// <param name="ev">The EV for which to compute costs.</param>
     /// <param name="stations">The array of stations to evaluate.</param>
     /// <param name="durations">The array of travel durations for each station.</param>
+    /// <param name="time">The current time.</param>
     /// <returns>The station with the lowest cost.</returns>
     /// <exception cref="NoNullAllowedException">If no suitable station is found.</exception>
-    public Station Compute(ref EV ev, Station[] stations, float[] durations)
+    public Station Compute(ref EV ev, Station[] stations, float[] durations, Time time)
     {
         var bestCost = double.MaxValue;
         Station? bestStation = null;
@@ -36,7 +37,7 @@ public class ComputeCost(ICostStore costStore)
             var effectiveQueueCost = CalculateEffectiveQueueSizeCost(station, weights);
             var pathDeviationCost = CalculatePathDeviationCost(ref ev, duration, weights);
             var urgencyCost = CalculateUrgencyCost(ref ev, weights);
-            var priceCost = CalculatePriceCost(ref ev, station, weights);
+            var priceCost = CalculatePriceCost(ref ev, station, weights, time);
             var effectiveWaitTimeCost = CalculateEffectiveWaitTimeCost(weights);
 
             var cost = effectiveQueueCost
@@ -58,7 +59,7 @@ public class ComputeCost(ICostStore costStore)
     }
 
     // TODO: Think about effective queue size
-    private static double CalculateEffectiveQueueSizeCost(Station station, CostWeights weights)
+    private static float CalculateEffectiveQueueSizeCost(Station station, CostWeights weights)
     {
         var totalQueueSize = station.Chargers.Sum(c => c.Queue.Count);
         var effectiveQueueSize = totalQueueSize / station.Chargers.Count; // Average queue size per charger
@@ -66,7 +67,7 @@ public class ComputeCost(ICostStore costStore)
         return weights.EffectiveQueueSize * MathF.Pow(effectiveQueueSize, 2);
     }
 
-    private static double CalculatePathDeviationCost(ref EV ev, float duration, CostWeights weights)
+    private static float CalculatePathDeviationCost(ref EV ev, float duration, CostWeights weights)
     {
         var pathDeviation = PathDeviator.CalculateDetourDeviation(ref ev, duration);
         return weights.PathDeviation * pathDeviation;
@@ -78,12 +79,12 @@ public class ComputeCost(ICostStore costStore)
         return weights.Urgency * urgency;
     }
 
-    private static double CalculatePriceCost(ref EV ev, Station station, CostWeights weights)
+    private static float CalculatePriceCost(ref EV ev, Station station, CostWeights weights, Time time)
     {
-        var price = station.Price;
+        var price = station.GetPrice(time);
         return weights.PriceSensitivity * ev.Preferences.PriceSensitivity * price;
     }
 
     // TODO: Implement
-    private static double CalculateEffectiveWaitTimeCost(CostWeights weights) => weights.ExpectedWaitTime * 0;
+    private static float CalculateEffectiveWaitTimeCost(CostWeights weights) => weights.ExpectedWaitTime * 0;
 }

@@ -32,6 +32,9 @@ public static class Program
                 EffectiveQueueSize = 1,
                 PathDeviation = 1,
                 PriceSensitivity = 1,
+                AvailableChargerRatio = 1,
+                ExpectedWaitTime = 1,
+                Urgency = 1,
             },
 
             RunId = Guid.NewGuid(),
@@ -56,7 +59,7 @@ public static class Program
                 TotalChargers = 10000,
             },
 
-            IntervalToUpdateEVs = 1 * 60,
+            IntervalToUpdateEVs = 5 * 60,
 
             BatteryIntervalForCheckUrgency = 0.05f,
 

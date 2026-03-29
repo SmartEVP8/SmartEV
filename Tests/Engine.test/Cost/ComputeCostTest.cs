@@ -9,6 +9,8 @@ using Engine.test.Builders;
 
 public class ComputeCostTest
 {
+    private readonly Time _time = new(0);
+
     [Fact]
     public void Compute_OnlyPathDeviationWeighted_SelectsLowerDeviationStation()
     {
@@ -26,7 +28,7 @@ public class ComputeCostTest
         var stations = new[] { stationA, stationB };
         var journeyDurations = new[] { 600f, 800f };
 
-        var bestStation = computeCost.Compute(ref ev, stations, journeyDurations);
+        var bestStation = computeCost.Compute(ref ev, stations, journeyDurations, _time);
 
         Assert.Same(stationA, bestStation);
     }
@@ -48,7 +50,7 @@ public class ComputeCostTest
         var stations = new[] { lowQueueStation, highQueueStation };
         var journeyDurations = new[] { 500f, 500f };
 
-        var bestStation = computeCost.Compute(ref ev, stations, journeyDurations);
+        var bestStation = computeCost.Compute(ref ev, stations, journeyDurations, _time);
 
         Assert.Same(lowQueueStation, bestStation);
     }
@@ -73,7 +75,7 @@ public class ComputeCostTest
         var stations = new[] { stationA, stationB };
         var journeyDurations = new[] { 600f, 800f };
 
-        var bestStation = computeCost.Compute(ref ev, stations, journeyDurations);
+        var bestStation = computeCost.Compute(ref ev, stations, journeyDurations, _time);
 
         // Station A: cost = 1 * 100 (deviation) + 1 * 5^2 (queue) = 125
         // Station B: cost = 1 * 300 (deviation) + 1 * 1^2 (queue) = 301
@@ -97,7 +99,7 @@ public class ComputeCostTest
         var stations = new[] { stationA, stationB };
         var journeyDurations = new[] { 500f, 500f };
 
-        var bestStation = computeCost.Compute(ref ev, stations, journeyDurations);
+        var bestStation = computeCost.Compute(ref ev, stations, journeyDurations, _time);
 
         // Both have cost 0, so first in iteration order wins
         Assert.Same(stationA, bestStation);
@@ -121,14 +123,11 @@ public class ComputeCostTest
         var cheapStation = TestData.Station(id: 1, pos: new Position(0, 0), energyPrices: cheapEnergyPrices);
         var expensiveStation = TestData.Station(id: 2, pos: new Position(1, 1), energyPrices: expensiveEnergyPrices);
 
-        // Trigger price calculation (caches price internally)
-        cheapStation.UpdatePrice(DayOfWeek.Monday, 12);
-        expensiveStation.UpdatePrice(DayOfWeek.Monday, 12);
 
         var stations = new[] { cheapStation, expensiveStation };
         var journeyDuration = new[] { 500f, 500f };
 
-        var bestStation = computeCost.Compute(ref ev, stations, journeyDuration);
+        var bestStation = computeCost.Compute(ref ev, stations, journeyDuration, _time);
 
         // Cheaper station (2.0 DKK/kWh) should be selected over expensive (4.0 DKK/kWh)
         Assert.Same(cheapStation, bestStation);
@@ -149,6 +148,6 @@ public class ComputeCostTest
         var journeyDurations = Array.Empty<float>();
 
         Assert.Throws<System.Data.NoNullAllowedException>(() =>
-            computeCost.Compute(ref ev, stations, journeyDurations));
+            computeCost.Compute(ref ev, stations, journeyDurations, _time));
     }
 }
