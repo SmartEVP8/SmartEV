@@ -1,13 +1,9 @@
 namespace Engine.Events;
 
 using Engine.Metrics;
-using Engine.Services;
-using Engine.Services;
 using Engine.Metrics.Snapshots;
 using Core.Shared;
 using Core.Charging;
-using Engine.Vehicles;
-using Engine.Vehicles;
 
 /// <summary>
 /// Handles the <see cref="SnapshotEvent"/> by collecting metrics for all stations
@@ -28,15 +24,12 @@ public class SnapshotEventHandler(
     /// scheduler, and power delivery.</param>
     public void Handle(SnapshotEvent e)
     {
-        var currentTime = startTime.AddSeconds(e.Time.T);
 
         foreach (var station in stations.Values)
         {
             var metric = StationSnapshotMetric.Collect(
                 station,
-                e.Time,
-                currentTime.DayOfWeek,
-                currentTime.Hour);
+                e.Time);
             metrics.RecordStationSnapshot(metric);
         }
 

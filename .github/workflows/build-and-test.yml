@@ -26,6 +26,5 @@ jobs:
           context: .
           file: Dockerfile.smartev
           target: test
+          no-cache: true
           push: false
-          cache-from: type=gha,scope=smartev
-          cache-to: type=gha,mode=min,scope=smartev
