@@ -31,11 +31,6 @@ public class ComputeCost(ICostStore costStore, StationService stationService)
         var bestUrgency = -1d;
         var bestPrice = -1d;
 
-        Console.WriteLine($"[StationDurations] Count: {stationDurations.Count}");
-        foreach (var (stationId, duration) in stationDurations)
-            Console.WriteLine($"  Station {stationId}: {duration}");
-
-
         foreach (var (stationId, duration) in stationDurations)
         {
             var station = stationService.GetStation(stationId)

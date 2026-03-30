@@ -29,7 +29,7 @@ public static class Program
         {
             CostConfig = new CostWeights
             {
-                EffectiveQueueSize = 500,
+                EffectiveQueueSize = 5,
                 PathDeviation = 1,
                 PriceSensitivity = 1,
                 AvailableChargerRatio = 1,
