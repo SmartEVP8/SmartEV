@@ -37,6 +37,5 @@ public class SnapshotEventHandler(
         }
 
         scheduler.ScheduleEvent(new SnapshotEvent(e.Time + rescheduleTime));
-        scheduler.ScheduleEvent(new SnapshotEvent(e.Time + rescheduleTime));
     }
 }
