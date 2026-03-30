@@ -87,6 +87,28 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     }
 
     /// <summary>
+    /// Calculates how much an EV needs to charge to reach its
+    /// destination while having at least their minimunAcceptable charge.
+    /// If they cant reach the destination with a single charge
+    /// they should charge to 80%.
+    /// </summary>
+    /// <param name="time">The time for when they arrive at the station.</param>
+    /// <returns>Returns the percentence that the EV should charge to.</returns>
+    public float ChargeTo(Time time)
+    {
+        var distanceToDest = GeoMath.EquirectangularDistance(Journey.Path.Waypoints[^1], Journey.CurrentPosition(time));
+        var energyToDest = EnergyForDistanceKWh((float)distanceToDest);
+        var percentNeededToDestination = energyToDest / Battery.MaxCapacityKWh;
+        var chargeToPercent = percentNeededToDestination + Preferences.MinAcceptableCharge;
+        if (chargeToPercent > 1f)
+        {
+            return 0.8f;
+        }
+
+        return chargeToPercent;
+    }
+
+    /// <summary>
     /// Consumes energy based on the distance traveled between <paramref name="from"/> and <paramref name="to"/>.
     /// </summary>
     /// <param name="from">The starting time of the interval which to calculate energy consumption.
@@ -106,17 +128,4 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     private readonly float EnergyForDistanceKWh(float distanceKm) =>
         distanceKm * ConsumptionWhPerKm / 1000f;
 
-    public float ChargeTo(Time time)
-    {
-        var distanceToDest = GeoMath.EquirectangularDistance(Journey.Path.Waypoints[^1], Journey.CurrentPosition(time));
-        var energyToDest = EnergyForDistanceKWh((float)distanceToDest);
-        var percentNeededToDestination = energyToDest / Battery.MaxCapacityKWh;
-        var chargeToPercent = percentNeededToDestination + Preferences.MinAcceptableCharge;
-        if (chargeToPercent > 1f)
-        {
-            return 0.8f;
-        }
-
-        return chargeToPercent;
-    }
 }
