@@ -91,11 +91,11 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     /// If they cant reach the destination with a single charge
     /// they should charge to 80%.
     /// </summary>
-    /// <param name="time">The time for when they arrive at the station.</param>
+    /// <param name="time">The time right now.</param>
     /// <returns>Returns the percentence that the EV should charge to.</returns>
-    public float ChargeTo(Time time)
+    public readonly float CalcDesiredSoC(Time time)
     {
-        var distanceToDest = GeoMath.EquirectangularDistance(Journey.Path.Waypoints[^1], Journey.CurrentPosition(time));
+        var distanceToDest = Journey.LastUpdatedDistancekm - Journey.DistanceToNextStop(time);
         var energyToDest = EnergyForDistanceKWh((float)distanceToDest);
         var percentNeededToDestination = energyToDest / Battery.MaxCapacityKWh;
         var chargeToPercent = percentNeededToDestination + Preferences.MinAcceptableCharge;
