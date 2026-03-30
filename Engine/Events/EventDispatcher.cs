@@ -62,6 +62,7 @@ public class EventDispatcher(
     /// </summary>
     /// <param name="e">The event to handle.</param>
     /// <exception cref="Exception">If a event handler is not registered.</exception>
+    /// <returns>What return?.</returns>
     public async Task Dispatch(Event e)
     {
         IncrementCount(e);

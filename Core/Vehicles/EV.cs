@@ -58,7 +58,6 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     /// <returns>True of false based on if the EV has arrived at its journeys end.</returns>
     public readonly bool HasArrived(Time currentTime) => Journey.JourneyStart + Journey.LastUpdatedDuration <= currentTime;
 
-
     /// <inheritdoc/>
     public override readonly string ToString() =>
         $"EV(SoC: {Battery.StateOfCharge:P1}, Distance left: {Journey.LastUpdatedDistancekm:F1}km, Energy: {Battery.CurrentChargeKWh:F1}kWh, Efficiency: {ConsumptionWhPerKm}Wh/km)";
@@ -92,20 +91,18 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     /// If they cant reach the destination with a single charge
     /// they should charge to 80%.
     /// </summary>
-    /// <param name="time">The time right now.</param>
+    /// <param name="arrivalAtStation">The time right now.</param>
     /// <returns>Returns the percentence that the EV should charge to.</returns>
-    public readonly float CalcDesiredSoC(Time time)
+    public readonly float CalcDesiredSoC(Time arrivalAtStation)
     {
-        var distanceToDest = Journey.LastUpdatedDistancekm - Journey.DistanceToNextStop(time);
-        var energyToDest = EnergyForDistanceKWh((float)distanceToDest);
+        var percentageCompleted = (arrivalAtStation - Journey.LastUpdatedDeparture) / (double)Journey.LastUpdatedDuration;
+        var remainingDistanceKm = Journey.LastUpdatedDistancekm * (1.0 - percentageCompleted);
+
+        var energyToDest = EnergyForDistanceKWh((float)remainingDistanceKm);
         var percentNeededToDestination = energyToDest / Battery.MaxCapacityKWh;
         var chargeToPercent = percentNeededToDestination + Preferences.MinAcceptableCharge;
-        if (chargeToPercent > 1f)
-        {
-            return 0.8f;
-        }
 
-        return chargeToPercent;
+        return chargeToPercent > 1f ? 0.8f : chargeToPercent;
     }
 
     /// <summary>

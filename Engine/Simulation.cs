@@ -18,6 +18,7 @@ public class Simulation(
     /// and continuously handling the next event until
     /// the specified end time is reached.
     /// </summary>
+    /// <returns>Returns?.</returns>
     public async Task Run()
     {
         Console.WriteLine("Starting Simulation");

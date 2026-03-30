@@ -141,7 +141,6 @@ public class StationServiceTests
         Assert.NotNull(cancel);
         service.HandleCancelRequest(cancel);
 
-
         Assert.Null(evStore.Get(0).HasReservationAtStationId);
         Assert.Equal(1, oldStation.TotalCancellations);
         Assert.Equal(1, newStation.TotalReservations);

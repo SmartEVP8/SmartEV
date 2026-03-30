@@ -201,6 +201,19 @@ public static class TestData
         }
     }
 
+    internal sealed class StubStationService(Dictionary<ushort, Station> stations) : IStationService
+    {
+        private readonly Dictionary<ushort, Station> _stations = stations;
+
+        public Station GetStation(ushort stationId) => _stations.TryGetValue(stationId, out var station)
+            ? station
+            : throw new KeyNotFoundException($"Station {stationId} not found.");
+
+        public int GetTotalQueueSize(ushort stationId) => _stations.TryGetValue(stationId, out var station)
+            ? station.Chargers.Sum(c => c.Queue.Count)
+            : throw new KeyNotFoundException($"Station {stationId} not found.");
+    }
+
     private sealed class FakeCharger() : ChargerBase(id: 1, maxPowerKW: 100)
     {
         public override ImmutableArray<Socket> GetSockets() => [Socket.CCS2];
