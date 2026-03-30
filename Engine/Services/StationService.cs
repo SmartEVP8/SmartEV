@@ -179,7 +179,6 @@ public class StationService : IStationService
         station.IncrementReservations();
         ev.HasReservationAtStationId = e.StationId;
         _applyNewPath.ApplyNewPathToEV(ref ev, station, e.Time);
-        _eVStore.Set(e.EVId, ref ev);
         _scheduler.ScheduleEvent(
             new ArriveAtStation(e.EVId, e.StationId, ev.CalcDesiredSoC(e.Time + e.DurationToStation), e.Time + e.DurationToStation));
     }
