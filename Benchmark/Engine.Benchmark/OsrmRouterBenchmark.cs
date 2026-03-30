@@ -72,28 +72,28 @@ public class OsrmRouterBenchmark
     [GlobalCleanup]
     public void Cleanup() => _router?.Dispose();
 
-    // /// <summary>
-    // /// Benchmarks querying stations for 1000 cars in parallel.
-    // /// </summary>
-    // [Benchmark]
-    // public void Query1000Cars50StationsParallel()
-    // {
-    //     var options = new ParallelOptions
-    //     {
-    //         MaxDegreeOfParallelism = Environment.ProcessorCount,
-    //     };
-    //     Parallel.For(0, _evCoordinates.Length, options, i =>
-    //     {
-    //         var (lon, lat) = _evCoordinates[i];
-    //         _ = _router.QueryStations(lon, lat, _stationIndices);
-    //     });
-    // }
+    /// <summary>
+    /// Benchmarks querying stations for 1000 cars in parallel.
+    /// </summary>
+    [Benchmark]
+    public void Query1000Cars50StationsParallel()
+    {
+        var options = new ParallelOptions
+        {
+            MaxDegreeOfParallelism = Environment.ProcessorCount,
+        };
+        Parallel.For(0, _evCoordinates.Length, options, i =>
+        {
+            var (lon, lat) = _evCoordinates[i];
+            _ = _router.QueryStations(lon, lat, _stationIndices);
+        });
+    }
 
-    // /// <summary>
-    // /// Benchmarks bulk querying of 1000 cars to 50 stations.
-    // /// </summary>
-    // [Benchmark]
-    // public void Query1000Cars50StationsBulk() => _ = _router.QueryPointsToPoints(_evCoordsFlat, _stationCoordsFlat);
+    /// <summary>
+    /// Benchmarks bulk querying of 1000 cars to 50 stations.
+    /// </summary>
+    [Benchmark]
+    public void Query1000Cars50StationsBulk() => _ = _router.QueryPointsToPoints(_evCoordsFlat, _stationCoordsFlat);
 
     /// <summary>
     /// Benchmarks querying a single destination.
@@ -105,6 +105,9 @@ public class OsrmRouterBenchmark
         _ = _router.QuerySingleDestination(lon, lat, _stationCoordsFlat[0], _stationCoordsFlat[1]);
     }
 
+    /// <summary>
+    /// Benchmarks querying a single destination.
+    /// </summary>
     [Benchmark]
     public void QueryDestinationEVtoDest()
     {
@@ -112,6 +115,9 @@ public class OsrmRouterBenchmark
         _ = _router.QueryDestination([lon, lat, _stationCoordsFlat[0], _stationCoordsFlat[1]]);
     }
 
+    /// <summary>
+    /// Benchmarks querying a single destination with a pre-indexed station for snapping.
+    /// </summary>
     [Benchmark]
     public void QueryDestinationEVtoDestWithStation()
     {
@@ -120,11 +126,11 @@ public class OsrmRouterBenchmark
     }
 
     /// <summary>
-    /// Benchmarks querying 1000 EVs each routing through a random station to a destination.
-    /// This tests the benefit of pre-registered station indexing across many queries.
+    /// Benchmarks querying 1000 EVs each routing through a pre-indexed station to a destination.
+    /// The station coordinates come from pre-registered indices for fast snapping.
     /// </summary>
     [Benchmark]
-    public void Query1000EvsManyStations()
+    public void QueryWithIndexedStation1000Evs()
     {
         var random = new Random(42);
         for (var i = 0; i < _evCoordinates.Length; i++)
@@ -138,7 +144,7 @@ public class OsrmRouterBenchmark
             var coords = new double[]
             {
                 lon, lat,
-                _stationCoordsFlat[destIdx * 2], _stationCoordsFlat[(destIdx * 2) + 1]
+                _stationCoordsFlat[destIdx * 2], _stationCoordsFlat[(destIdx * 2) + 1],
             };
             _ = _router.QueryDestination(coords, stationIdx);
         }

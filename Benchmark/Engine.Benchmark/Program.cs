@@ -14,12 +14,12 @@ public static class Program
     /// <returns>Benchmark results.</returns>
     public static async Task Main()
     {
-        //BenchmarkRunner.Run<StationsAroundPolyline>();
-        //BenchmarkRunner.Run<Polyline6Decode>();
-        //BenchmarkRunner.Run<Polyline6DecodeParallel>();
+        BenchmarkRunner.Run<StationsAroundPolyline>();
+        BenchmarkRunner.Run<Polyline6Decode>();
+        BenchmarkRunner.Run<Polyline6DecodeParallel>();
         BenchmarkRunner.Run<OsrmRouterBenchmark>();
-        //BenchmarkRunner.Run<OsrmRouterOneToManyBenchmark>();
-        //BenchmarkRunner.Run<UpdateAllEVsBenchMark>();
-        //BenchmarkRunner.Run<FindCandidateStationsBenchmark>();
+        BenchmarkRunner.Run<OsrmRouterOneToManyBenchmark>();
+        BenchmarkRunner.Run<UpdateAllEVsBenchMark>();
+        BenchmarkRunner.Run<FindCandidateStationsBenchmark>();
     }
 }
