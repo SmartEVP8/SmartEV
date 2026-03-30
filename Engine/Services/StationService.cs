@@ -132,19 +132,11 @@ public class StationService : IStationService
     public ChargerState? GetChargerState(int chargerId)
         => _chargerIndex.TryGetValue(chargerId, out var state) ? state : null;
 
-    /// <summary>
-    /// Returns the station for the given station id.
-    /// </summary>
-    /// <param name="stationId">The station id.</param>
-    /// <returns>The station for the given station id.</returns>
+    /// <inheritdoc/>
     public Station? GetStation(ushort stationId)
         => _stationIndex.TryGetValue(stationId, out var station) ? station : null;
 
-    /// <summary>
-    /// Returns the total queue size across all chargers at the given station id.
-    /// </summary>
-    /// <param name="stationId">The station id.</param>
-    /// <returns>The total queue size.</returns>
+    /// <inheritdoc/>
     public int GetTotalQueueSize(ushort stationId)
     {
         if (!_stationChargers.TryGetValue(stationId, out var chargers))
