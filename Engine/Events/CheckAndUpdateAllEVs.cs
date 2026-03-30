@@ -35,8 +35,6 @@ public class CheckAndUpdateAllEVsHandler(
             if (ev.Journey is null || ev.IsCharging || !ev.HasDeparted(currentTime) || ev.HasArrived(currentTime))
                 continue;
 
-
-
             var socBefore = ev.Battery.StateOfCharge;
             ev.ConsumeEnergy(currentTime, currentTime + intervalSize);
             var socAfter = ev.Battery.StateOfCharge;

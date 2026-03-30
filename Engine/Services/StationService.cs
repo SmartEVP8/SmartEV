@@ -87,8 +87,6 @@ public class StationService
     private readonly ApplyNewPath _applyNewPath;
     private readonly MetricsService _metrics;
     private readonly SnapshotEventHandler _snapshotHandler;
-    private SemaphoreSlim _lastGate = new(1, 1);
-    private Task _lastTask = Task.CompletedTask;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="StationService"/> class.

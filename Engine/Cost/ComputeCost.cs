@@ -63,6 +63,7 @@ public class ComputeCost(ICostStore costStore, StationService stationService)
         Console.WriteLine($"[Selected station {bestStation.Id} with cost {bestCost} (Queue: {bestQueueSize}, Path: {bestPath}, Urgency: {bestUrgency}, Price: {bestPrice})");
         return bestStation;
     }
+
     // TODO: Think about effective queue size
     private float CalculateEffectiveQueueSizeCost(Station station, CostWeights weights)
     {
