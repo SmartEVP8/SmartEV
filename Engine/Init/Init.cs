@@ -27,9 +27,6 @@ public static class Init
     /// <param name="services">The service collection to initialize.</param>
     public static void InitEngine(IServiceCollection services)
     {
-
-
-
         services.AddSingleton(sp =>
         {
             var settings = sp.GetRequiredService<EngineSettings>();
@@ -195,14 +192,6 @@ public static class Init
             var snapshotInterval = settings.SnapshotInterval;
             var stations = sp.GetRequiredService<Dictionary<ushort, Station>>();
             return new SnapshotEventHandler(snapshotInterval, stations, metrics, scheduler); // TODO: Look into how we can remove DateTime
-        });
-
-        services.AddSingleton(sp =>
-        {
-            var stationService = sp.GetRequiredService<StationService>();
-            var checkUrgencyHandler = sp.GetRequiredService<CheckUrgencyHandler>();
-            var snapshotHandler = sp.GetRequiredService<SnapshotEventHandler>();
-            return new CheckAndUpdateAllEVsHandler(sp.GetRequiredService<EventScheduler>(), sp.GetRequiredService<EVStore>(), sp.GetRequiredService<EngineSettings>().IntervalToUpdateEVs, sp.GetRequiredService<EngineSettings>().BatteryIntervalForCheckUrgency);
         });
 
         services.AddSingleton(sp =>

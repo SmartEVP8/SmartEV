@@ -229,7 +229,6 @@ public class StationService
 
         ev.IsCharging = true;
         target.Queue.Enqueue((e.EVId, connectedEV));
-        Console.WriteLine(target.Queue.Count);
         if (target.IsFree)
             StartCharging(target, e.Time);
     }
