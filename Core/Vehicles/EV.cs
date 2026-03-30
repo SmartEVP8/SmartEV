@@ -2,6 +2,7 @@ namespace Core.Vehicles;
 
 using Core.Routing;
 using Core.Shared;
+using Core.GeoMath;
 
 /// <summary>
 /// Represents an electric vehicle (EV) with a battery, preferences, a journey, and an efficiency rating.
@@ -86,6 +87,28 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     }
 
     /// <summary>
+    /// Calculates how much an EV needs to charge to reach its
+    /// destination while having at least their minimunAcceptable charge.
+    /// If they cant reach the destination with a single charge
+    /// they should charge to 80%.
+    /// </summary>
+    /// <param name="time">The time right now.</param>
+    /// <returns>Returns the percentence that the EV should charge to.</returns>
+    public readonly float CalcDesiredSoC(Time time)
+    {
+        var distanceToDest = Journey.LastUpdatedDistancekm - Journey.DistanceToNextStop(time);
+        var energyToDest = EnergyForDistanceKWh((float)distanceToDest);
+        var percentNeededToDestination = energyToDest / Battery.MaxCapacityKWh;
+        var chargeToPercent = percentNeededToDestination + Preferences.MinAcceptableCharge;
+        if (chargeToPercent > 1f)
+        {
+            return 0.8f;
+        }
+
+        return chargeToPercent;
+    }
+
+    /// <summary>
     /// Consumes energy based on the distance traveled between <paramref name="from"/> and <paramref name="to"/>.
     /// </summary>
     /// <param name="from">The starting time of the interval which to calculate energy consumption.
@@ -104,4 +127,5 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     /// <summary>Calculates the energy required to travel <paramref name="distanceKm"/>.</summary>
     private readonly float EnergyForDistanceKWh(float distanceKm) =>
         distanceKm * ConsumptionWhPerKm / 1000f;
+
 }

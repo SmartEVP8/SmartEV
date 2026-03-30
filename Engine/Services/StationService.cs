@@ -166,7 +166,7 @@ public class StationService
         _applyNewPath.ApplyNewPathToEV(ref ev, station, e.Time);
         _eVStore.Set(e.EVId, ref ev);
         _scheduler.ScheduleEvent(
-            new ArriveAtStation(e.EVId, e.StationId, 0.8f, e.Time + e.DurationToStation)); //TODO: WE CHARGE TO 80% WE PROBABLY NEED SOMETHING BETTER HERE
+            new ArriveAtStation(e.EVId, e.StationId, ev.CalcDesiredSoC(e.Time + e.DurationToStation), e.Time + e.DurationToStation));
     }
 
     /// <summary>
