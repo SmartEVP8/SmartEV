@@ -46,7 +46,11 @@ public class ComputeCost(ICostStore costStore, IStationService stationService)
             }
         }
 
-        ArgumentNullException.ThrowIfNull(bestStation, "No suitable station found.");
+        if (bestStation is null)
+        {
+            throw new ArgumentNullException("No suitable station found.");
+        }
+
         return bestStation;
     }
 
@@ -66,9 +70,10 @@ public class ComputeCost(ICostStore costStore, IStationService stationService)
     /// </returns>
     private static float CalculatePathDeviationCost(ref EV ev, float detourDuration, CostWeights weights, Time time)
     {
-        var remainingOriginalDuration = ev.Journey.OriginalDuration - ev.Journey.TimeElapsed(time);
-        var pathDeviation = (detourDuration - remainingOriginalDuration) / 60;
-        return weights.PathDeviation * pathDeviation;
+        const int SecondsPerMinute = 60;
+        var remainingCurrentRoute = ev.Journey.LastUpdatedDeparture + ev.Journey.LastUpdatedDuration - time;
+        var extraTimeCostMinutes = (detourDuration - remainingCurrentRoute) / SecondsPerMinute;
+        return weights.PathDeviation * extraTimeCostMinutes;
     }
 
     private static double CalculateUrgencyCost(ref EV ev, CostWeights weights)
