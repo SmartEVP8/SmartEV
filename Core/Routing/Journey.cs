@@ -130,4 +130,15 @@ public class Journey(Time departure, Time duration, float distanceMeters, Paths 
         LastUpdatedDistancekm = newDistancekm;
         PathDeviation += newEta - oldEta;
     }
+
+    /// <summary>
+    /// Calculates the distance from the EV's current position to the next stop.
+    /// </summary>
+    /// <param name="currentTime">The current time.</param>
+    /// <returns>Returns the distance to the next stop.</returns>
+    public float DistanceToNextStop(Time currentTime)
+    {
+        var currentPos = CurrentPosition(currentTime);
+        return (float)GeoMath.EquirectangularDistance(currentPos, NextStop) / 1000;
+    }
 }
