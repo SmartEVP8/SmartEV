@@ -17,10 +17,10 @@ public class DestinationArrivalHandler(
     /// <summary>
     /// Handles the <see cref="ArriveAtDestination"/> event.
     /// </summary>
-    /// <param name="e">The event.</param>
+    /// <param name="e">The ArriveAtDestination event.</param>
     public void Handle(ArriveAtDestination e)
     {
-        var ev = evStore.Get(e.EVId);
+        ref var ev = ref evStore.Get(e.EVId);
 
         var metric = ArrivalAtDestinationMetric.Collect(ref ev, e.Time);
         metrics.RecordArrival(metric);

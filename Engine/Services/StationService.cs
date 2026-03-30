@@ -174,6 +174,7 @@ public class StationService
         station.IncrementReservations();
         ev.HasReservationAtStationId = e.StationId;
         _applyNewPath.ApplyNewPathToEV(ref ev, station, e.Time);
+        
         _scheduler.ScheduleEvent(
             new ArriveAtStation(e.EVId, e.StationId, ev.CalcDesiredSoC(e.Time + e.DurationToStation), e.Time + e.DurationToStation));
     }
@@ -263,6 +264,7 @@ public class StationService
                 state.SessionA = null;
                 ev.IsCharging = false;
                 ev.HasReservationAtStationId = null;
+
                 ev.ArriveAtDestination = 
                     (ushort)_scheduler.ScheduleEvent(new ArriveAtDestination(e.EVId, e.Time + ev.Journey.LastUpdatedDuration));
                 break;
@@ -274,6 +276,7 @@ public class StationService
                     state.SessionA = null;
                     ev.IsCharging = false;
                     ev.HasReservationAtStationId = null;
+
                     ev.ArriveAtDestination = 
                         (ushort)_scheduler.ScheduleEvent(new ArriveAtDestination(e.EVId, e.Time + ev.Journey.LastUpdatedDuration));
 
@@ -294,6 +297,7 @@ public class StationService
                             ref var evB = ref _eVStore.Get(state.SessionB.EVId);
                             evB.IsCharging = false;
                             evB.HasReservationAtStationId = null;
+
                             evB.ArriveAtDestination = 
                                 (ushort)_scheduler.ScheduleEvent(new ArriveAtDestination(e.EVId, e.Time + evB.Journey.LastUpdatedDuration));
                 
@@ -307,6 +311,7 @@ public class StationService
                     state.SessionB = null;
                     ev.IsCharging = false;
                     ev.HasReservationAtStationId = null;
+
                     ev.ArriveAtDestination = 
                         (ushort)_scheduler.ScheduleEvent(new ArriveAtDestination(e.EVId, e.Time + ev.Journey.LastUpdatedDuration));
 
@@ -327,6 +332,7 @@ public class StationService
                             ref var evA = ref _eVStore.Get(state.SessionA.EVId);
                             evA.IsCharging = false;
                             evA.HasReservationAtStationId = null;
+                            
                             evA.ArriveAtDestination = 
                                 (ushort)_scheduler.ScheduleEvent(new ArriveAtDestination(e.EVId, e.Time + evA.Journey.LastUpdatedDuration));
                 
