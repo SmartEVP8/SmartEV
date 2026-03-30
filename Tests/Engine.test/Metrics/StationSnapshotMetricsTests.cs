@@ -18,7 +18,7 @@ public class StationSnapshotMetricTests
 
                 var simTime = new Time(3600);
 
-                var metric = StationSnapshotMetric.Collect(station, simTime, DayOfWeek.Monday, 10);
+                var metric = StationSnapshotMetric.Collect(station, 10);
 
                 Assert.Equal(3u, metric.Reservations);
                 Assert.Equal(1u, metric.Cancellations);

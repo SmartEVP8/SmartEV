@@ -59,7 +59,6 @@ public static class TestData
         int evStoreCapacity = 10) =>
         new(
             rescheduleTime: new Time(3600),
-            startTime: DateTimeOffset.UtcNow,
             stations: stations,
             metrics: metrics,
             scheduler: scheduler);
