@@ -24,18 +24,14 @@ public class ComputeCost(ICostStore costStore, StationService stationService)
     public Station Compute(ref EV ev, Dictionary<ushort, float> stationDurations, Time time)
     {
         var bestCost = double.MaxValue;
-        Station? bestStation = null;
         var weights = costStore.GetWeights();
-        var bestQueueSize = -1d;
-        var bestPath = -1d;
-        var bestUrgency = -1d;
-        var bestPrice = -1d;
+        Station? bestStation = null;
 
         foreach (var (stationId, duration) in stationDurations)
         {
             var station = stationService.GetStation(stationId)
                 ?? throw new NoNullAllowedException($"Station {stationId} not found.");
-            var effectiveQueueCost = CalculateEffectiveQueueSizeCost(station, weights);
+            var effectiveQueueCost = CalculateEffectiveQueueSizeCost(station, weights, ev.Battery.Socket);
             var pathDeviationCost = CalculatePathDeviationCost(ref ev, duration, weights);
             var urgencyCost = CalculateUrgencyCost(ref ev, weights);
             var priceCost = CalculatePriceCost(ref ev, station, weights, time);
@@ -50,25 +46,20 @@ public class ComputeCost(ICostStore costStore, StationService stationService)
             {
                 bestCost = cost;
                 bestStation = station;
-                bestQueueSize = effectiveQueueCost;
-                bestPath = pathDeviationCost;
-                bestUrgency = urgencyCost;
-                bestPrice = priceCost;
             }
         }
 
         if (bestStation is null)
             throw new NoNullAllowedException("No station found in station map.");
 
-        Console.WriteLine($"[Selected station {bestStation.Id} with cost {bestCost} (Queue: {bestQueueSize}, Path: {bestPath}, Urgency: {bestUrgency}, Price: {bestPrice})");
         return bestStation;
     }
 
     // TODO: Think about effective queue size
-    private float CalculateEffectiveQueueSizeCost(Station station, CostWeights weights)
+    private float CalculateEffectiveQueueSizeCost(Station station, CostWeights weights, Socket socket)
     {
         var totalQueueSize = stationService.GetTotalQueueSize(station.Id);
-        var effectiveQueueSize = (float)totalQueueSize / station.Chargers.Count;
+        var effectiveQueueSize = (float)totalQueueSize / station.Chargers.Count(s => s.GetSockets().Contains(socket));
         return weights.EffectiveQueueSize * MathF.Pow(effectiveQueueSize, 2);
     }
 
