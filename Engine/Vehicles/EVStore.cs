@@ -59,6 +59,23 @@ public class EVStore(int totalCapacity)
     }
 
     /// <summary>
+    /// Tries to allocate a specified number of EV instances, returning their indexes for parallel initialization by the caller.
+    /// </summary>
+    /// <param name="amount">The number of EV instances to allocate.</param>
+    /// <param name="allocatedIndexes">A span to receive the indexes of the allocated EV instances.</param>
+    /// <returns>True if the allocation was successful, false otherwise.</returns>
+    public bool TryAllocateParallel(int amount, int[] allocatedIndexes)
+    {
+        if (_freeIndexes.Count < amount)
+            return false;
+
+        for (var i = 0; i < amount; i++)
+            allocatedIndexes[i] = _freeIndexes.Pop();
+
+        return true;
+    }
+
+    /// <summary>
     /// Returns the number of free indexes currently available for allocation.
     /// </summary>
     /// <returns>The Available capacity.</returns>

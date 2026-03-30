@@ -87,8 +87,6 @@ public class StationService
     private readonly ApplyNewPath _applyNewPath;
     private readonly MetricsService _metrics;
     private readonly SnapshotEventHandler _snapshotHandler;
-    private SemaphoreSlim _lastGate = new(1, 1);
-    private Task _lastTask = Task.CompletedTask;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="StationService"/> class.
@@ -134,6 +132,16 @@ public class StationService
     public ChargerState? GetChargerState(int chargerId)
         => _chargerIndex.TryGetValue(chargerId, out var state) ? state : null;
 
+    public Station? GetStation(ushort stationId)
+        => _stationIndex.TryGetValue(stationId, out var station) ? station : null;
+
+    public int GetTotalQueueSize(ushort stationId)
+    {
+        if (!_stationChargers.TryGetValue(stationId, out var chargers))
+            return 0;
+        return chargers.Sum(cs => cs.Queue.Count);
+    }
+
     /// <summary>
     /// Handles a reservation request from an EV to a station.
     /// If the EV already has an active reservation, the existing arrival event is cancelled before proceeding.
@@ -155,31 +163,11 @@ public class StationService
 
         station.IncrementReservations();
         ev.HasReservationAtStationId = e.StationId;
-
-        var previousGate = _lastGate;
-        var myGate = new SemaphoreSlim(0, 1);
-        _lastGate = myGate;
-
-        _lastTask = Task.Run(async () =>
-        {
-            var ev = _eVStore.Get(e.EVId);
-            _applyNewPath.ApplyNewPathToEV(ref ev, station, e.Time);
-            _eVStore.Set(e.EVId, ref ev);
-
-            await previousGate.WaitAsync();
-
-            _scheduler.ScheduleEvent(
-                new ArriveAtStation(e.EVId, e.StationId, ev.Battery.Capacity, e.Time + e.DurationToStation));
-
-            myGate.Release();
-        });
+        _applyNewPath.ApplyNewPathToEV(ref ev, station, e.Time);
+        _eVStore.Set(e.EVId, ref ev);
+        _scheduler.ScheduleEvent(
+            new ArriveAtStation(e.EVId, e.StationId, 0.8f, e.Time + e.DurationToStation)); //TODO: WE CHARGE TO 80% WE PROBABLY NEED SOMETHING BETTER HERE
     }
-
-    /// <summary>
-    /// Waits for all currently scheduled reservation requests to complete.
-    /// </summary>
-    /// <returns>A task that completes when all reservation request handling has completed.</returns>
-    public Task WaitForAllScheduled() => _lastTask;
 
     /// <summary>
     /// Handles a cancellation request from an EV, decrementing the station's active reservation count,
@@ -230,13 +218,14 @@ public class StationService
                 EVId: e.EVId,
                 CurrentSoC: ev.Battery.StateOfCharge,
                 TargetSoC: e.TargetSoC,
-                CapacityKWh: ev.Battery.Capacity,
-                MaxChargeRateKW: ev.Battery.MaxChargeRate,
+                CapacityKWh: ev.Battery.MaxCapacityKWh,
+                MaxChargeRateKW: ev.Battery.MaxChargeRateKW,
                 Socket: ev.Battery.Socket,
                 ArrivalTime: e.Time);
 
+        ev.IsCharging = true;
         target.Queue.Enqueue((e.EVId, connectedEV));
-
+        Console.WriteLine(target.Queue.Count);
         if (target.IsFree)
             StartCharging(target, e.Time);
     }
@@ -261,6 +250,7 @@ public class StationService
         {
             case SingleCharger single:
                 single.ChargingPoint.Disconnect();
+
                 state.SessionA = null;
                 _eVStore.Get(e.EVId).IsCharging = false;
                 break;
@@ -275,8 +265,13 @@ public class StationService
                     if (state.SessionB is not null && result is not null)
                     {
                         var updatedSoC = result.BSoCWhenAFinish;
-                        state.SessionB = state.SessionB with { EV = state.SessionB.EV with { CurrentSoC = updatedSoC } };
-                        if (state.SessionB.EndChargingCancellationToken is { } token) _scheduler.CancelEvent(token);
+                        state.SessionB = state.SessionB with
+                        {
+                            EV = state.SessionB.EV with { CurrentSoC = updatedSoC }
+                        };
+
+                        if (state.SessionB!.EndChargingCancellationToken is { } token)
+                            _scheduler.CancelEvent(token);
 
                         if (updatedSoC >= state.SessionB.EV.TargetSoC)
                         {
@@ -292,11 +287,17 @@ public class StationService
                     state.SessionB = null;
                     _eVStore.Get(e.EVId).IsCharging = false;
 
+
                     if (state.SessionA is not null && result is not null)
                     {
                         var updatedSoC = result.ASoCWhenBFinish;
-                        state.SessionA = state.SessionA with { EV = state.SessionA.EV with { CurrentSoC = updatedSoC } };
-                        if (state.SessionA.EndChargingCancellationToken is { } token) _scheduler.CancelEvent(token);
+                        state.SessionA = state.SessionA with
+                        {
+                            EV = state.SessionA.EV with { CurrentSoC = updatedSoC }
+                        };
+
+                        if (state.SessionA!.EndChargingCancellationToken is { } token)
+                            _scheduler.CancelEvent(token);
 
                         if (updatedSoC >= state.SessionA.EV.TargetSoC)
                         {
@@ -306,7 +307,6 @@ public class StationService
                         }
                     }
                 }
-
                 break;
         }
 
@@ -343,7 +343,8 @@ public class StationService
                 state.SessionA = new ChargingSession(next.EVId, next.EV, simNow, null, null);
                 _eVStore.Get(next.EVId).IsCharging = true; // Mark as charging
 
-                var result = _integrator.IntegrateSingleToCompletion(simNow, single.MaxPowerKW, single.ChargingPoint, state.SessionA.EV);
+                var result = _integrator.IntegrateSingleToCompletion(
+                    simNow, single.MaxPowerKW, single.ChargingPoint, state.SessionA.EV);
                 state.LastResult = result;
 
                 if (result?.FinishTimeA is not null)
@@ -401,7 +402,10 @@ public class StationService
                 var carA = state.SessionA?.EV ?? state.SessionB!.EV with { CurrentSoC = state.SessionB.EV.TargetSoC };
                 var carB = state.SessionB?.EV ?? state.SessionA!.EV with { CurrentSoC = state.SessionA.EV.TargetSoC };
 
-                var dualResult = _integrator.IntegrateDualToCompletion(simNow, dual.MaxPowerKW, dual.ChargingPoint, carA, carB);
+
+                var dualResult = _integrator.IntegrateDualToCompletion(
+                    simNow, dual.MaxPowerKW, dual.ChargingPoint, carA, carB);
+
                 state.LastResult = dualResult;
 
                 if (state.SessionA is not null && dualResult?.FinishTimeA is not null)

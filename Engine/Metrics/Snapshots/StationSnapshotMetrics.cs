@@ -1,7 +1,6 @@
 namespace Engine.Metrics.Snapshots;
 
 using Core.Charging;
-using System;
 using Core.Shared;
 
 /// <summary>
@@ -65,19 +64,13 @@ public record StationSnapshotMetric
     /// </summary>
     /// <param name="station">The station to snapshot.</param>
     /// <param name="simTime">Current simulation time in seconds.</param>
-    /// <param name="day">Current day of week (for price lookup).</param>
-    /// <param name="hour">Current hour 0–23 (for price lookup).</param>
-    /// 
-    /// 
     /// A delegate that returns the actual power currently being delivered (in kW)
     /// for a given charger. Provided by the caller since power state lives outside
     /// this record. // TODO: Should be implemented somehow later.
     /// <returns>A <see cref="StationSnapshotMetric"/> containing the collected metrics for the station.</returns>
     public static StationSnapshotMetric Collect(
         Station station,
-        Time simTime,
-        DayOfWeek day,
-        int hour)
+        Time simTime)
     {
         var totalDeliveredKW = 0f;
         var totalMaxKW = 0f;
@@ -101,7 +94,7 @@ public record StationSnapshotMetric
             TotalDeliveredKW = totalDeliveredKW,
             TotalMaxKW = totalMaxKW,
             TotalQueueSize = totalQueueSize,
-            Price = station.UpdatePrice(day, hour),
+            Price = station.GetPrice(simTime),
             ActiveChargers = activeChargers,
             TotalChargers = station.Chargers.Count,
             Reservations = reservations,

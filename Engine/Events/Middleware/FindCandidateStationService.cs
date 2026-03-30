@@ -17,7 +17,7 @@ public class FindCandidateStationService(
     SpatialGrid spatialGrid,
     EVStore evStore)
 {
-    private record StationQuery(Station[] Stations, Task<(float[] Durations, float[] Distances)> Task);
+    private record StationQuery(Task<(ushort[] Stations, float[] Durations)> Task);
 
     private readonly Dictionary<int, StationQuery> _evStationPaths = [];
 
@@ -33,26 +33,30 @@ public class FindCandidateStationService(
             if (e is not FindCandidateStations fcse)
                 throw new SkillissueException("Not the correct event type");
 
-            var ev = evStore.Get(fcse.EVId);
-            var stationIds = spatialGrid.GetStationsAlongPolyline(ev.Journey.Path, ev.Preferences.MaxPathDeviation);
-            var reachableStationsIds = ReachableStations.FindReachableStations(
-                ev.Journey.Path,
-                ev,
-                stations,
-                stationIds,
-                ev.Preferences.MaxPathDeviation).ToArray();
+            _evStationPaths[fcse.EVId] = new StationQuery(Task.Run(async () =>
+            {
+                var ev = evStore.Get(fcse.EVId);
+                var stationIds = spatialGrid.GetStationsAlongPolyline(
+                    ev.Journey.Path, ev.Preferences.MaxPathDeviation);
+                var reachableStationIds = ReachableStations.FindReachableStations(
+                    ev.Journey.Path,
+                    ev,
+                    stations,
+                    stationIds,
+                    ev.Preferences.MaxPathDeviation).ToArray();
 
-            var pos = ev.Journey.CurrentPosition(fcse.Time);
-            var dest = ev.Journey.Path.Waypoints.Last();
+                var pos = ev.Journey.CurrentPosition(fcse.Time);
+                var dest = ev.Journey.Path.Waypoints.Last();
 
-            _evStationPaths[fcse.EVId] = new StationQuery(
-                    [.. reachableStationsIds.Select(id => stations[id])],
-                    Task.Run(() => router.QueryStationsWithDest(
-                pos.Longitude,
-                pos.Latitude,
-                dest.Longitude,
-                dest.Latitude,
-                reachableStationsIds)));
+                var res = router.QueryStationsWithDest(
+                    pos.Longitude,
+                    pos.Latitude,
+                    dest.Longitude,
+                    dest.Latitude,
+                    reachableStationIds);
+
+                return (reachableStationIds, res.Durations);
+            }));
         };
     }
 
@@ -60,13 +64,14 @@ public class FindCandidateStationService(
     /// <param name="evId">The EV's id.</param>
     /// <returns>The pre-computed candidate stations.</returns>
     /// <exception cref="SkillissueException">If you try and get a cached candidate which was never precomputed.</exception>
-    public async Task<Dictionary<Station, float>> ComputeCandidateStationFromCache(int evId)
+    public async Task<Dictionary<ushort, float>> ComputeCandidateStationFromCache(int evId)
     {
         if (!_evStationPaths.TryGetValue(evId, out var query))
             throw new SkillissueException($"No pre-computed station query found for EV {evId}. Ensure PreComputeCandidateStation is called first.");
 
-        var (stationIds, task) = query;
-        var (durations, _) = await task;
-        return stationIds.Zip(durations).ToDictionary(x => x.First, x => x.Second);
+        _evStationPaths.Remove(evId);
+
+        var (stationArray, durations) = await query.Task;
+        return stationArray.Zip(durations).ToDictionary(x => x.First, x => x.Second);
     }
 }

@@ -8,14 +8,14 @@ using Engine.test.Builders;
 
 public class CheckUrgencyHandlerTest
 {
-    private readonly EventScheduler _scheduler = new([]);
+    private readonly EventScheduler _scheduler = new();
     private readonly EVStore _evStore = new(10);
 
     private EV MakeEV(float stateOfCharge) =>
         TestData.EV(
             waypoints: [new Position(10, 10), new Position(20, 20)],
             battery: TestData.Battery(capacity: 50, maxChargeRate: 20, stateOfCharge: stateOfCharge),
-            preferences: TestData.Preferences(PriceSensitivity: 0.5f, MinAcceptableCharge: 0.0f),
+            preferences: TestData.Preferences(PriceSensitivity: 0.5f, MinAcceptableCharge: 0.4f),
             efficiency: 2,
             departureTime: 0);
 
@@ -25,7 +25,7 @@ public class CheckUrgencyHandlerTest
     [Fact]
     public void LowUrgencySchedulesCheckUrgency()
     {
-        var ev1 = MakeEV(stateOfCharge: 50f);
+        var ev1 = MakeEV(stateOfCharge: 0.5f);
         _evStore.TryAllocate((_, ref ev) => ev = ev1, out var index1);
 
         MakeHandler().Handle(new CheckUrgency(index1, 1));
@@ -36,7 +36,7 @@ public class CheckUrgencyHandlerTest
     [Fact]
     public void HighUrgencySchedulesFindCandidate()
     {
-        var ev2 = MakeEV(stateOfCharge: 4f);
+        var ev2 = MakeEV(stateOfCharge: 0.4f);
         _evStore.TryAllocate((_, ref ev) => ev = ev2, out var index1);
 
         MakeHandler().Handle(new CheckUrgency(index1, 1));

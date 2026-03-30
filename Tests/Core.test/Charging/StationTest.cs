@@ -26,9 +26,9 @@ public class StationTest
         var station = CreateStation();
         var basePrice = _energyPrices.GetHourPrice(day, hour);
 
-        station.UpdatePrice(DayOfWeek.Monday, hour);
+        var time = Time.From((uint)day, (uint)hour);
 
-        Assert.InRange(station.Price, basePrice * 0.80f, basePrice * 1.20f);
+        Assert.InRange(station.GetPrice(time), basePrice * 0.80f, basePrice * 1.20f);
     }
 
     /// <summary>
@@ -39,8 +39,9 @@ public class StationTest
     public void CalculatePrice_ChangesPrice()
     {
         var station = CreateStation();
-        station.UpdatePrice(DayOfWeek.Monday, 12);
-        Assert.NotEqual(3.0f, station.Price);
+        var hour = 12;
+        var time = Time.From(Time.From((uint)DayOfWeek.Monday), (uint)hour);
+        Assert.NotEqual(3.0f, station.GetPrice(time));
     }
 
     private Station CreateStation() =>

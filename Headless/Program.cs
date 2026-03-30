@@ -29,9 +29,12 @@ public static class Program
         {
             CostConfig = new CostWeights
             {
-                EffectiveQueueSize = 1,
+                EffectiveQueueSize = 5,
                 PathDeviation = 1,
                 PriceSensitivity = 1,
+                AvailableChargerRatio = 1,
+                ExpectedWaitTime = 1,
+                Urgency = 1,
             },
 
             RunId = Guid.NewGuid(),
@@ -56,21 +59,21 @@ public static class Program
                 TotalChargers = 10000,
             },
 
-            IntervalToUpdateEVs = 10,
+            IntervalToUpdateEVs = 5 * 60,
 
-            BatteryIntervalForCheckUrgency = 10,
+            BatteryIntervalForCheckUrgency = 0.05f,
 
             CurrentAmoutOfEVsInDenmark = 583320, // Based on the number of registered EVs in Denmark as of 2026-03-22 https://mobility.dk/nyheder/nu-koerer-hver-femte-personbil-i-danmark-paa-el/
 
             ChargingStepSeconds = 60,
 
-            SimulationEndTime = 10000,
+            SimulationEndTime = 10000 * 60,
 
-            SnapshotInterval = 1000,
+            SnapshotInterval = 1000 * 60,
 
-            EVDistributionWindowsSize = 100,
+            EVDistributionWindowsSize = 1 * 60,
 
-            EVSpawnFraction = 0.01f,
+            EVSpawnFraction = 0.10f,
 
             EnergyPricesPath = new FileInfo(Path.Combine(dataPath.FullName, "energy_prices.csv")),
             OsrmPath = new FileInfo(Path.Combine(dataPath.FullName, "osrm/output.osrm")),
@@ -93,6 +96,6 @@ public static class Program
         provider.GetRequiredService<StationService>();
 
         var coordinator = provider.GetRequiredService<Simulation>();
-        coordinator.Run();
+        await coordinator.Run();
     }
 }

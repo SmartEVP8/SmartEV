@@ -28,14 +28,43 @@ public class EventDispatcher(
         DestinationArrivalHandler destinationArrivalHandler,
         CheckAndUpdateAllEVsHandler CheckAndUpdateAllEVsHandler)
 {
+    private Dictionary<Type, uint> _calledCount = [];
+    private int _eventCount;
+
+    private void IncrementCount(Event e)
+    {
+        var type = e.GetType();
+
+        if (_calledCount.ContainsKey(type))
+        {
+            _calledCount[type]++;
+        }
+        else
+        {
+            _calledCount[type] = 1;
+        }
+
+        _eventCount++;
+    }
+
+    private void PrintCounts(Event e)
+    {
+        Console.WriteLine($"Event counts in timestamp {e.Time}:");
+        foreach (var kvp in _calledCount)
+        {
+            Console.WriteLine($"{kvp.Key.Name}: {kvp.Value}");
+        }
+    }
+
     /// <summary>
     /// Dispatches the event to the correct handler.
     /// Has a handler for every <c>Event</c>. If an event is dispatched for which there is no handler, an exception is thrown.
     /// </summary>
     /// <param name="e">The event to handle.</param>
     /// <exception cref="Exception">If a event handler is not registered.</exception>
-    public void Dispatch(Event e)
+    public async Task Dispatch(Event e)
     {
+        IncrementCount(e);
         switch (e)
         {
             case ReservationRequest ev:
@@ -55,7 +84,7 @@ public class EventDispatcher(
                 break;
 
             case FindCandidateStations ev:
-                findCandidateStationsHandler.Handle(ev);
+                await findCandidateStationsHandler.Handle(ev);
                 break;
 
             case ArriveAtDestination ev:
@@ -81,5 +110,8 @@ public class EventDispatcher(
             default:
                 throw new Exception("This should never happen, add a handler");
         }
+
+        if (_eventCount % 1000 == 0)
+            PrintCounts(e);
     }
 }

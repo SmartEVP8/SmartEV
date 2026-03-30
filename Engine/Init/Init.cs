@@ -27,10 +27,8 @@ public static class Init
     /// <param name="services">The service collection to initialize.</param>
     public static void InitEngine(IServiceCollection services)
     {
-        services.AddSingleton(sp =>
-        {
-            return new EventScheduler([]);
-        });
+
+
 
         services.AddSingleton(sp =>
         {
@@ -110,6 +108,24 @@ public static class Init
         });
 
         services.AddSingleton(sp =>
+                {
+                    var router = sp.GetRequiredService<IOSRMRouter>();
+                    var stations = sp.GetRequiredService<Dictionary<ushort, Station>>();
+                    var grid = sp.GetRequiredService<SpatialGrid>();
+                    var evStore = sp.GetRequiredService<EVStore>();
+                    return new FindCandidateStationService(router, stations, grid, evStore);
+                });
+
+        services.AddSingleton(sp =>
+        {
+            var findCandidateStationService = sp.GetRequiredService<FindCandidateStationService>();
+            return new EventScheduler(new Dictionary<Type, Action<IMiddlewareEvent>>
+            {
+                { typeof(FindCandidateStations), findCandidateStationService.PreComputeCandidateStation() },
+            });
+        });
+
+        services.AddSingleton(sp =>
         {
             var eventScheduler = sp.GetRequiredService<EventScheduler>();
             var evStore = sp.GetRequiredService<EVStore>();
@@ -178,7 +194,7 @@ public static class Init
             var settings = sp.GetRequiredService<EngineSettings>();
             var snapshotInterval = settings.SnapshotInterval;
             var stations = sp.GetRequiredService<Dictionary<ushort, Station>>();
-            return new SnapshotEventHandler(snapshotInterval, DateTimeOffset.UtcNow, stations, metrics, scheduler); // TODO: Look into how we can remove DateTime
+            return new SnapshotEventHandler(snapshotInterval, stations, metrics, scheduler); // TODO: Look into how we can remove DateTime
         });
 
         services.AddSingleton(sp =>
@@ -199,17 +215,11 @@ public static class Init
         services.AddSingleton(sp =>
         {
             var costStore = sp.GetRequiredService<ICostStore>();
-            return new ComputeCost(costStore);
+            var stationService = sp.GetRequiredService<StationService>();
+            return new ComputeCost(costStore, stationService);
         });
 
-        services.AddSingleton(sp =>
-        {
-            var router = sp.GetRequiredService<IOSRMRouter>();
-            var stations = sp.GetRequiredService<Dictionary<ushort, Station>>();
-            var grid = sp.GetRequiredService<SpatialGrid>();
-            var evStore = sp.GetRequiredService<EVStore>();
-            return new FindCandidateStationService(router, stations, grid, evStore);
-        });
+
 
         services.AddSingleton(sp =>
         {

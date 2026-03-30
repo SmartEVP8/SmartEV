@@ -18,33 +18,33 @@ public class Simulation(
     /// and continuously handling the next event until
     /// the specified end time is reached.
     /// </summary>
-    public void Run()
+    public async Task Run()
     {
+        Console.WriteLine("Starting Simulation");
         scheduler.ScheduleEvent(new SpawnEVS(0));
         scheduler.ScheduleEvent(new CheckAndUpdateAllEVs(0));
         while (true)
         {
-            HandleNextEvent();
+            await HandleNextEvent();
         }
     }
 
     /// <summary>
     /// Handles the next event in the scheduler.
     /// </summary>
-    private void HandleNextEvent()
+    private async Task HandleNextEvent()
     {
         var nextEvent = scheduler.GetNextEvent();
 
         if (nextEvent != null)
         {
-            Console.WriteLine($"Handling event: {nextEvent.GetType().Name} at time {nextEvent.Time}");
             if (nextEvent.Time > runUntilStop)
             {
                 Console.WriteLine("Reached end of simulation time.");
                 Environment.Exit(0);
             }
 
-            dispatcher.Dispatch(nextEvent);
+            await dispatcher.Dispatch(nextEvent);
         }
         else
         {

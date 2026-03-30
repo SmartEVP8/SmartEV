@@ -59,7 +59,6 @@ public static class TestData
         int evStoreCapacity = 10) =>
         new(
             rescheduleTime: new Time(3600),
-            startTime: DateTimeOffset.UtcNow,
             stations: stations,
             metrics: metrics,
             scheduler: scheduler);
@@ -99,18 +98,18 @@ public static class TestData
 
     public static Paths Route(double fromLon, double fromLat, double toLon, double toLat)
     {
-        var (_, polyline) = OSRMRouter.QuerySingleDestination(fromLon, fromLat, toLon, toLat);
-        return Polyline6ToPoints.DecodePolyline(polyline);
+        var result = OSRMRouter.QuerySingleDestination(fromLon, fromLat, toLon, toLat);
+        return Polyline6ToPoints.DecodePolyline(result.Polyline);
     }
 
     public static Journey Journey(List<Position>? waypoints, Time departure = default, Time originalDuration = default)
     {
         if (waypoints == null)
         {
-            return new(departure, originalDuration, new Paths([new Position(0, 0), new Position(1, 1)]));
+            return new(departure, originalDuration, 100, new Paths([new Position(0, 0), new Position(1, 1)]));
         }
 
-        return new(departure, originalDuration, new Paths(waypoints));
+        return new(departure, originalDuration, 100, new Paths(waypoints));
     }
 
     public static Battery Battery(

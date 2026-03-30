@@ -24,16 +24,16 @@ public class ApplyNewPath(IDestinationRouter router)
         var currentPos = ev.Journey.CurrentPosition(currentTime);
         var destination = ev.Journey.Path.Waypoints.Last();
 
-        var (duration, polyline) = _router.QueryDestination(
+        var res = _router.QueryDestination(
         [
             currentPos.Longitude, currentPos.Latitude,
             station.Position.Longitude, station.Position.Latitude,
             destination.Longitude, destination.Latitude,
         ]);
 
-        var detourPath = Polyline6ToPoints.DecodePolyline(polyline);
+        var detourPath = Polyline6ToPoints.DecodePolyline(res.Polyline);
         var newWaypoints = new Paths([currentPos, .. detourPath.Waypoints]);
-        var roundedDuration = (uint)Math.Ceiling(duration / 60);
-        ev.Journey.UpdateRoute(newWaypoints, currentTime, (Time)roundedDuration);
+        var roundedDuration = (uint)Math.Ceiling(res.Duration);
+        ev.Journey.UpdateRoute(newWaypoints, station.Position, currentTime, (Time)roundedDuration, res.Distance / 1000);
     }
 }

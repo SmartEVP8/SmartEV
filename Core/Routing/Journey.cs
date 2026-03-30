@@ -1,19 +1,21 @@
 namespace Core.Routing;
 
 using Core.Shared;
+using Core.GeoMath;
 
 /// <summary>
 /// Represents a journey for an electric vehicle.
 /// </summary>
 /// <param name="departure">The time the journey started.</param>
-/// <param name="originalDuration">The original duration of the journey.</param>
+/// <param name="duration">The original duration of the journey.</param>
+/// <param name="distanceMeters">The distance of the journey.</param>
 /// <param name="path">The path of the journey.</param>
-public class Journey(Time departure, Time originalDuration, Paths path)
+public class Journey(Time departure, Time duration, float distanceMeters, Paths path)
 {
     /// <summary>
     /// Gets the time the journey started.
     /// </summary>
-    public Time JourneyStart { get; } = departure;
+    public Time JourneyStart => departure;
 
     /// <summary>
     /// Gets the time the journey was last updated.
@@ -23,17 +25,22 @@ public class Journey(Time departure, Time originalDuration, Paths path)
     /// <summary>
     /// Gets the original duration of the journey, i.e. the duration of A -> B without any detours.
     /// </summary>
-    public Time OriginalDuration { get; } = originalDuration;
+    public Time OriginalDuration => duration;
 
     /// <summary>
     /// Gets the duration of an EVs journey, after it has been altered, i.e the duration of Start -> Station -> Detour.
     /// </summary>
-    public Time LastUpdatedDuration { get; private set; } = originalDuration;
+    public Time LastUpdatedDuration { get; private set; } = duration;
 
     /// <summary>
     /// Gets the current Path.
     /// </summary>
     public Paths Path { get; private set; } = path;
+
+    /// <summary>
+    /// Gets the next stop of the journey. Initially set to the original destination, but can be updated if the EV is rerouted through a station.
+    /// </summary>
+    public Position NextStop { get; private set; } = path.Waypoints[^1];
 
     /// <summary>
     /// Gets the additional time has been added by rerouting/deviating from the original path.
@@ -46,6 +53,16 @@ public class Journey(Time departure, Time originalDuration, Paths path)
     public Time TimeElapsed(Time currentTime) => currentTime - JourneyStart;
 
     /// <summary>
+    /// Gets the original distance of the journey, i.e. the distance of A -> B without any detours.
+    /// </summary>
+    public float OriginalDistancekm { get; } = distanceMeters / 1000;
+
+    /// <summary>
+    /// Gets the distance of an EVs journey, after it has been altered, i.e the distance of Start -> Station -> Detour.
+    /// </summary>
+    public float LastUpdatedDistancekm { get; private set; } = distanceMeters / 1000;
+
+    /// <summary>
     /// Calucates the EV's current position. Assumes the speed is always the same.
     /// </summary>
     /// <param name="currentTime">The current time.</param>
@@ -55,9 +72,9 @@ public class Journey(Time departure, Time originalDuration, Paths path)
     {
         Time completedTime = LastUpdatedDeparture + LastUpdatedDuration;
         if (currentTime > completedTime)
-            throw new ArgumentException("Current time is after the journey has completed.");
+            throw new ArgumentException($"Current time: {currentTime} is after the journey has completed: {completedTime}.");
         if (currentTime < LastUpdatedDeparture)
-            throw new ArgumentException("Current time is before the journey has started.");
+            throw new ArgumentException($"Current time: {currentTime} is before the journey has started: {JourneyStart}.");
 
         var percentageCompleted = (currentTime - LastUpdatedDeparture) / (double)LastUpdatedDuration;
 
@@ -67,9 +84,7 @@ public class Journey(Time departure, Time originalDuration, Paths path)
                 (
                     p.First,
                     p.Second,
-                    Length: Math.Sqrt(
-                        Math.Pow(p.Second.Latitude - p.First.Latitude, 2)
-                            + Math.Pow(p.Second.Longitude - p.First.Longitude, 2))
+                    Length: GeoMath.EquirectangularDistance(p.First, p.Second)
                 ))
             .ToList();
 
@@ -99,25 +114,20 @@ public class Journey(Time departure, Time originalDuration, Paths path)
     /// Updates the route of the journey and calculates the new path deviation based on the new estimated time of arrival (ETA) compared to the old ETA.
     /// </summary>
     /// <param name="newRoute">The new path/journey.</param>
+    /// <param name="nextStop">The next stop/position of <paramref name="newRoute"/>.</param>
     /// <param name="departure">The the journey takes affect/is updated.</param>
     /// <param name="duration">The duration of the new joruney.</param>
-    public void UpdateRoute(Paths newRoute, Time departure, Time duration)
+    /// <param name="newDistancekm">The distance of the new journey.</param>
+    public void UpdateRoute(Paths newRoute, Position nextStop, Time departure, Time duration, float newDistancekm)
     {
-        Path = newRoute;
-
         Time oldEta = LastUpdatedDeparture + LastUpdatedDuration;
         Time newEta = departure + duration;
 
-        if (newEta > oldEta)
-        {
-            PathDeviation += newEta - oldEta;
-        }
-        else if (oldEta > newEta)
-        {
-            PathDeviation -= oldEta - newEta;
-        }
-
+        Path = newRoute;
+        NextStop = nextStop;
         LastUpdatedDeparture = departure;
         LastUpdatedDuration = duration;
+        LastUpdatedDistancekm = newDistancekm;
+        PathDeviation += newEta - oldEta;
     }
 }

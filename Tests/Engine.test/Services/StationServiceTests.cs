@@ -4,7 +4,6 @@ using Core.Shared;
 using Core.Charging;
 using Core.Charging.ChargingModel;
 using Engine.Events;
-using Engine.Routing;
 using Engine.Services;
 using Engine.test.Builders;
 using Engine.Vehicles;
@@ -103,7 +102,7 @@ public class StationServiceTests
     [Fact]
     public void HandleReservationRequest_SetsReservation()
     {
-        var scheduler = new EventScheduler([]);
+        var scheduler = new EventScheduler();
         var evStore = new EVStore(1);
         var stations = TestData.Stations((1, 5.0, 5.0));
         var service = TestData.StationService(stations, scheduler, evStore);
@@ -119,7 +118,7 @@ public class StationServiceTests
     [Fact]
     public void HandleReservationRequest_CancelsPreviousReservation()
     {
-        var scheduler = new EventScheduler([]);
+        var scheduler = new EventScheduler();
         var evStore = new EVStore(1);
         var stations = TestData.Stations((1, 1.0, 1.0), (2, 2.0, 2.0));
         var service = TestData.StationService(stations, scheduler, evStore);
@@ -142,38 +141,13 @@ public class StationServiceTests
         Assert.Equal(1, newStation.TotalReservations);
     }
 
-    [Fact]
-    public async Task CheckReservationOrderIsCorrect()
-    {
-        var totalRequest = 100;
-        var scheduler = new EventScheduler([]);
-        var evStore = new EVStore(totalRequest);
-        ushort stationId = 1;
-        var stations = TestData.Stations((stationId, 1.0, 1.0));
-        var service = TestData.StationService(stations, scheduler, evStore);
-
-        evStore.TryAllocate(totalRequest, (index, ref ev) => { ev = TestData.EV(); });
-
-        for (var i = 0; i < totalRequest; i++)
-            service.HandleReservationRequest(new ReservationRequest(i, stationId, 0, 1));
-
-        await service.WaitForAllScheduled();
-
-        for (var i = 0; i < totalRequest; i++)
-        {
-            var ev = scheduler.GetNextEvent();
-            Assert.NotNull(ev);
-            Assert.IsType<ArriveAtStation>(ev);
-            Assert.Equal(i, ((ArriveAtStation)ev).EVId);
-        }
-    }
-
     private static (StationService service, EventScheduler scheduler, EVStore evStore) BuildSingle(int maxPowerKW = 150)
     {
         var charger = TestData.SingleCharger(1, maxPowerKW: maxPowerKW);
         var station = TestData.Station(1, chargers: [charger]);
+        var scheduler = new EventScheduler();
+        var integrator = new ChargingIntegrator(stepSeconds: 60);
         var stations = new Dictionary<ushort, Station> { [1] = station };
-        var scheduler = new EventScheduler([]);
         var evStore = new EVStore(10);
         var metrics = TestData.MetricsService();
         var service = TestData.StationService(stations, scheduler, evStore);
@@ -185,7 +159,7 @@ public class StationServiceTests
         var charger = TestData.DualCharger(1, maxPowerKW: maxPowerKW);
         var station = TestData.Station(1, chargers: [charger]);
         var stations = new Dictionary<ushort, Station> { [1] = station };
-        var scheduler = new EventScheduler([]);
+        var scheduler = new EventScheduler();
         var evStore = new EVStore(10);
         var metrics = TestData.MetricsService();
         var service = TestData.StationService(stations, scheduler, evStore);
@@ -196,6 +170,6 @@ public class StationServiceTests
     {
         Assert.NotNull(e);
         Assert.IsType<EndCharging>(e);
-        return (EndCharging)e!;
+        return (EndCharging)e;
     }
 }

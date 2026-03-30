@@ -13,5 +13,5 @@ public interface IPointToPointRouter
     /// <param name="destLon">The longitude of the destination position.</param>
     /// <param name="destLat">The latitude of the destination position.</param>
     /// <returns>A tuple containing the duration and polyline for the route.</returns>
-    (float duration, string polyline) QuerySingleDestination(double evLon, double evLat, double destLon, double destLat);
+    RouteSegment QuerySingleDestination(double evLon, double evLat, double destLon, double destLat);
 }

@@ -48,7 +48,7 @@ public class EngineSettings
     /// <summary>
     /// Gets the interval at which the engine checks for urgent EVs.
     /// </summary>
-    required public ushort BatteryIntervalForCheckUrgency { get; init; }
+    required public float BatteryIntervalForCheckUrgency { get; init; }
 
     /// <summary>
     /// Gets the number of seconds an EV is expected to spend charging at a station, used for simulating charging time and scheduling.

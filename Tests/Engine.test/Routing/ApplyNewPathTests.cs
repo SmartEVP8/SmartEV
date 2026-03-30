@@ -38,9 +38,10 @@ public class ApplyNewPathToEVTests()
             departure: new Time(0),
             originalDuration: 60U);
 
-        var dummyRoute = new Paths([new Position(0, 0), new Position(5, 5)]);
-        journey.UpdateRoute(dummyRoute, departure: new Time(0), duration: new Time(60));
-        journey.UpdateRoute(dummyRoute, departure: new Time(20), duration: new Time(40));
+        var stationPosition = new Position(2, 2);
+        var dummyRoute = new Paths([new Position(0, 0), stationPosition, new Position(5, 5)]);
+        journey.UpdateRoute(dummyRoute, stationPosition, departure: new Time(0), duration: new Time(60), 0);
+        journey.UpdateRoute(dummyRoute, stationPosition, departure: new Time(20), duration: new Time(40), 0);
 
         Assert.Equal(0U, (uint)journey.PathDeviation);
     }
@@ -62,7 +63,7 @@ public class ApplyNewPathToEVTests()
 
         applyNewPath.ApplyNewPathToEV(ref ev, station, currentTime);
 
-        Assert.Equal(3U, (uint)ev.Journey.LastUpdatedDuration);
+        Assert.Equal(150.0f, (uint)ev.Journey.LastUpdatedDuration);
         Assert.Equal(10U, (uint)ev.Journey.LastUpdatedDeparture);
     }
 
@@ -75,11 +76,13 @@ public class ApplyNewPathToEVTests()
             originalDuration: 50U);
 
         var dummyRoute = new Paths([]);
+        var dummyPosition = new Position(0, 0);
+        var dummyJourneyLengthkm = 10;
 
-        journey.UpdateRoute(dummyRoute, departure: new Time(100), duration: new Time(60));
+        journey.UpdateRoute(dummyRoute, dummyPosition, departure: new Time(100), duration: new Time(60), dummyJourneyLengthkm);
         Assert.Equal(10U, (uint)journey.PathDeviation);
 
-        journey.UpdateRoute(dummyRoute, departure: new Time(110), duration: new Time(40));
+        journey.UpdateRoute(dummyRoute, dummyPosition, departure: new Time(110), duration: new Time(40), dummyJourneyLengthkm);
         Assert.Equal(0U, (uint)journey.PathDeviation);
     }
 
@@ -116,6 +119,12 @@ public class ApplyNewPathToEVTests()
         {
             ReceivedCoordinates = coords;
             return (ReturnedDuration, ReturnedPolyline);
+        }
+
+        RouteSegment IDestinationRouter.QueryDestination(double[] coords)
+        {
+            ReceivedCoordinates = coords;
+            return new RouteSegment(ReturnedDuration, 0, ReturnedPolyline);
         }
     }
 }

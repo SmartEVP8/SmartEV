@@ -13,12 +13,12 @@ using Engine.Vehicles;
 /// </summary>
 public class SnapshotEventHandler(
     Time rescheduleTime,
-    DateTimeOffset startTime,
     Dictionary<ushort, Station> stations,
     MetricsService metrics,
     EventScheduler scheduler)
 {
     /// <summary>
+    /// Iterates over all stations, collects a <see cref="StationSnapshotMetric"/> for each,
     /// Iterates over all stations, collects a <see cref="StationSnapshotMetric"/> for each,
     /// records them via the <see cref="MetricsService"/>, then reschedules the next
     /// snapshot one hour later.
@@ -27,15 +27,12 @@ public class SnapshotEventHandler(
     /// scheduler, and power delivery.</param>
     public void Handle(SnapshotEvent e)
     {
-        var currentTime = startTime.AddSeconds(e.Time.T);
 
         foreach (var station in stations.Values)
         {
             var metric = StationSnapshotMetric.Collect(
                 station,
-                e.Time,
-                currentTime.DayOfWeek,
-                currentTime.Hour);
+                e.Time);
             metrics.RecordStationSnapshot(metric);
         }
 

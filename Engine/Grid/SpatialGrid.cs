@@ -2,7 +2,7 @@ namespace Engine.Grid;
 
 using Core.Charging;
 using Core.Shared;
-using Engine.GeoMath;
+using Core.GeoMath;
 
 /// <summary>
 /// The SpatialGrid class is a spatial index that allows for efficient querying of stations based on their geographic location.

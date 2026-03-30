@@ -39,7 +39,7 @@ public class EVPopulatorBenchMark
 
         var evFactory = new EVFactory(new Random(1), new JourneySamplerProvider(jp), router);
         var evStore = new EVStore(_count);
-        var eventScheduler = new EventScheduler([]);
+        var eventScheduler = new EventScheduler();
 
         _eVPopulator = new(evFactory, evStore, eventScheduler);
     }
