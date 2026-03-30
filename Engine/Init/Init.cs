@@ -196,14 +196,6 @@ public static class Init
 
         services.AddSingleton(sp =>
         {
-            var stationService = sp.GetRequiredService<StationService>();
-            var checkUrgencyHandler = sp.GetRequiredService<CheckUrgencyHandler>();
-            var snapshotHandler = sp.GetRequiredService<SnapshotEventHandler>();
-            return new CheckAndUpdateAllEVsHandler(sp.GetRequiredService<EventScheduler>(), sp.GetRequiredService<EVStore>(), sp.GetRequiredService<EngineSettings>().IntervalToUpdateEVs, sp.GetRequiredService<EngineSettings>().BatteryIntervalForCheckUrgency);
-        });
-
-        services.AddSingleton(sp =>
-        {
             var metrics = sp.GetRequiredService<MetricsService>();
             var evstore = sp.GetRequiredService<EVStore>();
             return new DestinationArrivalHandler(metrics, evstore);
