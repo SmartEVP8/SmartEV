@@ -165,10 +165,15 @@ public class StationService : IStationService
         if (!_stationIndex.TryGetValue(e.StationId, out var station))
             return;
 
-        if (ev.HasReservationAtStationId.HasValue)
+        if (ev.HasReservationAtStationId != null)
         {
-            HandleCancelRequest(
-                new CancelRequest(e.EVId, ev.HasReservationAtStationId.Value, e.Time));
+            if (ev.HasReservationAtStationId.Value == e.StationId)
+            {
+                // Already has a reservation at this station, no need to cancel and re-reserve
+                return;
+            }
+
+            _scheduler.ScheduleEvent(new CancelRequest(e.EVId, ev.HasReservationAtStationId.Value, e.Time));
         }
 
         station.IncrementReservations();
@@ -255,14 +260,15 @@ public class StationService : IStationService
 
         var result = state.LastResult;
         state.LastResult = null;
-
+        ref var ev = ref _eVStore.Get(e.EVId);
         switch (state.Charger)
         {
             case SingleCharger single:
                 single.ChargingPoint.Disconnect();
 
                 state.SessionA = null;
-                _eVStore.Get(e.EVId).IsCharging = false;
+                ev.IsCharging = false;
+                ev.HasReservationAtStationId = null;
                 break;
 
             case DualCharger dual:
@@ -270,7 +276,8 @@ public class StationService : IStationService
                 {
                     dual.ChargingPoint.Disconnect(ChargingSide.Left);
                     state.SessionA = null;
-                    _eVStore.Get(e.EVId).IsCharging = false;
+                    ev.IsCharging = false;
+                    ev.HasReservationAtStationId = null;
 
                     if (state.SessionB is not null && result is not null)
                     {
@@ -295,7 +302,8 @@ public class StationService : IStationService
                 {
                     dual.ChargingPoint.Disconnect(ChargingSide.Right);
                     state.SessionB = null;
-                    _eVStore.Get(e.EVId).IsCharging = false;
+                    ev.IsCharging = false;
+                    ev.HasReservationAtStationId = null;
 
                     if (state.SessionA is not null && result is not null)
                     {
