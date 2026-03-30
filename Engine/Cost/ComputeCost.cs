@@ -11,7 +11,8 @@ using Engine.Services;
 /// Computes the cost of detouring to each station and selects the station with the lowest cost.
 /// </summary>
 /// <param name="costStore">The cost store.</param>
-public class ComputeCost(ICostStore costStore, StationService stationService)
+/// <param name="stationService">The station service.</param>
+public class ComputeCost(ICostStore costStore, IStationService stationService)
 {
     /// <summary>
     /// Computes the cost of detouring to each station and selects the station with the lowest cost.
@@ -24,51 +25,39 @@ public class ComputeCost(ICostStore costStore, StationService stationService)
     public Station Compute(ref EV ev, Dictionary<ushort, float> stationDurations, Time time)
     {
         var bestCost = double.MaxValue;
-        Station? bestStation = null;
         var weights = costStore.GetWeights();
-        var bestQueueSize = -1d;
-        var bestPath = -1d;
-        var bestUrgency = -1d;
-        var bestPrice = -1d;
+        Station? bestStation = null;
 
         foreach (var (stationId, duration) in stationDurations)
         {
             var station = stationService.GetStation(stationId)
                 ?? throw new NoNullAllowedException($"Station {stationId} not found.");
-            var effectiveQueueCost = CalculateEffectiveQueueSizeCost(station, weights);
+
+            var effectiveQueueCost = CalculateEffectiveQueueSizeCost(station, weights, ev.Battery.Socket);
             var pathDeviationCost = CalculatePathDeviationCost(ref ev, duration, weights, time);
             var urgencyCost = CalculateUrgencyCost(ref ev, weights);
             var priceCost = CalculatePriceCost(ref ev, station, weights, time);
             var effectiveWaitTimeCost = CalculateEffectiveWaitTimeCost(weights);
-            var cost = effectiveQueueCost
-                + pathDeviationCost
-                + urgencyCost
-                + priceCost
-                + effectiveWaitTimeCost;
+            var cost = effectiveQueueCost + pathDeviationCost + urgencyCost + priceCost + effectiveWaitTimeCost;
 
             if (cost < bestCost)
             {
                 bestCost = cost;
                 bestStation = station;
-                bestQueueSize = effectiveQueueCost;
-                bestPath = pathDeviationCost;
-                bestUrgency = urgencyCost;
-                bestPrice = priceCost;
             }
         }
 
         if (bestStation is null)
             throw new NoNullAllowedException("No station found in station map.");
 
-        Console.WriteLine($"[Selected station {bestStation.Id} with cost {bestCost} (Queue: {bestQueueSize}, PathDev: {bestPath}, Urgency: {bestUrgency}, Price: {bestPrice})");
         return bestStation;
     }
 
     // TODO: Think about effective queue size
-    private float CalculateEffectiveQueueSizeCost(Station station, CostWeights weights)
+    private float CalculateEffectiveQueueSizeCost(Station station, CostWeights weights, Socket socket)
     {
         var totalQueueSize = stationService.GetTotalQueueSize(station.Id);
-        var effectiveQueueSize = (float)totalQueueSize / station.Chargers.Count;
+        var effectiveQueueSize = (float)totalQueueSize / station.Chargers.Count(s => s.GetSockets().Contains(socket));
         return weights.EffectiveQueueSize * MathF.Pow(effectiveQueueSize, 2);
     }
 

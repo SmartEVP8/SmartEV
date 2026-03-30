@@ -21,4 +21,3 @@ public interface IMultiStationRouter
         double destLat,
         ushort[] indices);
 }
-

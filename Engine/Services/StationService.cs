@@ -76,7 +76,7 @@ public class ChargerState(ChargerBase charger, ushort stationId)
 /// <summary>
 /// Service responsible for managing the state of stations and chargers, handling events related to reservations, arrivals, and charging sessions.
 /// </summary>
-public class StationService
+public class StationService : IStationService
 {
     private readonly Dictionary<int, List<ChargerState>> _stationChargers = [];
     private readonly Dictionary<int, ChargerState> _chargerIndex = [];
@@ -125,16 +125,18 @@ public class StationService
     }
 
     /// <summary>
-    /// Returns the charger state for the given charger id, or null if not found.
+    /// Returns the charger state for the given charger id.
     /// </summary>
     /// <param name="chargerId">The id of the charger.</param>
-    /// <returns>The charger state for the given charger id, or null if not found.</returns>
+    /// <returns>The charger state for the given charger id.</returns>
     public ChargerState? GetChargerState(int chargerId)
         => _chargerIndex.TryGetValue(chargerId, out var state) ? state : null;
 
+    /// <inheritdoc/>
     public Station? GetStation(ushort stationId)
         => _stationIndex.TryGetValue(stationId, out var station) ? station : null;
 
+    /// <inheritdoc/>
     public int GetTotalQueueSize(ushort stationId)
     {
         if (!_stationChargers.TryGetValue(stationId, out var chargers))
@@ -155,16 +157,20 @@ public class StationService
         if (!_stationIndex.TryGetValue(e.StationId, out var station))
             return;
 
-        if (ev.HasReservationAtStationId.HasValue)
+        if (ev.HasReservationAtStationId != null)
         {
-            HandleCancelRequest(
-                new CancelRequest(e.EVId, ev.HasReservationAtStationId.Value, e.Time));
+            if (ev.HasReservationAtStationId.Value == e.StationId)
+            {
+                // Already has a reservation at this station, no need to cancel and re-reserve
+                return;
+            }
+
+            _scheduler.ScheduleEvent(new CancelRequest(e.EVId, ev.HasReservationAtStationId.Value, e.Time));
         }
 
         station.IncrementReservations();
         ev.HasReservationAtStationId = e.StationId;
         _applyNewPath.ApplyNewPathToEV(ref ev, station, e.Time);
-        _eVStore.Set(e.EVId, ref ev);
         _scheduler.ScheduleEvent(
             new ArriveAtStation(e.EVId, e.StationId, ev.CalcDesiredSoC(e.Time + e.DurationToStation), e.Time + e.DurationToStation));
     }
@@ -225,7 +231,6 @@ public class StationService
 
         ev.IsCharging = true;
         target.Queue.Enqueue((e.EVId, connectedEV));
-        Console.WriteLine(target.Queue.Count);
         if (target.IsFree)
             StartCharging(target, e.Time);
     }
@@ -245,14 +250,15 @@ public class StationService
 
         var result = state.LastResult;
         state.LastResult = null;
-
+        ref var ev = ref _eVStore.Get(e.EVId);
         switch (state.Charger)
         {
             case SingleCharger single:
                 single.ChargingPoint.Disconnect();
 
                 state.SessionA = null;
-                _eVStore.Get(e.EVId).IsCharging = false;
+                ev.IsCharging = false;
+                ev.HasReservationAtStationId = null;
                 break;
 
             case DualCharger dual:
@@ -260,7 +266,8 @@ public class StationService
                 {
                     dual.ChargingPoint.Disconnect(ChargingSide.Left);
                     state.SessionA = null;
-                    _eVStore.Get(e.EVId).IsCharging = false;
+                    ev.IsCharging = false;
+                    ev.HasReservationAtStationId = null;
 
                     if (state.SessionB is not null && result is not null)
                     {
@@ -285,8 +292,8 @@ public class StationService
                 {
                     dual.ChargingPoint.Disconnect(ChargingSide.Right);
                     state.SessionB = null;
-                    _eVStore.Get(e.EVId).IsCharging = false;
-
+                    ev.IsCharging = false;
+                    ev.HasReservationAtStationId = null;
 
                     if (state.SessionA is not null && result is not null)
                     {
@@ -307,6 +314,7 @@ public class StationService
                         }
                     }
                 }
+
                 break;
         }
 
@@ -401,7 +409,6 @@ public class StationService
 
                 var carA = state.SessionA?.EV ?? state.SessionB!.EV with { CurrentSoC = state.SessionB.EV.TargetSoC };
                 var carB = state.SessionB?.EV ?? state.SessionA!.EV with { CurrentSoC = state.SessionA.EV.TargetSoC };
-
 
                 var dualResult = _integrator.IntegrateDualToCompletion(
                     simNow, dual.MaxPowerKW, dual.ChargingPoint, carA, carB);

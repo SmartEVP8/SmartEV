@@ -4,6 +4,7 @@ using Core.Shared;
 using Engine.Cost;
 using Engine.Events.Middleware;
 using Engine.Vehicles;
+using Engine.Services;
 
 /// <summary>
 /// Handles the <see cref="FindCandidateStations"/> event by pre-computing candidate stations,
@@ -13,19 +14,21 @@ using Engine.Vehicles;
 /// <param name="computeCost">Cost computation service for selecting the best station.</param>
 /// <param name="eventScheduler">Event scheduler for scheduling reservation requests.</param>
 /// <param name="evStore">EV store for retrieving EV data.</param>
+/// <param name="stationService">Station service for retrieving station data.</param>
 public class FindCandidateStationsHandler(
     FindCandidateStationService findCandidateStationService,
     ComputeCost computeCost,
     EventScheduler eventScheduler,
-    EVStore evStore)
+    EVStore evStore,
+    IStationService stationService)
 {
     private uint _numberOfNoStations = 0;
 
     /// <summary>
-    /// Handles the <see cref="FindCandidateStations"/> event by pre-computing candidate stations,
-    /// computing their costs, selecting the best station, and scheduling a <see cref="ReservationRequest"/> event.
+    /// Handles the <see cref="FindCandidateStations"/> event by pre-computing candidate stations.
     /// </summary>
-    /// <param name="e">The <see cref="FindCandidateStations"/> event.</param>
+    /// <param name="e">The event data.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
     public async Task Handle(FindCandidateStations e)
     {
         var ev = evStore.Get(e.EVId);

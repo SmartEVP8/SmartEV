@@ -79,8 +79,6 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
         public IntPtr Polyline;
     }
 
-
-
     /// <summary>
     /// Initializes a new instance of the <see cref="OSRMRouter"/> class.
     /// </summary>

@@ -27,9 +27,6 @@ public static class Init
     /// <param name="services">The service collection to initialize.</param>
     public static void InitEngine(IServiceCollection services)
     {
-
-
-
         services.AddSingleton(sp =>
         {
             var settings = sp.GetRequiredService<EngineSettings>();
@@ -199,14 +196,6 @@ public static class Init
 
         services.AddSingleton(sp =>
         {
-            var stationService = sp.GetRequiredService<StationService>();
-            var checkUrgencyHandler = sp.GetRequiredService<CheckUrgencyHandler>();
-            var snapshotHandler = sp.GetRequiredService<SnapshotEventHandler>();
-            return new CheckAndUpdateAllEVsHandler(sp.GetRequiredService<EventScheduler>(), sp.GetRequiredService<EVStore>(), sp.GetRequiredService<EngineSettings>().IntervalToUpdateEVs, sp.GetRequiredService<EngineSettings>().BatteryIntervalForCheckUrgency);
-        });
-
-        services.AddSingleton(sp =>
-        {
             var metrics = sp.GetRequiredService<MetricsService>();
             var evstore = sp.GetRequiredService<EVStore>();
             return new DestinationArrivalHandler(metrics, evstore);
@@ -219,15 +208,14 @@ public static class Init
             return new ComputeCost(costStore, stationService);
         });
 
-
-
         services.AddSingleton(sp =>
         {
             var findCandidateStationService = sp.GetRequiredService<FindCandidateStationService>();
             var computeCost = sp.GetRequiredService<ComputeCost>();
+            var stationService = sp.GetRequiredService<IStationService>();
             var scheduler = sp.GetRequiredService<EventScheduler>();
             var evStore = sp.GetRequiredService<EVStore>();
-            return new FindCandidateStationsHandler(findCandidateStationService, computeCost, scheduler, evStore);
+            return new FindCandidateStationsHandler(findCandidateStationService, computeCost, scheduler, evStore, stationService);
         });
 
         services.AddSingleton(sp =>
