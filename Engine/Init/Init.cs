@@ -212,10 +212,9 @@ public static class Init
         {
             var findCandidateStationService = sp.GetRequiredService<FindCandidateStationService>();
             var computeCost = sp.GetRequiredService<ComputeCost>();
-            var stationService = sp.GetRequiredService<IStationService>();
             var scheduler = sp.GetRequiredService<EventScheduler>();
             var evStore = sp.GetRequiredService<EVStore>();
-            return new FindCandidateStationsHandler(findCandidateStationService, computeCost, scheduler, evStore, stationService);
+            return new FindCandidateStationsHandler(findCandidateStationService, computeCost, scheduler, evStore);
         });
 
         services.AddSingleton(sp =>

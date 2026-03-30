@@ -14,13 +14,11 @@ using Engine.Services;
 /// <param name="computeCost">Cost computation service for selecting the best station.</param>
 /// <param name="eventScheduler">Event scheduler for scheduling reservation requests.</param>
 /// <param name="evStore">EV store for retrieving EV data.</param>
-/// <param name="stationService">Station service for retrieving station data.</param>
 public class FindCandidateStationsHandler(
     FindCandidateStationService findCandidateStationService,
     ComputeCost computeCost,
     EventScheduler eventScheduler,
-    EVStore evStore,
-    IStationService stationService)
+    EVStore evStore)
 {
     private uint _numberOfNoStations = 0;
 
@@ -33,8 +31,6 @@ public class FindCandidateStationsHandler(
     {
         var ev = evStore.Get(e.EVId);
         var stationCosts = await findCandidateStationService.ComputeCandidateStationFromCache(e.EVId);
-
-        //Console.WriteLine($"[EV {e.EVId}] Found {stationCosts.Count} candidate stations. {ev}");
 
         if (stationCosts.Count == 0)
         {

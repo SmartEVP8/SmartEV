@@ -4,7 +4,6 @@ using System.Data;
 using Core.Charging;
 using Core.Shared;
 using Core.Vehicles;
-using Engine.Routing;
 using Engine.Services;
 
 /// <summary>
@@ -12,7 +11,7 @@ using Engine.Services;
 /// </summary>
 /// <param name="costStore">The cost store.</param>
 /// <param name="stationService">The station service.</param>
-public class ComputeCost(ICostStore costStore, IStationService stationService)
+public class ComputeCost(ICostStore costStore, StationService stationService)
 {
     /// <summary>
     /// Computes the cost of detouring to each station and selects the station with the lowest cost.
@@ -49,7 +48,6 @@ public class ComputeCost(ICostStore costStore, IStationService stationService)
 
         if (bestStation is null)
             throw new NoNullAllowedException("No station found in station map.");
-
         return bestStation;
     }
 
@@ -61,10 +59,16 @@ public class ComputeCost(ICostStore costStore, IStationService stationService)
         return weights.EffectiveQueueSize * MathF.Pow(effectiveQueueSize, 2);
     }
 
-    private static float CalculatePathDeviationCost(ref EV ev, float duration, CostWeights weights, Time time)
+    /// <summary>
+    /// Calculates the path deviation cost based on the detour duration compared to the remaining original journey duration.
+    /// </summary>
+    /// <returns>
+    /// The path deviation cost in minutes.
+    /// </returns>
+    private static float CalculatePathDeviationCost(ref EV ev, float detourDuration, CostWeights weights, Time time)
     {
-        var pathDeviation = PathDeviator.CalculateDetourDeviation(ref ev, duration, time);
-        Console.WriteLine($"Path deviation for station: {pathDeviation / 60} minutes, weighted cost: {weights.PathDeviation}");
+        var remainingOriginalDuration = ev.Journey.OriginalDuration - ev.Journey.TimeElapsed(time);
+        var pathDeviation = (detourDuration - remainingOriginalDuration) / 60;
         return weights.PathDeviation * pathDeviation;
     }
 
