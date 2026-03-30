@@ -14,13 +14,11 @@ using Engine.Services;
 /// <param name="computeCost">Cost computation service for selecting the best station.</param>
 /// <param name="eventScheduler">Event scheduler for scheduling reservation requests.</param>
 /// <param name="evStore">EV store for retrieving EV data.</param>
-/// <param name="stationService">Station service for retrieving station data.</param>
 public class FindCandidateStationsHandler(
     FindCandidateStationService findCandidateStationService,
     ComputeCost computeCost,
     EventScheduler eventScheduler,
-    EVStore evStore,
-    IStationService stationService)
+    EVStore evStore)
 {
     private uint _numberOfNoStations = 0;
 

@@ -62,7 +62,11 @@ public class Journey(Time departure, Time duration, float distanceMeters, Paths 
     /// </summary>
     public float LastUpdatedDistancekm { get; private set; } = distanceMeters / 1000;
 
-    public bool OnItsWayToDestination { get; set; } = false;
+    /// <summary>
+    /// Gets or sets a value indicating whether the EV is currently on its way to the destination,
+    /// which can be used to determine if the EV should be considered for rerouting or not.
+    /// </summary>
+    public bool OnRouteToDestination { get; set; } = false;
 
     /// <summary>
     /// Calucates the EV's current position. Assumes the speed is always the same.

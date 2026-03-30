@@ -138,7 +138,7 @@ public static class Init
             var settings = sp.GetRequiredService<EngineSettings>();
             var intervalSize = settings.IntervalToUpdateEVs;
             var urgencyInterval = settings.BatteryIntervalForCheckUrgency;
-            return new CheckAndUpdateAllEVsHandler(eventScheduler, evStore, intervalSize, urgencyInterval);
+            return new CheckAndUpdateEVHandler(eventScheduler, evStore, intervalSize, urgencyInterval);
         });
 
         services.AddSingleton(sp =>
@@ -212,10 +212,9 @@ public static class Init
         {
             var findCandidateStationService = sp.GetRequiredService<FindCandidateStationService>();
             var computeCost = sp.GetRequiredService<ComputeCost>();
-            var stationService = sp.GetRequiredService<IStationService>();
             var scheduler = sp.GetRequiredService<EventScheduler>();
             var evStore = sp.GetRequiredService<EVStore>();
-            return new FindCandidateStationsHandler(findCandidateStationService, computeCost, scheduler, evStore, stationService);
+            return new FindCandidateStationsHandler(findCandidateStationService, computeCost, scheduler, evStore);
         });
 
         services.AddSingleton(sp =>
@@ -224,7 +223,7 @@ public static class Init
             var checkUrgencyHandler = sp.GetRequiredService<CheckUrgencyHandler>();
             var snapshotHandler = sp.GetRequiredService<SnapshotEventHandler>();
             var evService = sp.GetRequiredService<EVService>();
-            var checkAndUpdateAllEVsHandler = sp.GetRequiredService<CheckAndUpdateAllEVsHandler>();
+            var checkAndUpdateAllEVsHandler = sp.GetRequiredService<CheckAndUpdateEVHandler>();
             var destinationArrivalHandler = sp.GetRequiredService<DestinationArrivalHandler>();
             var findCandidateStationsHandler = sp.GetRequiredService<FindCandidateStationsHandler>();
             return new EventDispatcher(stationService, checkUrgencyHandler, snapshotHandler, findCandidateStationsHandler, evService, destinationArrivalHandler, checkAndUpdateAllEVsHandler);

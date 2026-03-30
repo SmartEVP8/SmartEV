@@ -41,6 +41,8 @@ public class EVPopulator(EVFactory evFactory, EVStore evStore, EventScheduler ev
         finally
         {
             ArrayPool<int>.Shared.Return(indexes);
+            foreach (var index in indexes)
+                if (index != 0) _eventScheduler.ScheduleEvent(new CheckAndUpdateEV(index, currentTime));
         }
     }
 }

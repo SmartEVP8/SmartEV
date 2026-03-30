@@ -18,7 +18,7 @@ using Core.Vehicles;
 public class UpdateAllEVsBenchMark
 {
     private const int _count = 580000;
-    private CheckAndUpdateAllEVsHandler _checkAndUpdateAllEVsHandler = null!;
+    private CheckAndUpdateEVHandler _checkAndUpdateAllEVsHandler = null!;
     private EventScheduler _eventScheduler = null!;
     private EVStore _evStore = null!;
 
@@ -41,7 +41,7 @@ public class UpdateAllEVsBenchMark
             _evStore.Set(i, ref ev);
         }
 
-        _checkAndUpdateAllEVsHandler = new CheckAndUpdateAllEVsHandler(_eventScheduler, _evStore, 5, 10);
+        _checkAndUpdateAllEVsHandler = new CheckAndUpdateEVHandler(_eventScheduler, _evStore, 5, 10);
     }
 
     /// <summary>
@@ -55,5 +55,9 @@ public class UpdateAllEVsBenchMark
     /// which checks and updates all EVs in the EVStore.
     /// </summary>
     [Benchmark]
-    public void UpdateAllEVs() => _checkAndUpdateAllEVsHandler.Handle(new CheckAndUpdateAllEVs(10));
+    public void UpdateAllEVs()
+    {
+        for (var evID = 0; evID < _count; evID++)
+            _checkAndUpdateAllEVsHandler.Handle(new CheckAndUpdateEV(evID, 0));
+    }
 }

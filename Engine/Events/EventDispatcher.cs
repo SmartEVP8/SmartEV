@@ -26,7 +26,7 @@ public class EventDispatcher(
         FindCandidateStationsHandler findCandidateStationsHandler,
         EVService evService,
         DestinationArrivalHandler destinationArrivalHandler,
-        CheckAndUpdateAllEVsHandler CheckAndUpdateAllEVsHandler)
+        CheckAndUpdateEVHandler CheckAndUpdateAllEVsHandler)
 {
     private Dictionary<Type, uint> _calledCount = [];
     private int _eventCount;
@@ -104,7 +104,7 @@ public class EventDispatcher(
                 evService.Handle(ev);
                 break;
 
-            case CheckAndUpdateAllEVs ev:
+            case CheckAndUpdateEV ev:
                 CheckAndUpdateAllEVsHandler.Handle(ev);
                 break;
 
