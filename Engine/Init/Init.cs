@@ -166,8 +166,6 @@ public static class Init
             return new StationService(stations.Values, integrator, scheduler, evStore, applyNewPath, metrics, snapshotHandler);
         });
 
-        services.AddSingleton<IStationService>(sp => sp.GetRequiredService<StationService>());
-
         services.AddSingleton(sp =>
         {
             var evFactory = sp.GetRequiredService<EVFactory>();
@@ -206,7 +204,7 @@ public static class Init
         services.AddSingleton(sp =>
         {
             var costStore = sp.GetRequiredService<ICostStore>();
-            var stationService = sp.GetRequiredService<IStationService>();
+            var stationService = sp.GetRequiredService<StationService>();
             return new ComputeCost(costStore, stationService);
         });
 

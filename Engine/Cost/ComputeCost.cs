@@ -39,6 +39,14 @@ public class ComputeCost(ICostStore costStore, IStationService stationService)
             var effectiveWaitTimeCost = CalculateEffectiveWaitTimeCost(weights);
             var cost = effectiveQueueCost + pathDeviationCost + urgencyCost + priceCost + effectiveWaitTimeCost;
 
+            if (double.IsNaN(cost))
+            {
+                throw new InvalidOperationException(
+                    $"Invalid cost calculated for station {stationId}: {cost}. " +
+                    $"Queue={effectiveQueueCost}, PathDev={pathDeviationCost}, " +
+                    $"Urgency={urgencyCost}, Price={priceCost}, Wait={effectiveWaitTimeCost}");
+            }
+
             if (cost < bestCost)
             {
                 bestCost = cost;
@@ -57,6 +65,14 @@ public class ComputeCost(ICostStore costStore, IStationService stationService)
     // TODO: Think about effective queue size
     private float CalculateEffectiveQueueSizeCost(Station station, CostWeights weights, Socket socket)
     {
+        var supportingChargers = station.Chargers.Count(s => s.GetSockets().Contains(socket));
+
+        if (supportingChargers == 0)
+        {
+            // Station doesn't support this socket type—return infinite cost to exclude it
+            return float.MaxValue;
+        }
+
         var totalQueueSize = stationService.GetTotalQueueSize(station.Id);
         var effectiveQueueSize = (float)totalQueueSize / station.Chargers.Count(s => s.GetSockets().Contains(socket));
         return weights.EffectiveQueueSize * MathF.Pow(effectiveQueueSize, 2);
