@@ -2,7 +2,6 @@ namespace Engine.Vehicles;
 
 using Core.Shared;
 using Engine.Events;
-using System.Diagnostics;
 using System.Buffers;
 
 /// <summary>

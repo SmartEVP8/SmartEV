@@ -26,14 +26,12 @@ public class FindCandidateStationsHandler(
     /// computing their costs, selecting the best station, and scheduling a <see cref="ReservationRequest"/> event.
     /// </summary>
     /// <param name="e">The <see cref="FindCandidateStations"/> event.</param>
-    public void Handle(FindCandidateStations e)
+    public async Task Handle(FindCandidateStations e)
     {
         var ev = evStore.Get(e.EVId);
-        var stationCosts = findCandidateStationService.GetCandidateStations(e);
-        var stations = stationCosts.Keys.ToArray();
-        var journeyDurations = stationCosts.Values.ToArray();
+        var stationCosts = await findCandidateStationService.ComputeCandidateStationFromCache(e.EVId);
 
-        if (stations.Length == 0)
+        if (stationCosts.Count == 0)
         {
             _numberOfNoStations++;
             Console.WriteLine($"[EV {e.EVId}] has no stations. {ev}. Total number of failed EV's {_numberOfNoStations}");
@@ -41,8 +39,8 @@ public class FindCandidateStationsHandler(
             return;
         }
 
-        var bestStation = computeCost.Compute(ref ev, stations, journeyDurations, e.Time);
-        var durationToStation = Math.Ceiling(stationCosts[bestStation]);
+        var bestStation = computeCost.Compute(ref ev, stationCosts, e.Time);
+        var durationToStation = Math.Ceiling(stationCosts[bestStation.Id]);
         var reservationRequest = new ReservationRequest(e.EVId, bestStation.Id, e.Time, (Time)(uint)durationToStation);
         eventScheduler.ScheduleEvent(reservationRequest);
     }

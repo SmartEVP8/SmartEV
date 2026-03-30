@@ -27,10 +27,8 @@ public static class Init
     /// <param name="services">The service collection to initialize.</param>
     public static void InitEngine(IServiceCollection services)
     {
-        services.AddSingleton(sp =>
-        {
-            return new EventScheduler();
-        });
+
+
 
         services.AddSingleton(sp =>
         {
@@ -107,6 +105,24 @@ public static class Init
             var stations = sp.GetRequiredService<Dictionary<ushort, Station>>();
             var spawnGrid = InitSpawnGrid(settings.PolygonPath);
             return new SpatialGrid(spawnGrid, stations);
+        });
+
+        services.AddSingleton(sp =>
+                {
+                    var router = sp.GetRequiredService<IOSRMRouter>();
+                    var stations = sp.GetRequiredService<Dictionary<ushort, Station>>();
+                    var grid = sp.GetRequiredService<SpatialGrid>();
+                    var evStore = sp.GetRequiredService<EVStore>();
+                    return new FindCandidateStationService(router, stations, grid, evStore);
+                });
+
+        services.AddSingleton(sp =>
+        {
+            var findCandidateStationService = sp.GetRequiredService<FindCandidateStationService>();
+            return new EventScheduler(new Dictionary<Type, Action<IMiddlewareEvent>>
+            {
+                { typeof(FindCandidateStations), findCandidateStationService.PreComputeCandidateStation() },
+            });
         });
 
         services.AddSingleton(sp =>
@@ -197,17 +213,11 @@ public static class Init
         services.AddSingleton(sp =>
         {
             var costStore = sp.GetRequiredService<ICostStore>();
-            return new ComputeCost(costStore);
+            var stationService = sp.GetRequiredService<StationService>();
+            return new ComputeCost(costStore, stationService);
         });
 
-        services.AddSingleton(sp =>
-        {
-            var router = sp.GetRequiredService<IOSRMRouter>();
-            var stations = sp.GetRequiredService<Dictionary<ushort, Station>>();
-            var grid = sp.GetRequiredService<SpatialGrid>();
-            var evStore = sp.GetRequiredService<EVStore>();
-            return new FindCandidateStationService(router, stations, grid, evStore);
-        });
+
 
         services.AddSingleton(sp =>
         {

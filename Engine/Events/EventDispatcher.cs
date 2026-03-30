@@ -47,9 +47,9 @@ public class EventDispatcher(
         _eventCount++;
     }
 
-    private void PrintCounts()
+    private void PrintCounts(Event e)
     {
-        Console.WriteLine("Event counts:");
+        Console.WriteLine($"Event counts in timestamp {e.Time}:");
         foreach (var kvp in _calledCount)
         {
             Console.WriteLine($"{kvp.Key.Name}: {kvp.Value}");
@@ -62,7 +62,7 @@ public class EventDispatcher(
     /// </summary>
     /// <param name="e">The event to handle.</param>
     /// <exception cref="Exception">If a event handler is not registered.</exception>
-    public void Dispatch(Event e)
+    public async Task Dispatch(Event e)
     {
         IncrementCount(e);
         switch (e)
@@ -84,7 +84,7 @@ public class EventDispatcher(
                 break;
 
             case FindCandidateStations ev:
-                findCandidateStationsHandler.Handle(ev);
+                await findCandidateStationsHandler.Handle(ev);
                 break;
 
             case ArriveAtDestination ev:
@@ -112,6 +112,6 @@ public class EventDispatcher(
         }
 
         if (_eventCount % 1000 == 0)
-            PrintCounts();
+            PrintCounts(e);
     }
 }
