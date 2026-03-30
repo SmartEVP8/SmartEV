@@ -42,10 +42,7 @@ public class FindCandidateStationsHandler(
             return;
         }
 
-        var stations = stationCosts.Keys.Select(id => stationService.GetStation(id)).ToArray();
-        var durations = stationCosts.Keys.Select(id => stationCosts[id]).ToArray();
-
-        var bestStation = computeCost.Compute(ref ev, stations, durations, e.Time);
+        var bestStation = computeCost.Compute(ref ev, stationCosts, e.Time);
         var durationToStation = Math.Ceiling(stationCosts[bestStation.Id]);
         var reservationRequest = new ReservationRequest(e.EVId, bestStation.Id, e.Time, (Time)(uint)durationToStation);
         eventScheduler.ScheduleEvent(reservationRequest);

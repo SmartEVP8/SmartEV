@@ -28,12 +28,14 @@ public class ComputeCostTest
             150);
 
         var stationA = stationService.GetStation(1);
-        var stationB = stationService.GetStation(2);
 
-        var stations = new[] { stationA, stationB };
-        var journeyDurations = new[] { 600f, 800f };
+        var stationDurations = new Dictionary<ushort, float>
+        {
+            { 1, 500f }, // Deviation = 0
+            { 2, 600f }, // Deviation = 100
+        };
 
-        var bestStation = computeCost.Compute(ref ev, stations, journeyDurations, _time);
+        var bestStation = computeCost.Compute(ref ev, stationDurations, _time);
 
         Assert.Same(stationA, bestStation);
     }
@@ -54,15 +56,15 @@ public class ComputeCostTest
             new Journey(new Time(0), new Time(500), 100, new Paths([new Position(0, 0), new Position(1, 1)])),
             150);
 
-        var lowQueueStation = stationService.GetStation(1);
-        var highQueueStation = stationService.GetStation(2);
+        var stationDurations = new Dictionary<ushort, float>
+        {
+            { 1, 500f },
+            { 2, 500f },
+        };
 
-        var stations = new[] { lowQueueStation, highQueueStation };
-        var journeyDurations = new[] { 500f, 500f };
+        var bestStation = computeCost.Compute(ref ev, stationDurations, _time);
 
-        var bestStation = computeCost.Compute(ref ev, stations, journeyDurations, _time);
-
-        Assert.Same(lowQueueStation, bestStation);
+        Assert.Same(stationService.GetStation(1), bestStation);
     }
 
     [Fact]
@@ -86,12 +88,14 @@ public class ComputeCostTest
             150);
 
         var stationA = stationService.GetStation(1);
-        var stationB = stationService.GetStation(2);
 
-        var stations = new[] { stationA, stationB };
-        var journeyDurations = new[] { 600f, 800f };
+        var stationDurations = new Dictionary<ushort, float>
+        {
+            { 1, 500f }, // Deviation = 100
+            { 2, 700f }, // Deviation = 300
+        };
 
-        var bestStation = computeCost.Compute(ref ev, stations, journeyDurations, _time);
+        var bestStation = computeCost.Compute(ref ev, stationDurations, _time);
 
         // Station A: cost = 1 * 100 (deviation) + 1 * 5^2 (queue) = 125
         // Station B: cost = 1 * 300 (deviation) + 1 * 1^2 (queue) = 301
@@ -115,12 +119,14 @@ public class ComputeCostTest
             150);
 
         var stationA = stationService.GetStation(1);
-        var stationB = stationService.GetStation(2);
 
-        var stations = new[] { stationA, stationB };
-        var journeyDurations = new[] { 500f, 500f };
+        var stationDurations = new Dictionary<ushort, float>
+        {
+            { 1, 500f },
+            { 2, 500f },
+        };
 
-        var bestStation = computeCost.Compute(ref ev, stations, journeyDurations, _time);
+        var bestStation = computeCost.Compute(ref ev, stationDurations, _time);
 
         // Both have cost 0, so first in iteration order wins
         Assert.Same(stationA, bestStation);
@@ -143,12 +149,14 @@ public class ComputeCostTest
             150);
 
         var cheapStation = stationService.GetStation(1);
-        var expensiveStation = stationService.GetStation(2);
 
-        var stations = new[] { cheapStation, expensiveStation };
-        var journeyDuration = new[] { 500f, 500f };
+        var stationDurations = new Dictionary<ushort, float>
+            {
+                { 1, 500f },
+                { 2, 500f },
+            };
 
-        var bestStation = computeCost.Compute(ref ev, stations, journeyDuration, _time);
+        var bestStation = computeCost.Compute(ref ev, stationDurations, _time);
 
         // Cheaper station (2.0 DKK/kWh) should be selected over expensive (4.0 DKK/kWh)
         Assert.Same(cheapStation, bestStation);
@@ -166,10 +174,9 @@ public class ComputeCostTest
             new Journey(new Time(0), new Time(500), 100, new Paths([new Position(0, 0), new Position(1, 1)])),
             150);
 
-        var stations = Array.Empty<Station>();
-        var journeyDurations = Array.Empty<float>();
+        var stationDurations = new Dictionary<ushort, float>();
 
         Assert.Throws<System.Data.NoNullAllowedException>(() =>
-            computeCost.Compute(ref ev, stations, journeyDurations, _time));
+            computeCost.Compute(ref ev, stationDurations, _time));
     }
 }
