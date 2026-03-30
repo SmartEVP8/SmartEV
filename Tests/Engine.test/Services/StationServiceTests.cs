@@ -23,8 +23,8 @@ public class StationServiceTests
         service.HandleArrivalAtStation(new ArriveAtStation(EVId: index1, StationId: 1, TargetSoC: 0.8, Time: 0));
         service.HandleArrivalAtStation(new ArriveAtStation(EVId: index2, StationId: 1, TargetSoC: 0.8, Time: 0));
 
-        var end1 = AsEndCharging(scheduler.GetNextEvent());
-        var end2 = AsEndCharging(scheduler.GetNextEvent());
+        var end1 = AsEndCharging(scheduler.GetNextEvent(), scheduler);
+        var end2 = AsEndCharging(scheduler.GetNextEvent(), scheduler);
 
         // Both cars are charging different EVIds, same charger
         Assert.NotEqual(end1.EVId, end2.EVId);
@@ -51,7 +51,7 @@ public class StationServiceTests
         service.HandleArrivalAtStation(new ArriveAtStation(EVId: index3, StationId: 1, TargetSoC: 0.8, Time: 0));
 
         // Only ev1 should have an EndCharging scheduled — ev2 and ev3 are queued
-        var firstEnd = AsEndCharging(scheduler.GetNextEvent());
+        var firstEnd = AsEndCharging(scheduler.GetNextEvent(), scheduler);
         Assert.Equal(index1, firstEnd.EVId);
         Assert.Equal(2, service.GetChargerState(chargerId: 1)!.Queue.Count);
         Assert.Null(scheduler.GetNextEvent());
@@ -60,7 +60,7 @@ public class StationServiceTests
         service.HandleEndCharging(firstEnd);
         Assert.Single(service.GetChargerState(chargerId: 1)!.Queue);
 
-        var secondEnd = AsEndCharging(scheduler.GetNextEvent());
+        var secondEnd = AsEndCharging(scheduler.GetNextEvent(), scheduler);
         Assert.Equal(index2, secondEnd.EVId);
     }
 
@@ -80,15 +80,15 @@ public class StationServiceTests
         service.HandleArrivalAtStation(new ArriveAtStation(EVId: index3, StationId: 1, TargetSoC: 0.8, Time: 0));
 
         // Both sides occupied — ev3 is queued
-        var ev1End = AsEndCharging(scheduler.GetNextEvent());
+        var ev1End = AsEndCharging(scheduler.GetNextEvent(), scheduler);
         Assert.Equal(index1, ev1End.EVId);
         Assert.Single(service.GetChargerState(chargerId: 1)!.Queue);
 
         service.HandleEndCharging(ev1End);
 
         // ev2 rescheduled + ev3 newly scheduled
-        var nextA = AsEndCharging(scheduler.GetNextEvent());
-        var nextB = AsEndCharging(scheduler.GetNextEvent());
+        var nextA = AsEndCharging(scheduler.GetNextEvent(), scheduler);
+        var nextB = AsEndCharging(scheduler.GetNextEvent(), scheduler);
         Assert.Empty(service.GetChargerState(chargerId: 1)!.Queue);
 
         var ev2Event = nextA.EVId == index2 ? nextA : nextB;
@@ -141,7 +141,6 @@ public class StationServiceTests
         Assert.NotNull(cancel);
         service.HandleCancelRequest(cancel);
 
-
         Assert.Null(evStore.Get(0).HasReservationAtStationId);
         Assert.Equal(1, oldStation.TotalCancellations);
         Assert.Equal(1, newStation.TotalReservations);
@@ -172,9 +171,16 @@ public class StationServiceTests
         return (service, scheduler, evStore);
     }
 
-    private static EndCharging AsEndCharging(Event? e)
+    private static EndCharging AsEndCharging(Event? e, EventScheduler scheduler)
     {
         Assert.NotNull(e);
+
+        if (e is ArriveAtDestination)
+    {
+        e = scheduler.GetNextEvent();
+        Assert.NotNull(e);
+    }
+
         Assert.IsType<EndCharging>(e);
         return (EndCharging)e;
     }

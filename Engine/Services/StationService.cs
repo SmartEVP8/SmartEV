@@ -166,6 +166,11 @@ public class StationService
             _scheduler.ScheduleEvent(new CancelRequest(e.EVId, ev.HasReservationAtStationId.Value, e.Time));
         }
 
+        if (ev.ArriveAtDestination != null)
+        {
+            _scheduler.CancelEvent((uint)ev.ArriveAtDestination);
+        }
+
         station.IncrementReservations();
         ev.HasReservationAtStationId = e.StationId;
         _applyNewPath.ApplyNewPathToEV(ref ev, station, e.Time);
@@ -249,6 +254,7 @@ public class StationService
         var result = state.LastResult;
         state.LastResult = null;
         ref var ev = ref _eVStore.Get(e.EVId);
+
         switch (state.Charger)
         {
             case SingleCharger single:
@@ -257,6 +263,8 @@ public class StationService
                 state.SessionA = null;
                 ev.IsCharging = false;
                 ev.HasReservationAtStationId = null;
+                ev.ArriveAtDestination = 
+                    (ushort)_scheduler.ScheduleEvent(new ArriveAtDestination(e.EVId, e.Time + ev.Journey.LastUpdatedDuration));
                 break;
 
             case DualCharger dual:
@@ -266,6 +274,8 @@ public class StationService
                     state.SessionA = null;
                     ev.IsCharging = false;
                     ev.HasReservationAtStationId = null;
+                    ev.ArriveAtDestination = 
+                        (ushort)_scheduler.ScheduleEvent(new ArriveAtDestination(e.EVId, e.Time + ev.Journey.LastUpdatedDuration));
 
                     if (state.SessionB is not null && result is not null)
                     {
@@ -281,7 +291,12 @@ public class StationService
                         if (updatedSoC >= state.SessionB.EV.TargetSoC)
                         {
                             dual.ChargingPoint.Disconnect(ChargingSide.Right);
-                            _eVStore.Get(state.SessionB.EVId).IsCharging = false;
+                            ref var evB = ref _eVStore.Get(state.SessionB.EVId);
+                            evB.IsCharging = false;
+                            evB.HasReservationAtStationId = null;
+                            evB.ArriveAtDestination = 
+                                (ushort)_scheduler.ScheduleEvent(new ArriveAtDestination(e.EVId, e.Time + evB.Journey.LastUpdatedDuration));
+                
                             state.SessionB = null;
                         }
                     }
@@ -292,6 +307,8 @@ public class StationService
                     state.SessionB = null;
                     ev.IsCharging = false;
                     ev.HasReservationAtStationId = null;
+                    ev.ArriveAtDestination = 
+                        (ushort)_scheduler.ScheduleEvent(new ArriveAtDestination(e.EVId, e.Time + ev.Journey.LastUpdatedDuration));
 
                     if (state.SessionA is not null && result is not null)
                     {
@@ -307,11 +324,17 @@ public class StationService
                         if (updatedSoC >= state.SessionA.EV.TargetSoC)
                         {
                             dual.ChargingPoint.Disconnect(ChargingSide.Left);
-                            _eVStore.Get(state.SessionA.EVId).IsCharging = false;
+                            ref var evA = ref _eVStore.Get(state.SessionA.EVId);
+                            evA.IsCharging = false;
+                            evA.HasReservationAtStationId = null;
+                            evA.ArriveAtDestination = 
+                                (ushort)_scheduler.ScheduleEvent(new ArriveAtDestination(e.EVId, e.Time + evA.Journey.LastUpdatedDuration));
+                
                             state.SessionA = null;
                         }
                     }
                 }
+
                 break;
         }
 
