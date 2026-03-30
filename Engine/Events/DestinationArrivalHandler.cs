@@ -5,7 +5,7 @@ using Engine.Vehicles;
 using Engine.Metrics;
 
 /// <summary>
-/// Handles the <see cref="ArriveAtDestination"/> event by collecting a <see cref="ArrivalAtDestinationMetric"/> for the EV that arrived at its destination, 
+/// Handles the <see cref="ArriveAtDestination"/> event by collecting a <see cref="ArrivalAtDestinationMetric"/> for the EV that arrived at its destination,
 /// recording it via the <see cref="MetricsService"/>, and freeing the EV from the <see cref="EVStore"/>.
 /// </summary>
 /// <param name="metrics">Metrics service.</param>
@@ -20,10 +20,10 @@ public class DestinationArrivalHandler(
     /// <param name="e">The event.</param>
     public void Handle(ArriveAtDestination e)
     {
-        var ev = evStore.Get(e.EVId);
+        ref var ev = ref evStore.Get(e.EVId);
 
-        var metric = ArrivalAtDestinationMetric.Collect(ref ev, e.Time);
-        metrics.RecordArrival(metric);
+        // var metric = ArrivalAtDestinationMetric.Collect(ref ev, e.Time);
+        // metrics.RecordArrival(metric);
 
         evStore.Free(e.EVId);
     }

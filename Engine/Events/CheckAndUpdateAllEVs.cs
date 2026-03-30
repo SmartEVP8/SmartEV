@@ -24,7 +24,9 @@ public class CheckAndUpdateAllEVsHandler(
     public void Handle(CheckAndUpdateAllEVs e)
     {
         var evsThatNeedChecking = new int[evStore.Count];
+        var evsThatDontNeedCharging = new int[evStore.Count];
         Array.Fill(evsThatNeedChecking, -1);
+        Array.Fill(evsThatDontNeedCharging, -1);
 
         var currentTime = eventScheduler.CurrentTime;
 
@@ -32,8 +34,15 @@ public class CheckAndUpdateAllEVsHandler(
         {
             ref var ev = ref evStore.Get(evID);
 
-            if (ev.Journey is null || ev.IsCharging || !ev.HasDeparted(currentTime) || ev.HasArrived(currentTime))
+            if (ev.Journey is null || ev.IsCharging || !ev.HasDeparted(currentTime) || ev.HasArrived(currentTime) || ev.Journey.OnItsWayToDestination)
                 continue;
+
+            if (ev.CanCompleteJourney(ev.Preferences.MinAcceptableCharge))
+            {
+                evsThatDontNeedCharging[evID] = evID;
+                ev.Journey.OnItsWayToDestination = true;
+                continue;
+            }
 
             var socBefore = ev.Battery.StateOfCharge;
             ev.ConsumeEnergy(currentTime, currentTime + intervalSize);
@@ -50,6 +59,12 @@ public class CheckAndUpdateAllEVsHandler(
         {
             if (evID == -1) continue;
             eventScheduler.ScheduleEvent(new CheckUrgency(evID, e.Time));
+        }
+
+        foreach (var evID in evsThatDontNeedCharging)
+        {
+            if (evID == -1) continue;
+            eventScheduler.ScheduleEvent(new ArriveAtDestination(evID, e.Time));
         }
 
         eventScheduler.ScheduleEvent(new CheckAndUpdateAllEVs(e.Time + intervalSize));

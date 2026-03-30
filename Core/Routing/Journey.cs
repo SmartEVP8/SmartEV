@@ -62,6 +62,8 @@ public class Journey(Time departure, Time duration, float distanceMeters, Paths 
     /// </summary>
     public float LastUpdatedDistancekm { get; private set; } = distanceMeters / 1000;
 
+    public bool OnItsWayToDestination { get; set; } = false;
+
     /// <summary>
     /// Calucates the EV's current position. Assumes the speed is always the same.
     /// </summary>
