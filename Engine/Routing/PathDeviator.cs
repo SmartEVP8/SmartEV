@@ -1,5 +1,6 @@
 namespace Engine.Routing;
 
+using Core.Shared;
 using Core.Vehicles;
 
 /// <summary>
@@ -13,10 +14,12 @@ public static class PathDeviator
     /// </summary>
     /// <param name="ev" >The EV for which to calculate the detour deviation.</param>
     /// <param name="detourDuration">The original journey.</param>
+    /// <param name="time">The current time.</param>
     /// <returns>The deviation and detoured route.</returns>
-    public static float CalculateDetourDeviation(ref EV ev, float detourDuration)
+    public static float CalculateDetourDeviation(ref EV ev, float detourDuration, Time time)
     {
-        var detourDeviation = Math.Max(0, detourDuration - ev.Journey.OriginalDuration);
+        var remainingOriginalDuration = ev.Journey.OriginalDuration - ev.Journey.TimeElapsed(time);
+        var detourDeviation = detourDuration - remainingOriginalDuration;
         return detourDeviation;
     }
 }

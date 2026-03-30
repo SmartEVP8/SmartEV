@@ -36,7 +36,7 @@ public class ComputeCost(ICostStore costStore, StationService stationService)
             var station = stationService.GetStation(stationId)
                 ?? throw new NoNullAllowedException($"Station {stationId} not found.");
             var effectiveQueueCost = CalculateEffectiveQueueSizeCost(station, weights);
-            var pathDeviationCost = CalculatePathDeviationCost(ref ev, duration, weights);
+            var pathDeviationCost = CalculatePathDeviationCost(ref ev, duration, weights, time);
             var urgencyCost = CalculateUrgencyCost(ref ev, weights);
             var priceCost = CalculatePriceCost(ref ev, station, weights, time);
             var effectiveWaitTimeCost = CalculateEffectiveWaitTimeCost(weights);
@@ -60,7 +60,7 @@ public class ComputeCost(ICostStore costStore, StationService stationService)
         if (bestStation is null)
             throw new NoNullAllowedException("No station found in station map.");
 
-        Console.WriteLine($"[Selected station {bestStation.Id} with cost {bestCost} (Queue: {bestQueueSize}, Path: {bestPath}, Urgency: {bestUrgency}, Price: {bestPrice})");
+        Console.WriteLine($"[Selected station {bestStation.Id} with cost {bestCost} (Queue: {bestQueueSize}, PathDev: {bestPath}, Urgency: {bestUrgency}, Price: {bestPrice})");
         return bestStation;
     }
 
@@ -72,9 +72,10 @@ public class ComputeCost(ICostStore costStore, StationService stationService)
         return weights.EffectiveQueueSize * MathF.Pow(effectiveQueueSize, 2);
     }
 
-    private static float CalculatePathDeviationCost(ref EV ev, float duration, CostWeights weights)
+    private static float CalculatePathDeviationCost(ref EV ev, float duration, CostWeights weights, Time time)
     {
-        var pathDeviation = PathDeviator.CalculateDetourDeviation(ref ev, duration);
+        var pathDeviation = PathDeviator.CalculateDetourDeviation(ref ev, duration, time);
+        Console.WriteLine($"Path deviation for station: {pathDeviation / 60} minutes, weighted cost: {weights.PathDeviation}");
         return weights.PathDeviation * pathDeviation;
     }
 
