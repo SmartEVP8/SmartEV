@@ -109,14 +109,14 @@ public class OsrmRouterBenchmark
     public void QueryDestinationEVtoDest()
     {
         var (lon, lat) = _evCoordinates[0];
-        _ = _router.QueryDestination([lon, lat, _stationCoordsFlat[0], _stationCoordsFlat[1]], null);
+        _ = _router.QueryDestination([lon, lat, _stationCoordsFlat[0], _stationCoordsFlat[1]]);
     }
 
     [Benchmark]
     public void QueryDestinationEVtoDestWithStation()
     {
         var (lon, lat) = _evCoordinates[0];
-        _ = _router.QueryDestination([lon, lat, _stationCoordsFlat[0], _stationCoordsFlat[1], _stationCoordsFlat[2], _stationCoordsFlat[3]], [_stationIndices[0]]);
+        _ = _router.QueryDestination([lon, lat, _stationCoordsFlat[2], _stationCoordsFlat[3]], _stationIndices[0]);
     }
 
     /// <summary>
@@ -138,10 +138,9 @@ public class OsrmRouterBenchmark
             var coords = new double[]
             {
                 lon, lat,
-                _stationCoordsFlat[stationIdx * 2], _stationCoordsFlat[(stationIdx * 2) + 1],
                 _stationCoordsFlat[destIdx * 2], _stationCoordsFlat[(destIdx * 2) + 1]
             };
-            _ = _router.QueryDestination(coords, [stationIdx]);
+            _ = _router.QueryDestination(coords, stationIdx);
         }
     }
 }

@@ -59,11 +59,11 @@ public interface IOSRMRouter : IMatrixRouter, IDisposable, IPointToPointRouter, 
     /// Queries the OSRM API for the duration and polyline from the given coordinates to the given destination.
     /// </summary>
     /// <param name="coords">The coordinates of the starting point.</param>
-    /// <param name="indices">An array of station indices to query.</param>
+    /// <param name="index">A station index to query along the route.</param>
     /// <returns>A tuple containing the duration and polyline.</returns>
-    new (float duration, string polyline) QueryDestination(
+    (float duration, string polyline) QueryDestination(
         double[] coords,
-        ushort[] indices);
+        ushort index = 0);
 
     /// <summary>
     /// Queries the OSRM API for the durations and distances from the given source coordinates to the given destination coordinates.

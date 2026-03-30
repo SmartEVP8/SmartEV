@@ -65,9 +65,7 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
         IntPtr osrm,
         [In] double[] coords,
         int numCoords,
-        [In] ushort[] indices,
-        int numIndices
-    );
+        ushort index);
 
     [LibraryImport(_lib)]
     private static partial void PointsToPoints(
@@ -188,27 +186,27 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
         double evLat,
         double destLon,
         double destLat)
-        => QueryDestination([evLon, evLat, destLon, destLat], null);
+        => QueryDestination([evLon, evLat, destLon, destLat]);
 
     /// <summary>
     /// Queries the duration and polyline route from an electric vehicle to a destination, potentially with a stop in between.
     /// </summary>
     /// <param name="coords">An array of coordinates representing the route, where the first element is the source and the last element is the destination.</param>
-    /// <param name="indices">An array of station indices to query along the route.</param>
+    /// <param name="index">A station index to query along the route.</param>
     /// <returns>A tuple containing the duration and polyline string for the route.</returns>
-    public (float duration, string polyline) QueryDestination(double[] coords, ushort[] indices)
+    public (float duration, string polyline) QueryDestination(double[] coords, ushort index = 0)
     {
         nint resultPtr;
-        if (coords.Length != 4 && coords.Length != 6)
+        if (coords.Length != 4)
         {
-            throw new ArgumentException("There has to be either 2 coordinate pairs (source and destination) or 3 coordinate pairs (source, stop, destination).");
+            throw new ArgumentException("There has to be either 2 coordinate pairs (source and destination) or 2 coordinate pairs with an index (source, stop, destination).");
         }
         else if (coords.Length % 2 != 0)
         {
             throw new ArgumentException("Coordinates array must contain pairs of longitude and latitude.");
         }
 
-        if (coords.Length == 4)
+        if (index == 0)
         {
             resultPtr = ComputeSrcToDest(
                 _osrm,
@@ -219,7 +217,7 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
         }
         else
         {
-            resultPtr = ComputeSrcToDestWithStop(_osrm, coords, coords.Length / 2, indices, indices.Length);
+            resultPtr = ComputeSrcToDestWithStop(_osrm, coords, coords.Length / 2, index);
         }
 
         if (resultPtr == IntPtr.Zero)
