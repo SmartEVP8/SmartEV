@@ -11,7 +11,8 @@ using Engine.Services;
 /// Computes the cost of detouring to each station and selects the station with the lowest cost.
 /// </summary>
 /// <param name="costStore">The cost store.</param>
-public class ComputeCost(ICostStore costStore, StationService stationService)
+/// <param name="stationService">The station service.</param>
+public class ComputeCost(ICostStore costStore, IStationService stationService)
 {
     /// <summary>
     /// Computes the cost of detouring to each station and selects the station with the lowest cost.
@@ -31,16 +32,13 @@ public class ComputeCost(ICostStore costStore, StationService stationService)
         {
             var station = stationService.GetStation(stationId)
                 ?? throw new NoNullAllowedException($"Station {stationId} not found.");
+
             var effectiveQueueCost = CalculateEffectiveQueueSizeCost(station, weights, ev.Battery.Socket);
             var pathDeviationCost = CalculatePathDeviationCost(ref ev, duration, weights);
             var urgencyCost = CalculateUrgencyCost(ref ev, weights);
             var priceCost = CalculatePriceCost(ref ev, station, weights, time);
             var effectiveWaitTimeCost = CalculateEffectiveWaitTimeCost(weights);
-            var cost = effectiveQueueCost
-                + pathDeviationCost
-                + urgencyCost
-                + priceCost
-                + effectiveWaitTimeCost;
+            var cost = effectiveQueueCost + pathDeviationCost + urgencyCost + priceCost + effectiveWaitTimeCost;
 
             if (cost < bestCost)
             {
