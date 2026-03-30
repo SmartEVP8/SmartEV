@@ -46,8 +46,7 @@ public class ComputeCost(ICostStore costStore, IStationService stationService)
             }
         }
 
-        if (bestStation is null)
-            throw new NoNullAllowedException("No station found in station map.");
+        ArgumentNullException.ThrowIfNull(bestStation, "No suitable station found.");
         return bestStation;
     }
 

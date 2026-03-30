@@ -67,13 +67,50 @@ public class ComputeCostTest
         Assert.Same(stationService.GetStation(1), bestStation);
     }
 
-    [Fact]
-    public void Compute_MixedWeights_SelectsOptimalStation()
+    [Theory]
+    [InlineData(0.5f, 2)] // Low deviation weight -> Station 2 wins (much shorter queue)
+    [InlineData(2.0f, 1)] // High deviation weight -> Station 1 wins (no deviation)
+    public void Compute_QueueVsPathDeviation_SelectsBasedOnWeights(float pathDeviationWeight, ushort expectedStationId)
     {
-        // Station A: low deviation (100), high queue (5)
-        // Station B: high deviation (300), low queue (1)
-        // With equal weights, station A wins with lower total cost
-        var costStore = new TestData.StubCostStore(new CostWeights(PathDeviation: 1, EffectiveQueueSize: 1));
+        var costStore = new TestData.StubCostStore(
+            new CostWeights(
+                PathDeviation: pathDeviationWeight,
+                EffectiveQueueSize: 1.0f));
+
+        var stationService = new TestData.StubStationService(new Dictionary<ushort, Station>
+        {
+            { 1, TestData.Station(id: 1, pos: new Position(0, 0), queueSize: 4) },
+            { 2, TestData.Station(id: 2, pos: new Position(0, 0), queueSize: 1) },
+        });
+
+        var computeCost = new ComputeCost(costStore, stationService);
+
+        var ev = new EV(
+            TestData.Battery(stateOfCharge: 0.5f),
+            TestData.Preferences(PriceSensitivity: 0.0f, MinAcceptableCharge: 0f),
+            new Journey(new Time(0), new Time(1000), 1000, new Paths([new Position(0, 0), new Position(1, 1)])),
+            150);
+
+        var stationDurations = new Dictionary<ushort, float>
+        {
+            { 1, 1000f }, // Deviation = 0 min
+            { 2, 1600f }, // Deviation = (1600 - 1000) / 60 = 10 min
+        };
+
+        // Tipping point: 3 cars (queue diff) vs 10 mins (deviation). 
+        // Weight < 0.3/min -> Queue wins. Weight > 0.3/min -> Deviation wins.
+        var bestStation = computeCost.Compute(ref ev, stationDurations, _time);
+        Assert.Equal(expectedStationId, bestStation.Id);
+    }
+
+    [Theory]
+    [InlineData(30, 2)] // Low battery -> Station 2 (Shorter queue beats deviation)
+    [InlineData(90, 2)] // High battery -> Station 2 (Shorter queue)
+    public void Compute_UrgencyVsQueue_SelectsBasedOnBattery(int stateOfCharge, ushort expectedStationId)
+    {
+        var weights = new CostWeights(PathDeviation: 0.5f, EffectiveQueueSize: 1.0f, Urgency: 10.0f);
+        var costStore = new TestData.StubCostStore(weights);
+
         var stationService = new TestData.StubStationService(new Dictionary<ushort, Station>
         {
             { 1, TestData.Station(id: 1, pos: new Position(0, 0), queueSize: 5) },
@@ -81,25 +118,21 @@ public class ComputeCostTest
         });
 
         var computeCost = new ComputeCost(costStore, stationService);
-        var ev = new EV(
-            TestData.Battery(stateOfCharge: 100),
-            TestData.Preferences(PriceSensitivity: 0.0f, MinAcceptableCharge: 0f),
-            new Journey(new Time(0), new Time(500), 100, new Paths([new Position(0, 0), new Position(1, 1)])),
-            150);
 
-        var stationA = stationService.GetStation(1);
+        var ev = new EV(
+            TestData.Battery(stateOfCharge: stateOfCharge),
+            TestData.Preferences(PriceSensitivity: 0.0f, MinAcceptableCharge: 20f),
+            new Journey(new Time(0), new Time(1000), 1000, new Paths([new Position(0, 0), new Position(1, 1)])),
+            150);
 
         var stationDurations = new Dictionary<ushort, float>
         {
-            { 1, 500f }, // Deviation = 100
-            { 2, 700f }, // Deviation = 300
+            { 1, 1000f }, // 0 min deviation
+            { 2, 1500f }, // ~8 min deviation
         };
 
         var bestStation = computeCost.Compute(ref ev, stationDurations, _time);
-
-        // Station A: cost = 1 * 100 (deviation) + 1 * 5^2 (queue) = 125
-        // Station B: cost = 1 * 300 (deviation) + 1 * 1^2 (queue) = 301
-        Assert.Same(stationA, bestStation);
+        Assert.Equal(expectedStationId, bestStation.Id);
     }
 
     [Fact]
@@ -176,7 +209,7 @@ public class ComputeCostTest
 
         var stationDurations = new Dictionary<ushort, float>();
 
-        Assert.Throws<System.Data.NoNullAllowedException>(() =>
+        Assert.Throws<ArgumentNullException>(() =>
             computeCost.Compute(ref ev, stationDurations, _time));
     }
 }
