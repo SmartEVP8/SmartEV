@@ -27,9 +27,6 @@ public static class Init
     /// <param name="services">The service collection to initialize.</param>
     public static void InitEngine(IServiceCollection services)
     {
-
-
-
         services.AddSingleton(sp =>
         {
             var settings = sp.GetRequiredService<EngineSettings>();
@@ -219,15 +216,14 @@ public static class Init
             return new ComputeCost(costStore, stationService);
         });
 
-
-
         services.AddSingleton(sp =>
         {
             var findCandidateStationService = sp.GetRequiredService<FindCandidateStationService>();
             var computeCost = sp.GetRequiredService<ComputeCost>();
+            var stationService = sp.GetRequiredService<IStationService>();
             var scheduler = sp.GetRequiredService<EventScheduler>();
             var evStore = sp.GetRequiredService<EVStore>();
-            return new FindCandidateStationsHandler(findCandidateStationService, computeCost, scheduler, evStore);
+            return new FindCandidateStationsHandler(findCandidateStationService, computeCost, scheduler, evStore, stationService);
         });
 
         services.AddSingleton(sp =>

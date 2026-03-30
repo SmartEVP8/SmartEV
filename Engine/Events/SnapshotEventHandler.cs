@@ -27,7 +27,6 @@ public class SnapshotEventHandler(
     /// scheduler, and power delivery.</param>
     public void Handle(SnapshotEvent e)
     {
-
         foreach (var station in stations.Values)
         {
             var metric = StationSnapshotMetric.Collect(

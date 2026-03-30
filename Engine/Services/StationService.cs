@@ -76,7 +76,7 @@ public class ChargerState(ChargerBase charger, ushort stationId)
 /// <summary>
 /// Service responsible for managing the state of stations and chargers, handling events related to reservations, arrivals, and charging sessions.
 /// </summary>
-public class StationService
+public class StationService : IStationService
 {
     private readonly Dictionary<int, List<ChargerState>> _stationChargers = [];
     private readonly Dictionary<int, ChargerState> _chargerIndex = [];
@@ -125,16 +125,26 @@ public class StationService
     }
 
     /// <summary>
-    /// Returns the charger state for the given charger id, or null if not found.
+    /// Returns the charger state for the given charger id.
     /// </summary>
     /// <param name="chargerId">The id of the charger.</param>
-    /// <returns>The charger state for the given charger id, or null if not found.</returns>
+    /// <returns>The charger state for the given charger id.</returns>
     public ChargerState? GetChargerState(int chargerId)
         => _chargerIndex.TryGetValue(chargerId, out var state) ? state : null;
 
+    /// <summary>
+    /// Returns the station for the given station id.
+    /// </summary>
+    /// <param name="stationId">The station id.</param>
+    /// <returns>The station for the given station id.</returns>
     public Station? GetStation(ushort stationId)
         => _stationIndex.TryGetValue(stationId, out var station) ? station : null;
 
+    /// <summary>
+    /// Returns the total queue size across all chargers at the given station id.
+    /// </summary>
+    /// <param name="stationId">The station id.</param>
+    /// <returns>The total queue size.</returns>
     public int GetTotalQueueSize(ushort stationId)
     {
         if (!_stationChargers.TryGetValue(stationId, out var chargers))
@@ -166,7 +176,7 @@ public class StationService
         _applyNewPath.ApplyNewPathToEV(ref ev, station, e.Time);
         _eVStore.Set(e.EVId, ref ev);
         _scheduler.ScheduleEvent(
-            new ArriveAtStation(e.EVId, e.StationId, 0.8f, e.Time + e.DurationToStation)); //TODO: WE CHARGE TO 80% WE PROBABLY NEED SOMETHING BETTER HERE
+            new ArriveAtStation(e.EVId, e.StationId, 0.8f, e.Time + e.DurationToStation)); // TODO: WE CHARGE TO 80% WE PROBABLY NEED SOMETHING BETTER HERE
     }
 
     /// <summary>
@@ -287,7 +297,6 @@ public class StationService
                     state.SessionB = null;
                     _eVStore.Get(e.EVId).IsCharging = false;
 
-
                     if (state.SessionA is not null && result is not null)
                     {
                         var updatedSoC = result.ASoCWhenBFinish;
@@ -307,6 +316,7 @@ public class StationService
                         }
                     }
                 }
+
                 break;
         }
 
@@ -401,7 +411,6 @@ public class StationService
 
                 var carA = state.SessionA?.EV ?? state.SessionB!.EV with { CurrentSoC = state.SessionB.EV.TargetSoC };
                 var carB = state.SessionB?.EV ?? state.SessionA!.EV with { CurrentSoC = state.SessionA.EV.TargetSoC };
-
 
                 var dualResult = _integrator.IntegrateDualToCompletion(
                     simNow, dual.MaxPowerKW, dual.ChargingPoint, carA, carB);

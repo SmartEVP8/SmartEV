@@ -57,7 +57,6 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     /// <returns>True of false based on if the EV has arrived at its journeys end.</returns>
     public readonly bool HasArrived(Time currentTime) => Journey.JourneyStart + Journey.LastUpdatedDuration <= currentTime;
 
-
     /// <inheritdoc/>
     public override readonly string ToString() =>
         $"EV(SoC: {Battery.StateOfCharge:P1}, Distance left: {Journey.LastUpdatedDistancekm:F1}km, Energy: {Battery.CurrentChargeKWh:F1}kWh, Efficiency: {ConsumptionWhPerKm}Wh/km)";
