@@ -134,9 +134,15 @@ public class StationServiceTests
         Assert.Equal(0, oldStation.TotalCancellations);
         Assert.Equal(0, newStation.TotalReservations);
 
-        service.HandleReservationRequest(new ReservationRequest(0, 2, new Time(0), 10));
+        var reservation = new ReservationRequest(0, 2, new Time(0), 10);
 
-        Assert.Equal(2, (ushort)evStore.Get(0).HasReservationAtStationId!);
+        service.HandleReservationRequest(reservation);
+        var cancel = scheduler.GetNextEvent() as CancelRequest;
+        Assert.NotNull(cancel);
+        service.HandleCancelRequest(cancel);
+
+
+        Assert.Null(evStore.Get(0).HasReservationAtStationId);
         Assert.Equal(1, oldStation.TotalCancellations);
         Assert.Equal(1, newStation.TotalReservations);
     }
