@@ -212,4 +212,87 @@ public class ComputeCostTest
         Assert.Throws<ArgumentNullException>(() =>
             computeCost.Compute(ref ev, stationDurations, _time));
     }
+
+    /// <summary>
+    /// Test verifies that path deviation cost is calculated correctly when an EV has already been rerouted through a station.
+    /// </summary>
+    [Fact]
+    public void Compute_AfterBeingRerouted_StillCalculatesPathDeviationCorrectly()
+    {
+        var costStore = new TestData.StubCostStore(new CostWeights(PathDeviation: 1));
+        var stationService = new TestData.StubStationService(new Dictionary<ushort, Station>
+        {
+            { 1, TestData.Station(id: 1, pos: new Position(0, 0)) },
+            { 2, TestData.Station(id: 2, pos: new Position(0, 0)) },
+        });
+        var computeCost = new ComputeCost(costStore, stationService);
+
+        var ev = TestData.EV(
+            waypoints: [new Position(0, 0), new Position(1, 1)],
+            battery: TestData.Battery(stateOfCharge: 50),
+            preferences: TestData.Preferences(PriceSensitivity: 0.0f, MinAcceptableCharge: 0f),
+            originalDuration: 1000);
+
+        ev.Journey.UpdateRoute(
+            newRoute: new Paths([new Position(0, 0), new Position(0.5f, 0.5f), new Position(1, 1)]),
+            nextStop: new Position(1, 1),
+            departure: new Time(200),
+            duration: new Time(900),
+            newDistancekm: 150);
+
+        var stationDurations = new Dictionary<ushort, float> { { 1, 600f }, { 2, 650f } };
+        var bestStation = computeCost.Compute(ref ev, stationDurations, new Time(250));
+
+        Assert.Equal(1, bestStation.Id);
+    }
+
+    /// <summary>
+    /// Test simulates multiple reroutes: Original route A->B, then detour to Station A, then detour again to Station B. 
+    /// Validates that path deviation cost is calculated based on the last updated route and departure time.
+    /// </summary>
+    [Fact]
+    public void Compute_MultipleReroutesAToStationAToB_SelectsCorrectStationAtLastDetour()
+    {
+        // Test simulates full chain: A -> Station A -> B, then detour again to a station
+        // Validates that path deviation cost works through multiple reroutes
+        var costStore = new TestData.StubCostStore(new CostWeights(PathDeviation: 1));
+        var stationService = new TestData.StubStationService(new Dictionary<ushort, Station>
+        {
+            { 10, TestData.Station(id: 10, pos: new Position(0.5f, 0.5f)) },
+            { 20, TestData.Station(id: 20, pos: new Position(0, 0)) },
+            { 30, TestData.Station(id: 30, pos: new Position(0, 0)) },
+        });
+        var computeCost = new ComputeCost(costStore, stationService);
+
+        var ev = TestData.EV(
+            waypoints: [new Position(0, 0), new Position(1, 1)],
+            battery: TestData.Battery(stateOfCharge: 50),
+            preferences: TestData.Preferences(PriceSensitivity: 0.0f, MinAcceptableCharge: 0f),
+            originalDuration: 1000);
+
+        // First reroute at time 100: A -> Station A (10) -> B
+        ev.Journey.UpdateRoute(
+            newRoute: new Paths([new Position(0, 0), new Position(0.5f, 0.5f), new Position(1, 1)]),
+            nextStop: new Position(1, 1),
+            departure: new Time(100),
+            duration: new Time(950),
+            newDistancekm: 150);
+
+        // Second reroute at time 400: A -> Station A -> Station B (20) -> final destination
+        // Route now ends at 400 + 800 = 1200, so at time 600 there are 600 seconds remaining
+        ev.Journey.UpdateRoute(
+            newRoute: new Paths([new Position(0, 0), new Position(0.5f, 0.5f), new Position(0.8f, 0.8f), new Position(1, 1)]),
+            nextStop: new Position(1, 1),
+            departure: new Time(400),
+            duration: new Time(800),
+            newDistancekm: 150);
+
+        // At time 600, choose between two more charging stations
+        // Station 20: 600 second detour = 0 deviation (perfect match)
+        // Station 30: 650 second detour = ~0.83 min deviation
+        var stationDurations = new Dictionary<ushort, float> { { 20, 600f }, { 30, 650f } };
+        var bestStation = computeCost.Compute(ref ev, stationDurations, new Time(600));
+
+        Assert.Equal(20, bestStation.Id);
+    }
 }

@@ -87,7 +87,7 @@ public class ComputeCost(ICostStore costStore, IStationService stationService)
     private static float CalculatePathDeviationCost(ref EV ev, float detourDuration, CostWeights weights, Time time)
     {
         const int SecondsPerMinute = 60;
-        var remainingCurrentRoute = ev.Journey.LastUpdatedDeparture + ev.Journey.LastUpdatedDuration - time;
+        var remainingCurrentRoute = ev.Journey.RemainingCurrentRoute(time);
         var extraTimeCostMinutes = (detourDuration - remainingCurrentRoute) / SecondsPerMinute;
         return weights.PathDeviation * extraTimeCostMinutes;
     }
