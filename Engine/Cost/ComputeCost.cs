@@ -5,65 +5,74 @@ using Core.Charging;
 using Core.Shared;
 using Core.Vehicles;
 using Engine.Routing;
+using Engine.Services;
 
 /// <summary>
 /// Computes the cost of detouring to each station and selects the station with the lowest cost.
 /// </summary>
 /// <param name="costStore">The cost store.</param>
-public class ComputeCost(ICostStore costStore)
+public class ComputeCost(ICostStore costStore, StationService stationService)
 {
-    private readonly ICostStore _costStore = costStore;
-
     /// <summary>
     /// Computes the cost of detouring to each station and selects the station with the lowest cost.
     /// </summary>
     /// <param name="ev">The EV for which to compute costs.</param>
-    /// <param name="stations">The array of stations to evaluate.</param>
-    /// <param name="durations">The array of travel durations for each station.</param>
+    /// <param name="stationDurations">A map of station ID to travel duration for each station.</param>
     /// <param name="time">The current time.</param>
     /// <returns>The station with the lowest cost.</returns>
     /// <exception cref="NoNullAllowedException">If no suitable station is found.</exception>
-    public Station Compute(ref EV ev, Station[] stations, float[] durations, Time time)
+    public Station Compute(ref EV ev, Dictionary<ushort, float> stationDurations, Time time)
     {
         var bestCost = double.MaxValue;
         Station? bestStation = null;
-        var weights = _costStore.GetWeights();
+        var weights = costStore.GetWeights();
+        var bestQueueSize = -1d;
+        var bestPath = -1d;
+        var bestUrgency = -1d;
+        var bestPrice = -1d;
 
-        for (var i = 0; i < stations.Length; i++)
+        Console.WriteLine($"[StationDurations] Count: {stationDurations.Count}");
+        foreach (var (stationId, duration) in stationDurations)
+            Console.WriteLine($"  Station {stationId}: {duration}");
+
+
+        foreach (var (stationId, duration) in stationDurations)
         {
-            var station = stations[i];
-            var duration = durations[i];
-
+            var station = stationService.GetStation(stationId)
+                ?? throw new NoNullAllowedException($"Station {stationId} not found.");
             var effectiveQueueCost = CalculateEffectiveQueueSizeCost(station, weights);
             var pathDeviationCost = CalculatePathDeviationCost(ref ev, duration, weights);
             var urgencyCost = CalculateUrgencyCost(ref ev, weights);
             var priceCost = CalculatePriceCost(ref ev, station, weights, time);
             var effectiveWaitTimeCost = CalculateEffectiveWaitTimeCost(weights);
-
             var cost = effectiveQueueCost
                 + pathDeviationCost
                 + urgencyCost
                 + priceCost
                 + effectiveWaitTimeCost;
+
             if (cost < bestCost)
             {
                 bestCost = cost;
                 bestStation = station;
+                bestQueueSize = effectiveQueueCost;
+                bestPath = pathDeviationCost;
+                bestUrgency = urgencyCost;
+                bestPrice = priceCost;
             }
         }
 
         if (bestStation is null)
             throw new NoNullAllowedException("No station found in station map.");
 
+        Console.WriteLine($"[Selected station {bestStation.Id} with cost {bestCost} (Queue: {bestQueueSize}, Path: {bestPath}, Urgency: {bestUrgency}, Price: {bestPrice})");
         return bestStation;
     }
-
     // TODO: Think about effective queue size
-    private static float CalculateEffectiveQueueSizeCost(Station station, CostWeights weights)
+    private float CalculateEffectiveQueueSizeCost(Station station, CostWeights weights)
     {
-        var totalQueueSize = station.Chargers.Sum(c => c.Queue.Count);
-        var effectiveQueueSize = totalQueueSize / station.Chargers.Count; // Average queue size per charger
-
+        var totalQueueSize = stationService.GetTotalQueueSize(station.Id);
+        var effectiveQueueSize = (float)totalQueueSize / station.Chargers.Count;
         return weights.EffectiveQueueSize * MathF.Pow(effectiveQueueSize, 2);
     }
 

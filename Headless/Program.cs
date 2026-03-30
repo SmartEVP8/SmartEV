@@ -29,7 +29,7 @@ public static class Program
         {
             CostConfig = new CostWeights
             {
-                EffectiveQueueSize = 1,
+                EffectiveQueueSize = 500,
                 PathDeviation = 1,
                 PriceSensitivity = 1,
                 AvailableChargerRatio = 1,
@@ -71,7 +71,7 @@ public static class Program
 
             SnapshotInterval = 1000 * 60,
 
-            EVDistributionWindowsSize = 10 * 60,
+            EVDistributionWindowsSize = 1 * 60,
 
             EVSpawnFraction = 0.10f,
 
@@ -96,6 +96,6 @@ public static class Program
         provider.GetRequiredService<StationService>();
 
         var coordinator = provider.GetRequiredService<Simulation>();
-        coordinator.Run();
+        await coordinator.Run();
     }
 }

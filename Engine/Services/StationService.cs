@@ -117,6 +117,16 @@ public class StationService
     public ChargerState? GetChargerState(int chargerId)
         => _chargerIndex.TryGetValue(chargerId, out var state) ? state : null;
 
+    public Station? GetStation(ushort stationId)
+        => _stationIndex.TryGetValue(stationId, out var station) ? station : null;
+
+    public int GetTotalQueueSize(ushort stationId)
+    {
+        if (!_stationChargers.TryGetValue(stationId, out var chargers))
+            return 0;
+        return chargers.Sum(cs => cs.Queue.Count);
+    }
+
     /// <summary>
     /// Handles a reservation request from an EV to a station.
     /// If the EV already has an active reservation, the existing arrival event is cancelled before proceeding.
@@ -199,7 +209,7 @@ public class StationService
 
         ev.IsCharging = true;
         target.Queue.Enqueue((e.EVId, connectedEV));
-
+        Console.WriteLine(target.Queue.Count);
         if (target.IsFree)
             StartCharging(target, e.Time);
     }
@@ -213,8 +223,6 @@ public class StationService
     {
         if (!_chargerIndex.TryGetValue(e.ChargerId, out var state))
             return;
-
-        var startTime = (state.SessionA?.EVId == e.EVId ? state.SessionA : state.SessionB)?.StartTime;
 
         var result = state.LastResult;
         state.LastResult = null;
