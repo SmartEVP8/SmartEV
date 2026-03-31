@@ -63,8 +63,12 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
     [LibraryImport(_lib)]
     private static partial IntPtr ComputeSrcToDestWithStop(
         IntPtr osrm,
-        [In] double[] coords,
-        int numCoords,
+        double evLon,
+        double evLat,
+        double stationLon,
+        double stationLat,
+        double destLon,
+        double destLat,
         ushort index);
 
     [LibraryImport(_lib)]
@@ -186,39 +190,37 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
         double evLat,
         double destLon,
         double destLat)
-        => QueryDestination([evLon, evLat, destLon, destLat]);
+    {
+        nint resultPtr;
+        resultPtr = ComputeSrcToDest(_osrm, evLon, evLat, destLon, destLat);
+
+        if (resultPtr == IntPtr.Zero)
+            return (-1, string.Empty);
+
+        var result = Marshal.PtrToStructure<RouteResult>(resultPtr);
+        var polylineStr = Marshal.PtrToStringAnsi(result.Polyline)!;
+
+        FreeMemory(result.Polyline);
+        FreeMemory(resultPtr);
+
+        return (result.Duration, polylineStr);
+    }
 
     /// <summary>
     /// Queries the duration and polyline route from an electric vehicle to a destination, potentially with a stop in between.
     /// </summary>
-    /// <param name="coords">An array of coordinates representing the route, where the first element is the source and the last element is the destination.</param>
-    /// <param name="index">A station index to query along the route.</param>
+    /// <param name="evLon">The longitude coordinate of the electric vehicle.</param>
+    /// <param name="evLat">The latitude coordinate of the electric vehicle.</param>
+    /// <param name="stationLon">Station longitude (only used when index == ushort.MaxValue for query-time snapping).</param>
+    /// <param name="stationLat">Station latitude (only used when index == ushort.MaxValue for query-time snapping).</param>
+    /// <param name="destLon">The longitude coordinate of the destination.</param>
+    /// <param name="destLat">The latitude coordinate of the destination.</param>
+    /// <param name="index">Station index: valid index (0-N) uses pre-indexed station, ushort.MaxValue uses query-time snapping.</param>
     /// <returns>A tuple containing the duration and polyline string for the route.</returns>
-    public (float duration, string polyline) QueryDestination(double[] coords, ushort index = 0)
+    public (float duration, string polyline) QueryDestinationWithStop(double evLon, double evLat, double stationLon, double stationLat, double destLon, double destLat, ushort index = ushort.MaxValue)
     {
         nint resultPtr;
-        if (coords.Length != 4)
-        {
-            throw new ArgumentException("There has to be either 2 coordinate pairs (source and destination) or 2 coordinate pairs with an index (source, stop, destination).");
-        }
-        else if (coords.Length % 2 != 0)
-        {
-            throw new ArgumentException("Coordinates array must contain pairs of longitude and latitude.");
-        }
-
-        if (index == 0)
-        {
-            resultPtr = ComputeSrcToDest(
-                _osrm,
-                coords[0],
-                coords[1],
-                coords[2],
-                coords[3]);
-        }
-        else
-        {
-            resultPtr = ComputeSrcToDestWithStop(_osrm, coords, coords.Length / 2, index);
-        }
+        resultPtr = ComputeSrcToDestWithStop(_osrm, evLon, evLat, stationLon, stationLat, destLon, destLat, index);
 
         if (resultPtr == IntPtr.Zero)
             return (-1, string.Empty);

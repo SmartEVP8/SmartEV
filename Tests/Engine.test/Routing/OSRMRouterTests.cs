@@ -127,12 +127,12 @@ public class OSRMRouterTests
         var stationOnRoute = new Position(10.182335, 56.156305);
         var router = CreateRouter([_stationNearPosition, stationOnRoute, _stationFarPosition]);
 
-        var (duration2, _) = router.QueryPointsToPoints(_evPosition, _destPosition);
-        var (duration3, _) = router.QueryDestination([.. _evPosition, .. _destPosition]);
-        var (duration4, _) = router.QueryDestination([.. _evPosition, .. _destPosition], 1);
+        var (duration1, _) = router.QueryPointsToPoints(_evPosition, _destPosition);
+        var (duration2, _) = router.QuerySingleDestination(_evPosition[0], _evPosition[1], _destPosition[0], _destPosition[1]);
+        var (duration3, _) = router.QueryDestinationWithStop(_evPosition[0], _evPosition[1], stationOnRoute.Longitude, stationOnRoute.Latitude, _destPosition[0], _destPosition[1]);
 
-        Assert.Equal(481.5f, duration2[0]);
+        Assert.Equal(481.5f, duration1[0]);
+        Assert.Equal(481.5f, duration2);
         Assert.Equal(481.5f, duration3);
-        Assert.Equal(481.5f, duration4);
     }
 }
