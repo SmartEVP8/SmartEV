@@ -223,66 +223,80 @@ public class StationService : IStationService
         switch (state.Charger)
         {
             case SingleCharger single:
-                single.ChargingPoint.Disconnect();
-
-                state.SessionA = null;
-                ev.HasReservationAtStationId = null;
+                SingleCharger(state, ev, single);
                 break;
 
             case DualCharger dual:
-                if (state.SessionA?.EVId == e.EVId)
-                {
-                    dual.ChargingPoint.Disconnect(ChargingSide.Left);
-                    state.SessionA = null;
-                    ev.HasReservationAtStationId = null;
-
-                    if (state.SessionB is not null && result is not null)
-                    {
-                        var updatedSoC = result.BSoCWhenAFinish;
-                        state.SessionB = state.SessionB with
-                        {
-                            EV = state.SessionB.EV with { CurrentSoC = updatedSoC }
-                        };
-
-                        if (state.SessionB!.EndChargingCancellationToken is { } token)
-                            _scheduler.CancelEvent(token);
-
-                        if (updatedSoC >= state.SessionB.EV.TargetSoC)
-                        {
-                            dual.ChargingPoint.Disconnect(ChargingSide.Right);
-                            state.SessionB = null;
-                        }
-                    }
-                }
-                else if (state.SessionB?.EVId == e.EVId)
-                {
-                    dual.ChargingPoint.Disconnect(ChargingSide.Right);
-                    state.SessionB = null;
-                    ev.HasReservationAtStationId = null;
-
-                    if (state.SessionA is not null && result is not null)
-                    {
-                        var updatedSoC = result.ASoCWhenBFinish;
-                        state.SessionA = state.SessionA with
-                        {
-                            EV = state.SessionA.EV with { CurrentSoC = updatedSoC }
-                        };
-
-                        if (state.SessionA!.EndChargingCancellationToken is { } token)
-                            _scheduler.CancelEvent(token);
-
-                        if (updatedSoC >= state.SessionA.EV.TargetSoC)
-                        {
-                            dual.ChargingPoint.Disconnect(ChargingSide.Left);
-                            state.SessionA = null;
-                        }
-                    }
-                }
-
+                DualCharger(e, state, result, ev, dual);
                 break;
         }
 
         StartCharging(state, e.Time);
+
+        if (ev.CanCompleteJourney(ev.Preferences.MinAcceptableCharge))
+            _scheduler.ScheduleEvent(new ArriveAtDestination(e.EVId, e.Time));
+        else
+            _scheduler.ScheduleEvent(new FindCandidateStations(e.EVId, e.Time));
+    }
+
+    private void DualCharger(EndCharging e, ChargerState state, IntegrationResult? result, Core.Vehicles.EV ev, DualCharger dual)
+    {
+        if (state.SessionA?.EVId == e.EVId)
+        {
+            dual.ChargingPoint.Disconnect(ChargingSide.Left);
+            state.SessionA = null;
+            ev.HasReservationAtStationId = null;
+
+            if (state.SessionB is not null && result is not null)
+            {
+                var updatedSoC = result.BSoCWhenAFinish;
+                state.SessionB = state.SessionB with
+                {
+                    EV = state.SessionB.EV with { CurrentSoC = updatedSoC }
+                };
+
+                if (state.SessionB!.EndChargingCancellationToken is { } token)
+                    _scheduler.CancelEvent(token);
+
+                if (updatedSoC >= state.SessionB.EV.TargetSoC)
+                {
+                    dual.ChargingPoint.Disconnect(ChargingSide.Right);
+                    state.SessionB = null;
+                }
+            }
+        }
+        else if (state.SessionB?.EVId == e.EVId)
+        {
+            dual.ChargingPoint.Disconnect(ChargingSide.Right);
+            state.SessionB = null;
+            ev.HasReservationAtStationId = null;
+
+            if (state.SessionA is not null && result is not null)
+            {
+                var updatedSoC = result.ASoCWhenBFinish;
+                state.SessionA = state.SessionA with
+                {
+                    EV = state.SessionA.EV with { CurrentSoC = updatedSoC }
+                };
+
+                if (state.SessionA!.EndChargingCancellationToken is { } token)
+                    _scheduler.CancelEvent(token);
+
+                if (updatedSoC >= state.SessionA.EV.TargetSoC)
+                {
+                    dual.ChargingPoint.Disconnect(ChargingSide.Left);
+                    state.SessionA = null;
+                }
+            }
+        }
+    }
+
+    private static void SingleCharger(ChargerState state, Core.Vehicles.EV ev, SingleCharger single)
+    {
+        single.ChargingPoint.Disconnect();
+
+        state.SessionA = null;
+        ev.HasReservationAtStationId = null;
     }
 
     private void StartCharging(ChargerState state, Time simNow)

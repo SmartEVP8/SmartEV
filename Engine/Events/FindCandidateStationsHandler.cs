@@ -38,7 +38,6 @@ public class FindCandidateStationsHandler(
     {
 
         ref var ev = ref evStore.Get(e.EVId);
-        ev.ConsumeEnergy(ev.Journey.LastUpdatedDeparture, e.Time);
         var stationCosts = await findCandidateStationService.GetCandidateStationFromCache(e.EVId);
 
         if (stationCosts.Count == 0)
@@ -61,9 +60,13 @@ public class FindCandidateStationsHandler(
 
         // Case 2.
         if (ev.HasReservationAtStationId == bestStation.Id)
+        {
+            ev.ConsumeEnergy(ev.Journey.LastUpdatedDeparture, e.Time);
             return;
+        }
 
         // Case 3.
+        ev.ConsumeEnergy(ev.Journey.LastUpdatedDeparture, e.Time);
         eventScheduler.ScheduleEvent(new CancelRequest(e.EVId, (ushort)ev.HasReservationAtStationId, e.Time));
         RescheduleDecision(bestStation, durationToStation, ref ev, e);
     }
