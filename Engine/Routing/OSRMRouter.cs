@@ -97,16 +97,7 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
         InitStations(stations);
     }
 
-    /// <summary>
-    /// Queries the durations and distances from an electric vehicle to specified stations
-    /// and back to the destination.
-    /// </summary>
-    /// <param name="evLon">The longitude coordinate of the electric vehicle.</param>
-    /// <param name="evLat">The latitude coordinate of the electric vehicle.</param>
-    /// <param name="destLon">The latitude coordinate of the destination.</param>
-    /// <param name="destLat">The longitude coordinate of the destination.</param>
-    /// <param name="indices">An array of station indices to query.</param>
-    /// <returns>A tuple containing arrays of durations and distances to each station.</returns>
+    /// <inheritdoc/>
     public RoutingResult QueryStationsWithDest(
         double evLon,
         double evLat,
@@ -129,21 +120,14 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
         return new RoutingResult(durations, distances);
     }
 
-    /// <summary>
-    /// Queries the duration and polyline route from an electric vehicle to a single destination.
-    /// </summary>
-    /// <param name="evLon">The longitude coordinate of the electric vehicle.</param>
-    /// <param name="evLat">The latitude coordinate of the electric vehicle.</param>
-    /// <param name="destLon">The longitude coordinate of the destination.</param>
-    /// <param name="destLat">The latitude coordinate of the destination.</param>
-    /// <returns>A tuple containing the duration and polyline string for the route.</returns>
+    /// <inheritdoc/>
     public RouteSegment QuerySingleDestination(
         double evLon,
         double evLat,
         double destLon,
         double destLat)
     {
-        nint resultPtr;
+        IntPtr resultPtr;
 
         resultPtr = ComputeSrcToDest(
             _osrm,
@@ -164,20 +148,10 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
         return new RouteSegment(result.Duration, result.Distance, polylineStr);
     }
 
-    /// <summary>
-    /// Queries the duration and polyline route from an electric vehicle to a destination, potentially with stops in between.
-    /// </summary>
-    /// <param name="evLon">The longitude coordinate of the electric vehicle.</param>
-    /// <param name="evLat">The latitude coordinate of the electric vehicle.</param>
-    /// <param name="stationLon">The longitude coordinate of the intermediate station.</param>
-    /// <param name="stationLat">The latitude coordinate of the intermediate station.</param>
-    /// <param name="destLon">The longitude coordinate of the destination.</param>
-    /// <param name="destLat">The latitude coordinate of the destination.</param>
-    /// <param name="index">A station index to query along the route.</param>
-    /// <returns>A tuple containing the duration and polyline string for the route.</returns>
+    /// <inheritdoc/>
     public RouteSegment QueryDestinationWithStop(double evLon, double evLat, double stationLon, double stationLat, double destLon, double destLat, ushort index = ushort.MaxValue)
     {
-        nint resultPtr;
+        IntPtr resultPtr;
 
         resultPtr = ComputeSrcToDestWithStop(_osrm, evLon, evLat, stationLon, stationLat, destLon, destLat, index);
 
@@ -193,12 +167,7 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
         return new RouteSegment(result.Duration, result.Distance, polylineStr);
     }
 
-    /// <summary>
-    /// Queries durations and distances between multiple source and destination points.
-    /// </summary>
-    /// <param name="srcCoords">Array of source coordinates in [lon, lat, lon, lat, ...] format.</param>
-    /// <param name="dstCoords">Array of destination coordinates in [lon, lat, lon, lat, ...] format.</param>
-    /// <returns>A tuple containing matrices of durations and distances between all source and destination pairs.</returns>
+    /// <inheritdoc/>
     public RoutingResult QueryPointsToPoints(
         double[] srcCoords,
         double[] dstCoords)
