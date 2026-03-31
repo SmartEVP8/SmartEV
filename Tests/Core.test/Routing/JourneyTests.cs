@@ -59,4 +59,17 @@ public class JourneyTests
         var expectedEndpoint = journey.CurrentPosition(3);
         Assert.Equal(waypoints[3].Latitude, expectedEndpoint.Latitude);
     }
+
+    [Fact]
+    public void TimeToPointTest()
+    {
+        var waypoints = new List<Position>
+        {
+            new(1, 1),
+            new(1, 2),
+        };
+        var journey = new Journey(departure: 0, duration: 2, distanceMeters: 0, new Paths(waypoints));
+        var expectedTime = journey.DurationToWayPoint(new Position(1, 1.5), 0);
+        Assert.Equal(1U, expectedTime);
+    }
 }

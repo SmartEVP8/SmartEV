@@ -62,6 +62,46 @@ public class Journey(Time departure, Time duration, float distanceMeters, Paths 
     /// </summary>
     public float LastUpdatedDistancekm { get; private set; } = distanceMeters / 1000;
 
+    /// <summary>
+    /// Calculates the time it will take for the EV to reach a given point on the path.
+    /// </summary>
+    /// <param name="point">The position the EV wants to drive to.</param>
+    /// <param name="currentTime">The current time of the simulation.</param>
+    /// <returns>Return the simulation time of when the EV will arive at the point.</returns>
+    /// <exception cref="ArgumentException">Throws error if point is not in path.</exception>
+    public uint DurationToWayPoint(Position point, Time currentTime)
+    {
+        var segments = Path
+        .Waypoints.Zip(Path.Waypoints.Skip(1))
+        .Select(p =>
+            (
+                p.First,
+                p.Second,
+                Length: GeoMath.EquirectangularDistance(p.First, p.Second)
+            ))
+        .ToList();
+
+        var totalLength = segments.Sum(s => s.Length);
+        var distanceTraveled = 0.0;
+
+        foreach (var (first, second, length) in segments)
+        {
+            var distToFirst = GeoMath.EquirectangularDistance(first, point);
+            var distToSecond = GeoMath.EquirectangularDistance(point, second);
+
+            if (distToFirst + distToSecond <= length)
+            {
+                distanceTraveled += distToFirst;
+                var percentageCompleted = distanceTraveled / totalLength;
+                return (Time)(uint)(currentTime + (percentageCompleted * LastUpdatedDuration));
+            }
+
+            distanceTraveled += length;
+        }
+
+        throw new ArgumentException($"Position {point} is not on the path.");
+    }
+
     public Paths GetPathFromCurrentPosition(Time currentTime)
     {
         Time completedTime = LastUpdatedDeparture + LastUpdatedDuration;
