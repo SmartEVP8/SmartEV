@@ -13,6 +13,8 @@ using Engine.Routing;
 [MemoryDiagnoser]
 public class OsrmRouterBenchmark
 {
+    private static readonly double[] _destPosition = [10.1572, 56.1496];
+
     private OSRMRouter _router = null!;
     private ushort[] _stationIndices = null!;
     private (double Lon, double Lat)[] _evCoordinates = null!;
@@ -28,11 +30,13 @@ public class OsrmRouterBenchmark
         var path = AppContext.GetData("OsrmDataPath") as string
             ?? throw new InvalidOperationException("OsrmDataPath not set in project.");
 
-        var csvPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "data", "energy_prices.csv");
-        var energyPrices = new EnergyPrices(new FileInfo(csvPath), new Random(42));
+        var energyPrices = new EnergyPrices(
+            new FileInfo(AppContext.GetData("EnergyPricesPath") as string
+                ?? throw new InvalidDataException("EnergyPricesPath not set.")),
+            new Random(1));
 
-        var stations = new List<Station>(50);
-        for (ushort i = 0; i < 50; i++)
+        var stations = new List<Station>(200);
+        for (ushort i = 0; i < 200; i++)
         {
             stations.Add(new Station(
                 id: i,
@@ -44,7 +48,7 @@ public class OsrmRouterBenchmark
         }
 
         _router = new OSRMRouter(new FileInfo(path), stations);
-        _stationIndices = [.. Enumerable.Range(0, 50).Select(i => (ushort)i)];
+        _stationIndices = [.. Enumerable.Range(0, 200).Select(i => (ushort)i)];
 
         _evCoordinates = new (double Lon, double Lat)[1000];
         _evCoordsFlat = new double[1000 * 2];
@@ -57,8 +61,8 @@ public class OsrmRouterBenchmark
             _evCoordsFlat[(i * 2) + 1] = lat;
         }
 
-        _stationCoordsFlat = new double[50 * 2];
-        for (var i = 0; i < 50; i++)
+        _stationCoordsFlat = new double[200 * 2];
+        for (var i = 0; i < 200; i++)
         {
             _stationCoordsFlat[i * 2] = stations[i].Position.Longitude;
             _stationCoordsFlat[(i * 2) + 1] = stations[i].Position.Latitude;
@@ -72,10 +76,13 @@ public class OsrmRouterBenchmark
     public void Cleanup() => _router?.Dispose();
 
     /// <summary>
-    /// Benchmarks bulk querying of 1000 cars to 50 stations.
+    /// Benchmarks bulk querying of 1000 cars to N stations.
     /// </summary>
     [Benchmark]
-    public void Query1000Cars50StationsBulk() => _ = _router.QueryPointsToPoints(_evCoordsFlat, _stationCoordsFlat);
+    public void Query1000CarsToNStationsBulk()
+    {
+        _ = _router.QueryPointsToPoints(_evCoordsFlat, _stationCoordsFlat);
+    }
 
     /// <summary>
     /// Benchmarks querying a single destination.
@@ -85,5 +92,25 @@ public class OsrmRouterBenchmark
     {
         var (lon, lat) = _evCoordinates[0];
         _ = _router.QuerySingleDestination(lon, lat, _stationCoordsFlat[0], _stationCoordsFlat[1]);
+    }
+
+    /// <summary>
+    /// Benchmarks querying to a specific station and destination.
+    /// </summary>
+    [Benchmark]
+    public void QueryStationsWithDest()
+    {
+        var (lon, lat) = _evCoordinates[0];
+        _ = _router.QueryStationsWithDest(lon, lat, _destPosition[0], _destPosition[1], _stationIndices);
+    }
+
+    /// <summary>
+    /// Benchmarks multi-stop waypoint routing EV -> Station -> Dest.
+    /// </summary>
+    [Benchmark]
+    public void QueryDestinationWithWaypoint()
+    {
+        var (lon, lat) = _evCoordinates[0];
+        _ = _router.QueryDestination([lon, lat, _stationCoordsFlat[0], _stationCoordsFlat[1], _destPosition[0], _destPosition[1]]);
     }
 }

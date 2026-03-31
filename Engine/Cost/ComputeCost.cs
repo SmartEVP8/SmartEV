@@ -4,7 +4,6 @@ using System.Data;
 using Core.Charging;
 using Core.Shared;
 using Core.Vehicles;
-using Engine.Routing;
 using Engine.Services;
 
 /// <summary>
@@ -34,11 +33,19 @@ public class ComputeCost(ICostStore costStore, IStationService stationService)
                 ?? throw new NoNullAllowedException($"Station {stationId} not found.");
 
             var effectiveQueueCost = CalculateEffectiveQueueSizeCost(station, weights, ev.Battery.Socket);
-            var pathDeviationCost = CalculatePathDeviationCost(ref ev, duration, weights);
+            var pathDeviationCost = CalculatePathDeviationCost(ref ev, duration, weights, time);
             var urgencyCost = CalculateUrgencyCost(ref ev, weights);
             var priceCost = CalculatePriceCost(ref ev, station, weights, time);
             var effectiveWaitTimeCost = CalculateEffectiveWaitTimeCost(weights);
             var cost = effectiveQueueCost + pathDeviationCost + urgencyCost + priceCost + effectiveWaitTimeCost;
+
+            if (double.IsNaN(cost))
+            {
+                throw new InvalidOperationException(
+                    $"Invalid cost calculated for station {stationId}: {cost}. " +
+                    $"Queue={effectiveQueueCost}, PathDev={pathDeviationCost}, " +
+                    $"Urgency={urgencyCost}, Price={priceCost}, Wait={effectiveWaitTimeCost}");
+            }
 
             if (cost < bestCost)
             {
@@ -48,7 +55,9 @@ public class ComputeCost(ICostStore costStore, IStationService stationService)
         }
 
         if (bestStation is null)
-            throw new NoNullAllowedException("No station found in station map.");
+        {
+            throw new ArgumentNullException("No suitable station found.");
+        }
 
         return bestStation;
     }
@@ -56,15 +65,31 @@ public class ComputeCost(ICostStore costStore, IStationService stationService)
     // TODO: Think about effective queue size
     private float CalculateEffectiveQueueSizeCost(Station station, CostWeights weights, Socket socket)
     {
+        var supportingChargers = station.Chargers.Count(s => s.GetSockets().Contains(socket));
+
+        if (supportingChargers == 0)
+        {
+            // Station doesn't support this socket type—return infinite cost to exclude it
+            return float.MaxValue;
+        }
+
         var totalQueueSize = stationService.GetTotalQueueSize(station.Id);
         var effectiveQueueSize = (float)totalQueueSize / station.Chargers.Count(s => s.GetSockets().Contains(socket));
         return weights.EffectiveQueueSize * MathF.Pow(effectiveQueueSize, 2);
     }
 
-    private static float CalculatePathDeviationCost(ref EV ev, float duration, CostWeights weights)
+    /// <summary>
+    /// Calculates the path deviation cost based on the detour duration compared to the remaining original journey duration.
+    /// </summary>
+    /// <returns>
+    /// The path deviation cost in minutes.
+    /// </returns>
+    private static float CalculatePathDeviationCost(ref EV ev, float detourDuration, CostWeights weights, Time time)
     {
-        var pathDeviation = PathDeviator.CalculateDetourDeviation(ref ev, duration);
-        return weights.PathDeviation * pathDeviation;
+        const int SecondsPerMinute = 60;
+        var remainingCurrentRoute = ev.Journey.RemainingCurrentRoute(time);
+        var extraTimeCostMinutes = (detourDuration - remainingCurrentRoute) / SecondsPerMinute;
+        return weights.PathDeviation * extraTimeCostMinutes;
     }
 
     private static double CalculateUrgencyCost(ref EV ev, CostWeights weights)
