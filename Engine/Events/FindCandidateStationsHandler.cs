@@ -1,3 +1,4 @@
+using Core.Routing;
 namespace Engine.Events;
 
 using Core.Shared;
@@ -17,13 +18,11 @@ using Core.Vehicles;
 /// <param name="computeCost">Cost computation service for selecting the best station.</param>
 /// <param name="eventScheduler">Event scheduler for scheduling reservation requests.</param>
 /// <param name="evStore">EV store for retrieving EV data.</param>
-/// <param name="stationService">Station service for retrieving station data.</param>
 public class FindCandidateStationsHandler(
     FindCandidateStationService findCandidateStationService,
     ComputeCost computeCost,
     EventScheduler eventScheduler,
     EVStore evStore,
-    IStationService stationService,
     ApplyNewPath applyNewPath)
 {
     private uint _numberOfNoStations = 0;
@@ -37,8 +36,10 @@ public class FindCandidateStationsHandler(
     /// <returns>A task representing the asynchronous operation.</returns>
     public async Task Handle(FindCandidateStations e)
     {
-        var stationCosts = await findCandidateStationService.GetCandidateStationFromCache(e.EVId);
+
         ref var ev = ref evStore.Get(e.EVId);
+        ev.ConsumeEnergy(ev.Journey.LastUpdatedDeparture, e.Time);
+        var stationCosts = await findCandidateStationService.GetCandidateStationFromCache(e.EVId);
 
         if (stationCosts.Count == 0)
         {
@@ -74,7 +75,7 @@ public class FindCandidateStationsHandler(
         eventScheduler.ScheduleEvent(arriveAtStation);
 
         var decisionPoint = applyNewPath.ApplyNewPathToEV(ref ev, bestStation, e.Time);
-        var decisionTime = ev.Journey.DurationToWayPoint(decisionPoint, e.Time);
+        var decisionTime = ev.Journey.DurationToWayPoint(decisionPoint);
         eventScheduler.ScheduleEvent(new FindCandidateStations(e.EVId, decisionTime));
     }
 }

@@ -69,7 +69,7 @@ public class Journey(Time departure, Time duration, float distanceMeters, Paths 
     /// <param name="currentTime">The current time of the simulation.</param>
     /// <returns>Return the simulation time of when the EV will arive at the point.</returns>
     /// <exception cref="ArgumentException">Throws error if point is not in path.</exception>
-    public uint DurationToWayPoint(Position point, Time currentTime)
+    public uint DurationToWayPoint(Position point)
     {
         var segments = Path
         .Waypoints.Zip(Path.Waypoints.Skip(1))
@@ -93,7 +93,7 @@ public class Journey(Time departure, Time duration, float distanceMeters, Paths 
             {
                 distanceTraveled += distToFirst;
                 var percentageCompleted = distanceTraveled / totalLength;
-                return (Time)(uint)(currentTime + (percentageCompleted * LastUpdatedDuration));
+                return (Time)(uint)(LastUpdatedDeparture + (percentageCompleted * LastUpdatedDuration));
             }
 
             distanceTraveled += length;

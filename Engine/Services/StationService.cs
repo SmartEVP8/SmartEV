@@ -177,6 +177,7 @@ public class StationService : IStationService
     public void HandleArrivalAtStation(ArriveAtStation e)
     {
         var ev = _eVStore.Get(e.EVId);
+        ev.ConsumeEnergy(ev.Journey.LastUpdatedDeparture, e.Time);
         if (!_stationChargers.TryGetValue(e.StationId, out var chargers))
             return;
 
