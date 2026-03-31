@@ -74,7 +74,7 @@ public class FindCandidateStationsBenchmark
         _evStore = new EVStore(_count);
 
         var findCandidateStationService = new FindCandidateStationService(router, stations, spatialGrid, _evStore);
-        _findCandidateStationsHandler = new FindCandidateStationsHandler(findCandidateStationService, computeCost, _eventScheduler, _evStore, stationService);
+        _findCandidateStationsHandler = new FindCandidateStationsHandler(findCandidateStationService, computeCost, _eventScheduler, _evStore);
 
         var random = new Random(1);
         for (var i = 0; i < _count; i++)

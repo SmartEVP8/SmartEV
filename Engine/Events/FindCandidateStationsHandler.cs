@@ -4,7 +4,6 @@ using Core.Shared;
 using Engine.Cost;
 using Engine.Events.Middleware;
 using Engine.Vehicles;
-using Engine.Services;
 
 /// <summary>
 /// Handles the <see cref="FindCandidateStations"/> event by pre-computing candidate stations,
@@ -14,13 +13,11 @@ using Engine.Services;
 /// <param name="computeCost">Cost computation service for selecting the best station.</param>
 /// <param name="eventScheduler">Event scheduler for scheduling reservation requests.</param>
 /// <param name="evStore">EV store for retrieving EV data.</param>
-/// <param name="stationService">Station service for retrieving station data.</param>
 public class FindCandidateStationsHandler(
     FindCandidateStationService findCandidateStationService,
     ComputeCost computeCost,
     EventScheduler eventScheduler,
-    EVStore evStore,
-    IStationService stationService)
+    EVStore evStore)
 {
     private uint _numberOfNoStations = 0;
 
