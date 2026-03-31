@@ -3,6 +3,10 @@ namespace Engine.Routing;
 using System.Runtime.InteropServices;
 using Core.Charging;
 
+public record RoutingResult(float[] Durations, float[] Distances);
+
+public record RouteSegment(float Duration, float Distance, string Polyline);
+
 /// <summary>
 /// Provides routing and station query functionality using the OSRM (Open Source Routing Machine) wrapper library.
 /// </summary>
@@ -26,17 +30,6 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
         IntPtr osrm,
         [In] double[] coords,
         int numStations
-    );
-
-    [LibraryImport(_lib)]
-    private static partial void ComputeTableIndexed(
-        IntPtr osrm,
-        double evLon,
-        double evLat,
-        [In] ushort[] indices,
-        int numIndices,
-        float* outDurations,
-        float* outDistances
     );
 
     [LibraryImport(_lib)]
@@ -86,6 +79,7 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
     private struct RouteResult
     {
         public float Duration;
+        public float Distance;
         public IntPtr Polyline;
     }
 
@@ -93,56 +87,14 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
     /// Initializes a new instance of the <see cref="OSRMRouter"/> class.
     /// </summary>
     /// <param name="mapPath">The path to the OSRM map data file.</param>
+    /// <param name="stations">A list of charging stations to register with the router.</param>
     /// <exception cref="InvalidOperationException">Thrown when OSRM initialization fails.</exception>
-    public OSRMRouter(FileInfo mapPath)
+    public OSRMRouter(FileInfo mapPath, List<Station> stations)
     {
         _osrm = InitializeOSRM(mapPath.ToString());
         if (_osrm == IntPtr.Zero)
             throw new Exception("OSRM initialization failed.");
-    }
-
-    /// <summary>
-    /// Initializes the router with a list of charging stations.
-    /// </summary>
-    /// <param name="stations">The list of charging stations to register.</param>
-    public void InitStations(List<Station> stations)
-    {
-        var coords = new double[stations.Count * 2];
-
-        for (var i = 0; i < stations.Count; i++)
-        {
-            coords[i * 2] = stations[i].Position.Longitude;
-            coords[(i * 2) + 1] = stations[i].Position.Latitude;
-        }
-
-        RegisterStations(_osrm, coords, stations.Count);
-    }
-
-    /// <summary>
-    /// Queries the durations and distances from an electric vehicle to specified stations.
-    /// </summary>
-    /// <param name="evLon">The longitude coordinate of the electric vehicle.</param>
-    /// <param name="evLat">The latitude coordinate of the electric vehicle.</param>
-    /// <param name="indices">An array of station indices to query.</param>
-    /// <returns>A tuple containing arrays of durations and distances to each station.</returns>
-    public (float[] durations, float[] distances) QueryStations(
-        double evLon,
-        double evLat,
-        ushort[] indices)
-    {
-        if (indices.Length == 0)
-            return ([], []);
-
-        var durations = new float[indices.Length];
-        var distances = new float[indices.Length];
-
-        fixed (float* durPtr = durations)
-        fixed (float* distPtr = distances)
-        {
-            ComputeTableIndexed(_osrm, evLon, evLat, indices, indices.Length, durPtr, distPtr);
-        }
-
-        return (durations, distances);
+        InitStations(stations);
     }
 
     /// <summary>
@@ -155,7 +107,7 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
     /// <param name="destLat">The longitude coordinate of the destination.</param>
     /// <param name="indices">An array of station indices to query.</param>
     /// <returns>A tuple containing arrays of durations and distances to each station.</returns>
-    public (float[] durations, float[] distances) QueryStationsWithDest(
+    public RoutingResult QueryStationsWithDest(
         double evLon,
         double evLat,
         double destLon,
@@ -163,7 +115,7 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
         ushort[] indices)
     {
         if (indices.Length == 0)
-            return ([], []);
+            return new RoutingResult([], []);
 
         var durations = new float[indices.Length];
         var distances = new float[indices.Length];
@@ -174,7 +126,7 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
             ComputeTableIndexedWithDest(_osrm, evLon, evLat, destLon, destLat, indices, indices.Length, durPtr, distPtr);
         }
 
-        return (durations, distances);
+        return new RoutingResult(durations, distances);
     }
 
     /// <summary>
@@ -185,17 +137,23 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
     /// <param name="destLon">The longitude coordinate of the destination.</param>
     /// <param name="destLat">The latitude coordinate of the destination.</param>
     /// <returns>A tuple containing the duration and polyline string for the route.</returns>
-    public (float duration, string polyline) QuerySingleDestination(
+    public RouteSegment QuerySingleDestination(
         double evLon,
         double evLat,
         double destLon,
         double destLat)
     {
         nint resultPtr;
-        resultPtr = ComputeSrcToDest(_osrm, evLon, evLat, destLon, destLat);
+
+        resultPtr = ComputeSrcToDest(
+            _osrm,
+            evLon,
+            evLat,
+            destLon,
+            destLat);
 
         if (resultPtr == IntPtr.Zero)
-            return (-1, string.Empty);
+            return new RouteSegment(-1, -1, string.Empty);
 
         var result = Marshal.PtrToStructure<RouteResult>(resultPtr);
         var polylineStr = Marshal.PtrToStringAnsi(result.Polyline)!;
@@ -203,27 +161,28 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
         FreeMemory(result.Polyline);
         FreeMemory(resultPtr);
 
-        return (result.Duration, polylineStr);
+        return new RouteSegment(result.Duration, result.Distance, polylineStr);
     }
 
     /// <summary>
-    /// Queries the duration and polyline route from an electric vehicle to a destination, potentially with a stop in between.
+    /// Queries the duration and polyline route from an electric vehicle to a destination, potentially with stops in between.
     /// </summary>
     /// <param name="evLon">The longitude coordinate of the electric vehicle.</param>
     /// <param name="evLat">The latitude coordinate of the electric vehicle.</param>
-    /// <param name="stationLon">Station longitude (only used when index == ushort.MaxValue for query-time snapping).</param>
-    /// <param name="stationLat">Station latitude (only used when index == ushort.MaxValue for query-time snapping).</param>
+    /// <param name="stationLon">The longitude coordinate of the intermediate station.</param>
+    /// <param name="stationLat">The latitude coordinate of the intermediate station.</param>
     /// <param name="destLon">The longitude coordinate of the destination.</param>
     /// <param name="destLat">The latitude coordinate of the destination.</param>
-    /// <param name="index">Station index: valid index (0-N) uses pre-indexed station, ushort.MaxValue uses query-time snapping.</param>
+    /// <param name="index">A station index to query along the route.</param>
     /// <returns>A tuple containing the duration and polyline string for the route.</returns>
-    public (float duration, string polyline) QueryDestinationWithStop(double evLon, double evLat, double stationLon, double stationLat, double destLon, double destLat, ushort index = ushort.MaxValue)
+    public RouteSegment QueryDestinationWithStop(double evLon, double evLat, double stationLon, double stationLat, double destLon, double destLat, ushort index = ushort.MaxValue)
     {
         nint resultPtr;
+
         resultPtr = ComputeSrcToDestWithStop(_osrm, evLon, evLat, stationLon, stationLat, destLon, destLat, index);
 
         if (resultPtr == IntPtr.Zero)
-            return (-1, string.Empty);
+            return new RouteSegment(-1, -1, string.Empty);
 
         var result = Marshal.PtrToStructure<RouteResult>(resultPtr);
         var polylineStr = Marshal.PtrToStringAnsi(result.Polyline)!;
@@ -231,7 +190,7 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
         FreeMemory(result.Polyline);
         FreeMemory(resultPtr);
 
-        return (result.Duration, polylineStr);
+        return new RouteSegment(result.Duration, result.Distance, polylineStr);
     }
 
     /// <summary>
@@ -240,7 +199,7 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
     /// <param name="srcCoords">Array of source coordinates in [lon, lat, lon, lat, ...] format.</param>
     /// <param name="dstCoords">Array of destination coordinates in [lon, lat, lon, lat, ...] format.</param>
     /// <returns>A tuple containing matrices of durations and distances between all source and destination pairs.</returns>
-    public (float[] durations, float[] distances) QueryPointsToPoints(
+    public RoutingResult QueryPointsToPoints(
         double[] srcCoords,
         double[] dstCoords)
     {
@@ -255,11 +214,28 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
             PointsToPoints(_osrm, srcCoords, numSrcs, dstCoords, numDsts, durPtr, distPtr);
         }
 
-        return (durations, distances);
+        return new RoutingResult(durations, distances);
     }
 
     /// <summary>
     /// Disposes the OSRM router and releases unmanaged resources.
     /// </summary>
     public void Dispose() => DeleteOSRM(_osrm);
+
+    /// <summary>
+    /// Initializes the router with a list of charging stations.
+    /// </summary>
+    /// <param name="stations">The list of charging stations to register.</param>
+    private void InitStations(List<Station> stations)
+    {
+        var coords = new double[stations.Count * 2];
+
+        for (var i = 0; i < stations.Count; i++)
+        {
+            coords[i * 2] = stations[i].Position.Longitude;
+            coords[(i * 2) + 1] = stations[i].Position.Latitude;
+        }
+
+        RegisterStations(_osrm, coords, stations.Count);
+    }
 }

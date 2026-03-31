@@ -1,5 +1,6 @@
 namespace Engine.Init;
 
+using Core.Shared;
 using Engine.Cost;
 using Engine.Metrics;
 using Engine.StationFactory;
@@ -47,12 +48,33 @@ public class EngineSettings
     /// <summary>
     /// Gets the interval at which the engine checks for urgent EVs.
     /// </summary>
-    required public ushort BatteryIntervalForCheckUrgency { get; init; }
+    required public float BatteryIntervalForCheckUrgency { get; init; }
 
     /// <summary>
     /// Gets the number of seconds an EV is expected to spend charging at a station, used for simulating charging time and scheduling.
     /// </summary>
     required public uint ChargingStepSeconds { get; init; }
+
+    /// <summary>
+    ///   Gets the interval at which snapshots of the simulation state are taken.
+    /// </summary>
+    required public uint SnapshotInterval { get; init; }
+
+    /// <summary>
+    /// Gets the simulation end time, which determines
+    /// when the simulation should stop running.
+    /// </summary>
+    required public Time SimulationEndTime { get; init; }
+
+    /// <summary>
+    /// Gets the size of the windows in which EVs are spawned, which affects the distribution of EV arrivals over time.
+    /// </summary>
+    required public Time EVDistributionWindowsSize { get; init; }
+
+    /// <summary>
+    /// Gets the fraction of the total EV population that should be spawned in the simulation.
+    /// </summary>
+    required public double EVSpawnFraction { get; init; }
 
     /// <summary>
     /// Gets the file paths for various input data required by the engine inclduing energy prices.

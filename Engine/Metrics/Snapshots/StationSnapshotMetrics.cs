@@ -1,14 +1,13 @@
 namespace Engine.Metrics.Snapshots;
 
 using Core.Charging;
-using System;
 using Core.Shared;
 
 /// <summary>
 /// A point-in-time snapshot of a single station's metrics.
 /// Collected once per simulation hour.
 /// </summary>
-public record SnapshotMetric
+public record StationSnapshotMetric
 {
     /// <summary>
     /// Gets the simulation timestamp (seconds) when this snapshot was taken.
@@ -51,24 +50,27 @@ public record SnapshotMetric
     required public int TotalChargers { get; init; }
 
     /// <summary>
+    /// Gets the number of reservations made to this station since the last snapshot.
+    /// </summary>
+    required public uint Reservations { get; init; }
+
+    /// <summary>
+    /// Gets the number of cancellations made to this station since the last snapshot.
+    /// </summary>
+    required public uint Cancellations { get; init; }
+
+    /// <summary>
     /// Collects a snapshot from a station at the given simulation time.
     /// </summary>
     /// <param name="station">The station to snapshot.</param>
     /// <param name="simTime">Current simulation time in seconds.</param>
-    /// <param name="day">Current day of week (for price lookup).</param>
-    /// <param name="hour">Current hour 0–23 (for price lookup).</param>
-    /// <param name="getDeliveredKW">
     /// A delegate that returns the actual power currently being delivered (in kW)
     /// for a given charger. Provided by the caller since power state lives outside
-    /// this record.
-    /// </param>
-    /// <returns>A <see cref="SnapshotMetric"/> containing the collected metrics for the station.</returns>
-    public static SnapshotMetric Collect(
+    /// this record. // TODO: Should be implemented somehow later.
+    /// <returns>A <see cref="StationSnapshotMetric"/> containing the collected metrics for the station.</returns>
+    public static StationSnapshotMetric Collect(
         Station station,
-        Time simTime,
-        DayOfWeek day,
-        int hour,
-        Func<ChargerBase, double> getDeliveredKW)
+        Time simTime)
     {
         var totalDeliveredKW = 0f;
         var totalMaxKW = 0f;
@@ -77,22 +79,26 @@ public record SnapshotMetric
 
         foreach (var charger in station.Chargers)
         {
-            totalDeliveredKW += (float)getDeliveredKW(charger);
+            totalDeliveredKW += totalDeliveredKW; // TODO: ADD METRICS BACK HERE
             totalMaxKW += charger.MaxPowerKW;
             totalQueueSize += charger.Queue.Count;
             if (charger.Queue.Count > 0) activeChargers++;
         }
 
-        return new SnapshotMetric
+        var (reservations, cancellations) = station.CountReservationsCancellations();
+
+        return new StationSnapshotMetric
         {
             SimTime = simTime,
             StationId = station.Id,
             TotalDeliveredKW = totalDeliveredKW,
             TotalMaxKW = totalMaxKW,
             TotalQueueSize = totalQueueSize,
-            Price = station.UpdatePrice(day, hour),
+            Price = station.GetPrice(simTime),
             ActiveChargers = activeChargers,
             TotalChargers = station.Chargers.Count,
+            Reservations = reservations,
+            Cancellations = cancellations,
         };
     }
 }

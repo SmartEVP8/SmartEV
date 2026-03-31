@@ -29,9 +29,12 @@ public static class Program
         {
             CostConfig = new CostWeights
             {
-                EffectiveQueueSize = 1,
-                PathDeviation = 1,
-                PriceSensitivity = 1,
+                EffectiveQueueSize = 0.5f,
+                PathDeviation = 10,
+                PriceSensitivity = 10,
+                AvailableChargerRatio = 1,
+                ExpectedWaitTime = 1,
+                Urgency = 1,
             },
 
             RunId = Guid.NewGuid(),
@@ -41,7 +44,7 @@ public static class Program
                 BufferSize = 5000,
                 OutputDirectory = new DirectoryInfo("Perkuet"),
                 RecordCarSnapshots = true,
-                RecordDeadlines = true,
+                RecordArrivals = true,
                 RecordStationSnapshots = true,
             },
 
@@ -56,13 +59,21 @@ public static class Program
                 TotalChargers = 10000,
             },
 
-            IntervalToUpdateEVs = 10,
+            IntervalToUpdateEVs = 5 * 60,
 
-            BatteryIntervalForCheckUrgency = 10,
+            BatteryIntervalForCheckUrgency = 0.05f,
 
             CurrentAmoutOfEVsInDenmark = 583320, // Based on the number of registered EVs in Denmark as of 2026-03-22 https://mobility.dk/nyheder/nu-koerer-hver-femte-personbil-i-danmark-paa-el/
 
             ChargingStepSeconds = 60,
+
+            SimulationEndTime = 10000 * 60,
+
+            SnapshotInterval = 1000 * 60,
+
+            EVDistributionWindowsSize = 1 * 60,
+
+            EVSpawnFraction = 0.10f,
 
             EnergyPricesPath = new FileInfo(Path.Combine(dataPath.FullName, "energy_prices.csv")),
             OsrmPath = new FileInfo(Path.Combine(dataPath.FullName, "osrm/output.osrm")),
@@ -83,5 +94,8 @@ public static class Program
         provider.GetRequiredService<SpatialGrid>();
         provider.GetRequiredService<IJourneySamplerProvider>();
         provider.GetRequiredService<StationService>();
+
+        var coordinator = provider.GetRequiredService<Simulation>();
+        await coordinator.Run();
     }
 }

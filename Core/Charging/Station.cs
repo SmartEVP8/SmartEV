@@ -40,11 +40,32 @@ public class Station(ushort id,
     public string Address => address;
 
     /// <summary>
-    /// Gets the current price of energy at the station.
+    /// Gets the total number of reservation requests ever made to this station.
     /// </summary>
-    public float Price { get; private set; }
+    public ushort TotalReservations { get; private set; }
 
-    private (DayOfWeek Day, int Hour) _lastPriceUpdate = ((DayOfWeek)(-1), -1);
+    /// <summary>
+    /// Gets the total number of cancellation requests ever made to this station.
+    /// </summary>
+    public ushort TotalCancellations { get; private set; }
+
+    /// <summary>
+    /// Gets the current price of energy at this station based on the time of day.
+    /// </summary>
+    /// <param name="time">The current time.</param>
+    /// <returns>The price at the current day and hour.</returns>
+    public float GetPrice(Time time)
+    {
+        var key = (Day: time.DayOfWeek, Hour: (int)time.Hour);
+
+        if (key != _lastPriceUpdate)
+        {
+            _lastPriceUpdate = key;
+            _price = energyPrices.CalculatePrice(key.Day, key.Hour);
+        }
+
+        return _price;
+    }
 
     /// <summary>
     /// Gets the list of chargers on a station.
@@ -53,21 +74,29 @@ public class Station(ushort id,
 
     private readonly List<ChargerBase> _chargers = chargers;
 
-    /// <summary>
-    /// Updates and caches the price for the given day and hour. If changed
-    /// since the last update, recalculates; otherwise uses the cached price.
-    /// </summary>
-    /// <param name="day">The day of the week.</param>
-    /// <param name="hour">The hour of the day (0–23).</param>
-    /// <returns>The current price at the station.</returns>
-    public float UpdatePrice(DayOfWeek day, int hour)
-    {
-        if ((day, hour) != _lastPriceUpdate)
-        {
-            _lastPriceUpdate = (day, hour);
-            Price = energyPrices.CalculatePrice(day, hour);
-        }
+    private (DayOfWeek Day, int Hour) _lastPriceUpdate = ((DayOfWeek)(-1), -1);
 
-        return Price;
+    private float _price;
+
+    /// <summary>
+    /// Collects the reservation and cancellation counts since the last snapshot, then resets both counters.
+    /// </summary>
+    /// <returns> Returns the reservation and cancellation counts since the last snapshot.</returns>
+    public (ushort reservations, ushort cancellations) CountReservationsCancellations()
+    {
+        var reservationsAndCancellations = (TotalReservations, TotalCancellations);
+        TotalReservations = 0;
+        TotalCancellations = 0;
+        return reservationsAndCancellations;
     }
+
+    /// <summary>
+    /// Increments the amount of reservations on a station, and updates the total amount of reservations.
+    /// </summary>
+    public void IncrementReservations() => TotalReservations++;
+
+    /// <summary>
+    /// Decrements the amount of reservations on a station, and updates the total amount of cancellations.
+    /// </summary>
+    public void IncrementCancellations() => TotalCancellations++;
 }

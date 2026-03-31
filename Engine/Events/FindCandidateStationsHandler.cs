@@ -1,5 +1,6 @@
 namespace Engine.Events;
 
+using Core.Shared;
 using Engine.Cost;
 using Engine.Events.Middleware;
 using Engine.Vehicles;
@@ -18,26 +19,29 @@ public class FindCandidateStationsHandler(
     EventScheduler eventScheduler,
     EVStore evStore)
 {
+    private uint _numberOfNoStations = 0;
+
     /// <summary>
-    /// Handles the <see cref="FindCandidateStations"/> event by pre-computing candidate stations,
-    /// computing their costs, selecting the best station, and scheduling a <see cref="ReservationRequest"/> event.
+    /// Handles the <see cref="FindCandidateStations"/> event by pre-computing candidate stations.
     /// </summary>
-    /// <param name="e">The <see cref="FindCandidateStations"/> event.</param>
-    public void Handle(FindCandidateStations e)
+    /// <param name="e">The event data.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    public async Task Handle(FindCandidateStations e)
     {
-        findCandidateStationService.PreComputeCandidateStation()(e);
+        var ev = evStore.Get(e.EVId);
+        var stationCosts = await findCandidateStationService.ComputeCandidateStationFromCache(e.EVId);
 
-        _ = Task.Run(async () =>
+        if (stationCosts.Count == 0)
         {
-            var stationCosts = await findCandidateStationService.ComputeCandidateStationFromCache(e.EVId);
+            _numberOfNoStations++;
+            Console.WriteLine($"[EV {e.EVId}] has no stations. {ev}. Total number of failed EV's {_numberOfNoStations}");
+            evStore.Free(e.EVId);
+            return;
+        }
 
-            var ev = evStore.Get(e.EVId);
-            var stations = stationCosts.Keys.ToArray();
-            var journeyDurations = stationCosts.Values.ToArray();
-
-            var bestStation = computeCost.Compute(ref ev, stations, journeyDurations);
-            var reservationRequest = new ReservationRequest(e.EVId, bestStation.Id, e.Time);
-            eventScheduler.ScheduleEvent(reservationRequest);
-        });
+        var bestStation = computeCost.Compute(ref ev, stationCosts, e.Time);
+        var durationToStation = Math.Ceiling(stationCosts[bestStation.Id]);
+        var reservationRequest = new ReservationRequest(e.EVId, bestStation.Id, e.Time, (Time)(uint)durationToStation);
+        eventScheduler.ScheduleEvent(reservationRequest);
     }
 }

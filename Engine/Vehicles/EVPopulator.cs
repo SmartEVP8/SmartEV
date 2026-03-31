@@ -2,6 +2,7 @@ namespace Engine.Vehicles;
 
 using Core.Shared;
 using Engine.Events;
+using System.Buffers;
 
 /// <summary>
 /// The EVPopulator class is responsible for creating and scheduling the spawning of EVs.
@@ -24,17 +25,22 @@ public class EVPopulator(EVFactory evFactory, EVStore evStore, EventScheduler ev
     {
         var currentTime = _eventScheduler.CurrentTime;
         var interval = distributionWindow / amount;
-        var spawnTimes = Enumerable.Range(0, amount)
-                                   .Select(i => currentTime + (i * interval))
-                                   .ToArray();
 
-        Parallel.For(0, amount, i =>
+        var indexes = ArrayPool<int>.Shared.Rent(amount);
+        try
         {
-            var departure = (uint)spawnTimes[i];
-            _eVStore.TryAllocate(amount, (index, ref ev) =>
+            if (_eVStore.TryAllocateParallel(amount, indexes))
             {
-                ev = _evFactory.Create(departure);
-            });
-        });
+                Parallel.For(0, amount, i =>
+                {
+                    var departure = (uint)(currentTime + (i * interval));
+                    _eVStore.Get(indexes[i]) = _evFactory.Create(departure);
+                });
+            }
+        }
+        finally
+        {
+            ArrayPool<int>.Shared.Return(indexes);
+        }
     }
 }

@@ -13,7 +13,8 @@ public record ConnectedEV(
     double TargetSoC,
     double CapacityKWh,
     double MaxChargeRateKW,
-    Socket Socket);
+    Socket Socket,
+    Time ArrivalTime);
 
 /// <summary>
 /// Returned by all integrator methods.
@@ -79,8 +80,7 @@ public sealed class ChargingIntegrator(uint stepSeconds)
         Time simNow,
         double maxKW,
         ISingleChargingPoint point,
-        ConnectedEV ev)
-        => IntegrateSingle(simNow, maxKW, point, ev, runUntilSeconds: null);
+        ConnectedEV ev) => IntegrateSingle(simNow, maxKW, point, ev, runUntilSeconds: null);
 
     /// <summary>
     /// Integrates the charging sessions of two cars until both reach their target SoC.
@@ -96,8 +96,7 @@ public sealed class ChargingIntegrator(uint stepSeconds)
         double maxKW,
         IDualChargingPoint point,
         ConnectedEV evA,
-        ConnectedEV evB)
-        => IntegrateDual(simNow, maxKW, point, evA, evB, runUntilSeconds: null);
+        ConnectedEV evB) => IntegrateDual(simNow, maxKW, point, evA, evB, runUntilSeconds: null);
 
     private IntegrationResult IntegrateSingle(
         Time simNow,

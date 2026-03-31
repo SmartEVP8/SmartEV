@@ -16,5 +16,5 @@ public interface IDestinationRouter
     /// <param name="destLat">The latitude coordinate of the destination.</param>
     /// <param name="index">A station index to query along the route.</param>
     /// <returns>A tuple containing the duration and polyline string for the route.</returns>
-    public (float duration, string polyline) QueryDestinationWithStop(double evLon, double evLat, double stationLon, double stationLat, double destLon, double destLat, ushort index = 0);
+    public RouteSegment QueryDestinationWithStop(double evLon, double evLat, double stationLon, double stationLat, double destLon, double destLat, ushort index = ushort.MaxValue);
 }

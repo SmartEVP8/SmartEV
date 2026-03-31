@@ -1,33 +1,74 @@
 namespace Core.Routing;
 
 using Core.Shared;
+using Core.GeoMath;
 
 /// <summary>
 /// Represents a journey for an electric vehicle.
 /// </summary>
 /// <param name="departure">The time the journey started.</param>
-/// <param name="originalDuration">The original duration of the journey.</param>
+/// <param name="duration">The original duration of the journey.</param>
+/// <param name="distanceMeters">The distance of the journey.</param>
 /// <param name="path">The path of the journey.</param>
-public class Journey(Time departure, Time originalDuration, Paths path)
+public class Journey(Time departure, Time duration, float distanceMeters, Paths path)
 {
     /// <summary>
     /// Gets the time the journey started.
     /// </summary>
-    public Time Departure { get; } = departure;
+    public Time JourneyStart => departure;
+
+    /// <summary>
+    /// Gets the time the journey was last updated.
+    /// </summary>
+    public Time LastUpdatedDeparture { get; private set; } = departure;
 
     /// <summary>
     /// Gets the original duration of the journey, i.e. the duration of A -> B without any detours.
     /// </summary>
-    public Time OriginalDuration { get; } = originalDuration;
+    public Time OriginalDuration => duration;
 
     /// <summary>
-    /// Gets the path as it is currently. 
-    /// This can be updated as the journey progresses, e.g. if the EV is rerouted to a different station.
-    /// Represented by waypoints that are mutated as the journey progresses.
+    /// Gets the duration of an EVs journey, after it has been altered, i.e the duration of Start -> Station -> Detour.
+    /// </summary>
+    public Time LastUpdatedDuration { get; private set; } = duration;
+
+    /// <summary>
+    /// Gets the current Path.
     /// </summary>
     public Paths Path { get; private set; } = path;
 
-    private Time _runningSumDeviation;
+    /// <summary>
+    /// Gets the next stop of the journey. Initially set to the original destination, but can be updated if the EV is rerouted through a station.
+    /// </summary>
+    public Position NextStop { get; private set; } = path.Waypoints[^1];
+
+    /// <summary>
+    /// Gets the additional time has been added by rerouting/deviating from the original path.
+    /// </summary>
+    public Time PathDeviation { get; private set; } = 0;
+
+    /// <summary>Calculates the time elapsed since the journey started.</summary>
+    /// <param name="currentTime">The current time.</param>
+    /// <returns>The elapsed time.</returns>
+    public Time TimeElapsed(Time currentTime) => currentTime - JourneyStart;
+
+    /// <summary>
+    /// Calculates the remaining time on the current route, 
+    /// i.e. the time until the EV would reach its destination if it continues on its current path without any detours.
+    /// </summary>
+    /// <param name="currentTime">The current time.</param>
+    /// <returns>The remaining time on the current route.</returns>
+    public Time RemainingCurrentRoute(Time currentTime) => LastUpdatedDeparture + LastUpdatedDuration - currentTime;
+
+    /// <summary>
+    /// Gets the original distance of the journey, i.e. the distance of A -> B without any detours.
+    /// </summary>
+    public float OriginalDistancekm { get; } = distanceMeters / 1000;
+
+    /// <summary>
+    /// Gets the distance of an EVs journey, after it has been altered, i.e the distance of Start -> Station -> Detour.
+    /// </summary>
+    public float LastUpdatedDistancekm { get; private set; } = distanceMeters / 1000;
 
     /// <summary>
     /// Calucates the EV's current position. Assumes the speed is always the same.
@@ -37,13 +78,13 @@ public class Journey(Time departure, Time originalDuration, Paths path)
     /// <exception cref="ArgumentException">Thrown when the current time is before the journey starts or after it has completed.</exception>
     public Position CurrentPosition(Time currentTime)
     {
-        Time completedTime = Departure + OriginalDuration;
+        Time completedTime = LastUpdatedDeparture + LastUpdatedDuration;
         if (currentTime > completedTime)
-            throw new ArgumentException("Current time is after the journey has completed.");
-        if (currentTime < Departure)
-            throw new ArgumentException("Current time is before the journey has started.");
+            throw new ArgumentException($"Current time: {currentTime} is after the journey has completed: {completedTime}.");
+        if (currentTime < LastUpdatedDeparture)
+            throw new ArgumentException($"Current time: {currentTime} is before the journey has started: {JourneyStart}.");
 
-        var percentageCompleted = (double)(currentTime - Departure) / (double)OriginalDuration;
+        var percentageCompleted = (currentTime - LastUpdatedDeparture) / (double)LastUpdatedDuration;
 
         var segments = Path
             .Waypoints.Zip(Path.Waypoints.Skip(1))
@@ -51,9 +92,7 @@ public class Journey(Time departure, Time originalDuration, Paths path)
                 (
                     p.First,
                     p.Second,
-                    Length: Math.Sqrt(
-                        Math.Pow(p.Second.Latitude - p.First.Latitude, 2)
-                            + Math.Pow(p.Second.Longitude - p.First.Longitude, 2))
+                    Length: GeoMath.EquirectangularDistance(p.First, p.Second)
                 ))
             .ToList();
 
@@ -79,24 +118,35 @@ public class Journey(Time departure, Time originalDuration, Paths path)
         return new Position(longitude: last.Longitude, latitude: last.Latitude);
     }
 
-    /// <summary>Calculates the times elapsed since the journey started.</summary>
+    /// <summary>
+    /// Updates the route of the journey and calculates the new path deviation based on the new estimated time of arrival (ETA) compared to the old ETA.
+    /// </summary>
+    /// <param name="newRoute">The new path/journey.</param>
+    /// <param name="nextStop">The next stop/position of <paramref name="newRoute"/>.</param>
+    /// <param name="departure">The the journey takes affect/is updated.</param>
+    /// <param name="duration">The duration of the new joruney.</param>
+    /// <param name="newDistancekm">The distance of the new journey.</param>
+    public void UpdateRoute(Paths newRoute, Position nextStop, Time departure, Time duration, float newDistancekm)
+    {
+        Time oldEta = LastUpdatedDeparture + LastUpdatedDuration;
+        Time newEta = departure + duration;
+
+        Path = newRoute;
+        NextStop = nextStop;
+        LastUpdatedDeparture = departure;
+        LastUpdatedDuration = duration;
+        LastUpdatedDistancekm = newDistancekm;
+        PathDeviation += newEta - oldEta;
+    }
+
+    /// <summary>
+    /// Calculates the distance from the EV's current position to the next stop.
+    /// </summary>
     /// <param name="currentTime">The current time.</param>
-    /// <returns>The elapsed time.</returns>
-    public Time TimeElapsed(Time currentTime) => currentTime - Departure;
-
-    /// <summary>
-    /// Gets the running sum of deviations for this journey. 
-    /// Can be updated as the journey progresses using the UpdateRunningSumDeviation method.
-    /// </summary>
-    public Time RunningSumDeviation => _runningSumDeviation;
-
-    /// <summary> Updates the running sum deviation for this journey.</summary>
-    /// <param name="deviation">The new deviation to set.</param>
-    public void UpdateRunningSumDeviation(Time deviation) => _runningSumDeviation = deviation;
-
-    /// <summary>
-    /// Updates the path of the journey. This can be used to update the path as the journey progresses, e.g. if the EV is rerouted to a different station.
-    /// </summary>
-    /// <param name="newPath">The new path for the journey.</param>
-    public void UpdatePath(Paths newPath) => Path = newPath;
+    /// <returns>Returns the distance to the next stop.</returns>
+    public float DistanceToNextStop(Time currentTime)
+    {
+        var currentPos = CurrentPosition(currentTime);
+        return (float)GeoMath.EquirectangularDistance(currentPos, NextStop) / 1000;
+    }
 }

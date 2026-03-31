@@ -1,4 +1,4 @@
-# Force rebuild to sync with new C++ logic (add or remove this line)
+# Force rebuild to sync with new C++ logic (edit this line)
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0-noble AS osrm-build
 

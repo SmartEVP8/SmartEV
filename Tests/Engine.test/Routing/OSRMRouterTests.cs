@@ -17,11 +17,12 @@ public class OSRMRouterTests
 
     private OSRMRouter CreateRouter(params Position[] positions)
     {
-        var router = new OSRMRouter(new FileInfo(_osrmPath));
-        router.InitStations([.. positions.Select((pos, i) => TestData.Station(
-            id: (ushort)(i + 1),
-            pos: pos,
-            energyPrices: TestData.EnergyPrices))]);
+        List<Station> stations = [.. positions.Select((pos, i) =>
+            TestData.Station(
+                id: (ushort)(i + 1),
+                pos: pos,
+                energyPrices: TestData.EnergyPrices))];
+        var router = new OSRMRouter(new FileInfo(_osrmPath), stations);
         return router;
     }
 
@@ -45,30 +46,6 @@ public class OSRMRouterTests
 
         Assert.True(durations[0] < 1f, $"Expected ~0s, got {durations[0]:F1}s");
         Assert.True(distances[0] < 1f, $"Expected ~0m, got {distances[0]:F1}m");
-    }
-
-    [Fact]
-    public void QueryStationsWithDest_EvToStationLeg_MatchesQueryStations()
-    {
-        using var router = CreateRouter(_stationNearPosition, _stationFarPosition);
-
-        var (queryStationsDurations, queryStationsDistances) = router.QueryStations(
-            _evPosition[0], _evPosition[1], [0]);
-
-        var (withDestDurations, withDestDistances) = router.QueryStationsWithDest(
-            _evPosition[0],
-            _evPosition[1],
-            _stationNearPosition.Longitude,
-            _stationNearPosition.Latitude,
-            [0]);
-
-        Assert.True(
-            Math.Abs(queryStationsDurations[0] - withDestDurations[0]) < 10f,
-            $"EV→station leg mismatch: QueryStations={queryStationsDurations[0]:F1}s QueryStationsWithDest={withDestDurations[0]:F1}s");
-
-        Assert.True(
-            Math.Abs(queryStationsDistances[0] - withDestDistances[0]) < 50f,
-            $"EV→station leg mismatch: QueryStations={queryStationsDistances[0]:F1}m QueryStationsWithDest={withDestDistances[0]:F1}m");
     }
 
     [Fact]
@@ -96,13 +73,13 @@ public class OSRMRouterTests
     {
         using var router = CreateRouter(_stationNearPosition, _stationFarPosition);
 
-        var (evToStation, _) = router.QuerySingleDestination(
+        var evToStationRes = router.QuerySingleDestination(
             _evPosition[0],
             _evPosition[1],
             _stationNearPosition.Longitude,
             _stationNearPosition.Latitude);
 
-        var (stationToDest, _) = router.QuerySingleDestination(
+        var stationToDestRes = router.QuerySingleDestination(
             _stationNearPosition.Longitude,
             _stationNearPosition.Latitude,
             _destPosition[0],
@@ -115,7 +92,7 @@ public class OSRMRouterTests
             _destPosition[1],
             [0]); // index 0 = _stationNearPosition
 
-        var routeSum = evToStation + stationToDest;
+        var routeSum = evToStationRes.Duration + stationToDestRes.Duration;
         Assert.True(
             Math.Abs(tableDurations[0] - routeSum) < 1f,
             $"Table={tableDurations[0]:F1}s RouteSum={routeSum:F1}s — likely wrong leg wired");
@@ -128,11 +105,11 @@ public class OSRMRouterTests
         var router = CreateRouter([_stationNearPosition, stationOnRoute, _stationFarPosition]);
 
         var (duration1, _) = router.QueryPointsToPoints(_evPosition, _destPosition);
-        var (duration2, _) = router.QuerySingleDestination(_evPosition[0], _evPosition[1], _destPosition[0], _destPosition[1]);
-        var (duration3, _) = router.QueryDestinationWithStop(_evPosition[0], _evPosition[1], stationOnRoute.Longitude, stationOnRoute.Latitude, _destPosition[0], _destPosition[1]);
+        var routeSegment2 = router.QuerySingleDestination(_evPosition[0], _evPosition[1], _destPosition[0], _destPosition[1]);
+        var routeSegment3 = router.QueryDestinationWithStop(_evPosition[0], _evPosition[1], stationOnRoute.Longitude, stationOnRoute.Latitude, _destPosition[0], _destPosition[1]);
 
         Assert.Equal(481.5f, duration1[0]);
-        Assert.Equal(481.5f, duration2);
-        Assert.Equal(481.5f, duration3);
+        Assert.Equal(481.5f, routeSegment2.Duration);
+        Assert.Equal(481.5f, routeSegment3.Duration);
     }
 }

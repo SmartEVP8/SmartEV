@@ -11,7 +11,7 @@ public class Preferences(float priceSensitivity, float minAcceptableCharge, doub
     /// <summary>Gets the price sensitivity of the driver.</summary>
     public float PriceSensitivity { get; } = priceSensitivity;
 
-    /// <summary>Gets the minimum acceptable state of charge.</summary>
+    /// <summary>Gets the minimum acceptable state of charge. Valid values are [0-1].</summary>
     public float MinAcceptableCharge { get; } = minAcceptableCharge;
 
     /// <summary>Gets the maximum path deviation as a radius.</summary>
