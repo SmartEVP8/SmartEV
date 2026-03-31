@@ -104,7 +104,7 @@ public class EventDispatcher(
                 evService.Handle(ev);
                 break;
 
-            case CheckAndUpdateAllEVs ev:
+            case CheckAndUpdateEV ev:
                 CheckAndUpdateAllEVsHandler.Handle(ev);
                 break;
 

@@ -12,10 +12,6 @@ using System.Buffers;
 /// <param name="eventScheduler">The scheduler used to manage and execute events.</param>
 public class EVPopulator(EVFactory evFactory, EVStore evStore, EventScheduler eventScheduler)
 {
-    private readonly EVFactory _evFactory = evFactory;
-    private readonly EVStore _eVStore = evStore;
-    private readonly EventScheduler _eventScheduler = eventScheduler;
-
     /// <summary>
     /// Creates a specified number of EVs and schedules their spawning events over a given distribution window.
     /// </summary>
@@ -23,23 +19,35 @@ public class EVPopulator(EVFactory evFactory, EVStore evStore, EventScheduler ev
     /// <param name="distributionWindow">The time window over which to distribute the spawning events.</param>
     public void CreateEVs(int amount, Time distributionWindow)
     {
-        var currentTime = _eventScheduler.CurrentTime;
+        var currentTime = eventScheduler.CurrentTime;
         var interval = distributionWindow / amount;
+        var depatures = Enumerable.Range(0, amount).Select(t => (uint)(currentTime + (t * interval))).ToArray();
 
         var indexes = ArrayPool<int>.Shared.Rent(amount);
         try
         {
-            if (_eVStore.TryAllocateParallel(amount, indexes))
+            if (evStore.TryAllocateParallel(amount, indexes))
             {
                 Parallel.For(0, amount, i =>
                 {
-                    var departure = (uint)(currentTime + (i * interval));
-                    _eVStore.Get(indexes[i]) = _evFactory.Create(departure);
+                    evStore.Get(indexes[i]) = evFactory.Create(depatures[i]);
                 });
             }
         }
         finally
         {
+            foreach (var i in indexes)
+            {
+                ref var ev = ref evStore.Get(i);
+                if (ev.CanCompleteJourney(ev.Preferences.MinAcceptableCharge))
+                {
+                    eventScheduler.ScheduleEvent(new ArriveAtDestination(i, currentTime + ev.Journey.OriginalDuration));
+                    continue;
+                }
+
+                eventScheduler.ScheduleEvent(new CheckAndUpdateEV(i, depatures[i]));
+            }
+
             ArrayPool<int>.Shared.Return(indexes);
         }
     }

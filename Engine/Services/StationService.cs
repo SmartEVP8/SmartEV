@@ -229,7 +229,6 @@ public class StationService : IStationService
                 Socket: ev.Battery.Socket,
                 ArrivalTime: e.Time);
 
-        ev.IsCharging = true;
         target.Queue.Enqueue((e.EVId, connectedEV));
         if (target.IsFree)
             StartCharging(target, e.Time);
@@ -257,7 +256,6 @@ public class StationService : IStationService
                 single.ChargingPoint.Disconnect();
 
                 state.SessionA = null;
-                ev.IsCharging = false;
                 ev.HasReservationAtStationId = null;
                 break;
 
@@ -266,7 +264,6 @@ public class StationService : IStationService
                 {
                     dual.ChargingPoint.Disconnect(ChargingSide.Left);
                     state.SessionA = null;
-                    ev.IsCharging = false;
                     ev.HasReservationAtStationId = null;
 
                     if (state.SessionB is not null && result is not null)
@@ -283,7 +280,6 @@ public class StationService : IStationService
                         if (updatedSoC >= state.SessionB.EV.TargetSoC)
                         {
                             dual.ChargingPoint.Disconnect(ChargingSide.Right);
-                            _eVStore.Get(state.SessionB.EVId).IsCharging = false;
                             state.SessionB = null;
                         }
                     }
@@ -292,7 +288,6 @@ public class StationService : IStationService
                 {
                     dual.ChargingPoint.Disconnect(ChargingSide.Right);
                     state.SessionB = null;
-                    ev.IsCharging = false;
                     ev.HasReservationAtStationId = null;
 
                     if (state.SessionA is not null && result is not null)
@@ -309,7 +304,6 @@ public class StationService : IStationService
                         if (updatedSoC >= state.SessionA.EV.TargetSoC)
                         {
                             dual.ChargingPoint.Disconnect(ChargingSide.Left);
-                            _eVStore.Get(state.SessionA.EVId).IsCharging = false;
                             state.SessionA = null;
                         }
                     }
@@ -349,7 +343,6 @@ public class StationService : IStationService
                 });
 
                 state.SessionA = new ChargingSession(next.EVId, next.EV, simNow, null, null);
-                _eVStore.Get(next.EVId).IsCharging = true; // Mark as charging
 
                 var result = _integrator.IntegrateSingleToCompletion(
                     simNow, single.MaxPowerKW, single.ChargingPoint, state.SessionA.EV);
@@ -384,7 +377,6 @@ public class StationService : IStationService
                     });
 
                     var session = new ChargingSession(candidate.EVId, candidate.EV, simNow, side, null);
-                    _eVStore.Get(candidate.EVId).IsCharging = true;
 
                     if (side == ChargingSide.Left) state.SessionA = session;
                     else state.SessionB = session;

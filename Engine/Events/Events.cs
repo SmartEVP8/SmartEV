@@ -52,7 +52,7 @@ public record ArriveAtDestination(int EVId, Time Time) : Event(Time);
 
 // Functionality:
 // - Updates all EV's parallelly to their SoC level and check if should schedule a CheckUrgency event
-public record CheckAndUpdateAllEVs(Time Time) : Event(Time);
+public record CheckAndUpdateEV(int EVId, Time Time) : Event(Time);
 
 // ---------- NON-DOMAIN EVENTS ---------- //
 
