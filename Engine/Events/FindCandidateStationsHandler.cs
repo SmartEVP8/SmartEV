@@ -6,6 +6,8 @@ using Engine.Events.Middleware;
 using Engine.Vehicles;
 using Engine.Services;
 using Engine.Routing;
+using Core.Charging;
+using Core.Vehicles;
 
 /// <summary>
 /// Handles the <see cref="FindCandidateStations"/> event by pre-computing candidate stations,
@@ -27,7 +29,9 @@ public class FindCandidateStationsHandler(
     private uint _numberOfNoStations = 0;
 
     /// <summary>
-    /// Handles the <see cref="FindCandidateStations"/> event by pre-computing candidate stations.
+    /// Case 1: The first time the function is called we choose the best station among candidates and reserve a spot.
+    /// Case 2 (Base): We have a reserveration from Case 1 and conclude it's the best one still.
+    /// Case 3 (Recursive): We have a reservation from Case 1 and conclude it's the wrong one.
     /// </summary>
     /// <param name="e">The event data.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
@@ -45,23 +49,32 @@ public class FindCandidateStationsHandler(
         }
 
         var bestStation = computeCost.Compute(ref ev, stationCosts, e.Time);
+        var durationToStation = Math.Ceiling(stationCosts[bestStation.Id]);
 
-        if (ev.HasReservationAtStationId is not null)
+        // Case 1.
+        if (ev.HasReservationAtStationId is null)
         {
-            if (ev.HasReservationAtStationId == bestStation.Id)
-                return;
-
-            eventScheduler.ScheduleEvent(new CancelRequest(e.EVId, (ushort)ev.HasReservationAtStationId, e.Time));
+            RescheduleDecision(bestStation, durationToStation, ref ev, e);
+            return;
         }
 
+        // Case 2.
+        if (ev.HasReservationAtStationId == bestStation.Id)
+            return;
+
+        // Case 3.
+        eventScheduler.ScheduleEvent(new CancelRequest(e.EVId, (ushort)ev.HasReservationAtStationId, e.Time));
+        RescheduleDecision(bestStation, durationToStation, ref ev, e);
+    }
+
+    private void RescheduleDecision(Station bestStation, double durationToStation, ref EV ev, FindCandidateStations e)
+    {
         bestStation.IncrementReservations();
-        var durationToStation = Math.Ceiling(stationCosts[bestStation.Id]);
         var arriveAtStation = new ArriveAtStation(e.EVId, bestStation.Id, ev.CalcDesiredSoC((Time)(uint)durationToStation), (Time)(uint)durationToStation);
-        var cancellationId = eventScheduler.ScheduleEvent(arriveAtStation);
+        eventScheduler.ScheduleEvent(arriveAtStation);
 
         var decisionPoint = applyNewPath.ApplyNewPathToEV(ref ev, bestStation, e.Time);
         var decisionTime = ev.Journey.DurationToWayPoint(decisionPoint, e.Time);
-
-        eventScheduler.ScheduleEvent(new DecisionEvent(e.EVId, decisionTime, cancellationId));
+        eventScheduler.ScheduleEvent(new FindCandidateStations(e.EVId, decisionTime));
     }
 }
