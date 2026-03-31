@@ -64,7 +64,7 @@ public class FindCandidateStationService(
     /// <param name="evId">The EV's id.</param>
     /// <returns>The pre-computed candidate stations.</returns>
     /// <exception cref="SkillissueException">If you try and get a cached candidate which was never precomputed.</exception>
-    public async Task<Dictionary<ushort, float>> ComputeCandidateStationFromCache(int evId)
+    public async Task<Dictionary<ushort, float>> GetCandidateStationFromCache(int evId)
     {
         if (!_evStationPaths.TryGetValue(evId, out var query))
             throw new SkillissueException($"No pre-computed station query found for EV {evId}. Ensure PreComputeCandidateStation is called first.");

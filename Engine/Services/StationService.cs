@@ -145,37 +145,6 @@ public class StationService : IStationService
     }
 
     /// <summary>
-    /// Handles a reservation request from an EV to a station.
-    /// If the EV already has an active reservation, the existing arrival event is cancelled before proceeding.
-    /// Calculates the detoured path through the station, updates the EV's journey, and schedules a new
-    /// arrival event.
-    /// </summary>
-    /// <param name="e">The reservation request event.</param>
-    public void HandleReservationRequest(ReservationRequest e)
-    {
-        ref var ev = ref _eVStore.Get(e.EVId);
-        if (!_stationIndex.TryGetValue(e.StationId, out var station))
-            return;
-
-        if (ev.HasReservationAtStationId != null)
-        {
-            if (ev.HasReservationAtStationId.Value == e.StationId)
-            {
-                // Already has a reservation at this station, no need to cancel and re-reserve
-                return;
-            }
-
-            _scheduler.ScheduleEvent(new CancelRequest(e.EVId, ev.HasReservationAtStationId.Value, e.Time));
-        }
-
-        station.IncrementReservations();
-        ev.HasReservationAtStationId = e.StationId;
-        _applyNewPath.ApplyNewPathToEV(ref ev, station, e.Time);
-        _scheduler.ScheduleEvent(
-            new ArriveAtStation(e.EVId, e.StationId, ev.CalcDesiredSoC(e.Time + e.DurationToStation), e.Time + e.DurationToStation));
-    }
-
-    /// <summary>
     /// Handles a cancellation request from an EV, decrementing the station's active reservation count,
     /// clearing the reservation from the EV, and cancelling the scheduled arrival event.
     /// </summary>

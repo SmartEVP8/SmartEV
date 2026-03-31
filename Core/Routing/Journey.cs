@@ -62,6 +62,49 @@ public class Journey(Time departure, Time duration, float distanceMeters, Paths 
     /// </summary>
     public float LastUpdatedDistancekm { get; private set; } = distanceMeters / 1000;
 
+    public Paths GetPathFromCurrentPosition(Time currentTime)
+    {
+        Time completedTime = LastUpdatedDeparture + LastUpdatedDuration;
+        if (currentTime > completedTime)
+            throw new ArgumentException($"Current time: {currentTime} is after the journey has completed: {completedTime}.");
+        if (currentTime < LastUpdatedDeparture)
+            throw new ArgumentException($"Current time: {currentTime} is before the journey has started: {JourneyStart}.");
+
+        var percentageCompleted = (currentTime - LastUpdatedDeparture) / (double)LastUpdatedDuration;
+
+        var segments = Path
+            .Waypoints.Zip(Path.Waypoints.Skip(1))
+            .Select(p =>
+                (
+                    p.First,
+                    p.Second,
+                    Length: GeoMath.EquirectangularDistance(p.First, p.Second)
+                ))
+            .ToList();
+
+        var totalLength = segments.Sum(s => s.Length);
+        var distanceTraveled = percentageCompleted * totalLength;
+
+        var distanceCovered = 0.0;
+        foreach (var (first, second, length) in segments)
+        {
+            if (distanceCovered + length >= distanceTraveled)
+            {
+                var remainingDistance = distanceTraveled - distanceCovered;
+                var ratio = remainingDistance / length;
+                var latitude = first.Latitude + (ratio * (second.Latitude - first.Latitude));
+                var longitude = first.Longitude + (ratio * (second.Longitude - first.Longitude));
+                var postions = new Position(longitude: longitude, latitude: latitude);
+                return new Paths([postions, .. Path.Waypoints.SkipWhile(w => w != second)]);
+            }
+
+            distanceCovered += length;
+        }
+
+        var last = Path.Waypoints[^1];
+        return new Paths([new Position(longitude: last.Longitude, latitude: last.Latitude)]);
+    }
+
     /// <summary>
     /// Calucates the EV's current position. Assumes the speed is always the same.
     /// </summary>

@@ -5,6 +5,7 @@ using Engine.Cost;
 using Engine.Events.Middleware;
 using Engine.Vehicles;
 using Engine.Services;
+using Engine.Routing;
 
 /// <summary>
 /// Handles the <see cref="FindCandidateStations"/> event by pre-computing candidate stations,
@@ -20,7 +21,8 @@ public class FindCandidateStationsHandler(
     ComputeCost computeCost,
     EventScheduler eventScheduler,
     EVStore evStore,
-    IStationService stationService)
+    IStationService stationService,
+    ApplyNewPath applyNewPath)
 {
     private uint _numberOfNoStations = 0;
 
@@ -31,8 +33,8 @@ public class FindCandidateStationsHandler(
     /// <returns>A task representing the asynchronous operation.</returns>
     public async Task Handle(FindCandidateStations e)
     {
-        var ev = evStore.Get(e.EVId);
-        var stationCosts = await findCandidateStationService.ComputeCandidateStationFromCache(e.EVId);
+        ref var ev = ref evStore.Get(e.EVId);
+        var stationCosts = await findCandidateStationService.GetCandidateStationFromCache(e.EVId);
 
         if (stationCosts.Count == 0)
         {
@@ -43,8 +45,26 @@ public class FindCandidateStationsHandler(
         }
 
         var bestStation = computeCost.Compute(ref ev, stationCosts, e.Time);
+
+        if (ev.HasReservationAtStationId is not null)
+        {
+            if (ev.HasReservationAtStationId == bestStation.Id)
+                return;
+
+            eventScheduler.ScheduleEvent(new CancelRequest(e.EVId, (ushort)ev.HasReservationAtStationId, e.Time));
+        }
+
+        bestStation.IncrementReservations();
+
+        var oldPath = ev.Journey.Path;
+
+        applyNewPath.ApplyNewPathToEV(ref ev, bestStation, e.Time);
+
+        var newPath = ev.Journey.Path;
+
         var durationToStation = Math.Ceiling(stationCosts[bestStation.Id]);
-        var reservationRequest = new ReservationRequest(e.EVId, bestStation.Id, e.Time, (Time)(uint)durationToStation);
-        eventScheduler.ScheduleEvent(reservationRequest);
+
+        var arriveAtStation = new ArriveAtStation(e.EVId, bestStation.Id, ev.CalcDesiredSoC((Time)(uint)durationToStation), (Time)(uint)durationToStation);
+        eventScheduler.ScheduleEvent(arriveAtStation);
     }
 }

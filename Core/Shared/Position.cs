@@ -5,7 +5,7 @@ namespace Core.Shared;
 /// </summary>
 /// <param name="longitude">The longitude coordinate.</param>
 /// <param name="latitude">The latitude coordinate.</param>
-public readonly struct Position(double longitude, double latitude)
+public readonly record struct Position(double longitude, double latitude)
 {
     /// <summary>
     /// Gets the longitude coordinate.
