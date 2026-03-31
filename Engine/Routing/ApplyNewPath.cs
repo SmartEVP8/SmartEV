@@ -19,7 +19,7 @@ public class ApplyNewPath(IDestinationRouter router)
     /// <param name="ev">The EV to reroute.</param>
     /// <param name="station">The station the EV should reroute through.</param>
     /// <param name="currentTime">Used to determine the EV's current position in the journey.</param>
-    public void ApplyNewPathToEV(ref EV ev, Station station, Time currentTime)
+    public Position ApplyNewPathToEV(ref EV ev, Station station, Time currentTime)
     {
         var originalRouteRightNow = ev.Journey.GetPathFromCurrentPosition(currentTime);
         var currentPos = originalRouteRightNow.Waypoints[0];
@@ -38,15 +38,23 @@ public class ApplyNewPath(IDestinationRouter router)
         var newWaypoints = new Paths([currentPos, .. detourPath.Waypoints]);
         var roundedDuration = (uint)Math.Ceiling(res.Duration);
         ev.Journey.UpdateRoute(newWaypoints, station.Position, currentTime, (Time)roundedDuration, res.Distance / 1000);
+        return decisionPoint;
     }
 
-    public Position CalculateDecisionPoint(Paths originalRoute, Paths detourRoute)
+    /// <summary>
+    /// Calculates the decision point where the original route and the detour route diverge.
+    /// </summary>
+    /// <param name="r1">Route 1.</param>
+    /// <param name="r2">Route 2.</param>
+    /// <returns>The position where <paramref name="r1"/> and <paramref name="r2"/> diverge.</returns>
+    /// <exception cref="SkillissueException">If they never diverge.</exception>
+    public static Position CalculateDecisionPoint(Paths r1, Paths r2)
     {
-        for (int i = 0; i < originalRoute.Waypoints.Count; i++)
+        for (var i = 0; i < r1.Waypoints.Count; i++)
         {
-            if (originalRoute.Waypoints[i] == detourRoute.Waypoints[i])
+            if (r1.Waypoints[i] != r2.Waypoints[i])
             {
-                return originalRoute.Waypoints[i];
+                return r1.Waypoints[i - 1];
             }
         }
 

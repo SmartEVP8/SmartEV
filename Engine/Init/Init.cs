@@ -138,7 +138,7 @@ public static class Init
             var settings = sp.GetRequiredService<EngineSettings>();
             var intervalSize = settings.IntervalToUpdateEVs;
             var urgencyInterval = settings.BatteryIntervalForCheckUrgency;
-            return new CheckAndUpdateAllEVsHandler(eventScheduler, evStore, intervalSize, urgencyInterval);
+            return new CheckAndUpdateAllEVsHandler(eventScheduler, evStore);
         });
 
         services.AddSingleton(sp =>
@@ -215,7 +215,8 @@ public static class Init
             var stationService = sp.GetRequiredService<IStationService>();
             var scheduler = sp.GetRequiredService<EventScheduler>();
             var evStore = sp.GetRequiredService<EVStore>();
-            return new FindCandidateStationsHandler(findCandidateStationService, computeCost, scheduler, evStore, stationService);
+            var applyNewPath = sp.GetRequiredService<ApplyNewPath>();
+            return new FindCandidateStationsHandler(findCandidateStationService, computeCost, scheduler, evStore, stationService, applyNewPath);
         });
 
         services.AddSingleton(sp =>

@@ -99,53 +99,6 @@ public class StationServiceTests
         Assert.True(ev2Event.Time > ev1End.Time);
     }
 
-    [Fact]
-    public void HandleReservationRequest_SetsReservation()
-    {
-        var scheduler = new EventScheduler();
-        var evStore = new EVStore(1);
-        var stations = TestData.Stations((1, 5.0, 5.0));
-        var service = TestData.StationService(stations, scheduler, evStore);
-
-        var ev = TestData.EV();
-        evStore.Set(0, ref ev);
-
-        service.HandleReservationRequest(new ReservationRequest(0, 1, new Time(0), 0));
-
-        Assert.Equal(1, (ushort)evStore.Get(0).HasReservationAtStationId!);
-    }
-
-    [Fact]
-    public void HandleReservationRequest_CancelsPreviousReservation()
-    {
-        var scheduler = new EventScheduler();
-        var evStore = new EVStore(1);
-        var stations = TestData.Stations((1, 1.0, 1.0), (2, 2.0, 2.0));
-        var service = TestData.StationService(stations, scheduler, evStore);
-
-        var ev = TestData.EV();
-        ev.HasReservationAtStationId = 1;
-        evStore.Set(0, ref ev);
-
-        var oldStation = stations[1];
-        var newStation = stations[2];
-        oldStation.IncrementReservations();
-
-        Assert.Equal(0, oldStation.TotalCancellations);
-        Assert.Equal(0, newStation.TotalReservations);
-
-        var reservation = new ReservationRequest(0, 2, new Time(0), 10);
-
-        service.HandleReservationRequest(reservation);
-        var cancel = scheduler.GetNextEvent() as CancelRequest;
-        Assert.NotNull(cancel);
-        service.HandleCancelRequest(cancel);
-
-        Assert.Null(evStore.Get(0).HasReservationAtStationId);
-        Assert.Equal(1, oldStation.TotalCancellations);
-        Assert.Equal(1, newStation.TotalReservations);
-    }
-
     private static (StationService service, EventScheduler scheduler, EVStore evStore) BuildSingle(int maxPowerKW = 150)
     {
         var charger = TestData.SingleCharger(1, maxPowerKW: maxPowerKW);

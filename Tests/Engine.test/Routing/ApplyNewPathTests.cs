@@ -127,4 +127,26 @@ public class ApplyNewPathToEVTests()
             return new RouteSegment(ReturnedDuration, 0, ReturnedPolyline);
         }
     }
+
+    [Fact]
+    public void Test_DivergencePoint()
+    {
+        var divergencePosition = new Position(5, 5);
+        var r1 = new Paths(
+                [
+                    new Position(1, 1),
+                    divergencePosition,
+                    new Position(10, 10)
+                ]);
+
+        var r2 = new Paths(
+                [
+                    new Position(1, 1),
+                    divergencePosition,
+                    new Position(9, 9)
+                ]);
+
+        var pos = ApplyNewPath.CalculateDecisionPoint(r1, r2);
+        Assert.Equal(pos, divergencePosition);
+    }
 }

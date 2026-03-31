@@ -33,8 +33,8 @@ public class FindCandidateStationsHandler(
     /// <returns>A task representing the asynchronous operation.</returns>
     public async Task Handle(FindCandidateStations e)
     {
-        ref var ev = ref evStore.Get(e.EVId);
         var stationCosts = await findCandidateStationService.GetCandidateStationFromCache(e.EVId);
+        ref var ev = ref evStore.Get(e.EVId);
 
         if (stationCosts.Count == 0)
         {
@@ -55,16 +55,13 @@ public class FindCandidateStationsHandler(
         }
 
         bestStation.IncrementReservations();
-
-        var oldPath = ev.Journey.Path;
-
-        applyNewPath.ApplyNewPathToEV(ref ev, bestStation, e.Time);
-
-        var newPath = ev.Journey.Path;
-
         var durationToStation = Math.Ceiling(stationCosts[bestStation.Id]);
-
         var arriveAtStation = new ArriveAtStation(e.EVId, bestStation.Id, ev.CalcDesiredSoC((Time)(uint)durationToStation), (Time)(uint)durationToStation);
-        eventScheduler.ScheduleEvent(arriveAtStation);
+        var cancellationId = eventScheduler.ScheduleEvent(arriveAtStation);
+
+        var decisionPoint = applyNewPath.ApplyNewPathToEV(ref ev, bestStation, e.Time);
+        var decisionTime = ev.Journey.DurationToWayPoint(decisionPoint, e.Time);
+
+        eventScheduler.ScheduleEvent(new DecisionEvent(e.EVId, decisionTime, cancellationId));
     }
 }

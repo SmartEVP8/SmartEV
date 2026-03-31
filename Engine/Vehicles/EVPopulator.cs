@@ -45,7 +45,7 @@ public class EVPopulator(EVFactory evFactory, EVStore evStore, EventScheduler ev
                     continue;
                 }
 
-                eventScheduler.ScheduleEvent(new CheckAndUpdateEV(i, depatures[i]));
+                eventScheduler.ScheduleEvent(new FindCandidateStations(i, depatures[i]));
             }
 
             ArrayPool<int>.Shared.Return(indexes);
