@@ -50,9 +50,6 @@ public record EndCharging(int EVId, int ChargerId, Time Time) : Event(Time);
 //  - Record the path deviation of an EVs actual journey compared to its original journey.
 public record ArriveAtDestination(int EVId, Time Time) : Event(Time);
 
-// Functionality:
-// - Updates all EV's parallelly to their SoC level and check if should schedule a CheckUrgency event
-public record CheckAndUpdateEV(int EVId, Time Time) : Event(Time);
 
 // ---------- NON-DOMAIN EVENTS ---------- //
 
@@ -60,9 +57,6 @@ public record CheckAndUpdateEV(int EVId, Time Time) : Event(Time);
 // EV's are allocated up front and polled once their depature has been reached.
 public record SpawnEVS(Time Time) : Event(Time);
 
-// Functionality:
-// - Checks if an EV should look for Stations
-public record CheckUrgency(int EVId, Time Time) : Event(Time);
 
 // Spawn
 // Functionality:
