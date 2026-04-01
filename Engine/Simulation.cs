@@ -22,7 +22,7 @@ public class Simulation(
     public async Task Run()
     {
         Console.WriteLine("Starting Simulation");
-        scheduler.ScheduleEvent(new SpawnEVS(0));
+        scheduler.ScheduleEvent(new SpawnEVS(1));
         while (true)
         {
             await HandleNextEvent();

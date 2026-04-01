@@ -53,7 +53,7 @@ public class Journey(Time departure, Time duration, float distanceMeters, Paths 
     public Time TimeElapsed(Time currentTime) => currentTime - JourneyStart;
 
     /// <summary>
-    /// Calculates the remaining time on the current route, 
+    /// Calculates the remaining time on the current route,
     /// i.e. the time until the EV would reach its destination if it continues on its current path without any detours.
     /// </summary>
     /// <param name="currentTime">The current time.</param>
@@ -150,9 +150,12 @@ public class Journey(Time departure, Time duration, float distanceMeters, Paths 
             if (distanceCovered + length >= distanceTraveled)
             {
                 var remainingDistance = distanceTraveled - distanceCovered;
-                var ratio = remainingDistance / length;
+                var ratio = Math.Clamp(remainingDistance / length, 0, 1);
                 var latitude = first.Latitude + (ratio * (second.Latitude - first.Latitude));
                 var longitude = first.Longitude + (ratio * (second.Longitude - first.Longitude));
+                if (double.IsNaN(latitude) || double.IsNaN(longitude))
+                    throw new InvalidOperationException($"Calculated position is invalid. First: {first}, Second: {second}, Ratio: {ratio}, RemainingDistance: {remainingDistance}, Length: {length}.");
+
                 return new Position(longitude: longitude, latitude: latitude);
             }
 

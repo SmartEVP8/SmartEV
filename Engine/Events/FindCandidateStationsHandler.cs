@@ -37,7 +37,6 @@ public class FindCandidateStationsHandler(
     {
         var stationCosts = await findCandidateStationService.GetCandidateStationFromCache(e.EVId);
         ref var ev = ref evStore.Get(e.EVId);
-
         if (stationCosts.Count == 0)
         {
             _numberOfNoStations++;
