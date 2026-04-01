@@ -216,7 +216,7 @@ public static class Init
             var scheduler = sp.GetRequiredService<EventScheduler>();
             var evStore = sp.GetRequiredService<EVStore>();
             var applyNewPath = sp.GetRequiredService<ApplyNewPath>();
-            return new FindCandidateStationsHandler(findCandidateStationService, computeCost, scheduler, evStore, stationService, applyNewPath);
+            return new FindCandidateStationsHandler(findCandidateStationService, computeCost, scheduler, evStore, applyNewPath);
         });
 
         services.AddSingleton(sp =>

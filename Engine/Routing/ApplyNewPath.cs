@@ -8,7 +8,7 @@ using Engine.Utils;
 /// <summary>
 /// Calculates detour deviations by querying OSRM routes.
 /// </summary>
-public class ApplyNewPath(IDestinationRouter router)
+public class ApplyNewPath(IDestinationRouter router) : IApplyNewPath
 {
     private readonly IDestinationRouter _router = router;
 

@@ -1,11 +1,9 @@
-using Core.Routing;
 namespace Engine.Events;
 
 using Core.Shared;
 using Engine.Cost;
 using Engine.Events.Middleware;
 using Engine.Vehicles;
-using Engine.Services;
 using Engine.Routing;
 using Core.Charging;
 using Core.Vehicles;
@@ -18,12 +16,13 @@ using Core.Vehicles;
 /// <param name="computeCost">Cost computation service for selecting the best station.</param>
 /// <param name="eventScheduler">Event scheduler for scheduling reservation requests.</param>
 /// <param name="evStore">EV store for retrieving EV data.</param>
+/// <param name="applyNewPath">EV path updater.</param>
 public class FindCandidateStationsHandler(
-    FindCandidateStationService findCandidateStationService,
-    ComputeCost computeCost,
-    EventScheduler eventScheduler,
+    IFindCandidateStationService findCandidateStationService,
+    IComputeCost computeCost,
+    IEventScheduler eventScheduler,
     EVStore evStore,
-    ApplyNewPath applyNewPath)
+    IApplyNewPath applyNewPath)
 {
     private uint _numberOfNoStations = 0;
 
@@ -36,9 +35,8 @@ public class FindCandidateStationsHandler(
     /// <returns>A task representing the asynchronous operation.</returns>
     public async Task Handle(FindCandidateStations e)
     {
-
-        ref var ev = ref evStore.Get(e.EVId);
         var stationCosts = await findCandidateStationService.GetCandidateStationFromCache(e.EVId);
+        ref var ev = ref evStore.Get(e.EVId);
 
         if (stationCosts.Count == 0)
         {

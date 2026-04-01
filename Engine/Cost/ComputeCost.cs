@@ -12,7 +12,7 @@ using Engine.Services;
 /// </summary>
 /// <param name="costStore">The cost store.</param>
 /// <param name="stationService">The station service.</param>
-public class ComputeCost(ICostStore costStore, IStationService stationService)
+public class ComputeCost(ICostStore costStore, IStationService stationService) : IComputeCost
 {
     /// <summary>
     /// Computes the cost of detouring to each station and selects the station with the lowest cost.
