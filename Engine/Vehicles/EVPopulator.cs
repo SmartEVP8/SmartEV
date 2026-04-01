@@ -36,18 +36,16 @@ public class EVPopulator(EVFactory evFactory, EVStore evStore, EventScheduler ev
         }
         finally
         {
-            foreach (var i in indexes)
+            for (var i = 0; i < amount; i++)
             {
-                ref var ev = ref evStore.Get(i);
+                ref var ev = ref evStore.Get(indexes[i]);
                 if (ev.CanCompleteJourney(ev.Preferences.MinAcceptableCharge))
                 {
-                    eventScheduler.ScheduleEvent(new ArriveAtDestination(i, currentTime + ev.Journey.OriginalDuration));
+                    eventScheduler.ScheduleEvent(new ArriveAtDestination(indexes[i], currentTime + ev.Journey.OriginalDuration));
                     continue;
                 }
-
-                eventScheduler.ScheduleEvent(new FindCandidateStations(i, depatures[i]));
+                eventScheduler.ScheduleEvent(new FindCandidateStations(indexes[i], depatures[i]));
             }
-
             ArrayPool<int>.Shared.Return(indexes);
         }
     }
