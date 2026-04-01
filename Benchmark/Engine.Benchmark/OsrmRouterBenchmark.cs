@@ -29,11 +29,9 @@ public class OsrmRouterBenchmark
     {
         var path = AppContext.GetData("OsrmDataPath") as string
             ?? throw new InvalidOperationException("OsrmDataPath not set in project.");
-
-        var energyPrices = new EnergyPrices(
-            new FileInfo(AppContext.GetData("EnergyPricesPath") as string
-                ?? throw new InvalidDataException("EnergyPricesPath not set.")),
-            new Random(1));
+        var csvPath = AppContext.GetData("EnergyPricesPath") as string
+            ?? throw new InvalidOperationException("EnergyPricesPath not set in project.");
+        var energyPrices = new EnergyPrices(new FileInfo(csvPath), new Random(42));
 
         var stations = new List<Station>(200);
         for (ushort i = 0; i < 200; i++)
@@ -112,5 +110,66 @@ public class OsrmRouterBenchmark
     {
         var (lon, lat) = _evCoordinates[0];
         _ = _router.QueryDestination([lon, lat, _stationCoordsFlat[0], _stationCoordsFlat[1], _destPosition[0], _destPosition[1]]);
+    }
+}
+
+    /// <summary>
+    /// Benchmarks querying a single destination.
+    /// </summary>
+    [Benchmark]
+    public void QueryDestinationEVtoDest()
+    {
+        var (lon, lat) = _evCoordinates[0];
+        _ = _router.QuerySingleDestination(lon, lat, _stationCoordsFlat[0], _stationCoordsFlat[1]);
+    }
+
+    /// <summary>
+    /// Benchmarks querying a single destination with a pre-indexed station for snapping.
+    /// </summary>
+    [Benchmark]
+    public void QueryDestinationEVtoDestWithStation()
+    {
+        var (lon, lat) = _evCoordinates[0];
+        _ = _router.QueryDestinationWithStop(lon, lat, _stationCoordsFlat[0], _stationCoordsFlat[1], _stationCoordsFlat[2], _stationCoordsFlat[3], _stationIndices[0]);
+    }
+
+    /// <summary>
+    /// Benchmarks querying 1000 EVs each routing through a pre-indexed station to a destination.
+    /// The station is looked up by pre-computed index with cached snapping hints.
+    /// </summary>
+    [Benchmark]
+    public void QueryWithIndexedStation1000Evs()
+    {
+        var random = new Random(42);
+        for (var i = 0; i < _evCoordinates.Length; i++)
+        {
+            var (lon, lat) = _evCoordinates[i];
+            var stationIdx = (ushort)random.Next(0, 50);
+            var destIdx = (ushort)random.Next(0, 50);
+            while (destIdx == stationIdx)
+                destIdx = (ushort)random.Next(0, 50);
+
+            _ = _router.QueryDestinationWithStop(lon, lat, _stationCoordsFlat[stationIdx * 2], _stationCoordsFlat[(stationIdx * 2) + 1], _stationCoordsFlat[destIdx * 2], _stationCoordsFlat[(destIdx * 2) + 1], stationIdx);
+        }
+    }
+
+    /// <summary>
+    /// Benchmarks querying 1000 EVs each routing through the same stations to the same destinations.
+    /// The station is snapped at query time (no pre-computed hints).
+    /// </summary>
+    [Benchmark]
+    public void QueryWithQueryTimeSnappedStation1000Evs()
+    {
+        var random = new Random(42);
+        for (var i = 0; i < _evCoordinates.Length; i++)
+        {
+            var (lon, lat) = _evCoordinates[i];
+            var stationIdx = (ushort)random.Next(0, 50);
+            var destIdx = (ushort)random.Next(0, 50);
+            while (destIdx == stationIdx)
+                destIdx = (ushort)random.Next(0, 50);
+
+            _ = _router.QueryDestinationWithStop(lon, lat, _stationCoordsFlat[stationIdx * 2], _stationCoordsFlat[(stationIdx * 2) + 1], _stationCoordsFlat[destIdx * 2], _stationCoordsFlat[(destIdx * 2) + 1], ushort.MaxValue);
+        }
     }
 }
