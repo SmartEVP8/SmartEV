@@ -6,7 +6,6 @@ using Engine.Routing;
 using Engine.test.Builders;
 
 // If this test ever fails report it. We should have been fixed but just in case.
-[Collection("OSRM_Sequential")]
 public class OSRMRouterTests
 {
     private static readonly double[] _evPosition = [10.2039, 56.1629];
@@ -102,6 +101,7 @@ public class OSRMRouterTests
     [Fact]
     public void AllOSRMQueryFunctions_ReturnsTheSameResult()
     {
+        // station is directly on route so shouldn't impact routing
         var stationOnRoute = new Position(10.182335, 56.156305);
         var router = CreateRouter([_stationNearPosition, stationOnRoute, _stationFarPosition]);
 
@@ -140,49 +140,16 @@ public class OSRMRouterTests
         var queryDestRes2 = router.QuerySingleDestination(
             stationLon, stationLat, _destPosition[0], _destPosition[1]);
 
-        var withStopsRes = router.QueryDestination(
-            [_evPosition[0], _evPosition[1], stationLon, stationLat, _destPosition[0], _destPosition[1]]);
+        var withStopsRes = router.QueryDestinationWithStop(
+            _evPosition[0], _evPosition[1], stationLon, stationLat, _destPosition[0], _destPosition[1]);
 
         // Values are baselines from OSRM public API
         Assert.Equal(272f, singleRes.Duration, 5.0f);          // EV->Station
         Assert.Equal(477f, singleResDest.Duration, 5.0f);      // EV->Dest
         Assert.Equal(274f, singleResStationDest.Duration, 5.0f); // Station->Dest
 
-        // WithStops (591s) != sum of independent legs (550s) OSRM waypoint routing takes a different path. Consistent with OSRM public API (587s).
-        Assert.Equal(591f, withStopsRes.Duration, 5.0f);
-    }
-
-    [Fact]
-    public void QueryStationsWithDest_ReturnsDurationsInRequestedIndexOrder()
-    {
-        using var router = CreateRouter(_stationNearPosition, _stationFarPosition);
-
-        // 1. Get the "Ground Truth" in natural order [0, 1]
-        var (standardDurations, _) = router.QueryStationsWithDest(
-            _evPosition[0], _evPosition[1], _destPosition[0], _destPosition[1], [0, 1]);
-
-        // 2. Request them in reverse order [1, 0]
-        var (shuffledDurations, _) = router.QueryStationsWithDest(
-            _evPosition[0], _evPosition[1],
-            _destPosition[0], _destPosition[1],
-            [1, 0]);
-
-        // 3. Assert that the values are swapped correctly
-        // The first result in the shuffled array should match the second result of the standard array
-        Assert.Equal(standardDurations[1], shuffledDurations[0], 0.1f);
-        Assert.Equal(standardDurations[0], shuffledDurations[1], 0.1f);
-    }
-
-    [Fact]
-    public void QueryDestination_ThrowsOnInvalidCoordinateCount()
-    {
-        using var router = CreateRouter();
-
-        // Odd number of doubles (lon, lat, lon)
-        Assert.Throws<ArgumentException>(() => router.QueryDestination([10.1, 56.1, 10.2]));
-
-        // Too few coordinates
-        Assert.Throws<ArgumentException>(() => router.QueryDestination([10.1, 56.1]));
+        // WithStops != sum of independent legs (550s) OSRM waypoint routing takes a different path. Consistent with OSRM public API (587s).
+        Assert.Equal(587f, withStopsRes.Duration, 5.0f);
     }
 
     [Fact]
@@ -196,12 +163,26 @@ public class OSRMRouterTests
     }
 
     [Fact]
+    public void QueryStationsWithDest_IndexOrderDeterminesResultOrder()
+    {
+        using var router = CreateRouter(_stationNearPosition, _stationFarPosition);
+
+        var (durationsForward, _) = router.QueryStationsWithDest(
+            _evPosition[0], _evPosition[1], _destPosition[0], _destPosition[1], [0, 1]);
+
+        var (durationsReversed, _) = router.QueryStationsWithDest(
+            _evPosition[0], _evPosition[1], _destPosition[0], _destPosition[1], [1, 0]);
+
+        Assert.Equal(durationsForward[0], durationsReversed[1], 0.1f);
+        Assert.Equal(durationsForward[1], durationsReversed[0], 0.1f);
+    }
+
+    [Fact]
     public async Task OSRMRouter_IsThreadSafe_WithConcurrentUniqueQueries()
     {
         using var router = CreateRouter();
-        var numTasks = 50;
+        var numTasks = 1000;
 
-        // 1. Generate unique queries and calculate their EXPECTED sequential results
         var queries = new (double startLon, double startLat, double endLon, double endLat, float expectedDur)[numTasks];
 
         for (var i = 0; i < numTasks; i++)
@@ -215,7 +196,6 @@ public class OSRMRouterTests
             queries[i] = (_evPosition[0], _evPosition[1], targetLon, targetLat, seqResult.Duration);
         }
 
-        // 2. Fire them all off concurrentlykids
         var parallelResults = new float[numTasks];
         var tasks = Enumerable.Range(0, numTasks).Select(i => Task.Run(() =>
         {
@@ -226,10 +206,67 @@ public class OSRMRouterTests
 
         await Task.WhenAll(tasks);
 
-        // 3. Verify! If memory bled across threads, these won't match.
         for (var i = 0; i < numTasks; i++)
         {
             Assert.Equal(queries[i].expectedDur, parallelResults[i], 0.1f);
         }
+    }
+
+    [Fact]
+    public async Task QueryStationsWithDest_IsThreadSafe_WithConcurrentQueries()
+    {
+        using var router = CreateRouter(_stationNearPosition, _stationFarPosition);
+        var numTasks = 1000;
+
+        var queries = new (double evLon, double evLat, float expectedDuration)[numTasks];
+        for (var i = 0; i < numTasks; i++)
+        {
+            var offset = i * 0.001;
+            var (durations, _) = router.QueryStationsWithDest(
+                _evPosition[0] + offset, _evPosition[1] + offset, _destPosition[0], _destPosition[1], [0, 1]);
+            queries[i] = (_evPosition[0] + offset, _evPosition[1] + offset, durations[0]);
+        }
+
+        var parallelResults = new float[numTasks];
+        await Task.WhenAll(Enumerable.Range(0, numTasks).Select(i => Task.Run(() =>
+        {
+            var (evLon, evLat, _) = queries[i];
+            var (durations, _) = router.QueryStationsWithDest(
+                evLon, evLat, _destPosition[0], _destPosition[1], [0, 1]);
+            parallelResults[i] = durations[0];
+        })));
+
+        for (var i = 0; i < numTasks; i++)
+            Assert.Equal(queries[i].expectedDuration, parallelResults[i], 0.1f);
+    }
+
+    [Fact]
+    public async Task QueryPointsToPoints_IsThreadSafe_WithConcurrentQueries()
+    {
+        using var router = CreateRouter(_stationNearPosition, _stationFarPosition);
+        var numTasks = 1000;
+
+        var queries = new (double evLon, double evLat, float expectedDuration)[numTasks];
+        for (var i = 0; i < numTasks; i++)
+        {
+            var offset = i * 0.001;
+            var (durations, _) = router.QueryPointsToPoints(
+                [_evPosition[0] + offset, _evPosition[1] + offset],
+                [_stationNearPosition.Longitude, _stationNearPosition.Latitude]);
+            queries[i] = (_evPosition[0] + offset, _evPosition[1] + offset, durations[0]);
+        }
+
+        var parallelResults = new float[numTasks];
+        await Task.WhenAll(Enumerable.Range(0, numTasks).Select(i => Task.Run(() =>
+        {
+            var (evLon, evLat, _) = queries[i];
+            var (durations, _) = router.QueryPointsToPoints(
+                [evLon, evLat],
+                [_stationNearPosition.Longitude, _stationNearPosition.Latitude]);
+            parallelResults[i] = durations[0];
+        })));
+
+        for (var i = 0; i < numTasks; i++)
+            Assert.Equal(queries[i].expectedDuration, parallelResults[i], 0.1f);
     }
 }

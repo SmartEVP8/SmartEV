@@ -25,7 +25,6 @@ public class OsrmRouterOneToManyBenchmark
         var osrmPath = AppContext.GetData("OsrmDataPath") as string
             ?? throw new InvalidDataException("OSRMPath not set.");
 
-
         var energyPrices = new EnergyPrices(
             new FileInfo(AppContext.GetData("EnergyPricesPath") as string
                 ?? throw new InvalidDataException("EnergyPricesPath not set.")),

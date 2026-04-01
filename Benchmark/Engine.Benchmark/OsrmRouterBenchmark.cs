@@ -33,8 +33,8 @@ public class OsrmRouterBenchmark
             ?? throw new InvalidOperationException("EnergyPricesPath not set in project.");
         var energyPrices = new EnergyPrices(new FileInfo(csvPath), new Random(42));
 
-        var stations = new List<Station>(200);
-        for (ushort i = 0; i < 200; i++)
+        var stations = new List<Station>(50);
+        for (ushort i = 0; i < 50; i++)
         {
             stations.Add(new Station(
                 id: i,
@@ -46,7 +46,7 @@ public class OsrmRouterBenchmark
         }
 
         _router = new OSRMRouter(new FileInfo(path), stations);
-        _stationIndices = [.. Enumerable.Range(0, 200).Select(i => (ushort)i)];
+        _stationIndices = [.. Enumerable.Range(0, 50).Select(i => (ushort)i)];
 
         _evCoordinates = new (double Lon, double Lat)[1000];
         _evCoordsFlat = new double[1000 * 2];
@@ -59,8 +59,8 @@ public class OsrmRouterBenchmark
             _evCoordsFlat[(i * 2) + 1] = lat;
         }
 
-        _stationCoordsFlat = new double[200 * 2];
-        for (var i = 0; i < 200; i++)
+        _stationCoordsFlat = new double[50 * 2];
+        for (var i = 0; i < 50; i++)
         {
             _stationCoordsFlat[i * 2] = stations[i].Position.Longitude;
             _stationCoordsFlat[(i * 2) + 1] = stations[i].Position.Latitude;
@@ -74,10 +74,10 @@ public class OsrmRouterBenchmark
     public void Cleanup() => _router?.Dispose();
 
     /// <summary>
-    /// Benchmarks bulk querying of 1000 cars to N stations.
+    /// Benchmarks bulk querying of 1000 cars to 50 stations.
     /// </summary>
     [Benchmark]
-    public void Query1000CarsToNStationsBulk()
+    public void Query1000CarsTo50StationsBulk()
     {
         _ = _router.QueryPointsToPoints(_evCoordsFlat, _stationCoordsFlat);
     }
@@ -109,9 +109,8 @@ public class OsrmRouterBenchmark
     public void QueryDestinationWithWaypoint()
     {
         var (lon, lat) = _evCoordinates[0];
-        _ = _router.QueryDestination([lon, lat, _stationCoordsFlat[0], _stationCoordsFlat[1], _destPosition[0], _destPosition[1]]);
+        _ = _router.QueryDestinationWithStop(lon, lat, _stationCoordsFlat[0], _stationCoordsFlat[1], _destPosition[0], _destPosition[1]);
     }
-}
 
     /// <summary>
     /// Benchmarks querying a single destination.
