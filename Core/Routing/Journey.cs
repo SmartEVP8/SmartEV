@@ -53,6 +53,14 @@ public class Journey(Time departure, Time duration, float distanceMeters, Paths 
     public Time TimeElapsed(Time currentTime) => currentTime - JourneyStart;
 
     /// <summary>
+    /// Calculates the remaining time on the current route, 
+    /// i.e. the time until the EV would reach its destination if it continues on its current path without any detours.
+    /// </summary>
+    /// <param name="currentTime">The current time.</param>
+    /// <returns>The remaining time on the current route.</returns>
+    public Time RemainingCurrentRoute(Time currentTime) => LastUpdatedDeparture + LastUpdatedDuration - currentTime;
+
+    /// <summary>
     /// Gets the original distance of the journey, i.e. the distance of A -> B without any detours.
     /// </summary>
     public float OriginalDistancekm { get; } = distanceMeters / 1000;

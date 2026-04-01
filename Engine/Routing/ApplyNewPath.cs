@@ -25,12 +25,8 @@ public class ApplyNewPath(IDestinationRouter router) : IApplyNewPath
         var currentPos = originalRouteRightNow.Waypoints[0];
         var destination = originalRouteRightNow.Waypoints[^1];
 
-        var res = _router.QueryDestination(
-        [
-            currentPos.Longitude, currentPos.Latitude,
-            station.Position.Longitude, station.Position.Latitude,
-            destination.Longitude, destination.Latitude,
-        ]);
+        var res = _router.QueryDestinationWithStop(
+            currentPos.Longitude, currentPos.Latitude, station.Position.Longitude, station.Position.Latitude, destination.Longitude, destination.Latitude, station.Id);
 
         var detourPath = Polyline6ToPoints.DecodePolyline(res.Polyline);
 

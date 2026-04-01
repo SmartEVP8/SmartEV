@@ -7,30 +7,6 @@ using Engine.test.Builders;
 public class ApplyNewPathToEVTests()
 {
     [Fact]
-    public void ApplyNewPathToEV_PassesCorrectCoordinatesToRouter()
-    {
-        var ev = TestData.EV(waypoints: [
-            new Position(longitude: 0, latitude: 0),
-        new Position(longitude: 10, latitude: 10)
-        ]);
-        var station = TestData.Station(1, new Position(longitude: 5, latitude: 5));
-        var fakeRouter = new FakeDestinationRouter();
-        var applyNewPath = new ApplyNewPath(fakeRouter);
-
-        applyNewPath.ApplyNewPathToEV(ref ev, station, new Time(0));
-
-        var expectedCoordinates = new double[]
-        {
-            0, 0,   // Current position (time 0 = start)
-            5, 5,   // Station position
-            10, 10, // Destination position
-        };
-
-        Assert.NotNull(fakeRouter.ReceivedCoordinates);
-        Assert.Equal(expectedCoordinates, fakeRouter.ReceivedCoordinates);
-    }
-
-    [Fact]
     public void ApplyNewPath_WhenApplyingSamePath_IsSame()
     {
         var journey = TestData.Journey(
@@ -105,27 +81,18 @@ public class ApplyNewPathToEVTests()
             applyNewPath.ApplyNewPathToEV(ref ev, station, new Time(151)));
     }
 
-    public class FakeDestinationRouter() : IDestinationRouter
+    public class FakeDestinationRouter : IDestinationRouter
     {
         private const float _tenMinutesInSeconds = 600.0f;
 
-        public float ReturnedDuration { get; set; } = _tenMinutesInSeconds; // 10 minutes default
+        public float ReturnedDuration { get; set; } = _tenMinutesInSeconds;
 
-        public string ReturnedPolyline { get; set; } = "_p~iF~ps|U_ulLnnqC_mqNvxq`@"; // Arbitrary valid polyline
+        public float ReturnedDistance { get; set; } = 0;
 
-        public double[]? ReceivedCoordinates { get; private set; }
+        public string ReturnedPolyline { get; set; } = "_p~iF~ps|U_ulLnnqC_mqNvxq`@";
 
-        public (float duration, string polyline) QueryDestination(double[] coords)
-        {
-            ReceivedCoordinates = coords;
-            return (ReturnedDuration, ReturnedPolyline);
-        }
-
-        RouteSegment IDestinationRouter.QueryDestination(double[] coords)
-        {
-            ReceivedCoordinates = coords;
-            return new RouteSegment(ReturnedDuration, 0, ReturnedPolyline);
-        }
+        public RouteSegment QueryDestinationWithStop(
+            double evLon, double evLat, double stationLon, double stationLat, double destLon, double destLat, ushort index) => new(ReturnedDuration, ReturnedDistance, ReturnedPolyline);
     }
 
     [Fact]
