@@ -37,10 +37,8 @@ public class ComputeCost(ICostStore costStore, IStationService stationService, E
             var pathDeviationCost = CalculatePathDeviationCost(ref ev, duration, weights, time);
             var urgencyCost = CalculateUrgencyCost(ref ev, weights);
             var priceCost = CalculatePriceCost(ref ev, station, weights, time, energyPrices);
-            Console.WriteLine(priceCost);
             var effectiveWaitTimeCost = CalculateEffectiveWaitTimeCost(weights);
             var cost = effectiveQueueCost + pathDeviationCost + urgencyCost + priceCost + effectiveWaitTimeCost;
-            Console.WriteLine("cost is " + cost + " where effectiveQueueCost is " + effectiveQueueCost + " pathDeviationCost is " + pathDeviationCost + " urgencyCost is " + urgencyCost + " priceCost is " + priceCost + " effectiveWaitTimeCost is " + effectiveWaitTimeCost);
 
             if (double.IsNaN(cost))
             {
