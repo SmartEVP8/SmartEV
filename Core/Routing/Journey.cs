@@ -66,7 +66,6 @@ public class Journey(Time departure, Time duration, float distanceMeters, Paths 
     /// Calculates the time it will take for the EV to reach a given point on the path.
     /// </summary>
     /// <param name="point">The position the EV wants to drive to.</param>
-    /// <param name="currentTime">The current time of the simulation.</param>
     /// <returns>Return the simulation time of when the EV will arive at the point.</returns>
     /// <exception cref="ArgumentException">Throws error if point is not in path.</exception>
     public uint DurationToWayPoint(Position point)
@@ -102,30 +101,14 @@ public class Journey(Time departure, Time duration, float distanceMeters, Paths 
         throw new ArgumentException($"Position {point} is not on the path.");
     }
 
+    /// <summary>
+    /// Calculates the path from the EV's current position to the destination, based on the current time and the original path. Assumes the speed is always the same.
+    /// </summary>
+    /// <param name="currentTime">The current simulation time.</param>
+    /// <returns>Returns a new path with starting point from current position.</returns>
     public Paths GetPathFromCurrentPosition(Time currentTime)
     {
-        Time completedTime = LastUpdatedDeparture + LastUpdatedDuration;
-        if (currentTime > completedTime)
-            throw new ArgumentException($"Current time: {currentTime} is after the journey has completed: {completedTime}.");
-        if (currentTime < LastUpdatedDeparture)
-            throw new ArgumentException($"Current time: {currentTime} is before the journey has started: {JourneyStart}.");
-
-        var percentageCompleted = (currentTime - LastUpdatedDeparture) / (double)LastUpdatedDuration;
-
-        var segments = Path
-            .Waypoints.Zip(Path.Waypoints.Skip(1))
-            .Select(p =>
-                (
-                    p.First,
-                    p.Second,
-                    Length: GeoMath.EquirectangularDistance(p.First, p.Second)
-                ))
-            .ToList();
-
-        var totalLength = segments.Sum(s => s.Length);
-        var distanceTraveled = percentageCompleted * totalLength;
-
-        var distanceCovered = 0.0;
+        CreateFindPositionVariables(currentTime, out var segments, out var distanceTraveled, out var distanceCovered);
         foreach (var (first, second, length) in segments)
         {
             if (distanceCovered + length >= distanceTraveled)
@@ -153,28 +136,7 @@ public class Journey(Time departure, Time duration, float distanceMeters, Paths 
     /// <exception cref="ArgumentException">Thrown when the current time is before the journey starts or after it has completed.</exception>
     public Position CurrentPosition(Time currentTime)
     {
-        Time completedTime = LastUpdatedDeparture + LastUpdatedDuration;
-        if (currentTime > completedTime)
-            throw new ArgumentException($"Current time: {currentTime} is after the journey has completed: {completedTime}.");
-        if (currentTime < LastUpdatedDeparture)
-            throw new ArgumentException($"Current time: {currentTime} is before the journey has started: {JourneyStart}.");
-
-        var percentageCompleted = (currentTime - LastUpdatedDeparture) / (double)LastUpdatedDuration;
-
-        var segments = Path
-            .Waypoints.Zip(Path.Waypoints.Skip(1))
-            .Select(p =>
-                (
-                    p.First,
-                    p.Second,
-                    Length: GeoMath.EquirectangularDistance(p.First, p.Second)
-                ))
-            .ToList();
-
-        var totalLength = segments.Sum(s => s.Length);
-        var distanceTraveled = percentageCompleted * totalLength;
-
-        var distanceCovered = 0.0;
+        CreateFindPositionVariables(currentTime, out var segments, out var distanceTraveled, out var distanceCovered);
         foreach (var (first, second, length) in segments)
         {
             if (distanceCovered + length >= distanceTraveled)
@@ -214,14 +176,26 @@ public class Journey(Time departure, Time duration, float distanceMeters, Paths 
         PathDeviation += newEta - oldEta;
     }
 
-    /// <summary>
-    /// Calculates the distance from the EV's current position to the next stop.
-    /// </summary>
-    /// <param name="currentTime">The current time.</param>
-    /// <returns>Returns the distance to the next stop.</returns>
-    public float DistanceToNextStop(Time currentTime)
+    private void CreateFindPositionVariables(Time currentTime, out List<(Position First, Position Second, double Length)> segments, out double distanceTraveled, out double distanceCovered)
     {
-        var currentPos = CurrentPosition(currentTime);
-        return (float)GeoMath.EquirectangularDistance(currentPos, NextStop) / 1000;
+        Time completedTime = LastUpdatedDeparture + LastUpdatedDuration;
+        if (currentTime > completedTime)
+            throw new ArgumentException($"Current time: {currentTime} is after the journey has completed: {completedTime}.");
+        if (currentTime < LastUpdatedDeparture)
+            throw new ArgumentException($"Current time: {currentTime} is before the journey has started: {JourneyStart}.");
+
+        var percentageCompleted = (currentTime - LastUpdatedDeparture) / (double)LastUpdatedDuration;
+
+        segments = [.. Path
+            .Waypoints.Zip(Path.Waypoints.Skip(1))
+            .Select(p =>
+                (
+                    p.First,
+                    p.Second,
+                    Length: GeoMath.EquirectangularDistance(p.First, p.Second)
+                ))];
+        var totalLength = segments.Sum(s => s.Length);
+        distanceTraveled = percentageCompleted * totalLength;
+        distanceCovered = 0.0;
     }
 }
