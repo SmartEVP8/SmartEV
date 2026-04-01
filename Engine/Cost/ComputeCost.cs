@@ -58,8 +58,7 @@ public class ComputeCost(ICostStore costStore, IStationService stationService, E
         if (bestStation is null)
         {
             throw new ArgumentNullException("No suitable station found.");
-        }
-
+        }             
         return bestStation;
     }
 
@@ -103,7 +102,7 @@ public class ComputeCost(ICostStore costStore, IStationService stationService, E
     {
         var currentPrice = station.GetPrice(time);
         var averagePrice = energyPrices.GetHourPrice(time.DayOfWeek, (int)time.Hour);
-        return weights.PriceSensitivity * ev.Preferences.PriceSensitivity * (currentPrice - averagePrice);
+        return weights.PriceSensitivity * ev.Preferences.PriceSensitivity * (currentPrice - averagePrice) * 15; // Scale factor to convert price difference to a comparable cost value
     }
 
     // TODO: Implement
