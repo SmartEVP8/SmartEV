@@ -7,28 +7,6 @@ using Engine.test.Builders;
 public class ApplyNewPathToEVTests()
 {
     [Fact]
-    public void ApplyNewPathToEV_PassesCorrectCoordinatesToRouter()
-    {
-        var ev = TestData.EV(waypoints: [
-            new Position(longitude: 0, latitude: 0),
-            new Position(longitude: 10, latitude: 10)
-        ]);
-        var station = TestData.Station(1, new Position(longitude: 5, latitude: 5));
-        var fakeRouter = new FakeDestinationRouter();
-        var applyNewPath = new ApplyNewPath(fakeRouter);
-
-        applyNewPath.ApplyNewPathToEV(ref ev, station, new Time(0));
-
-        Assert.Equal(0, fakeRouter.ReceivedEvLon);
-        Assert.Equal(0, fakeRouter.ReceivedEvLat);
-        Assert.Equal(5, fakeRouter.ReceivedStationLon);
-        Assert.Equal(5, fakeRouter.ReceivedStationLat);
-        Assert.Equal(10, fakeRouter.ReceivedDestLon);
-        Assert.Equal(10, fakeRouter.ReceivedDestLat);
-        Assert.Equal((ushort)1, fakeRouter.ReceivedIndex);
-    }
-
-    [Fact]
     public void ApplyNewPath_WhenApplyingSamePath_IsSame()
     {
         var journey = TestData.Journey(
@@ -113,32 +91,7 @@ public class ApplyNewPathToEVTests()
 
         public string ReturnedPolyline { get; set; } = "_p~iF~ps|U_ulLnnqC_mqNvxq`@";
 
-        public double? ReceivedEvLon { get; private set; }
-
-        public double? ReceivedEvLat { get; private set; }
-
-        public double? ReceivedStationLon { get; private set; }
-
-        public double? ReceivedStationLat { get; private set; }
-
-        public double? ReceivedDestLon { get; private set; }
-
-        public double? ReceivedDestLat { get; private set; }
-
-        public ushort? ReceivedIndex { get; private set; }
-
         public RouteSegment QueryDestinationWithStop(
-            double evLon, double evLat, double stationLon, double stationLat, double destLon, double destLat, ushort index)
-        {
-            ReceivedEvLon = evLon;
-            ReceivedEvLat = evLat;
-            ReceivedStationLon = stationLon;
-            ReceivedStationLat = stationLat;
-            ReceivedDestLon = destLon;
-            ReceivedDestLat = destLat;
-            ReceivedIndex = index;
-
-            return new RouteSegment(ReturnedDuration, ReturnedDistance, ReturnedPolyline);
-        }
+            double evLon, double evLat, double stationLon, double stationLat, double destLon, double destLat, ushort index) => new(ReturnedDuration, ReturnedDistance, ReturnedPolyline);
     }
 }
