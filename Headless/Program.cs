@@ -1,5 +1,6 @@
 namespace Headless;
 
+using Engine;
 using Engine.Cost;
 using Engine.Events;
 using Engine.Grid;
@@ -46,6 +47,7 @@ public static class Program
                 RecordCarSnapshots = true,
                 RecordArrivals = true,
                 RecordStationSnapshots = true,
+                RecordChargerSnapshots = true,
             },
 
             Seed = new Random(42),
@@ -69,7 +71,7 @@ public static class Program
 
             SimulationEndTime = 10000 * 60,
 
-            SnapshotInterval = 1000 * 60,
+            SnapshotInterval = 10 * 60,
 
             EVDistributionWindowsSize = 1 * 60,
 

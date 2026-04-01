@@ -53,13 +53,12 @@ public static class TestData
     }
 
     public static SnapshotEventHandler SnapshotHandler(
+        StationService stationService,
         MetricsService metrics,
-        EventScheduler scheduler,
-        Dictionary<ushort, Station> stations,
-        int evStoreCapacity = 10) =>
+        EventScheduler scheduler) =>
         new(
             rescheduleTime: new Time(3600),
-            stations: stations,
+            stationService: stationService,
             metrics: metrics,
             scheduler: scheduler);
 
@@ -179,8 +178,7 @@ public static class TestData
             scheduler: scheduler,
             evStore: evStore,
             applyNewPath: new ApplyNewPath(OSRMRouter),
-            metrics: metrics,
-            snapshotHandler: SnapshotHandler(metrics, scheduler, stations));
+            metrics: metrics);
     }
 
     internal sealed class FixedEnergyPrices(float fixedPrice) : EnergyPrices(new FileInfo("data/energy_prices.csv"), new Random(42))

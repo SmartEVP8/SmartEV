@@ -10,6 +10,8 @@ using Engine.Routing;
 using Engine.Utils;
 using Engine.Metrics;
 using Engine.Metrics.Events;
+using Engine.Metrics.Snapshots;
+using Engine.Init;
 
 /// <summary>
 /// Tracks an active charging session at one side of a charger.
@@ -63,6 +65,26 @@ public class ChargerState(ChargerBase charger, ushort stationId)
     public IntegrationResult? LastResult { get; set; }
 
     /// <summary>
+    /// Gets or sets the maximum queue size seen during the current snapshot window.
+    /// </summary>
+    public int WindowMaxQueueSize { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether this charger had any activity during the current snapshot window.
+    /// </summary>
+    public bool WindowHadActivity { get; set; }
+
+    /// <summary>
+    /// Gets or sets the energy delivered in the current snapshot window in kWh.
+    /// </summary>
+    public double WindowDeliveredKWh { get; set; }
+
+    /// <summary>
+    /// Gets or sets the last simulation time the energy accumulator was updated.
+    /// </summary>
+    public Time LastEnergyUpdateTime { get; set; }
+
+    /// <summary>
     /// Gets a value indicating whether the charger has at least one free side.
     /// </summary>
     public bool IsFree => Charger switch
@@ -71,6 +93,43 @@ public class ChargerState(ChargerBase charger, ushort stationId)
         DualCharger => SessionA is null || SessionB is null,
         _ => false
     };
+
+    /// <summary>
+    /// Accumulates exact energy using the pre-calculated charging curve trajectory.
+    /// </summary>
+    public void AccumulateEnergy(Time simNow)
+    {
+        if (simNow <= LastEnergyUpdateTime || LastResult is null) return;
+
+        if (SessionA is not null)
+        {
+            WindowDeliveredKWh += GetEnergyFromCurve(
+                LastResult.CumulativeEnergyA, LastResult.StepSeconds, SessionA.StartTime, LastEnergyUpdateTime, simNow);
+        }
+
+        if (SessionB is not null)
+        {
+            WindowDeliveredKWh += GetEnergyFromCurve(
+                LastResult.CumulativeEnergyB, LastResult.StepSeconds, SessionB.StartTime, LastEnergyUpdateTime, simNow);
+        }
+
+        LastEnergyUpdateTime = simNow;
+    }
+
+    private double GetEnergyFromCurve(List<double> curve, uint stepSeconds, Time sessionStart, Time lastUpdate, Time simNow)
+    {
+        if (curve.Count == 0) return 0.0;
+
+        // Cast to 'long' first to prevent uint underflow. 
+        // If lastUpdate is before sessionStart, it goes negative, and Math.Max clamps it to 0.
+        var startOffset = Math.Max(0L, (long)lastUpdate - (long)sessionStart);
+        var endOffset = Math.Max(0L, (long)simNow - (long)sessionStart);
+
+        var startIndex = Math.Min(curve.Count - 1, (int)(startOffset / stepSeconds));
+        var endIndex = Math.Min(curve.Count - 1, (int)(endOffset / stepSeconds));
+
+        return curve[endIndex] - curve[startIndex];
+    }
 }
 
 /// <summary>
@@ -78,15 +137,17 @@ public class ChargerState(ChargerBase charger, ushort stationId)
 /// </summary>
 public class StationService : IStationService
 {
-    private readonly Dictionary<int, List<ChargerState>> _stationChargers = [];
+    private readonly Dictionary<ushort, List<ChargerState>> _stationChargers = [];
     private readonly Dictionary<int, ChargerState> _chargerIndex = [];
     private readonly Dictionary<ushort, Station> _stationIndex = [];
+    private readonly Dictionary<ushort, uint> _windowReservations = [];
+    private readonly Dictionary<ushort, uint> _windowCancellations = [];
     private readonly ChargingIntegrator _integrator;
     private readonly EventScheduler _scheduler;
     private readonly EVStore _eVStore;
     private readonly ApplyNewPath _applyNewPath;
     private readonly MetricsService _metrics;
-    private readonly SnapshotEventHandler _snapshotHandler;
+    private readonly EngineSettings _settings;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="StationService"/> class.
@@ -97,7 +158,7 @@ public class StationService : IStationService
     /// <param name="evStore">The storage of current EV's.</param>
     /// <param name="applyNewPath">The path deviator to use for calculating route deviations through charging stations.</param>
     /// <param name="metrics">The metrics service to use for recording metrics.</param>
-    /// <param name="snapshotHandler">The snapshot event handler to use for handling snapshot events.</param>
+    /// <param name="settings">The engine settings containing configuration options.</param>
     public StationService(
         ICollection<Station> stations,
         ChargingIntegrator integrator,
@@ -105,15 +166,14 @@ public class StationService : IStationService
         EVStore evStore,
         ApplyNewPath applyNewPath,
         MetricsService metrics,
-        SnapshotEventHandler snapshotHandler)
+        EngineSettings settings)
     {
         _integrator = integrator;
         _scheduler = scheduler;
         _eVStore = evStore;
         _applyNewPath = applyNewPath;
         _metrics = metrics;
-        _snapshotHandler = snapshotHandler;
-
+        _settings = settings;
         foreach (var station in stations)
         {
             _stationIndex[station.Id] = station;
@@ -145,6 +205,91 @@ public class StationService : IStationService
     }
 
     /// <summary>
+    /// Collects charger snapshots from runtime charger states for the provided simulation time.
+    /// Includes per-charger utilization computed from the latest integrator result.
+    /// </summary>
+    /// <param name="simNow">The simulation time of the snapshot.</param>
+    /// <returns>All charger snapshots across all stations.</returns>
+    public (IEnumerable<ChargerSnapshotMetric> Chargers, IEnumerable<StationSnapshotMetric> Stations) CollectAllSnapshots(Time simNow)
+    {
+        var chargerMetrics = new List<ChargerSnapshotMetric>();
+        var stationMetrics = new List<StationSnapshotMetric>();
+
+        foreach (var (stationId, chargerStates) in _stationChargers)
+        {
+            var station = _stationIndex[stationId];
+            var totalDeliveredKW = 0f;
+            var totalMaxKW = 0f;
+            var totalQueueSize = 0;
+
+            foreach (var state in chargerStates)
+            {
+                state.AccumulateEnergy(simNow);
+                var deliveredKWhInWindow = (float)state.WindowDeliveredKWh;
+                var targetEVDemandKWh = 0f;
+                if (state.SessionA is not null)
+                {
+                    var ev = state.SessionA.EV;
+                    targetEVDemandKWh += (float)Math.Max(0, (ev.TargetSoC - ev.CurrentSoC) * ev.CapacityKWh);
+                }
+
+                if (state.SessionB is not null)
+                {
+                    var ev = state.SessionB.EV;
+                    targetEVDemandKWh += (float)Math.Max(0, (ev.TargetSoC - ev.CurrentSoC) * ev.CapacityKWh);
+                }
+
+                var snapshotDurationHours = _settings.SnapshotInterval / 3600f;
+                var maxPossibleKWh = state.Charger.MaxPowerKW * snapshotDurationHours;
+                var utilizationInWindow = maxPossibleKWh > 0
+                    ? Math.Clamp(deliveredKWhInWindow / maxPossibleKWh, 0f, 1f)
+                    : 0f;
+
+                var queueSizeInWindow = Math.Max(state.WindowMaxQueueSize, state.Queue.Count);
+
+                chargerMetrics.Add(ChargerSnapshotMetric.Collect(
+                    state.Charger,
+                    stationId,
+                    simNow,
+                    queueSizeInWindow,
+                    utilizationInWindow,
+                    deliveredKWhInWindow,
+                    state.Charger is DualCharger,
+                    targetEVDemandKWh));
+
+                totalDeliveredKW += deliveredKWhInWindow;
+                totalMaxKW += state.Charger.MaxPowerKW;
+                totalQueueSize += queueSizeInWindow;
+
+                state.WindowHadActivity = false;
+                state.WindowMaxQueueSize = state.Queue.Count;
+                state.WindowDeliveredKWh = 0;
+            }
+
+            _windowReservations.TryGetValue(stationId, out var reservations);
+            _windowCancellations.TryGetValue(stationId, out var cancellations);
+
+            _windowReservations[stationId] = 0;
+            _windowCancellations[stationId] = 0;
+
+            stationMetrics.Add(new StationSnapshotMetric
+            {
+                SimTime = (uint)simNow,
+                StationId = stationId,
+                TotalDeliveredKW = totalDeliveredKW,
+                TotalMaxKW = totalMaxKW,
+                TotalQueueSize = totalQueueSize,
+                Price = station.GetPrice(simNow),
+                TotalChargers = chargerStates.Count,
+                Reservations = reservations,
+                Cancellations = cancellations,
+            });
+        }
+
+        return (chargerMetrics, stationMetrics);
+    }
+
+    /// <summary>
     /// Handles a reservation request from an EV to a station.
     /// If the EV already has an active reservation, the existing arrival event is cancelled before proceeding.
     /// Calculates the detoured path through the station, updates the EV's journey, and schedules a new
@@ -168,7 +313,7 @@ public class StationService : IStationService
             _scheduler.ScheduleEvent(new CancelRequest(e.EVId, ev.HasReservationAtStationId.Value, e.Time));
         }
 
-        station.IncrementReservations();
+        _windowReservations[e.StationId]++;
         ev.HasReservationAtStationId = e.StationId;
         _applyNewPath.ApplyNewPathToEV(ref ev, station, e.Time);
         _scheduler.ScheduleEvent(
@@ -186,7 +331,7 @@ public class StationService : IStationService
         if (!_stationIndex.TryGetValue(e.StationId, out var station))
             return;
 
-        station.IncrementCancellations();
+        _windowCancellations[e.StationId]++;
 
         if (ev.HasReservationAtStationId != null)
         {
@@ -231,6 +376,7 @@ public class StationService : IStationService
 
         ev.IsCharging = true;
         target.Queue.Enqueue((e.EVId, connectedEV));
+        UpdateWindowStats(target);
         if (target.IsFree)
             StartCharging(target, e.Time);
     }
@@ -248,6 +394,7 @@ public class StationService : IStationService
         if (!_chargerIndex.TryGetValue(e.ChargerId, out var state))
             return;
 
+        state.AccumulateEnergy(e.Time);
         var result = state.LastResult;
         state.LastResult = null;
         ref var ev = ref _eVStore.Get(e.EVId);
@@ -324,6 +471,8 @@ public class StationService : IStationService
     private void StartCharging(ChargerState state, Time simNow)
     {
         if (_integrator == null) return;
+
+        state.AccumulateEnergy(simNow);
 
         switch (state.Charger)
         {
@@ -429,5 +578,21 @@ public class StationService : IStationService
 
                 break;
         }
+
+        UpdateWindowStats(state);
+    }
+
+    private static void UpdateWindowStats(ChargerState state)
+    {
+        var hasActivity = state.Queue.Count > 0
+            || state.SessionA is not null
+            || state.SessionB is not null
+            || state.WindowDeliveredKWh > 0;
+
+        if (!hasActivity)
+            return;
+
+        state.WindowHadActivity = true;
+        state.WindowMaxQueueSize = Math.Max(state.WindowMaxQueueSize, state.Queue.Count);
     }
 }

@@ -162,8 +162,8 @@ public static class Init
             var evStore = sp.GetRequiredService<EVStore>();
             var applyNewPath = sp.GetRequiredService<ApplyNewPath>();
             var metrics = sp.GetRequiredService<MetricsService>();
-            var snapshotHandler = sp.GetRequiredService<SnapshotEventHandler>();
-            return new StationService(stations.Values, integrator, scheduler, evStore, applyNewPath, metrics, snapshotHandler);
+            var settings = sp.GetRequiredService<EngineSettings>();
+            return new StationService(stations.Values, integrator, scheduler, evStore, applyNewPath, metrics, settings);
         });
 
         services.AddSingleton(sp =>
@@ -190,8 +190,8 @@ public static class Init
             var metrics = sp.GetRequiredService<MetricsService>();
             var settings = sp.GetRequiredService<EngineSettings>();
             var snapshotInterval = settings.SnapshotInterval;
-            var stations = sp.GetRequiredService<Dictionary<ushort, Station>>();
-            return new SnapshotEventHandler(snapshotInterval, stations, metrics, scheduler); // TODO: Look into how we can remove DateTime
+            var stationService = sp.GetRequiredService<StationService>();
+            return new SnapshotEventHandler(snapshotInterval, stationService, metrics, scheduler);
         });
 
         services.AddSingleton(sp =>

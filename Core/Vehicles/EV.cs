@@ -100,9 +100,9 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
 
         var energyToDest = EnergyForDistanceKWh((float)remainingDistanceKm);
         var percentNeededToDestination = energyToDest / Battery.MaxCapacityKWh;
-        var chargeToPercent = percentNeededToDestination + Preferences.MinAcceptableCharge;
+        var chargeToPercent = 1;
 
-        return chargeToPercent > 1f ? 0.8f : chargeToPercent;
+        return chargeToPercent;
     }
 
     /// <summary>
