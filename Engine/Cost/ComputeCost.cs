@@ -37,8 +37,10 @@ public class ComputeCost(ICostStore costStore, IStationService stationService, E
             var pathDeviationCost = CalculatePathDeviationCost(ref ev, duration, weights, time);
             var urgencyCost = CalculateUrgencyCost(ref ev, weights);
             var priceCost = CalculatePriceCost(ref ev, station, weights, time, energyPrices);
+            Console.WriteLine(priceCost);
             var effectiveWaitTimeCost = CalculateEffectiveWaitTimeCost(weights);
             var cost = effectiveQueueCost + pathDeviationCost + urgencyCost + priceCost + effectiveWaitTimeCost;
+            Console.WriteLine("cost is " + cost + " where effectiveQueueCost is " + effectiveQueueCost + " pathDeviationCost is " + pathDeviationCost + " urgencyCost is " + urgencyCost + " priceCost is " + priceCost + " effectiveWaitTimeCost is " + effectiveWaitTimeCost);
 
             if (double.IsNaN(cost))
             {
@@ -58,7 +60,8 @@ public class ComputeCost(ICostStore costStore, IStationService stationService, E
         if (bestStation is null)
         {
             throw new ArgumentNullException("No suitable station found.");
-        }             
+        }
+
         return bestStation;
     }
 
@@ -102,7 +105,7 @@ public class ComputeCost(ICostStore costStore, IStationService stationService, E
     {
         var currentPrice = station.GetPrice(time);
         var averagePrice = energyPrices.GetHourPrice(time.DayOfWeek, (int)time.Hour);
-        return weights.PriceSensitivity * ev.Preferences.PriceSensitivity * (currentPrice - averagePrice) * 15; // Scale factor to convert price difference to a comparable cost value
+        return weights.PriceSensitivity * ev.Preferences.PriceSensitivity * (currentPrice - averagePrice) * 100; // Scale factor to convert price difference to a comparable cost value
     }
 
     // TODO: Implement
