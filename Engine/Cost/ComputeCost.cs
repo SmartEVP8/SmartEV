@@ -75,7 +75,7 @@ public class ComputeCost(ICostStore costStore, IStationService stationService)
 
         var totalQueueSize = stationService.GetTotalQueueSize(station.Id);
         var effectiveQueueSize = (float)totalQueueSize / station.Chargers.Count(s => s.GetSockets().Contains(socket));
-        return weights.EffectiveQueueSize * MathF.Pow(effectiveQueueSize, 2);
+        return weights.EffectiveQueueSize * MathF.Pow(effectiveQueueSize, 3);
     }
 
     /// <summary>
@@ -100,8 +100,9 @@ public class ComputeCost(ICostStore costStore, IStationService stationService)
 
     private static float CalculatePriceCost(ref EV ev, Station station, CostWeights weights, Time time)
     {
-        var price = station.GetPrice(time);
-        return weights.PriceSensitivity * ev.Preferences.PriceSensitivity * price;
+        var currentPrice = station.GetPrice(time);
+        var averagePrice = 3.525304f; // Average price across all stations and times, used for normalization
+        return weights.PriceSensitivity * ev.Preferences.PriceSensitivity * (currentPrice - averagePrice);
     }
 
     // TODO: Implement
