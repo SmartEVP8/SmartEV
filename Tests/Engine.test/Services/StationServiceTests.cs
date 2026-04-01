@@ -60,6 +60,9 @@ public class StationServiceTests
         service.HandleEndCharging(firstEnd);
         Assert.Single(service.GetChargerState(chargerId: 1)!.Queue);
 
+        var nextEvent = scheduler.GetNextEvent();
+        Assert.True(nextEvent is ArriveAtDestination or FindCandidateStations);
+
         var secondEnd = AsEndCharging(scheduler.GetNextEvent());
         Assert.Equal(index2, secondEnd.EVId);
     }
@@ -85,7 +88,8 @@ public class StationServiceTests
         Assert.Single(service.GetChargerState(chargerId: 1)!.Queue);
 
         service.HandleEndCharging(ev1End);
-
+        var nextEvent = scheduler.GetNextEvent();
+        Assert.True(nextEvent is ArriveAtDestination or FindCandidateStations);
         // ev2 rescheduled + ev3 newly scheduled
         var nextA = AsEndCharging(scheduler.GetNextEvent());
         var nextB = AsEndCharging(scheduler.GetNextEvent());

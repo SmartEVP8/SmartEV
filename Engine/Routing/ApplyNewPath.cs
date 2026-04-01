@@ -46,11 +46,11 @@ public class ApplyNewPath(IDestinationRouter router) : IApplyNewPath
     /// <exception cref="SkillissueException">If they never diverge.</exception>
     public static Position CalculateDecisionPoint(Paths r1, Paths r2)
     {
-        for (var i = 0; i < r1.Waypoints.Count; i++)
+        for (var i = 0; i < Math.Min(r1.Waypoints.Count, r2.Waypoints.Count); i++)
         {
             if (r1.Waypoints[i] != r2.Waypoints[i])
             {
-                return r1.Waypoints[i - 1];
+                return i == 0 ? r1.Waypoints[0] : r1.Waypoints[i - 1];
             }
         }
 

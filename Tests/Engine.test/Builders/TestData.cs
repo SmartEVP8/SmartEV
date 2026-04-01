@@ -102,14 +102,14 @@ public static class TestData
         return Polyline6ToPoints.DecodePolyline(result.Polyline);
     }
 
-    public static Journey Journey(List<Position>? waypoints, Time departure = default, Time originalDuration = default)
+    public static Journey Journey(List<Position>? waypoints, Time departure = default, Time originalDuration = default, float distanceMeters = default)
     {
         if (waypoints == null)
         {
-            return new(departure, originalDuration, 100, new Paths([new Position(0, 0), new Position(1, 1)]));
+            return new(departure, originalDuration, distanceMeters, new Paths([new Position(0, 0), new Position(1, 1)]));
         }
 
-        return new(departure, originalDuration, 100, new Paths(waypoints));
+        return new(departure, originalDuration, distanceMeters, new Paths(waypoints));
     }
 
     public static Battery Battery(
@@ -131,11 +131,12 @@ public static class TestData
         Preferences? preferences = null,
         ushort efficiency = 150,
         uint originalDuration = 100u,
+        float distanceMeters = 100,
         Time departureTime = default) =>
         new(
             battery ?? Battery(),
             preferences ?? Preferences(),
-            Journey(waypoints, originalDuration: originalDuration, departure: departureTime),
+            Journey(waypoints, originalDuration: originalDuration, departure: departureTime, distanceMeters: distanceMeters),
             efficiency);
 
     public static SingleCharger SingleCharger(int id, int maxPowerKW = 150)
