@@ -13,6 +13,8 @@ using Engine.Routing;
 [MemoryDiagnoser]
 public class OsrmRouterBenchmark
 {
+    private static readonly double[] _destPosition = [10.1572, 56.1496];
+
     private OSRMRouter _router = null!;
     private ushort[] _stationIndices = null!;
     private (double Lon, double Lat)[] _evCoordinates = null!;
@@ -75,7 +77,10 @@ public class OsrmRouterBenchmark
     /// Benchmarks bulk querying of 1000 cars to 50 stations.
     /// </summary>
     [Benchmark]
-    public void Query1000Cars50StationsBulk() => _ = _router.QueryPointsToPoints(_evCoordsFlat, _stationCoordsFlat);
+    public void Query1000CarsTo50StationsBulk()
+    {
+        _ = _router.QueryPointsToPoints(_evCoordsFlat, _stationCoordsFlat);
+    }
 
     /// <summary>
     /// Benchmarks querying a single destination.
@@ -85,6 +90,26 @@ public class OsrmRouterBenchmark
     {
         var (lon, lat) = _evCoordinates[0];
         _ = _router.QuerySingleDestination(lon, lat, _stationCoordsFlat[0], _stationCoordsFlat[1]);
+    }
+
+    /// <summary>
+    /// Benchmarks querying to a specific station and destination.
+    /// </summary>
+    [Benchmark]
+    public void QueryStationsWithDest()
+    {
+        var (lon, lat) = _evCoordinates[0];
+        _ = _router.QueryStationsWithDest(lon, lat, _destPosition[0], _destPosition[1], _stationIndices);
+    }
+
+    /// <summary>
+    /// Benchmarks multi-stop waypoint routing EV -> Station -> Dest.
+    /// </summary>
+    [Benchmark]
+    public void QueryDestinationWithWaypoint()
+    {
+        var (lon, lat) = _evCoordinates[0];
+        _ = _router.QueryDestinationWithStop(lon, lat, _stationCoordsFlat[0], _stationCoordsFlat[1], _destPosition[0], _destPosition[1]);
     }
 
     /// <summary>
