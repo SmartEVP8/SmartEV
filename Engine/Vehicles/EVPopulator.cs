@@ -10,12 +10,8 @@ using System.Buffers;
 /// <param name="evFactory">The factory used to create new EV instances.</param>
 /// <param name="evStore">The store used to allocate and manage EV instances.</param>
 /// <param name="eventScheduler">The scheduler used to manage and execute events.</param>
-public class EVPopulator(EVFactory evFactory, EVStore evStore, EventScheduler eventScheduler)
+public class EVPopulator(EVFactory evFactory, EVStore evStore, IEventScheduler eventScheduler)
 {
-    private readonly EVFactory _evFactory = evFactory;
-    private readonly EVStore _eVStore = evStore;
-    private readonly EventScheduler _eventScheduler = eventScheduler;
-
     /// <summary>
     /// Creates a specified number of EVs and schedules their spawning events over a given distribution window.
     /// </summary>
@@ -23,18 +19,18 @@ public class EVPopulator(EVFactory evFactory, EVStore evStore, EventScheduler ev
     /// <param name="distributionWindow">The time window over which to distribute the spawning events.</param>
     public void CreateEVs(int amount, Time distributionWindow)
     {
-        var currentTime = _eventScheduler.CurrentTime;
+        var currentTime = eventScheduler.CurrentTime;
         var interval = distributionWindow / amount;
 
         var indexes = ArrayPool<int>.Shared.Rent(amount);
         try
         {
-            if (_eVStore.TryAllocateParallel(amount, indexes))
+            if (evStore.TryAllocateParallel(amount, indexes))
             {
                 Parallel.For(0, amount, i =>
                 {
                     var departure = (uint)(currentTime + (i * interval));
-                    _eVStore.Get(indexes[i]) = _evFactory.Create(departure);
+                    evStore.Get(indexes[i]) = evFactory.Create(departure);
                 });
             }
         }
