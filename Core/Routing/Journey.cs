@@ -15,7 +15,7 @@ public class Journey(Time departure, Time duration, float distanceMeters, Paths 
     /// <summary>
     /// Gets the time the journey started.
     /// </summary>
-    public Time JourneyStart => departure;
+    public Time JourneyStart { get; } = departure;
 
     /// <summary>
     /// Gets the time the journey was last updated.
@@ -25,7 +25,8 @@ public class Journey(Time departure, Time duration, float distanceMeters, Paths 
     /// <summary>
     /// Gets the original duration of the journey, i.e. the duration of A -> B without any detours.
     /// </summary>
-    public Time OriginalDuration => duration;
+    public Time OriginalDuration { get; } = duration;
+
 
     /// <summary>
     /// Gets the duration of an EVs journey, after it has been altered, i.e the duration of Start -> Station -> Detour.
@@ -122,7 +123,7 @@ public class Journey(Time departure, Time duration, float distanceMeters, Paths 
             if (distanceCovered + length >= distanceTraveled)
             {
                 var remainingDistance = distanceTraveled - distanceCovered;
-                var ratio = remainingDistance / length;
+                var ratio = Math.Clamp(remainingDistance / length, 0, 1);
                 var latitude = first.Latitude + (ratio * (second.Latitude - first.Latitude));
                 var longitude = first.Longitude + (ratio * (second.Longitude - first.Longitude));
                 var postions = new Position(longitude: longitude, latitude: latitude);
@@ -153,11 +154,9 @@ public class Journey(Time departure, Time duration, float distanceMeters, Paths 
                 var ratio = Math.Clamp(remainingDistance / length, 0, 1);
                 var latitude = first.Latitude + (ratio * (second.Latitude - first.Latitude));
                 var longitude = first.Longitude + (ratio * (second.Longitude - first.Longitude));
-                if (double.IsNaN(latitude) || double.IsNaN(longitude))
-                    throw new InvalidOperationException($"Calculated position is invalid. First: {first}, Second: {second}, Ratio: {ratio}, RemainingDistance: {remainingDistance}, Length: {length}.");
-
                 return new Position(longitude: longitude, latitude: latitude);
             }
+
 
             distanceCovered += length;
         }

@@ -6,6 +6,64 @@ using Core.Shared;
 public class JourneyTests
 {
     [Fact]
+    public void JourneyInterpolationOnePointAtDurationEnd()
+    {
+        var singlePoint = new Position(1,1);
+        var waypoints = new List<Position>
+        {
+            singlePoint,
+        };
+        var journey = new Journey(departure: 0, duration: 2, distanceMeters: 10, new Paths(waypoints));
+
+        var expectedEndpoint = journey.CurrentPosition(2);
+        Assert.Equal(singlePoint, expectedEndpoint);
+    }
+
+    [Fact]
+    public void JourneyInterpolationOnePointAtDurationStart()
+    {
+        var singlePoint = new Position(1,1);
+        var waypoints = new List<Position>
+        {
+            singlePoint,
+        };
+        var journey = new Journey(departure: 0, duration: 2, distanceMeters: 10, new Paths(waypoints));
+
+        var expectedEndpoint = journey.CurrentPosition(0);
+        Assert.Equal(singlePoint, expectedEndpoint);
+    }
+
+    [Fact]
+    public void JourneyInterpolationOn2SamePointsStart()
+    {
+        var singlePoint = new Position(1,1);
+        var waypoints = new List<Position>
+        {
+            singlePoint,
+            singlePoint,
+        };
+        var journey = new Journey(departure: 0, duration: 2, distanceMeters: 10, new Paths(waypoints));
+
+        var expectedEndpoint = journey.CurrentPosition(0);
+        Assert.Equal(singlePoint, expectedEndpoint);
+    }
+
+    [Fact]
+    public void JourneyInterpolationOn2SamePointsEnd()
+    {
+        var singlePoint = new Position(1,1);
+        var waypoints = new List<Position>
+        {
+            singlePoint,
+            singlePoint,
+        };
+        var journey = new Journey(departure: 0, duration: 2, distanceMeters: 10, new Paths(waypoints));
+
+        var expectedEndpoint = journey.CurrentPosition(2);
+        Assert.Equal(singlePoint, expectedEndpoint);
+    }
+
+    [Fact]
     public void JourneyInterpolationEnd()
     {
         var waypoints = new List<Position>

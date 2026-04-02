@@ -116,4 +116,33 @@ public class ApplyNewPathToEVTests()
         var pos = ApplyNewPath.CalculateDecisionPoint(r1, r2);
         Assert.Equal(pos, divergencePosition);
     }
+
+    [Fact]
+    public void CalculateDecisionPoint_WhenRoutesAreIdentical_ReturnsLastWaypoint()
+    {
+        var a = new Position(1, 1);
+        var b = new Position(2, 2);
+        var c = new Position(3, 3);
+        var r1 = new Paths([a, b, c]);
+        var r2 = new Paths([a, b, c]);
+
+        var pos = ApplyNewPath.CalculateDecisionPoint(r1, r2);
+
+        Assert.Equal(c, pos);
+    }
+
+    [Fact]
+    public void CalculateDecisionPoint_WhenOneRouteIsPrefixOfOther_ReturnsLastSharedWaypoint()
+    {
+        var a = new Position(1, 1);
+        var b = new Position(2, 2);
+        var c = new Position(3, 3);
+        var d = new Position(4, 4);
+        var r1 = new Paths([a, b, c, d]);
+        var r2 = new Paths([a, b, c]);
+
+        var pos = ApplyNewPath.CalculateDecisionPoint(r1, r2);
+
+        Assert.Equal(c, pos);
+    }
 }

@@ -31,7 +31,14 @@ public class ApplyNewPath(IDestinationRouter router) : IApplyNewPath
         var detourPath = Polyline6ToPoints.DecodePolyline(res.Polyline);
 
         var decisionPoint = CalculateDecisionPoint(originalRouteRightNow, detourPath);
-        var newWaypoints = new Paths([currentPos, .. detourPath.Waypoints]);
+
+        // Somehow we got the case where they were equal and we compare dist between points whcih was 0 and gave us division by 0.
+        Paths? newWaypoints;
+        if (currentPos == detourPath.Waypoints[0])
+            newWaypoints = new Paths(detourPath.Waypoints);
+        else
+            newWaypoints = new Paths([currentPos, .. detourPath.Waypoints]);
+
         var roundedDuration = (uint)Math.Ceiling(res.Duration);
         ev.Journey.UpdateRoute(newWaypoints, station.Position, currentTime, (Time)roundedDuration, res.Distance / 1000);
         return decisionPoint;
@@ -46,14 +53,15 @@ public class ApplyNewPath(IDestinationRouter router) : IApplyNewPath
     /// <exception cref="SkillissueException">If they never diverge.</exception>
     public static Position CalculateDecisionPoint(Paths r1, Paths r2)
     {
-        for (var i = 0; i < Math.Min(r1.Waypoints.Count, r2.Waypoints.Count); i++)
+        var sharedCount = Math.Min(r1.Waypoints.Count, r2.Waypoints.Count);
+
+        for (var i = 0; i < sharedCount; i++)
         {
             if (r1.Waypoints[i] != r2.Waypoints[i])
             {
                 return i == 0 ? r1.Waypoints[0] : r1.Waypoints[i - 1];
             }
         }
-
         throw new SkillissueException("No decision point found between original route and detour route.");
     }
 }
