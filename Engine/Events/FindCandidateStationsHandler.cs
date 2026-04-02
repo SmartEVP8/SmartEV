@@ -71,11 +71,14 @@ public class FindCandidateStationsHandler(
     private void RescheduleDecision(Station bestStation, double durationToStation, ref EV ev, FindCandidateStations e)
     {
         bestStation.IncrementReservations();
-        var arriveAtStation = new ArriveAtStation(e.EVId, bestStation.Id, ev.CalcDesiredSoC((Time)(uint)durationToStation), (Time)(uint)durationToStation);
+        var arriveAtStation = new ArriveAtStation(e.EVId, bestStation.Id, ev.CalcDesiredSoC((Time)(uint)durationToStation + e.Time), (Time)(uint)durationToStation + e.Time);
         eventScheduler.ScheduleEvent(arriveAtStation);
 
         var decisionPoint = applyNewPath.ApplyNewPathToEV(ref ev, bestStation, e.Time);
         var decisionTime = ev.Journey.DurationToWayPoint(decisionPoint);
-        eventScheduler.ScheduleEvent(new FindCandidateStations(e.EVId, decisionTime));
+        if (decisionTime < 60)
+            decisionTime = 60; // Ensure we have at least 1 minute to react to the new path, otherwise we might end up in a loop of rescheduling before we can even arrive at the station.
+
+        eventScheduler.ScheduleEvent(new FindCandidateStations(e.EVId, decisionTime + e.Time));
     }
 }
