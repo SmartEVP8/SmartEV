@@ -179,9 +179,10 @@ public static class Init
             var evPopulator = sp.GetRequiredService<EVPopulator>();
             var scheduler = sp.GetRequiredService<EventScheduler>();
             var settings = sp.GetRequiredService<EngineSettings>();
+            var evStore = sp.GetRequiredService<EVStore>();
             var distributionWindow = settings.EVDistributionWindowsSize;
             var spawnFraction = settings.EVSpawnFraction;
-            return new EVService(evPopulator, scheduler, distributionWindow, spawnFraction);
+            return new EVService(evPopulator, scheduler, evStore, distributionWindow, spawnFraction);
         });
 
         services.AddSingleton(sp =>

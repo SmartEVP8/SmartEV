@@ -11,9 +11,11 @@ using Engine.Vehicles;
 /// <param name="scheduler">Reschedules a SpawnEV event at each handle invocation at T + <paramref name="distributionWindow"/>.</param>
 /// <param name="distributionWindow">How frequently sampling is done.</param>
 /// <param name="spawnFraction">A scaler controlling the total for configuration.</param>
+/// <param name="evStore">The store for EVs, used for logging purposes.</param>
 public class EVService(
     EVPopulator evPopulator,
     EventScheduler scheduler,
+    EVStore evStore,
     Time distributionWindow,
     double spawnFraction)
 {
@@ -28,5 +30,8 @@ public class EVService(
         var amount = _carsInPeriod.GetCarsInPeriod(e.Time);
         evPopulator.CreateEVs(amount, distributionWindow);
         scheduler.ScheduleEvent(new SpawnEVS(e.Time + distributionWindow));
+
+        var inSystem = evStore.Count - evStore.AvailableCapacity();
+        Console.WriteLine($"[SpawnEVS] T={e.Time} | Spawned: {amount} | EVs in system: {inSystem} / {evStore.Count}");
     }
 }

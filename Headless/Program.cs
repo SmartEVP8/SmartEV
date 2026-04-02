@@ -73,7 +73,7 @@ public static class Program
 
             EVDistributionWindowsSize = 1 * 60,
 
-            EVSpawnFraction = 0.10f,
+            EVSpawnFraction = 0.3f,
 
             EnergyPricesPath = new FileInfo(Path.Combine(dataPath.FullName, "energy_prices.csv")),
             OsrmPath = new FileInfo(Path.Combine(dataPath.FullName, "osrm/output.osrm")),
