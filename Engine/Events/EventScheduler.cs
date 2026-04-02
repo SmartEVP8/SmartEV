@@ -6,7 +6,7 @@ using Core.Shared;
 /// The EventScheduler is responsible for managing and scheduling events in the system.
 /// </summary>
 /// <param name="preProcessors">Middleware/Preprocessors that are fired on MiddlewareEvents if attatched.</param>
-public class EventScheduler(Dictionary<Type, Action<IMiddlewareEvent>>? preProcessors = null)
+public class EventScheduler(Dictionary<Type, Action<IMiddlewareEvent>>? preProcessors = null) : IEventScheduler
 {
     private readonly PriorityQueue<Event, (Time, uint)> _eventPriorityQueue = new();
 
