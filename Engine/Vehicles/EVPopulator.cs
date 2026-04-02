@@ -14,6 +14,8 @@ public class EVPopulator(EVFactory evFactory, EVStore evStore, IEventScheduler e
 {
     /// <summary>
     /// Creates a specified number of EVs and schedules their spawning events over a given distribution window.
+    /// Random sampling is done sequentially upfront via <see cref="EVFactory.SampleParams"/>,
+    /// after which EV construction is parallelized over the router calls.
     /// </summary>
     /// <param name="amount">The amount of EVs to create.</param>
     /// <param name="distributionWindow">The time window over which to distribute the spawning events.</param>
@@ -21,16 +23,16 @@ public class EVPopulator(EVFactory evFactory, EVStore evStore, IEventScheduler e
     {
         var currentTime = eventScheduler.CurrentTime;
         var interval = distributionWindow / amount;
-
         var indexes = ArrayPool<int>.Shared.Rent(amount);
         try
         {
             if (evStore.TryAllocateParallel(amount, indexes))
             {
+                var sampledParams = evFactory.SampleParams(amount);
                 Parallel.For(0, amount, i =>
                 {
                     var departure = (uint)(currentTime + (i * interval));
-                    evStore.Get(indexes[i]) = evFactory.Create(departure);
+                    evStore.Get(indexes[i]) = evFactory.Create(sampledParams[i], departure);
                 });
             }
         }
