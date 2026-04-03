@@ -17,6 +17,7 @@ using Engine.Metrics;
 using Engine.Vehicles;
 using Engine.Events;
 using Engine.Services;
+using Engine.Spawning;
 
 /// <summary>
 /// Ugly file for construction of objects more easily where we do not have to specifiy all properties or think about paths.
@@ -34,17 +35,42 @@ public static class TestData
 
     public static Dictionary<ushort, Station> AllStations => _allStations ??= CreateAllStations();
 
-    public static OSRMRouter OSRMRouter
-    {
-        get
-        {
-            return new OSRMRouter(
-                new FileInfo(AppContext.GetData("OsrmDataPath") as string
-                        ?? throw new InvalidDataException("OSRMPath not set")), [.. AllStations.Values]);
-        }
-    }
+    public static OSRMRouter OSRMRouter => new(
+                            new FileInfo(AppContext.GetData("OsrmDataPath") as string
+                                    ?? throw new InvalidDataException("OSRMPath not set")), [.. AllStations.Values]);
 
     public static readonly SpatialGrid SpatialGrid = BuildSpatialGrid(AllStations);
+
+    public static readonly JourneyPipeline JourneySamplers = BuildJourneyPipeline();
+
+    private static JourneyPipeline BuildJourneyPipeline()
+    {
+        var polygonPath = AppContext.GetData("GridPath") as string
+                    ?? throw new InvalidOperationException("GridPath not set in project.");
+
+        var polygons = PolygonParser.Parse(File.ReadAllText(polygonPath));
+        var spawnGrid = Polygooner.GenerateGrid(size: 0.1, polygons);
+
+        var cityPath = AppContext.GetData("CityDataPath") as string
+                            ?? throw new InvalidOperationException("GridPath not set in project.");
+
+        var cities = InitCities(new FileInfo(cityPath));
+
+        return new JourneyPipeline(spawnGrid, cities, OSRMRouter);
+    }
+
+    private static List<City> InitCities(FileInfo citiesPath)
+    {
+        return [.. File.ReadAllLines(citiesPath.ToString()).Skip(1).Select(line =>
+        {
+            var parts = line.Split(',');
+            var name = parts[0];
+            var longitude = double.Parse(parts[2]);
+            var latitude = double.Parse(parts[3]);
+            var population = int.Parse(parts[1]);
+            return new City(name, new Position(longitude, latitude), population);
+        })];
+    }
 
     public static MetricsService MetricsService()
     {
@@ -55,13 +81,14 @@ public static class TestData
     public static SnapshotEventHandler SnapshotHandler(
         MetricsService metrics,
         EventScheduler scheduler,
-        Dictionary<ushort, Station> stations,
-        int evStoreCapacity = 10) =>
-        new(
+        Dictionary<ushort, Station> stations)
+    {
+        return new(
             rescheduleTime: new Time(3600),
             stations: stations,
             metrics: metrics,
             scheduler: scheduler);
+    }
 
     public static Station Station(
         ushort id,
@@ -84,8 +111,8 @@ public static class TestData
         return new Station(id, string.Empty, string.Empty, position, chargerList, prices);
     }
 
-    public static Dictionary<ushort, Station> Stations(params (ushort Id, double Lon, double Lat)[] stations) =>
-        stations.ToDictionary(s => s.Id, s => Station(s.Id, new Position(s.Lon, s.Lat)));
+    public static Dictionary<ushort, Station> Stations(params (ushort Id, double Lon, double Lat)[] stations)
+        => stations.ToDictionary(s => s.Id, s => Station(s.Id, new Position(s.Lon, s.Lat)));
 
     public static SpatialGrid BuildSpatialGrid(Dictionary<ushort, Station>? stations = null)
     {
@@ -96,7 +123,7 @@ public static class TestData
         return new SpatialGrid(grid, stations ?? []);
     }
 
-    public static Paths Route(double fromLon, double fromLat, double toLon, double toLat)
+    public static List<Position> Route(double fromLon, double fromLat, double toLon, double toLat)
     {
         var result = OSRMRouter.QuerySingleDestination(fromLon, fromLat, toLon, toLat);
         return Polyline6ToPoints.DecodePolyline(result.Polyline);
@@ -106,24 +133,22 @@ public static class TestData
     {
         if (waypoints == null)
         {
-            return new(departure, originalDuration, 100, new Paths([new Position(0, 0), new Position(1, 1)]));
+            return new(departure, originalDuration, 100, new List<Position>([new(0, 0), new(1, 1)]));
         }
 
-        return new(departure, originalDuration, 100, new Paths(waypoints));
+        return new(departure, originalDuration, 100, [.. waypoints]);
     }
 
     public static Battery Battery(
         ushort capacity = 100,
         ushort maxChargeRate = 150,
         float stateOfCharge = 0.2f,
-        Socket socket = Socket.CCS2) =>
-        new(capacity, maxChargeRate, stateOfCharge, socket);
+        Socket socket = Socket.CCS2) => new(capacity, maxChargeRate, stateOfCharge, socket);
 
     public static Preferences Preferences(
         float PriceSensitivity = 1f,
         float MinAcceptableCharge = 0.1f,
-        float MaxPathDeviation = 10.0f) =>
-        new(PriceSensitivity, MinAcceptableCharge, MaxPathDeviation);
+        float MaxPathDeviation = 10.0f) => new(PriceSensitivity, MinAcceptableCharge, MaxPathDeviation);
 
     public static EV EV(
         List<Position>? waypoints = null,
@@ -131,12 +156,14 @@ public static class TestData
         Preferences? preferences = null,
         ushort efficiency = 150,
         uint originalDuration = 100u,
-        Time departureTime = default) =>
-        new(
+        Time departureTime = default)
+    {
+        return new(
             battery ?? Battery(),
             preferences ?? Preferences(),
             Journey(waypoints, originalDuration: originalDuration, departure: departureTime),
             efficiency);
+    }
 
     public static SingleCharger SingleCharger(int id, int maxPowerKW = 150)
     {
@@ -187,7 +214,7 @@ public static class TestData
     {
         private readonly float _fixedPrice = fixedPrice;
 
-        public new float CalculatePrice(DayOfWeek day, int hour) => _fixedPrice;
+        public float CalculatePrice() => _fixedPrice;
     }
 
     internal sealed class StubCostStore(CostWeights weights) : ICostStore
@@ -205,13 +232,19 @@ public static class TestData
     {
         private readonly Dictionary<ushort, Station> _stations = stations;
 
-        public Station GetStation(ushort stationId) => _stations.TryGetValue(stationId, out var station)
+        public Station GetStation(ushort stationId)
+        {
+            return _stations.TryGetValue(stationId, out var station)
             ? station
             : throw new KeyNotFoundException($"Station {stationId} not found.");
+        }
 
-        public int GetTotalQueueSize(ushort stationId) => _stations.TryGetValue(stationId, out var station)
+        public int GetTotalQueueSize(ushort stationId)
+        {
+            return _stations.TryGetValue(stationId, out var station)
             ? station.Chargers.Sum(c => c.Queue.Count)
             : throw new KeyNotFoundException($"Station {stationId} not found.");
+        }
     }
 
     private sealed class FakeCharger() : ChargerBase(id: 1, maxPowerKW: 100)

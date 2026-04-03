@@ -23,8 +23,8 @@ public static class Polyline6ToPoints
     /// Decodes a polyline string into a list of (latitude, longitude) points.
     /// </summary>
     /// <param name="polyline">The string representing the encoded polyline, where each character encodes a portion of the latitude and longitude values. </param>
-    /// <returns>Path containing a list of latitude and longitude points decoded from the input polyline string.</returns>
-    public static Paths DecodePolyline(string polyline)
+    /// <returns>Waypoints of latitude and longitude points decoded from the input polyline string.</returns>
+    public static List<Position> DecodePolyline(string polyline)
     {
         var points = new List<Position>();
 
@@ -41,12 +41,12 @@ public static class Polyline6ToPoints
             lng += DecodeValue(polyline, ref index);
 
             // Step 2
-            points.Add(new Position(
+            points.Add(new(
                 lng * _scale,
                 lat * _scale));
         }
 
-        return new Paths(points);
+        return points;
     }
 
     /// <summary>

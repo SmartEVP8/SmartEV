@@ -41,14 +41,14 @@ public readonly struct ArrivalAtDestinationMetric
     /// <returns>The collected arrival metric.</returns>
     public static ArrivalAtDestinationMetric Collect(ref EV ev, Time simNow)
     {
-        var expectedArrivalTime = ev.Journey.OriginalDuration;
-        var actualArrivalTime = simNow - ev.Journey.JourneyStart;
+        var expectedArrivalTime = ev.Journey.Original.Duration;
+        var actualArrivalTime = simNow - ev.Journey.Original.Departure;
 
         return new ArrivalAtDestinationMetric
         {
             ExpectedArrivalTime = expectedArrivalTime,
             ActualArrivalTime = actualArrivalTime,
-            PathDeviation = ev.Journey.PathDeviation,
+            PathDeviation = ev.Journey.Current.PathDeviation,
             MissedDeadline = actualArrivalTime > expectedArrivalTime,
         };
     }

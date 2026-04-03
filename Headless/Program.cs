@@ -23,7 +23,7 @@ public static class Program
     /// <returns>The running simulation.</returns>
     public static async Task Main()
     {
-        var dataPath = new DirectoryInfo("../data/");
+        var dataPath = new DirectoryInfo("data/");
         var services = new ServiceCollection();
         var settings = new EngineSettings
         {
