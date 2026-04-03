@@ -61,8 +61,9 @@ public static class Init
             var router = sp.GetRequiredService<IOSRMRouter>();
             var spawnGrid = InitSpawnGrid(settings.PolygonPath);
             var cities = InitCities(settings.CitiesPath);
+            var engineSettings = sp.GetRequiredService<EngineSettings>();
             var journeyPipeline = new JourneyPipeline(spawnGrid, cities, router);
-            return new JourneySamplerProvider(journeyPipeline);
+            return new JourneySamplerProvider(journeyPipeline, (float)engineSettings.PopulationScaler, (float)engineSettings.DistanceScaler);
         });
 
         services.AddSingleton<ICostStore>(sp =>

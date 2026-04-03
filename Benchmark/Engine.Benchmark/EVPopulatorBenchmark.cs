@@ -36,8 +36,10 @@ public class EVPopulatorBenchMark
         var polygons = PolygonParser.Parse(File.ReadAllText(polygonPath));
         var grid = Polygooner.GenerateGrid(0.1, polygons);
         var jp = new JourneyPipeline(grid, cities, router);
+        var distanceScalar = 1.7f;
+        var populationScalar = 0.7f;
 
-        var evFactory = new EVFactory(new Random(1), new JourneySamplerProvider(jp), router);
+        var evFactory = new EVFactory(new Random(1), new JourneySamplerProvider(jp, distanceScalar, populationScalar), router);
         var evStore = new EVStore(_count);
         var eventScheduler = new EventScheduler();
 

@@ -15,9 +15,12 @@ public interface IJourneySamplerProvider
     /// <summary>
     /// Recomputes the samplers and sets current to it.
     /// </summary>
-    /// <param name="scalar">Influence of city population on the gravity weight.
-    /// A higher scaler increases the weight of larger cities, while a lower scaler reduces it.
+    /// <param name="distanceScalar">Influence of distance on the gravity weight.
+    /// A higher scalar increases the weight of closer cities, while a lower scalar reduces it.
+    /// </param>
+    /// <param name="populationScalar">Influence of city population on the gravity weight.
+    /// A higher scalar increases the weight of larger cities, while a lower scalar reduces it.
     /// </param>
     /// <returns>The computed samplers. Equivelant to calling Current after Recomputation.</returns>
-    IJourneySampler Recompute(float scalar);
+    IJourneySampler Recompute(float distanceScalar, float populationScalar);
 }

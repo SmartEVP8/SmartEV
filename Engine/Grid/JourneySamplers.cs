@@ -52,6 +52,7 @@ public class JourneySamplers(
 
         var destIndex = _destinationSamplers[sourceIndex].Sample(random);
         var dest = _cityCenters[destIndex];
+
         return (source, dest);
     }
 
