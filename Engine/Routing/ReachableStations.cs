@@ -19,7 +19,7 @@ public class ReachableStations
     /// <param name="nearbyStations">The list of station ids provided by the spatial grid.</param>
     /// <param name="radius">The same radius used in finding stations in the Spatial Grid.</param>
     /// <returns>Returns a list of ids of stations within reach of the EV.</returns>
-    public static List<ushort> FindReachableStations(Paths path, EV ev, Dictionary<ushort, Station> stations, List<ushort> nearbyStations, double radius)
+    public static List<ushort> FindReachableStations(Segments path, EV ev, Dictionary<ushort, Station> stations, List<ushort> nearbyStations, double radius)
     {
         var evBattery = ev.Battery;
         var reach = evBattery.StateOfCharge * evBattery.MaxCapacityKWh / ((double)ev.ConsumptionWhPerKm / 1000);

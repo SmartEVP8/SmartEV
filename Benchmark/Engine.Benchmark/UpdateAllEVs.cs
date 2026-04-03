@@ -36,7 +36,7 @@ public class UpdateAllEVsBenchMark
         {
             var battery = new Battery(100, 50, 50 * random.NextSingle(), Socket.CCS2);
             var preferences = new Preferences(0, 0, 0);
-            var journey = new Journey(0, 100, 100, new Paths([new Position(10 * random.NextSingle(), 10 * random.NextSingle()), new Position(20 * random.NextSingle(), 20 * random.NextSingle())]));
+            var journey = new Journey(0, 100, 100, new Segments([new Position(10 * random.NextSingle(), 10 * random.NextSingle()), new Position(20 * random.NextSingle(), 20 * random.NextSingle())]));
             var ev = new EV(battery, preferences, journey, 10);
             _evStore.Set(i, ref ev);
         }

@@ -24,7 +24,7 @@ public class ComputeCostTest
         var ev = new EV(
             TestData.Battery(stateOfCharge: 100),
             TestData.Preferences(PriceSensitivity: 0.0f, MinAcceptableCharge: 0f),
-            new Journey(new Time(0), new Time(500), 100, new Paths([new Position(0, 0), new Position(1, 1)])),
+            new Journey(new Time(0), new Time(500), 100, new Segments([new Position(0, 0), new Position(1, 1)])),
             150);
 
         var stationA = stationService.GetStation(1);
@@ -53,7 +53,7 @@ public class ComputeCostTest
         var ev = new EV(
             TestData.Battery(stateOfCharge: 100),
             TestData.Preferences(PriceSensitivity: 0.0f, MinAcceptableCharge: 0f),
-            new Journey(new Time(0), new Time(500), 100, new Paths([new Position(0, 0), new Position(1, 1)])),
+            new Journey(new Time(0), new Time(500), 100, new Segments([new Position(0, 0), new Position(1, 1)])),
             150);
 
         var stationDurations = new Dictionary<ushort, float>
@@ -88,7 +88,7 @@ public class ComputeCostTest
         var ev = new EV(
             TestData.Battery(stateOfCharge: 0.5f),
             TestData.Preferences(PriceSensitivity: 0.0f, MinAcceptableCharge: 0f),
-            new Journey(new Time(0), new Time(1000), 1000, new Paths([new Position(0, 0), new Position(1, 1)])),
+            new Journey(new Time(0), new Time(1000), 1000, new Segments([new Position(0, 0), new Position(1, 1)])),
             150);
 
         var stationDurations = new Dictionary<ushort, float>
@@ -97,7 +97,7 @@ public class ComputeCostTest
             { 2, 1600f }, // Deviation = (1600 - 1000) / 60 = 10 min
         };
 
-        // Tipping point: 3 cars (queue diff) vs 10 mins (deviation). 
+        // Tipping point: 3 cars (queue diff) vs 10 mins (deviation).
         // Weight < 0.3/min -> Queue wins. Weight > 0.3/min -> Deviation wins.
         var bestStation = computeCost.Compute(ref ev, stationDurations, _time);
         Assert.Equal(expectedStationId, bestStation.Id);
@@ -122,7 +122,7 @@ public class ComputeCostTest
         var ev = new EV(
             TestData.Battery(stateOfCharge: stateOfCharge),
             TestData.Preferences(PriceSensitivity: 0.0f, MinAcceptableCharge: 20f),
-            new Journey(new Time(0), new Time(1000), 1000, new Paths([new Position(0, 0), new Position(1, 1)])),
+            new Journey(new Time(0), new Time(1000), 1000, new Segments([new Position(0, 0), new Position(1, 1)])),
             150);
 
         var stationDurations = new Dictionary<ushort, float>
@@ -148,7 +148,7 @@ public class ComputeCostTest
         var ev = new EV(
             TestData.Battery(stateOfCharge: 100),
             TestData.Preferences(PriceSensitivity: 0.0f, MinAcceptableCharge: 0f),
-            new Journey(new Time(0), new Time(500), 100, new Paths([new Position(0, 0), new Position(1, 1)])),
+            new Journey(new Time(0), new Time(500), 100, new Segments([new Position(0, 0), new Position(1, 1)])),
             150);
 
         var stationA = stationService.GetStation(1);
@@ -178,7 +178,7 @@ public class ComputeCostTest
         var ev = new EV(
             TestData.Battery(stateOfCharge: 50),
             TestData.Preferences(PriceSensitivity: 1.0f, MinAcceptableCharge: 20f),
-            new Journey(new Time(0), new Time(500), 100, new Paths([new Position(0, 0), new Position(1, 1)])),
+            new Journey(new Time(0), new Time(500), 100, new Segments([new Position(0, 0), new Position(1, 1)])),
             150);
 
         var cheapStation = stationService.GetStation(1);
@@ -204,7 +204,7 @@ public class ComputeCostTest
         var ev = new EV(
             TestData.Battery(stateOfCharge: 100),
             TestData.Preferences(PriceSensitivity: 0.0f, MinAcceptableCharge: 0f),
-            new Journey(new Time(0), new Time(500), 100, new Paths([new Position(0, 0), new Position(1, 1)])),
+            new Journey(new Time(0), new Time(500), 100, new Segments([new Position(0, 0), new Position(1, 1)])),
             150);
 
         var stationDurations = new Dictionary<ushort, float>();
@@ -234,7 +234,7 @@ public class ComputeCostTest
             originalDuration: 1000);
 
         ev.Journey.UpdateRoute(
-            newRoute: new Paths([new Position(0, 0), new Position(0.5f, 0.5f), new Position(1, 1)]),
+            newRoute: new Segments([new Position(0, 0), new Position(0.5f, 0.5f), new Position(1, 1)]),
             nextStop: new Position(1, 1),
             departure: new Time(200),
             duration: new Time(900),
@@ -247,7 +247,7 @@ public class ComputeCostTest
     }
 
     /// <summary>
-    /// Test simulates multiple reroutes: Original route A->B, then detour to Station A, then detour again to Station B. 
+    /// Test simulates multiple reroutes: Original route A->B, then detour to Station A, then detour again to Station B.
     /// Validates that path deviation cost is calculated based on the last updated route and departure time.
     /// </summary>
     [Fact]
@@ -272,7 +272,7 @@ public class ComputeCostTest
 
         // First reroute at time 100: A -> Station A (10) -> B
         ev.Journey.UpdateRoute(
-            newRoute: new Paths([new Position(0, 0), new Position(0.5f, 0.5f), new Position(1, 1)]),
+            newRoute: new Segments([new Position(0, 0), new Position(0.5f, 0.5f), new Position(1, 1)]),
             nextStop: new Position(1, 1),
             departure: new Time(100),
             duration: new Time(950),
@@ -281,7 +281,7 @@ public class ComputeCostTest
         // Second reroute at time 400: A -> Station A -> Station B (20) -> final destination
         // Route now ends at 400 + 800 = 1200, so at time 600 there are 600 seconds remaining
         ev.Journey.UpdateRoute(
-            newRoute: new Paths([new Position(0, 0), new Position(0.5f, 0.5f), new Position(0.8f, 0.8f), new Position(1, 1)]),
+            newRoute: new Segments([new Position(0, 0), new Position(0.5f, 0.5f), new Position(0.8f, 0.8f), new Position(1, 1)]),
             nextStop: new Position(1, 1),
             departure: new Time(400),
             duration: new Time(800),

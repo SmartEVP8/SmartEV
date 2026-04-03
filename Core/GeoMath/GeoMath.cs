@@ -71,7 +71,7 @@ public static class GeoMath
     /// <param name="radius">The radius in kilometers that defines how close the point must be to the path to be considered "in radius".</param>
     /// <returns>Returns the distance from the start of the path to the point if it's within the radius of the path, otherwise returns -1.</returns>
     public static double DistancesThroughPath(
-    Paths path, Position position, double radius)
+    Segments path, Position position, double radius)
     {
         var matchIndex = -1;
         var radiusDeg = radius / KmPerLatitudeDegree;
