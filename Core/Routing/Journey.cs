@@ -66,52 +66,25 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
     /// <returns>The remaining time on the current route.</returns>
     public Time RemainingCurrentRoute(Time currentTime) => Current.Eta - currentTime;
 
+    /// <summary>Calculates the distance from the EV's current position to the next stop.</summary>
+    /// <param name="currentTime">The current time.</param>
+    /// <returns>Returns the distance to the next stop in kilometers.</returns>
+    public float DistanceToNextStop(Time currentTime)
+    {
+        var currentPos = GetCurrentPosition(currentTime);
+        return (float)GeoMath.EquirectangularDistance(currentPos, Current.NextStop) / 1000;
+    }
+
     /// <summary>
     /// Calculates the EV's current position. Assumes the speed is always the same.
     /// </summary>
     /// <param name="currentTime">The current time.</param>
     /// <returns>The position of the car.</returns>
     /// <exception cref="ArgumentException">Thrown when the current time is before the journey starts or after it has completed.</exception>
-    public Position CurrentPosition(Time currentTime)
+    public Position GetCurrentPosition(Time currentTime)
     {
-        Time completedTime = Current.Departure + Current.Duration;
-        if (currentTime > completedTime)
-            throw new ArgumentException($"Current time: {currentTime} is after the journey has completed: {completedTime}.");
-        if (currentTime < Current.Departure)
-            throw new ArgumentException($"Current time: {currentTime} is before the journey has started: {Original.Departure}.");
-
-        var percentageCompleted = (currentTime - Current.Departure) / (double)Current.Duration;
-
-        var segments = Current.Waypoints
-            .Zip(Current.Waypoints.Skip(1))
-            .Select(p =>
-                (
-                    p.First,
-                    p.Second,
-                    Length: GeoMath.EquirectangularDistance(p.First, p.Second)
-                ))
-            .ToList();
-
-        var totalLength = segments.Sum(s => s.Length);
-        var distanceTraveled = percentageCompleted * totalLength;
-
-        var distanceCovered = 0.0;
-        foreach (var (first, second, length) in segments)
-        {
-            if (distanceCovered + length >= distanceTraveled)
-            {
-                var remainingDistance = distanceTraveled - distanceCovered;
-                var ratio = remainingDistance / length;
-                var latitude = first.Latitude + (ratio * (second.Latitude - first.Latitude));
-                var longitude = first.Longitude + (ratio * (second.Longitude - first.Longitude));
-                return new Position(longitude: longitude, latitude: latitude);
-            }
-
-            distanceCovered += length;
-        }
-
-        var last = Current.Waypoints[^1];
-        return new Position(longitude: last.Longitude, latitude: last.Latitude);
+        DeriveRoute(currentTime);
+        return Current.Waypoints[0];
     }
 
     /// <summary>
@@ -128,14 +101,63 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
         Current = new CurrentJourney(departure, duration, newDistanceKm, waypoints, nextStop, deviation);
     }
 
-    /// <summary>
-    /// Calculates the distance from the EV's current position to the next stop.
-    /// </summary>
-    /// <param name="currentTime">The current time.</param>
-    /// <returns>Returns the distance to the next stop in kilometers.</returns>
-    public float DistanceToNextStop(Time currentTime)
+    private float PercentageCompleted(Time currentTime) => (currentTime - Current.Departure) / (float)Current.Duration;
+
+    private void DeriveRoute(Time currentTime)
     {
-        var currentPos = CurrentPosition(currentTime);
-        return (float)GeoMath.EquirectangularDistance(currentPos, Current.NextStop) / 1000;
+        var percentageCompleted = PercentageCompleted(currentTime);
+        var ratio = 1 - percentageCompleted;
+        var duration = (uint)Math.Ceiling(ratio * Current.Duration);
+        var newDistanceKm = ratio * Current.DistanceKm;
+        var waypoints = DeriveNewWaypoints(currentTime);
+
+        if (!waypoints.Any(x => x == Current.NextStop))
+            throw new ArgumentException("You called this in an illegal context. We should never derive route beyond the station");
+
+        Current = new CurrentJourney(currentTime, duration, newDistanceKm, waypoints, Current.NextStop, Current.PathDeviation);
+    }
+
+    private List<Position> DeriveNewWaypoints(Time currentTime)
+    {
+        Time completedTime = Current.Departure + Current.Duration;
+        if (currentTime > completedTime)
+            throw new ArgumentException($"Current time: {currentTime} is after the journey has completed: {completedTime}.");
+        if (currentTime < Current.Departure)
+            throw new ArgumentException($"Current time: {currentTime} is before the journey has started: {Original.Departure}.");
+
+        var percentageCompleted = PercentageCompleted(currentTime);
+
+        var segments = Current.Waypoints
+            .Zip(Current.Waypoints.Skip(1))
+            .Select(p =>
+                (
+                    p.First,
+                    p.Second,
+                    Length: GeoMath.EquirectangularDistance(p.First, p.Second)
+                ))
+            .ToList();
+
+        var totalLength = segments.Sum(s => s.Length);
+        var distanceTraveled = percentageCompleted * totalLength;
+
+        var distanceCovered = 0.0;
+
+        foreach (var (first, second, length) in segments)
+        {
+            if (distanceCovered + length >= distanceTraveled)
+            {
+                var remainingDistance = distanceTraveled - distanceCovered;
+                var ratio = remainingDistance / length;
+                var latitude = first.Latitude + (ratio * (second.Latitude - first.Latitude));
+                var longitude = first.Longitude + (ratio * (second.Longitude - first.Longitude));
+                var currentPos = new Position(Longitude: longitude, Latitude: latitude);
+                return new List<Position>([currentPos, .. Current.Waypoints.SkipWhile(w => w != second)]);
+            }
+
+            distanceCovered += length;
+        }
+
+        var last = Current.Waypoints[^1];
+        return new List<Position>([last]);
     }
 }

@@ -3,20 +3,9 @@ namespace Core.Shared;
 /// <summary>
 /// Represents a geographic position with longitude and latitude coordinates.
 /// </summary>
-/// <param name="longitude">The longitude coordinate.</param>
-/// <param name="latitude">The latitude coordinate.</param>
-public readonly struct Position(double longitude, double latitude)
-{
-    /// <summary>
-    /// Gets the longitude coordinate.
-    /// </summary>
-    public readonly double Longitude = longitude;
-
-    /// <summary>
-    /// Gets the latitude coordinate.
-    /// </summary>
-    public readonly double Latitude = latitude;
-}
+/// <param name="Longitude">The longitude coordinate.</param>
+/// <param name="Latitude">The latitude coordinate.</param>
+public readonly record struct Position(double Longitude, double Latitude) { }
 
 /// <summary>
 /// Provides a method to convert a collection of Position instances into a flat array of doubles.

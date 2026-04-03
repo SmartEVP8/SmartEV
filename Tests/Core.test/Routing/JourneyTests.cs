@@ -14,7 +14,7 @@ public class JourneyTests
             new(1, 2),
         };
         var journey = new Journey(departure: 0, duration: 2, distanceMeters: 10, waypoints);
-        var expectedEndpoint = journey.CurrentPosition(2);
+        var expectedEndpoint = journey.GetCurrentPosition(2);
         Assert.Equal(waypoints[1].Latitude, expectedEndpoint.Latitude);
     }
 
@@ -27,7 +27,7 @@ public class JourneyTests
             new(1, 2),
         };
         var journey = new Journey(departure: 0, duration: 2, distanceMeters: 10, waypoints);
-        var expectedEndpoint = journey.CurrentPosition(0);
+        var expectedEndpoint = journey.GetCurrentPosition(0);
         Assert.Equal(waypoints[0].Latitude, expectedEndpoint.Latitude);
     }
 
@@ -40,7 +40,7 @@ public class JourneyTests
             new(1, 2),
         };
         var journey = new Journey(departure: 0, duration: 2, distanceMeters: 10, waypoints);
-        var expectedEndpoint = journey.CurrentPosition(1);
+        var expectedEndpoint = journey.GetCurrentPosition(1);
         Assert.Equal(1.5, expectedEndpoint.Latitude);
     }
 
@@ -56,7 +56,7 @@ public class JourneyTests
             new(1, 5),
         };
         var journey = new Journey(departure: 0, duration: 4, distanceMeters: 10, waypoints);
-        var expectedEndpoint = journey.CurrentPosition(3);
+        var expectedEndpoint = journey.GetCurrentPosition(3);
         Assert.Equal(waypoints[3].Latitude, expectedEndpoint.Latitude);
     }
 }

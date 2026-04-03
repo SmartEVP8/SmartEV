@@ -45,7 +45,7 @@ public class FindCandidateStationService(
                     stationIds,
                     ev.Preferences.MaxPathDeviation).ToArray();
 
-                var pos = ev.Journey.CurrentPosition(fcse.Time);
+                var pos = ev.Journey.GetCurrentPosition(fcse.Time);
                 var dest = ev.Journey.Current.Waypoints.Last();
 
                 var res = router.QueryStationsWithDest(
