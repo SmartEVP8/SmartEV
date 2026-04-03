@@ -123,7 +123,7 @@ public static class TestData
         return new SpatialGrid(grid, stations ?? []);
     }
 
-    public static Paths Route(double fromLon, double fromLat, double toLon, double toLat)
+    public static Segments Route(double fromLon, double fromLat, double toLon, double toLat)
     {
         var result = OSRMRouter.QuerySingleDestination(fromLon, fromLat, toLon, toLat);
         return Polyline6ToPoints.DecodePolyline(result.Polyline);
@@ -133,10 +133,10 @@ public static class TestData
     {
         if (waypoints == null)
         {
-            return new(departure, originalDuration, 100, new Paths([new Position(0, 0), new Position(1, 1)]));
+            return new(departure, originalDuration, 100, new Segments([new Position(0, 0), new Position(1, 1)]));
         }
 
-        return new(departure, originalDuration, 100, new Paths(waypoints));
+        return new(departure, originalDuration, 100, new Segments(waypoints));
     }
 
     public static Battery Battery(

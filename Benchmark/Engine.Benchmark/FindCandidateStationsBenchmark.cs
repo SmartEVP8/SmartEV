@@ -81,7 +81,7 @@ public class FindCandidateStationsBenchmark
         {
             var battery = new Battery(100, 50, 10 * random.NextSingle(), Socket.CCS2);
             var preferences = new Preferences(0.5f, 0.1f, 10.0f);
-            var journey = new Journey(new Time(0), new Time(100), 0, new Paths([new Position(10 * random.NextSingle(), 10 * random.NextSingle()), new Position(20 * random.NextSingle(), 20 * random.NextSingle())]));
+            var journey = new Journey(new Time(0), new Time(100), 0, new Segments([new Position(10 * random.NextSingle(), 10 * random.NextSingle()), new Position(20 * random.NextSingle(), 20 * random.NextSingle())]));
             var ev = new EV(battery, preferences, journey, 150);
             _evStore.Set(i, ref ev);
         }

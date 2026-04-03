@@ -10,7 +10,7 @@ using Core.GeoMath;
 /// <param name="duration">The original duration of the journey.</param>
 /// <param name="distanceMeters">The distance of the journey.</param>
 /// <param name="path">The path of the journey.</param>
-public class Journey(Time departure, Time duration, float distanceMeters, Paths path)
+public class Journey(Time departure, Time duration, float distanceMeters, Segments path)
 {
     /// <summary>
     /// Gets the time the journey started.
@@ -35,7 +35,7 @@ public class Journey(Time departure, Time duration, float distanceMeters, Paths 
     /// <summary>
     /// Gets the current Path.
     /// </summary>
-    public Paths Path { get; private set; } = path;
+    public Segments Path { get; private set; } = path;
 
     /// <summary>
     /// Gets the next stop of the journey. Initially set to the original destination, but can be updated if the EV is rerouted through a station.
@@ -53,7 +53,7 @@ public class Journey(Time departure, Time duration, float distanceMeters, Paths 
     public Time TimeElapsed(Time currentTime) => currentTime - JourneyStart;
 
     /// <summary>
-    /// Calculates the remaining time on the current route, 
+    /// Calculates the remaining time on the current route,
     /// i.e. the time until the EV would reach its destination if it continues on its current path without any detours.
     /// </summary>
     /// <param name="currentTime">The current time.</param>
@@ -126,7 +126,7 @@ public class Journey(Time departure, Time duration, float distanceMeters, Paths 
     /// <param name="departure">The the journey takes affect/is updated.</param>
     /// <param name="duration">The duration of the new joruney.</param>
     /// <param name="newDistancekm">The distance of the new journey.</param>
-    public void UpdateRoute(Paths newRoute, Position nextStop, Time departure, Time duration, float newDistancekm)
+    public void UpdateRoute(Segments newRoute, Position nextStop, Time departure, Time duration, float newDistancekm)
     {
         Time oldEta = LastUpdatedDeparture + LastUpdatedDuration;
         Time newEta = departure + duration;
