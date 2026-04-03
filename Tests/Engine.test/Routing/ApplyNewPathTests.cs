@@ -19,7 +19,7 @@ public class ApplyNewPathToEVTests()
         journey.UpdateRoute(dummyRoute, stationPosition, departure: new Time(0), duration: new Time(60), 0);
         journey.UpdateRoute(dummyRoute, stationPosition, departure: new Time(20), duration: new Time(40), 0);
 
-        Assert.Equal(0U, (uint)journey.PathDeviation);
+        Assert.Equal(0U, (uint)journey.Current.PathDeviation);
     }
 
     [Fact]
@@ -39,8 +39,8 @@ public class ApplyNewPathToEVTests()
 
         applyNewPath.ApplyNewPathToEV(ref ev, station, currentTime);
 
-        Assert.Equal(150.0f, (uint)ev.Journey.LastUpdatedDuration);
-        Assert.Equal(10U, (uint)ev.Journey.LastUpdatedDeparture);
+        Assert.Equal(150.0f, (uint)ev.Journey.Current.Duration);
+        Assert.Equal(10U, (uint)ev.Journey.Current.Departure);
     }
 
     [Fact]
@@ -56,10 +56,10 @@ public class ApplyNewPathToEVTests()
         var dummyJourneyLengthkm = 10;
 
         journey.UpdateRoute(dummyRoute, dummyPosition, departure: new Time(100), duration: new Time(60), dummyJourneyLengthkm);
-        Assert.Equal(10U, (uint)journey.PathDeviation);
+        Assert.Equal(10U, (uint)journey.Current.PathDeviation);
 
         journey.UpdateRoute(dummyRoute, dummyPosition, departure: new Time(110), duration: new Time(40), dummyJourneyLengthkm);
-        Assert.Equal(0U, (uint)journey.PathDeviation);
+        Assert.Equal(0U, (uint)journey.Current.PathDeviation);
     }
 
     [Fact]
