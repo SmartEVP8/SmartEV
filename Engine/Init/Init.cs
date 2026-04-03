@@ -205,7 +205,8 @@ public static class Init
         {
             var costStore = sp.GetRequiredService<ICostStore>();
             var stationService = sp.GetRequiredService<StationService>();
-            return new ComputeCost(costStore, stationService);
+            var energyPrices = sp.GetRequiredService<EnergyPrices>();
+            return new ComputeCost(costStore, stationService, energyPrices);
         });
 
         services.AddSingleton(sp =>

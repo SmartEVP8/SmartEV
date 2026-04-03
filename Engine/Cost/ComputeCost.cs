@@ -11,7 +11,8 @@ using Engine.Services;
 /// </summary>
 /// <param name="costStore">The cost store.</param>
 /// <param name="stationService">The station service.</param>
-public class ComputeCost(ICostStore costStore, IStationService stationService)
+/// <param name="energyPrices">The energy prices.</param>
+public class ComputeCost(ICostStore costStore, IStationService stationService, EnergyPrices energyPrices)
 {
     /// <summary>
     /// Computes the cost of detouring to each station and selects the station with the lowest cost.
@@ -35,7 +36,7 @@ public class ComputeCost(ICostStore costStore, IStationService stationService)
             var effectiveQueueCost = CalculateEffectiveQueueSizeCost(station, weights, ev.Battery.Socket);
             var pathDeviationCost = CalculatePathDeviationCost(ref ev, duration, weights, time);
             var urgencyCost = CalculateUrgencyCost(ref ev, weights);
-            var priceCost = CalculatePriceCost(ref ev, station, weights, time);
+            var priceCost = CalculatePriceCost(ref ev, station, weights, time, energyPrices);
             var effectiveWaitTimeCost = CalculateEffectiveWaitTimeCost(weights);
             var cost = effectiveQueueCost + pathDeviationCost + urgencyCost + priceCost + effectiveWaitTimeCost;
 
@@ -75,7 +76,7 @@ public class ComputeCost(ICostStore costStore, IStationService stationService)
 
         var totalQueueSize = stationService.GetTotalQueueSize(station.Id);
         var effectiveQueueSize = (float)totalQueueSize / station.Chargers.Count(s => s.GetSockets().Contains(socket));
-        return weights.EffectiveQueueSize * MathF.Pow(effectiveQueueSize, 2);
+        return weights.EffectiveQueueSize * MathF.Pow(effectiveQueueSize, 3);
     }
 
     /// <summary>
@@ -98,10 +99,11 @@ public class ComputeCost(ICostStore costStore, IStationService stationService)
         return weights.Urgency * urgency;
     }
 
-    private static float CalculatePriceCost(ref EV ev, Station station, CostWeights weights, Time time)
+    private static float CalculatePriceCost(ref EV ev, Station station, CostWeights weights, Time time, EnergyPrices energyPrices)
     {
-        var price = station.GetPrice(time);
-        return weights.PriceSensitivity * ev.Preferences.PriceSensitivity * price;
+        var currentPrice = station.GetPrice(time);
+        var averagePrice = energyPrices.GetHourPrice(time.DayOfWeek, (int)time.Hour);
+        return weights.PriceSensitivity * ev.Preferences.PriceSensitivity * (currentPrice - averagePrice) * 100; // Scale factor to convert price difference to a comparable cost value
     }
 
     // TODO: Implement

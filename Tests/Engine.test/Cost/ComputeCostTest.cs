@@ -15,12 +15,13 @@ public class ComputeCostTest
     public void Compute_OnlyPathDeviationWeighted_SelectsLowerDeviationStation()
     {
         var costStore = new TestData.StubCostStore(new CostWeights(PathDeviation: 1));
+        var energyPrices = new TestData.FixedEnergyPrices(2.0f);
         var stationService = new TestData.StubStationService(new Dictionary<ushort, Station>
         {
             { 1, TestData.Station(id: 1, pos: new (0, 0)) },
             { 2, TestData.Station(id: 2, pos: new (0, 0)) },
         });
-        var computeCost = new ComputeCost(costStore, stationService);
+        var computeCost = new ComputeCost(costStore, stationService, energyPrices);
         var ev = new EV(
             TestData.Battery(stateOfCharge: 100),
             TestData.Preferences(PriceSensitivity: 0.0f, MinAcceptableCharge: 0f),
@@ -44,12 +45,13 @@ public class ComputeCostTest
     public void Compute_OnlyQueueWeighted_SelectsShorterQueueStation()
     {
         var costStore = new TestData.StubCostStore(new CostWeights(EffectiveQueueSize: 1));
+        var energyPrices = new TestData.FixedEnergyPrices(2.0f);
         var stationService = new TestData.StubStationService(new Dictionary<ushort, Station>
         {
             { 1, TestData.Station(id: 1, pos: new (0, 0), queueSize: 1) },
             { 2, TestData.Station(id: 2, pos: new (0, 0), queueSize: 3) },
         });
-        var computeCost = new ComputeCost(costStore, stationService);
+        var computeCost = new ComputeCost(costStore, stationService, energyPrices);
         var ev = new EV(
             TestData.Battery(stateOfCharge: 100),
             TestData.Preferences(PriceSensitivity: 0.0f, MinAcceptableCharge: 0f),
@@ -69,7 +71,7 @@ public class ComputeCostTest
 
     [Theory]
     [InlineData(0.5f, 2)] // Low deviation weight -> Station 2 wins (much shorter queue)
-    [InlineData(2.0f, 1)] // High deviation weight -> Station 1 wins (no deviation)
+    [InlineData(7.0f, 1)] // High deviation weight -> Station 1 wins (no deviation)
     public void Compute_QueueVsPathDeviation_SelectsBasedOnWeights(float pathDeviationWeight, ushort expectedStationId)
     {
         var costStore = new TestData.StubCostStore(
@@ -77,13 +79,15 @@ public class ComputeCostTest
                 PathDeviation: pathDeviationWeight,
                 EffectiveQueueSize: 1.0f));
 
+        var energyPrices = new TestData.FixedEnergyPrices(2.0f);
+
         var stationService = new TestData.StubStationService(new Dictionary<ushort, Station>
         {
             { 1, TestData.Station(id: 1, pos: new (0, 0), queueSize: 4) },
             { 2, TestData.Station(id: 2, pos: new (0, 0), queueSize: 1) },
         });
 
-        var computeCost = new ComputeCost(costStore, stationService);
+        var computeCost = new ComputeCost(costStore, stationService, energyPrices);
 
         var ev = new EV(
             TestData.Battery(stateOfCharge: 0.5f),
@@ -110,6 +114,7 @@ public class ComputeCostTest
     {
         var weights = new CostWeights(PathDeviation: 0.5f, EffectiveQueueSize: 1.0f, Urgency: 10.0f);
         var costStore = new TestData.StubCostStore(weights);
+        var energyPrices = new TestData.FixedEnergyPrices(2.0f);
 
         var stationService = new TestData.StubStationService(new Dictionary<ushort, Station>
         {
@@ -117,7 +122,7 @@ public class ComputeCostTest
             { 2, TestData.Station(id: 2, pos: new (0, 0), queueSize: 1) },
         });
 
-        var computeCost = new ComputeCost(costStore, stationService);
+        var computeCost = new ComputeCost(costStore, stationService, energyPrices);
 
         var ev = new EV(
             TestData.Battery(stateOfCharge: stateOfCharge),
@@ -139,12 +144,13 @@ public class ComputeCostTest
     public void Compute_AllStationsIdenticalCost_ReturnsFirst()
     {
         var costStore = new TestData.StubCostStore(new CostWeights(PathDeviation: 1, EffectiveQueueSize: 1));
+        var energyPrices = new TestData.FixedEnergyPrices(2.0f);
         var stationService = new TestData.StubStationService(new Dictionary<ushort, Station>
         {
             { 1, TestData.Station(id: 1, pos: new (0, 0), queueSize: 0) },
             { 2, TestData.Station(id: 2, pos: new (0, 0), queueSize: 0) },
         });
-        var computeCost = new ComputeCost(costStore, stationService);
+        var computeCost = new ComputeCost(costStore, stationService, energyPrices);
         var ev = new EV(
             TestData.Battery(stateOfCharge: 100),
             TestData.Preferences(PriceSensitivity: 0.0f, MinAcceptableCharge: 0f),
@@ -169,12 +175,13 @@ public class ComputeCostTest
     public void Compute_OnlyPriceSensitivityWeighted_SelectsCheaperStation()
     {
         var costStore = new TestData.StubCostStore(new CostWeights(PriceSensitivity: 1));
+        var energyPrices = new TestData.FixedEnergyPrices(2.0f);
         var stationService = new TestData.StubStationService(new Dictionary<ushort, Station>
         {
             { 1, TestData.Station(id: 1, pos: new (0, 0), energyPrices: new TestData.FixedEnergyPrices(2.0f)) },
             { 2, TestData.Station(id: 2, pos: new (1, 1), energyPrices: new TestData.FixedEnergyPrices(4.0f)) },
         });
-        var computeCost = new ComputeCost(costStore, stationService);
+        var computeCost = new ComputeCost(costStore, stationService, energyPrices);
         var ev = new EV(
             TestData.Battery(stateOfCharge: 50),
             TestData.Preferences(PriceSensitivity: 1.0f, MinAcceptableCharge: 20f),
@@ -199,8 +206,9 @@ public class ComputeCostTest
     public void Compute_NoStations_ThrowsNoNullAllowedException()
     {
         var costStore = new TestData.StubCostStore(new CostWeights(PathDeviation: 1));
-        var stationService = new TestData.StubStationService([]);
-        var computeCost = new ComputeCost(costStore, stationService);
+        var stationService = new TestData.StubStationService(new Dictionary<ushort, Station>());
+        var energyPrices = new TestData.FixedEnergyPrices(2.0f);
+        var computeCost = new ComputeCost(costStore, stationService, energyPrices);
         var ev = new EV(
             TestData.Battery(stateOfCharge: 100),
             TestData.Preferences(PriceSensitivity: 0.0f, MinAcceptableCharge: 0f),
@@ -220,12 +228,13 @@ public class ComputeCostTest
     public void Compute_AfterBeingRerouted_StillCalculatesPathDeviationCorrectly()
     {
         var costStore = new TestData.StubCostStore(new CostWeights(PathDeviation: 1));
+        var energyPrices = new TestData.FixedEnergyPrices(2.0f);
         var stationService = new TestData.StubStationService(new Dictionary<ushort, Station>
         {
             { 1, TestData.Station(id: 1, pos: new (0, 0)) },
             { 2, TestData.Station(id: 2, pos: new (0, 0)) },
         });
-        var computeCost = new ComputeCost(costStore, stationService);
+        var computeCost = new ComputeCost(costStore, stationService, energyPrices);
 
         var ev = TestData.EV(
             waypoints: [new(0, 0), new(1, 1)],
@@ -256,13 +265,14 @@ public class ComputeCostTest
         // Test simulates full chain: A -> Station A -> B, then detour again to a station
         // Validates that path deviation cost works through multiple reroutes
         var costStore = new TestData.StubCostStore(new CostWeights(PathDeviation: 1));
+        var energyPrices = new TestData.FixedEnergyPrices(2.0f);
         var stationService = new TestData.StubStationService(new Dictionary<ushort, Station>
         {
             { 10, TestData.Station(id: 10, pos: new (0.5f, 0.5f)) },
             { 20, TestData.Station(id: 20, pos: new (0, 0)) },
             { 30, TestData.Station(id: 30, pos: new (0, 0)) },
         });
-        var computeCost = new ComputeCost(costStore, stationService);
+        var computeCost = new ComputeCost(costStore, stationService, energyPrices);
 
         var ev = TestData.EV(
             waypoints: [new(0, 0), new(1, 1)],

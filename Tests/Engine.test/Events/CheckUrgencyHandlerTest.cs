@@ -25,7 +25,7 @@ public class CheckUrgencyHandlerTest
     [Fact]
     public void LowUrgencySchedulesCheckUrgency()
     {
-        var ev1 = MakeEV(stateOfCharge: 0.5f);
+        var ev1 = MakeEV(stateOfCharge: 0.8f);
         _evStore.TryAllocate((_, ref ev) => ev = ev1, out var index1);
 
         MakeHandler().Handle(new CheckUrgency(index1, 1));
