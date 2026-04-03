@@ -15,7 +15,7 @@ public class ApplyNewPathToEVTests()
             originalDuration: 60U);
 
         var stationPosition = new Position(2, 2);
-        var dummyRoute = new Segments([new Position(0, 0), stationPosition, new Position(5, 5)]);
+        var dummyRoute = new List<Position>([new(0, 0), stationPosition, new(5, 5)]);
         journey.UpdateRoute(dummyRoute, stationPosition, departure: new Time(0), duration: new Time(60), 0);
         journey.UpdateRoute(dummyRoute, stationPosition, departure: new Time(20), duration: new Time(40), 0);
 
@@ -26,10 +26,10 @@ public class ApplyNewPathToEVTests()
     public void ApplyNewPathToEV_ConvertsAndRoundsDurationCorrectly()
     {
         var ev = TestData.EV(waypoints: [
-            new Position(0, 0),
-            new Position(10, 10)
+            new (0, 0),
+            new (10, 10)
         ]);
-        var station = TestData.Station(1, new Position(5, 5));
+        var station = TestData.Station(1, new(5, 5));
         var fakeRouter = new FakeDestinationRouter
         {
             ReturnedDuration = 150.0f, // 2.5 minutes, should round to 2
@@ -51,7 +51,7 @@ public class ApplyNewPathToEVTests()
             departure: new Time(100),
             originalDuration: 50U);
 
-        var dummyRoute = new Segments([]);
+        var dummyRoute = new List<Position>([]);
         var dummyPosition = new Position(0, 0);
         var dummyJourneyLengthkm = 10;
 

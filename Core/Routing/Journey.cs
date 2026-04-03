@@ -21,14 +21,14 @@ public record OriginalJourney(Time Departure, Time Duration, float DistanceKm)
 /// <param name="Departure">The time the current leg of the journey started.</param>
 /// <param name="Duration">The duration of the current leg of the journey.</param>
 /// <param name="DistanceKm">The distance of the current journey in kilometers.</param>
-/// <param name="Segments">The current segments of the journey.</param>
+/// <param name="Waypoints">The current waypoints of the journey.</param>
 /// <param name="NextStop">The next stop of the journey.</param>
 /// <param name="PathDeviation">The accumulated time added by rerouting.</param>
 public record CurrentJourney(
     Time Departure,
     Time Duration,
     float DistanceKm,
-    Segments Segments,
+    List<Position> Waypoints,
     Position NextStop,
     Time PathDeviation)
 {
@@ -42,8 +42,8 @@ public record CurrentJourney(
 /// <param name="departure">The time the journey started.</param>
 /// <param name="duration">The original duration of the journey.</param>
 /// <param name="distanceMeters">The distance of the journey.</param>
-/// <param name="segments">The segments of the journey.</param>
-public class Journey(Time departure, Time duration, float distanceMeters, Segments segments)
+/// <param name="waypoints">The waypoints in the journey.</param>
+public class Journey(Time departure, Time duration, float distanceMeters, List<Position> waypoints)
 {
     /// <summary>Gets the original baseline of the journey.</summary>
     public OriginalJourney Original { get; } = new(departure, duration, distanceMeters / 1000);
@@ -51,7 +51,7 @@ public class Journey(Time departure, Time duration, float distanceMeters, Segmen
     /// <summary>Gets the live state of the journey.</summary>
     public CurrentJourney Current { get; private set; } = new(
         departure, duration, distanceMeters / 1000,
-        segments, segments.Waypoints[^1], PathDeviation: 0);
+        waypoints, waypoints[^1], PathDeviation: 0);
 
     /// <summary>Calculates the time elapsed since the journey started.</summary>
     /// <param name="currentTime">The current time.</param>
@@ -82,8 +82,8 @@ public class Journey(Time departure, Time duration, float distanceMeters, Segmen
 
         var percentageCompleted = (currentTime - Current.Departure) / (double)Current.Duration;
 
-        var segments = Current.Segments
-            .Waypoints.Zip(Current.Segments.Waypoints.Skip(1))
+        var segments = Current.Waypoints
+            .Zip(Current.Waypoints.Skip(1))
             .Select(p =>
                 (
                     p.First,
@@ -110,22 +110,22 @@ public class Journey(Time departure, Time duration, float distanceMeters, Segmen
             distanceCovered += length;
         }
 
-        var last = Current.Segments.Waypoints[^1];
+        var last = Current.Waypoints[^1];
         return new Position(longitude: last.Longitude, latitude: last.Latitude);
     }
 
     /// <summary>
     /// Updates the route of the journey and calculates the new path deviation based on the new estimated time of arrival (ETA) compared to the old ETA.
     /// </summary>
-    /// <param name="newSegments">The new segments of the journey.</param>
-    /// <param name="nextStop">The next stop/position of <paramref name="newSegments"/>.</param>
+    /// <param name="waypoints">The new waypoints of the journey.</param>
+    /// <param name="nextStop">The next stop/position of <paramref name="waypoints"/>.</param>
     /// <param name="departure">The time the journey update takes effect.</param>
     /// <param name="duration">The duration of the new journey.</param>
     /// <param name="newDistanceKm">The distance of the new journey in kilometers.</param>
-    public void UpdateRoute(Segments newSegments, Position nextStop, Time departure, Time duration, float newDistanceKm)
+    public void UpdateRoute(List<Position> waypoints, Position nextStop, Time departure, Time duration, float newDistanceKm)
     {
         var deviation = Current.PathDeviation + (departure + duration) - Current.Eta;
-        Current = new CurrentJourney(departure, duration, newDistanceKm, newSegments, nextStop, deviation);
+        Current = new CurrentJourney(departure, duration, newDistanceKm, waypoints, nextStop, deviation);
     }
 
     /// <summary>
