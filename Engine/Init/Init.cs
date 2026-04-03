@@ -61,8 +61,9 @@ public static class Init
             var router = sp.GetRequiredService<IOSRMRouter>();
             var spawnGrid = InitSpawnGrid(settings.PolygonPath);
             var cities = InitCities(settings.CitiesPath);
+            var engineSettings = sp.GetRequiredService<EngineSettings>();
             var journeyPipeline = new JourneyPipeline(spawnGrid, cities, router);
-            return new JourneySamplerProvider(journeyPipeline);
+            return new JourneySamplerProvider(journeyPipeline, (float)engineSettings.PopulationScaler, (float)engineSettings.DistanceScaler);
         });
 
         services.AddSingleton<ICostStore>(sp =>
@@ -84,7 +85,7 @@ public static class Init
             var settings = sp.GetRequiredService<EngineSettings>();
             var journeySamplerProvider = sp.GetRequiredService<IJourneySamplerProvider>();
             var router = sp.GetRequiredService<IOSRMRouter>();
-            var random = settings.Seed;
+                        var random = settings.Seed;
             return new EVFactory(random, journeySamplerProvider, router);
         });
 
