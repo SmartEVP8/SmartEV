@@ -24,7 +24,7 @@ public class StationsAroundPolyline
     private OSRMRouter _router = null!;
     private Dictionary<ushort, Station> _stations = null!;
     private SpatialGrid _spatialGrid = null!;
-    private Segments _path = null!;
+    private List<Position> _waypoints = null!;
     private EV _ev = default;
 
     /// <summary>
@@ -44,8 +44,8 @@ public class StationsAroundPolyline
         _router = new OSRMRouter(new FileInfo(path), []);
         var route = _router.QuerySingleDestination(9.935932, 57.046707, 12.5683, 55.6761);
         var polyline = route.Polyline;
-        _path = Polyline6ToPoints.DecodePolyline(polyline);
-        var journey = new Journey(0, 0, 0, _path);
+        _waypoints = Polyline6ToPoints.DecodePolyline(polyline);
+        var journey = new Journey(0, 0, 0, _waypoints);
 
         _ev = new EV(new Battery(100, 100, 15, Socket.CCS2), new Preferences(1f, 0.1f, 10.0f), journey, 150);
 
@@ -75,7 +75,7 @@ public class StationsAroundPolyline
     [Benchmark]
     public void BenchmarkStationsInPolyline()
     {
-        var stationNearBy = _spatialGrid.GetStationsAlongPolyline(_path, _ev.Preferences.MaxPathDeviation);
-        _ = ReachableStations.FindReachableStations(_path, _ev, _stations, stationNearBy, _ev.Preferences.MaxPathDeviation);
+        var stationNearBy = _spatialGrid.GetStationsAlongPolyline(_waypoints, _ev.Preferences.MaxPathDeviation);
+        _ = ReachableStations.FindReachableStations(_waypoints, _ev, _stations, stationNearBy, _ev.Preferences.MaxPathDeviation);
     }
 }

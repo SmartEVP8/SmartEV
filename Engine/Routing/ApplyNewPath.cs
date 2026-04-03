@@ -22,13 +22,13 @@ public class ApplyNewPath(IDestinationRouter router)
     public void ApplyNewPathToEV(ref EV ev, Station station, Time currentTime)
     {
         var currentPos = ev.Journey.CurrentPosition(currentTime);
-        var destination = ev.Journey.Path.Waypoints.Last();
+        var destination = ev.Journey.Current.Waypoints.Last();
 
         var res = _router.QueryDestinationWithStop(
             currentPos.Longitude, currentPos.Latitude, station.Position.Longitude, station.Position.Latitude, destination.Longitude, destination.Latitude, station.Id);
 
         var detourPath = Polyline6ToPoints.DecodePolyline(res.Polyline);
-        var newWaypoints = new Segments([currentPos, .. detourPath.Waypoints]);
+        var newWaypoints = new List<Position>([currentPos, .. detourPath]);
         var roundedDuration = (uint)Math.Ceiling(res.Duration);
         ev.Journey.UpdateRoute(newWaypoints, station.Position, currentTime, (Time)roundedDuration, res.Distance / 1000);
     }
