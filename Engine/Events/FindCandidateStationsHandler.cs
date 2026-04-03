@@ -28,9 +28,8 @@ public class FindCandidateStationsHandler(
     /// <returns>A task representing the asynchronous operation.</returns>
     public async Task Handle(FindCandidateStations e)
     {
-        var ev = evStore.Get(e.EVId);
         var stationCosts = await findCandidateStationService.ComputeCandidateStationFromCache(e.EVId);
-
+        ref var ev = ref evStore.Get(e.EVId);
         if (stationCosts.Count == 0)
         {
             _numberOfNoStations++;

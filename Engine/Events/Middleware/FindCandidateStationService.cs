@@ -1,6 +1,7 @@
 namespace Engine.Events.Middleware;
 
 using Core.Charging;
+using Core.Shared;
 using Engine.Grid;
 using Engine.Routing;
 using Engine.Utils;
@@ -35,7 +36,7 @@ public class FindCandidateStationService(
 
             _evStationPaths[fcse.EVId] = new StationQuery(Task.Run(async () =>
             {
-                var ev = evStore.Get(fcse.EVId);
+                ref var ev = ref evStore.Get(fcse.EVId);
                 var stationIds = spatialGrid.GetStationsAlongPolyline(
                     ev.Journey.Current.Waypoints, ev.Preferences.MaxPathDeviation);
                 var reachableStationIds = ReachableStations.FindReachableStations(
