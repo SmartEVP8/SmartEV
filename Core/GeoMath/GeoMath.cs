@@ -66,20 +66,20 @@ public static class GeoMath
     /// Calculates the distance from the start of the segments to the point, following the segments waypoints,
     /// and checking if the point is within a certain radius of the segments.
     /// </summary>
-    /// <param name="segments">The segments to check the distance along.</param>
+    /// <param name="waypoints">The segments to check the distance along.</param>
     /// <param name="position">The position to check the distance to.</param>
     /// <param name="radius">The radius in kilometers that defines how close the point must be to the segments to be considered "in radius".</param>
     /// <returns>Returns the distance from the start of the segments to the point if it's within the radius of the segments, otherwise returns -1.</returns>
     public static double DistancesThroughPath(
-    Segments segments, Position position, double radius)
+    List<Position> waypoints, Position position, double radius)
     {
         var matchIndex = -1;
         var radiusDeg = radius / KmPerLatitudeDegree;
 
-        for (var i = 0; i < segments.Waypoints.Count - 1; i++)
+        for (var i = 0; i < waypoints.Count - 1; i++)
         {
-            var wp1 = segments.Waypoints[i];
-            var wp2 = segments.Waypoints[i + 1];
+            var wp1 = waypoints[i];
+            var wp2 = waypoints[i + 1];
 
             var minLat = Math.Min(wp1.Latitude, wp2.Latitude) - radiusDeg;
             var maxLat = Math.Max(wp1.Latitude, wp2.Latitude) + radiusDeg;
@@ -99,11 +99,11 @@ public static class GeoMath
         for (var i = 0; i < matchIndex; i++)
         {
             totalDistance += EquirectangularDistance(
-                segments.Waypoints[i], segments.Waypoints[i + 1]);
+                waypoints[i], waypoints[i + 1]);
         }
 
         return totalDistance + EquirectangularDistance(
-            position, segments.Waypoints[matchIndex]);
+            position, waypoints[matchIndex]);
     }
 
     /// <summary>

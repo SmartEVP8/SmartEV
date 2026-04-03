@@ -37,16 +37,16 @@ public class FindCandidateStationService(
             {
                 var ev = evStore.Get(fcse.EVId);
                 var stationIds = spatialGrid.GetStationsAlongPolyline(
-                    ev.Journey.Current.Segments, ev.Preferences.MaxPathDeviation);
+                    ev.Journey.Current.Waypoints, ev.Preferences.MaxPathDeviation);
                 var reachableStationIds = ReachableStations.FindReachableStations(
-                    ev.Journey.Current.Segments,
+                    ev.Journey.Current.Waypoints,
                     ev,
                     stations,
                     stationIds,
                     ev.Preferences.MaxPathDeviation).ToArray();
 
                 var pos = ev.Journey.CurrentPosition(fcse.Time);
-                var dest = ev.Journey.Current.Segments.Waypoints.Last();
+                var dest = ev.Journey.Current.Waypoints.Last();
 
                 var res = router.QueryStationsWithDest(
                     pos.Longitude,
