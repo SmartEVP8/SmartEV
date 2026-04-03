@@ -199,7 +199,7 @@ public class ComputeCostTest
     public void Compute_NoStations_ThrowsNoNullAllowedException()
     {
         var costStore = new TestData.StubCostStore(new CostWeights(PathDeviation: 1));
-        var stationService = new TestData.StubStationService(new Dictionary<ushort, Station>());
+        var stationService = new TestData.StubStationService([]);
         var computeCost = new ComputeCost(costStore, stationService);
         var ev = new EV(
             TestData.Battery(stateOfCharge: 100),
@@ -238,7 +238,7 @@ public class ComputeCostTest
             nextStop: new Position(1, 1),
             departure: new Time(200),
             duration: new Time(900),
-            newDistancekm: 150);
+            newDistanceKm: 150);
 
         var stationDurations = new Dictionary<ushort, float> { { 1, 600f }, { 2, 650f } };
         var bestStation = computeCost.Compute(ref ev, stationDurations, new Time(250));
@@ -276,7 +276,7 @@ public class ComputeCostTest
             nextStop: new Position(1, 1),
             departure: new Time(100),
             duration: new Time(950),
-            newDistancekm: 150);
+            newDistanceKm: 150);
 
         // Second reroute at time 400: A -> Station A -> Station B (20) -> final destination
         // Route now ends at 400 + 800 = 1200, so at time 600 there are 600 seconds remaining
@@ -285,7 +285,7 @@ public class ComputeCostTest
             nextStop: new Position(1, 1),
             departure: new Time(400),
             duration: new Time(800),
-            newDistancekm: 150);
+            newDistanceKm: 150);
 
         // At time 600, choose between two more charging stations
         // Station 20: 600 second detour = 0 deviation (perfect match)
