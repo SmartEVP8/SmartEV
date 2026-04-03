@@ -234,7 +234,7 @@ public class ComputeCostTest
             originalDuration: 1000);
 
         ev.Journey.UpdateRoute(
-            newRoute: new Segments([new Position(0, 0), new Position(0.5f, 0.5f), new Position(1, 1)]),
+            newSegments: new Segments([new Position(0, 0), new Position(0.5f, 0.5f), new Position(1, 1)]),
             nextStop: new Position(1, 1),
             departure: new Time(200),
             duration: new Time(900),
@@ -272,7 +272,7 @@ public class ComputeCostTest
 
         // First reroute at time 100: A -> Station A (10) -> B
         ev.Journey.UpdateRoute(
-            newRoute: new Segments([new Position(0, 0), new Position(0.5f, 0.5f), new Position(1, 1)]),
+            newSegments: new Segments([new Position(0, 0), new Position(0.5f, 0.5f), new Position(1, 1)]),
             nextStop: new Position(1, 1),
             departure: new Time(100),
             duration: new Time(950),
@@ -281,7 +281,7 @@ public class ComputeCostTest
         // Second reroute at time 400: A -> Station A -> Station B (20) -> final destination
         // Route now ends at 400 + 800 = 1200, so at time 600 there are 600 seconds remaining
         ev.Journey.UpdateRoute(
-            newRoute: new Segments([new Position(0, 0), new Position(0.5f, 0.5f), new Position(0.8f, 0.8f), new Position(1, 1)]),
+            newSegments: new Segments([new Position(0, 0), new Position(0.5f, 0.5f), new Position(0.8f, 0.8f), new Position(1, 1)]),
             nextStop: new Position(1, 1),
             departure: new Time(400),
             duration: new Time(800),

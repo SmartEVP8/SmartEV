@@ -9,8 +9,8 @@ using Core.GeoMath;
 /// <param name="departure">The time the journey started.</param>
 /// <param name="duration">The original duration of the journey.</param>
 /// <param name="distanceMeters">The distance of the journey.</param>
-/// <param name="path">The path of the journey.</param>
-public class Journey(Time departure, Time duration, float distanceMeters, Segments path)
+/// <param name="segments">The path of the journey.</param>
+public class Journey(Time departure, Time duration, float distanceMeters, Segments segments)
 {
     /// <summary>
     /// Gets the time the journey started.
@@ -33,14 +33,14 @@ public class Journey(Time departure, Time duration, float distanceMeters, Segmen
     public Time LastUpdatedDuration { get; private set; } = duration;
 
     /// <summary>
-    /// Gets the current Path.
+    /// Gets the current Segments.
     /// </summary>
-    public Segments Path { get; private set; } = path;
+    public Segments Segments { get; private set; } = segments;
 
     /// <summary>
     /// Gets the next stop of the journey. Initially set to the original destination, but can be updated if the EV is rerouted through a station.
     /// </summary>
-    public Position NextStop { get; private set; } = path.Waypoints[^1];
+    public Position NextStop { get; private set; } = segments.Waypoints[^1];
 
     /// <summary>
     /// Gets the additional time has been added by rerouting/deviating from the original path.
@@ -86,8 +86,8 @@ public class Journey(Time departure, Time duration, float distanceMeters, Segmen
 
         var percentageCompleted = (currentTime - LastUpdatedDeparture) / (double)LastUpdatedDuration;
 
-        var segments = Path
-            .Waypoints.Zip(Path.Waypoints.Skip(1))
+        var segments = Segments
+            .Waypoints.Zip(Segments.Waypoints.Skip(1))
             .Select(p =>
                 (
                     p.First,
@@ -114,24 +114,24 @@ public class Journey(Time departure, Time duration, float distanceMeters, Segmen
             distanceCovered += length;
         }
 
-        var last = Path.Waypoints[^1];
+        var last = Segments.Waypoints[^1];
         return new Position(longitude: last.Longitude, latitude: last.Latitude);
     }
 
     /// <summary>
     /// Updates the route of the journey and calculates the new path deviation based on the new estimated time of arrival (ETA) compared to the old ETA.
     /// </summary>
-    /// <param name="newRoute">The new path/journey.</param>
-    /// <param name="nextStop">The next stop/position of <paramref name="newRoute"/>.</param>
+    /// <param name="newSegments">The new segments/journey.</param>
+    /// <param name="nextStop">The next stop/position of <paramref name="newSegments"/>.</param>
     /// <param name="departure">The the journey takes affect/is updated.</param>
     /// <param name="duration">The duration of the new joruney.</param>
     /// <param name="newDistancekm">The distance of the new journey.</param>
-    public void UpdateRoute(Segments newRoute, Position nextStop, Time departure, Time duration, float newDistancekm)
+    public void UpdateRoute(Segments newSegments, Position nextStop, Time departure, Time duration, float newDistancekm)
     {
         Time oldEta = LastUpdatedDeparture + LastUpdatedDuration;
         Time newEta = departure + duration;
 
-        Path = newRoute;
+        Segments = newSegments;
         NextStop = nextStop;
         LastUpdatedDeparture = departure;
         LastUpdatedDuration = duration;
