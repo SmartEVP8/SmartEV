@@ -3,31 +3,28 @@ namespace Core.Shared;
 /// <summary>
 /// Represents a geographic position with longitude and latitude coordinates.
 /// </summary>
-/// <param name="longitude">The longitude coordinate.</param>
-/// <param name="latitude">The latitude coordinate.</param>
-public readonly struct Position(double longitude, double latitude)
+/// <param name="Longitude">The longitude coordinate.</param>
+/// <param name="Latitude">The latitude coordinate.</param>
+public sealed record Position(double Longitude, double Latitude)
 {
-    /// <summary>
-    /// Gets the longitude coordinate.
-    /// </summary>
-    public readonly double Longitude = longitude;
+    private const double _tolerance = 0.00001; // ~1 meter at equator
 
-    /// <summary>
-    /// Gets the latitude coordinate.
-    /// </summary>
-    public readonly double Latitude = latitude;
-}
+    /// <inheritdoc/>
+    public bool Equals(Position? other)
+    {
+        if (other is null)
+            return false;
 
-/// <summary>
-/// Provides a method to convert a collection of Position instances into a flat array of doubles.
-/// </summary>
-public static class PositionExtensions
-{
-    /// <summary>
-    /// Converts an enumerable of Position instances into a flat array of doubles, where each Position is represented as a tuple of lon, lat.
-    /// </summary>
-    /// <param name="positions">The collection of Position instances to convert.</param>
-    /// <returns>A flat array of doubles representing the positions.</returns>
-    public static double[] ToFlatArray(this IEnumerable<Position> positions)
-        => [.. positions.SelectMany(p => new[] { p.Longitude, p.Latitude })];
+        return Math.Abs(Longitude - other.Longitude) < _tolerance &&
+               Math.Abs(Latitude - other.Latitude) < _tolerance;
+    }
+
+    /// <inheritdoc/>
+    public override int GetHashCode()
+    {
+        // Bucket positions into tolerance-sized cells for hash consistency
+        var lonBucket = (int)(Longitude / _tolerance);
+        var latBucket = (int)(Latitude / _tolerance);
+        return HashCode.Combine(lonBucket, latBucket);
+    }
 }

@@ -19,7 +19,7 @@ public class CheckUrgencyHandler(EventScheduler eventScheduler, EVStore evStore,
     /// <param name="checkUrgency">The event for checking urgency of an EV.</param>
     public void Handle(CheckUrgency checkUrgency)
     {
-        var ev = evStore.Get(checkUrgency.EVId);
+        ref var ev = ref evStore.Get(checkUrgency.EVId);
 
         var urgency = Urgency.CalculateChargeUrgency(ev.Battery.StateOfCharge, ev.Preferences.MinAcceptableCharge);
         if (urgency == 1)

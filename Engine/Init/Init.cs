@@ -163,7 +163,7 @@ public static class Init
             var applyNewPath = sp.GetRequiredService<ApplyNewPath>();
             var metrics = sp.GetRequiredService<MetricsService>();
             var snapshotHandler = sp.GetRequiredService<SnapshotEventHandler>();
-            return new StationService(stations.Values, integrator, scheduler, evStore, applyNewPath, metrics, snapshotHandler);
+            return new StationService(stations.Values, integrator, scheduler, evStore, applyNewPath, metrics, snapshotHandler, bypassArrivalHandling: true);
         });
 
         services.AddSingleton(sp =>

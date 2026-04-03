@@ -87,6 +87,7 @@ public class StationService : IStationService
     private readonly ApplyNewPath _applyNewPath;
     private readonly MetricsService _metrics;
     private readonly SnapshotEventHandler _snapshotHandler;
+    private readonly bool _bypassArrivalHandling;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="StationService"/> class.
@@ -98,6 +99,7 @@ public class StationService : IStationService
     /// <param name="applyNewPath">The path deviator to use for calculating route deviations through charging stations.</param>
     /// <param name="metrics">The metrics service to use for recording metrics.</param>
     /// <param name="snapshotHandler">The snapshot event handler to use for handling snapshot events.</param>
+    /// <param name="bypassArrivalHandling">If true, arriving EVs are freed immediately instead of entering charger queues.</param>
     public StationService(
         ICollection<Station> stations,
         ChargingIntegrator integrator,
@@ -105,7 +107,8 @@ public class StationService : IStationService
         EVStore evStore,
         ApplyNewPath applyNewPath,
         MetricsService metrics,
-        SnapshotEventHandler snapshotHandler)
+        SnapshotEventHandler snapshotHandler,
+        bool bypassArrivalHandling = false)
     {
         _integrator = integrator;
         _scheduler = scheduler;
@@ -113,6 +116,7 @@ public class StationService : IStationService
         _applyNewPath = applyNewPath;
         _metrics = metrics;
         _snapshotHandler = snapshotHandler;
+        _bypassArrivalHandling = bypassArrivalHandling;
 
         foreach (var station in stations)
         {
@@ -207,6 +211,13 @@ public class StationService : IStationService
     /// <param name="e">The arrival event.</param>
     public void HandleArrivalAtStation(ArriveAtStation e)
     {
+        if (_bypassArrivalHandling)
+        {
+            // TODO: Remove this temporary bypass once the new station-arrival system is in place.
+            _eVStore.Free(e.EVId);
+            return;
+        }
+
         var ev = _eVStore.Get(e.EVId);
         if (!_stationChargers.TryGetValue(e.StationId, out var chargers))
             return;

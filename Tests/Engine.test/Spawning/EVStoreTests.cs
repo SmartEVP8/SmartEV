@@ -40,7 +40,7 @@ public class EVStoreTests
 
         Assert.True(success);
 
-        var ev = evStore.Get(0);
+        ref var ev = ref evStore.Get(0);
         Assert.Equal(1.0f, ev.Preferences.PriceSensitivity);
 
         var newEv = TestData.EV(preferences: new Preferences(2, 0, 0));
