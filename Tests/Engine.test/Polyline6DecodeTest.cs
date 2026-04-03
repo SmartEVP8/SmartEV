@@ -12,7 +12,7 @@ public class Polyline6DecodeTests
     string polyline, int index, double expectedLat, double expectedLng)
     {
         var res = Polyline6ToPoints.DecodePolyline(polyline);
-        Assert.Equal(expectedLat, res.Waypoints[index].Latitude, precision: 5);
-        Assert.Equal(expectedLng, res.Waypoints[index].Longitude, precision: 5);
+        Assert.Equal(expectedLat, res[index].Latitude, precision: 5);
+        Assert.Equal(expectedLng, res[index].Longitude, precision: 5);
     }
 }

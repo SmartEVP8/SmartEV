@@ -24,18 +24,18 @@ public static class Program
     /// <returns>The running simulation.</returns>
     public static async Task Main()
     {
-        var dataPath = new DirectoryInfo("../data/");
+        var dataPath = new DirectoryInfo("data/");
         var services = new ServiceCollection();
         var settings = new EngineSettings
         {
             CostConfig = new CostWeights
             {
-                EffectiveQueueSize = 0.5f,
-                PathDeviation = 10,
-                PriceSensitivity = 10,
+                EffectiveQueueSize = 1,
+                PathDeviation = 0.8f,
+                PriceSensitivity = 0.4f,
                 AvailableChargerRatio = 1,
                 ExpectedWaitTime = 1,
-                Urgency = 1,
+                Urgency = 0.5f,
             },
 
             RunId = Guid.NewGuid(),

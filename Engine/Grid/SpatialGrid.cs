@@ -50,21 +50,21 @@ public class SpatialGrid
     /// <summary>
     /// Given a polyline (a list of waypoints) and a radius, return the list of station ids that are within the radius of any point along the polyline.
     /// </summary>
-    /// <param name="path">The polyline / list of waypoints.</param>
+    /// <param name="waypoints">The polyline / list of waypoints.</param>
     /// <param name="radius">Radius to search around the polyline.</param>
     /// <returns>A lits of uints of stations id's.</returns>
     public List<ushort> GetStationsAlongPolyline(
-    Paths path,
+    List<Position> waypoints,
     double radius)
     {
         var radiusInLatDeg = radius / GeoMath.KmPerLatitudeDegree;
         var radiusInLonDeg = radius / GeoMath.KmPerLongtitudeDegree;
         var seen = new HashSet<ushort>();
 
-        for (var i = 0; i < path.Waypoints.Count - 1; i++)
+        for (var i = 0; i < waypoints.Count - 1; i++)
         {
-            var wp1 = path.Waypoints[i];
-            var wp2 = path.Waypoints[i + 1];
+            var wp1 = waypoints[i];
+            var wp2 = waypoints[i + 1];
             var minPos = new Position(
                 Math.Min(wp1.Longitude, wp2.Longitude) - radiusInLonDeg,
                 Math.Min(wp1.Latitude, wp2.Latitude) - radiusInLatDeg);

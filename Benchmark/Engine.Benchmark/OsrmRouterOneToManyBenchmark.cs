@@ -22,11 +22,13 @@ public class OsrmRouterOneToManyBenchmark
     [GlobalSetup]
     public void Setup()
     {
-        var path = AppContext.GetData("OsrmDataPath") as string
-            ?? throw new InvalidOperationException("OsrmDataPath not set in project.");
-        var energyPath = AppContext.GetData("EnergyPricesPath") as string
-            ?? throw new InvalidOperationException("EnergyPricesPath not set in project.");
-        var energyPrices = new EnergyPrices(new FileInfo(energyPath), new Random(42));
+        var osrmPath = AppContext.GetData("OsrmDataPath") as string
+            ?? throw new InvalidDataException("OSRMPath not set.");
+
+        var energyPrices = new EnergyPrices(
+            new FileInfo(AppContext.GetData("EnergyPricesPath") as string
+                ?? throw new InvalidDataException("EnergyPricesPath not set.")),
+            new Random(1));
 
         var stations = new List<Station>(50);
         for (ushort i = 0; i < 50; i++)
@@ -40,7 +42,7 @@ public class OsrmRouterOneToManyBenchmark
                 energyPrices: energyPrices));
         }
 
-        _router = new OSRMRouter(new FileInfo(path), stations);
+        _router = new OSRMRouter(new FileInfo(osrmPath), stations);
 
         // Flat array of 50 station coordinates for one-to-many queries
         _stationCoordsFlat = new double[50 * 2];

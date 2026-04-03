@@ -31,9 +31,7 @@ public static class Urgency
         if (soc <= minSoc)
             return 1.0;
 
-        const double steepness = 2.0;
-        var normalizedPosition = (upperChargeLimit - soc) / (upperChargeLimit - minSoc);
-        return Math.Clamp(Math.Pow(normalizedPosition, steepness), 0.0, 1.0);
+        return 0.02 * Math.Pow(soc * 100, 2);
     }
 
     /// <summary>

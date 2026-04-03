@@ -28,34 +28,6 @@ public class EventDispatcher(
         DestinationArrivalHandler destinationArrivalHandler,
         CheckAndUpdateAllEVsHandler CheckAndUpdateAllEVsHandler)
 {
-    private Dictionary<Type, uint> _calledCount = [];
-    private int _eventCount;
-
-    private void IncrementCount(Event e)
-    {
-        var type = e.GetType();
-
-        if (_calledCount.ContainsKey(type))
-        {
-            _calledCount[type]++;
-        }
-        else
-        {
-            _calledCount[type] = 1;
-        }
-
-        _eventCount++;
-    }
-
-    private void PrintCounts(Event e)
-    {
-        Console.WriteLine($"Event counts in timestamp {e.Time}:");
-        foreach (var kvp in _calledCount)
-        {
-            Console.WriteLine($"{kvp.Key.Name}: {kvp.Value}");
-        }
-    }
-
     /// <summary>
     /// Dispatches the event to the correct handler.
     /// Has a handler for every <c>Event</c>. If an event is dispatched for which there is no handler, an exception is thrown.
@@ -114,5 +86,33 @@ public class EventDispatcher(
 
         if (_eventCount % 1000 == 0)
             PrintCounts(e);
+    }
+
+    private Dictionary<Type, uint> _calledCount = [];
+    private int _eventCount;
+
+    private void IncrementCount(Event e)
+    {
+        var type = e.GetType();
+
+        if (_calledCount.ContainsKey(type))
+        {
+            _calledCount[type]++;
+        }
+        else
+        {
+            _calledCount[type] = 1;
+        }
+
+        _eventCount++;
+    }
+
+    private void PrintCounts(Event e)
+    {
+        Console.WriteLine($"Event counts in timestamp {e.Time}:");
+        foreach (var kvp in _calledCount)
+        {
+            Console.WriteLine($"{kvp.Key.Name}: {kvp.Value}");
+        }
     }
 }

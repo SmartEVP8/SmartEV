@@ -21,7 +21,7 @@ public class ArriveAtDestinationMetricTest
         var battery = TestData.Battery();
         var preferences = TestData.Preferences();
         var journey = TestData.Journey(waypoints: null, departure: 100U, originalDuration: 50U);
-        journey.UpdateRoute(new Paths([]), new Position(0, 0), departure: 100, duration: 62U, newDistancekm: 10);
+        journey.UpdateRoute(new List<Position>([]), new(0, 0), departure: 100, duration: 62U, newDistanceKm: 10);
         var ev = new EV(battery, preferences, journey, 150);
 
         var metric = ArrivalAtDestinationMetric.Collect(ref ev, simNow);
