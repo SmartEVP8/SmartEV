@@ -11,7 +11,7 @@ public class EVPopulatorTests
     [Fact]
     public void CreateEVsSameObjects2Iterations()
     {
-        var journeySamplerProvider = new JourneySamplerProvider(TestData.JourneySamplers);
+        var journeySamplerProvider = TestData.JourneySamplerProvider();
         var fakeScheduler = new FakeScheduler();
         var evStore1 = new EVStore(100);
         var evStore2 = new EVStore(100);
