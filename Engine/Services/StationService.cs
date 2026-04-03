@@ -207,6 +207,10 @@ public class StationService : IStationService
     /// <param name="e">The arrival event.</param>
     public void HandleArrivalAtStation(ArriveAtStation e)
     {
+        // TODO: Remove this temporary bypass once the new station-arrival system is in place.
+        _eVStore.Free(e.EVId);
+        return;
+
         var ev = _eVStore.Get(e.EVId);
         if (!_stationChargers.TryGetValue(e.StationId, out var chargers))
             return;
