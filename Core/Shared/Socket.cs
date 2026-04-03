@@ -49,7 +49,7 @@ public static class SocketExtensions
         return socket switch
         {
             Socket.CHADEMO => 150,
-            Socket.CCS2 => 400,
+            Socket.CCS2 => 100,
             Socket.Type2SocketOnly => 43,
             Socket.Type2Tethered => 43,
             Socket.NACS => 120,
