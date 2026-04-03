@@ -85,7 +85,7 @@ public static class Init
             var settings = sp.GetRequiredService<EngineSettings>();
             var journeySamplerProvider = sp.GetRequiredService<IJourneySamplerProvider>();
             var router = sp.GetRequiredService<IOSRMRouter>();
-                        var random = settings.Seed;
+            var random = settings.Seed;
             return new EVFactory(random, journeySamplerProvider, router);
         });
 
