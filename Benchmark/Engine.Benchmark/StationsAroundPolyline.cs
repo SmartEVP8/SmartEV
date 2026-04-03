@@ -24,7 +24,7 @@ public class StationsAroundPolyline
     private OSRMRouter _router = null!;
     private Dictionary<ushort, Station> _stations = null!;
     private SpatialGrid _spatialGrid = null!;
-    private Paths _path = null!;
+    private Segments _path = null!;
     private EV _ev = default;
 
     /// <summary>

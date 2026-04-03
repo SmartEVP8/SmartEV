@@ -11,7 +11,7 @@ public class ReachableStationsTests
     [Fact]
     public void FindReachableStationse()
     {
-        var path = new Paths(
+        var path = new Segments(
         [
             new Position(0, 0),
             new Position(1, 1),

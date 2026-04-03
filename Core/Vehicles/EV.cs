@@ -2,7 +2,6 @@ namespace Core.Vehicles;
 
 using Core.Routing;
 using Core.Shared;
-using Core.GeoMath;
 
 /// <summary>
 /// Represents an electric vehicle (EV) with a battery, preferences, a journey, and an efficiency rating.

@@ -24,7 +24,7 @@ public static class Polyline6ToPoints
     /// </summary>
     /// <param name="polyline">The string representing the encoded polyline, where each character encodes a portion of the latitude and longitude values. </param>
     /// <returns>Path containing a list of latitude and longitude points decoded from the input polyline string.</returns>
-    public static Paths DecodePolyline(string polyline)
+    public static Segments DecodePolyline(string polyline)
     {
         var points = new List<Position>();
 
@@ -46,7 +46,7 @@ public static class Polyline6ToPoints
                 lat * _scale));
         }
 
-        return new Paths(points);
+        return new Segments(points);
     }
 
     /// <summary>

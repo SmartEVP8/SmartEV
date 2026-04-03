@@ -54,7 +54,7 @@ public class SpatialGrid
     /// <param name="radius">Radius to search around the polyline.</param>
     /// <returns>A lits of uints of stations id's.</returns>
     public List<ushort> GetStationsAlongPolyline(
-    Paths path,
+    Segments path,
     double radius)
     {
         var radiusInLatDeg = radius / GeoMath.KmPerLatitudeDegree;

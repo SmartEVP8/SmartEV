@@ -15,7 +15,7 @@ public class ApplyNewPathToEVTests()
             originalDuration: 60U);
 
         var stationPosition = new Position(2, 2);
-        var dummyRoute = new Paths([new Position(0, 0), stationPosition, new Position(5, 5)]);
+        var dummyRoute = new Segments([new Position(0, 0), stationPosition, new Position(5, 5)]);
         journey.UpdateRoute(dummyRoute, stationPosition, departure: new Time(0), duration: new Time(60), 0);
         journey.UpdateRoute(dummyRoute, stationPosition, departure: new Time(20), duration: new Time(40), 0);
 
@@ -51,7 +51,7 @@ public class ApplyNewPathToEVTests()
             departure: new Time(100),
             originalDuration: 50U);
 
-        var dummyRoute = new Paths([]);
+        var dummyRoute = new Segments([]);
         var dummyPosition = new Position(0, 0);
         var dummyJourneyLengthkm = 10;
 
