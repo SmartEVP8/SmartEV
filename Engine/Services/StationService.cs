@@ -84,7 +84,6 @@ public class StationService : IStationService
     private readonly ChargingIntegrator _integrator;
     private readonly EventScheduler _scheduler;
     private readonly EVStore _eVStore;
-    private readonly ApplyNewPath _applyNewPath;
     private readonly MetricsService _metrics;
     private readonly SnapshotEventHandler _snapshotHandler;
     private readonly bool _bypassArrivalHandling;
@@ -105,7 +104,6 @@ public class StationService : IStationService
         ChargingIntegrator integrator,
         EventScheduler scheduler,
         EVStore evStore,
-        ApplyNewPath applyNewPath,
         MetricsService metrics,
         SnapshotEventHandler snapshotHandler,
         bool bypassArrivalHandling = false)
@@ -113,7 +111,6 @@ public class StationService : IStationService
         _integrator = integrator;
         _scheduler = scheduler;
         _eVStore = evStore;
-        _applyNewPath = applyNewPath;
         _metrics = metrics;
         _snapshotHandler = snapshotHandler;
         _bypassArrivalHandling = bypassArrivalHandling;
@@ -146,37 +143,6 @@ public class StationService : IStationService
         if (!_stationChargers.TryGetValue(stationId, out var chargers))
             return 0;
         return chargers.Sum(cs => cs.Queue.Count);
-    }
-
-    /// <summary>
-    /// Handles a reservation request from an EV to a station.
-    /// If the EV already has an active reservation, the existing arrival event is cancelled before proceeding.
-    /// Calculates the detoured path through the station, updates the EV's journey, and schedules a new
-    /// arrival event.
-    /// </summary>
-    /// <param name="e">The reservation request event.</param>
-    public void HandleReservationRequest(ReservationRequest e)
-    {
-        ref var ev = ref _eVStore.Get(e.EVId);
-        if (!_stationIndex.TryGetValue(e.StationId, out var station))
-            return;
-
-        if (ev.HasReservationAtStationId != null)
-        {
-            if (ev.HasReservationAtStationId.Value == e.StationId)
-            {
-                // Already has a reservation at this station, no need to cancel and re-reserve
-                return;
-            }
-
-            _scheduler.ScheduleEvent(new CancelRequest(e.EVId, ev.HasReservationAtStationId.Value, e.Time));
-        }
-
-        station.IncrementReservations();
-        ev.HasReservationAtStationId = e.StationId;
-        _applyNewPath.ApplyNewPathToEV(ref ev, station, e.Time);
-        _scheduler.ScheduleEvent(
-            new ArriveAtStation(e.EVId, e.StationId, ev.CalcDesiredSoC(e.Time + e.DurationToStation), e.Time + e.DurationToStation));
     }
 
     /// <summary>
