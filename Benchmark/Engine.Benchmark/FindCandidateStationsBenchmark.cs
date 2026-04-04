@@ -69,12 +69,13 @@ public class FindCandidateStationsBenchmark
         var costStore = new CostStore(costWeigths);
         var stationService = new BenchmarkStationService(stations);
         var computeCost = new ComputeCost(costStore, stationService, energyPrices);
+        var applyNewPath = new ApplyNewPath(router);
 
         _eventScheduler = new EventScheduler();
         _evStore = new EVStore(_count);
 
         var findCandidateStationService = new FindCandidateStationService(router, stations, spatialGrid, _evStore);
-        _findCandidateStationsHandler = new FindCandidateStationsHandler(findCandidateStationService, computeCost, _eventScheduler, _evStore);
+        _findCandidateStationsHandler = new FindCandidateStationsHandler(findCandidateStationService, computeCost, _eventScheduler, _evStore, applyNewPath);
 
         var random = new Random(1);
         for (var i = 0; i < _count; i++)

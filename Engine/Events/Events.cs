@@ -16,14 +16,6 @@ public interface IMiddlewareEvent
 public record FindCandidateStations(int EVId, Time Time) : Event(Time), IMiddlewareEvent;
 
 // Functionality:
-//  - Should increase Expected Queue Size by 1 (EQS + 1).
-//  - Produce an arrival event where the expected arrival time is Actual_Arrival_Time * +- 20%.
-//  - Calculate what the path deviation to the station will be from the original journey.
-// Metrics:
-//  - Count of reservation requests and their timestamps for when the reservation requests are made.
-public record ReservationRequest(int EVId, ushort StationId, Time Time, Time DurationToStation) : Event(Time);
-
-// Functionality:
 //  - Should decrease Expected Queue Size by 1 (EQS - 1).
 //  - Calculate the EVs path deviation of the original journey from its current position.
 //  - Get its own urgency and sample once from the urgency graph.

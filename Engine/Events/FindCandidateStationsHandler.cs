@@ -3,6 +3,7 @@ namespace Engine.Events;
 using Core.Shared;
 using Engine.Cost;
 using Engine.Events.Middleware;
+using Engine.Routing;
 using Engine.Vehicles;
 
 /// <summary>
@@ -13,14 +14,14 @@ using Engine.Vehicles;
 /// <param name="computeCost">Cost computation service for selecting the best station.</param>
 /// <param name="eventScheduler">Event scheduler for scheduling reservation requests.</param>
 /// <param name="evStore">EV store for retrieving EV data.</param>
+/// <param name="applyNewPath">To update a journey if a better one is found.</param>
 public class FindCandidateStationsHandler(
     FindCandidateStationService findCandidateStationService,
     ComputeCost computeCost,
     EventScheduler eventScheduler,
-    EVStore evStore)
+    EVStore evStore,
+    ApplyNewPath applyNewPath)
 {
-    private uint _numberOfNoStations = 0;
-
     /// <summary>
     /// Handles the <see cref="FindCandidateStations"/> event by pre-computing candidate stations.
     /// </summary>
@@ -36,18 +37,28 @@ public class FindCandidateStationsHandler(
         }
 
         var stationCosts = await findCandidateStationService.ComputeCandidateStationFromCache(e.EVId);
-        ref var evAfterAwait = ref evStore.Get(e.EVId);
-        if (stationCosts.Count == 0)
+
+        ref var ev = ref evStore.Get(e.EVId);
+        var bestStation = computeCost.Compute(ref ev, stationCosts, e.Time);
+        var durationToStation = (Time)(uint)Math.Ceiling(stationCosts[bestStation.Id]);
+
+        if (ev.HasReservationAtStationId != null)
         {
-            _numberOfNoStations++;
-            Console.WriteLine($"[EV {e.EVId}] has no stations. {evAfterAwait}. Total number of failed EV's {_numberOfNoStations}");
-            evStore.Free(e.EVId);
-            return;
+            if (ev.HasReservationAtStationId.Value == bestStation.Id)
+            {
+                return;
+            }
+
+            eventScheduler.ScheduleEvent(new CancelRequest(e.EVId, ev.HasReservationAtStationId.Value, e.Time));
         }
 
-        var bestStation = computeCost.Compute(ref evAfterAwait, stationCosts, e.Time);
-        var durationToStation = Math.Ceiling(stationCosts[bestStation.Id]);
-        var reservationRequest = new ReservationRequest(e.EVId, bestStation.Id, e.Time, (Time)(uint)durationToStation);
-        eventScheduler.ScheduleEvent(reservationRequest);
+        bestStation.IncrementReservations();
+        ev.HasReservationAtStationId = bestStation.Id;
+        applyNewPath.ApplyNewPathToEV(ref ev, bestStation, e.Time);
+        eventScheduler.ScheduleEvent(new ArriveAtStation(
+            e.EVId,
+            bestStation.Id,
+            ev.CalcDesiredSoC(e.Time + durationToStation),
+            e.Time + durationToStation));
     }
 }
