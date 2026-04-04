@@ -144,7 +144,7 @@ public static class Init
             var evStore = sp.GetRequiredService<EVStore>();
             var metrics = sp.GetRequiredService<MetricsService>();
             var snapshotHandler = sp.GetRequiredService<SnapshotEventHandler>();
-            return new StationService(stations.Values, integrator, scheduler, evStore, metrics, snapshotHandler, bypassArrivalHandling: true);
+            return new StationService(stations.Values, integrator, scheduler, evStore, metrics, snapshotHandler, bypassArrivalHandling: false);
         });
 
         services.AddSingleton(sp =>

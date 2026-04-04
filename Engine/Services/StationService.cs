@@ -158,16 +158,13 @@ public class StationService : IStationService
 
         station.IncrementCancellations();
 
-        if (ev.HasReservationAtStationId != null)
+        if (ev.ScheduledArrivalEventToken is { } token)
         {
-            _scheduler.CancelEvent((uint)ev.HasReservationAtStationId);
-        }
-        else
-        {
-            throw new SkillissueException("Should never cancel without a reservation cancellation token");
+            _scheduler.CancelEvent(token);
         }
 
         ev.HasReservationAtStationId = null;
+        ev.ScheduledArrivalEventToken = null;
     }
 
     /// <summary>
@@ -177,6 +174,9 @@ public class StationService : IStationService
     /// <param name="e">The arrival event.</param>
     public void HandleArrivalAtStation(ArriveAtStation e)
     {
+        ref var evRef = ref _eVStore.Get(e.EVId);
+        evRef.ScheduledArrivalEventToken = null;
+
         if (_bypassArrivalHandling)
         {
             // TODO: Remove this temporary bypass once the new station-arrival system is in place.
@@ -184,7 +184,7 @@ public class StationService : IStationService
             return;
         }
 
-        var ev = _eVStore.Get(e.EVId);
+        var ev = evRef;
         if (!_stationChargers.TryGetValue(e.StationId, out var chargers))
             return;
 
@@ -234,6 +234,7 @@ public class StationService : IStationService
 
                 state.SessionA = null;
                 ev.HasReservationAtStationId = null;
+                ev.ScheduledArrivalEventToken = null;
                 break;
 
             case DualCharger dual:
@@ -242,6 +243,7 @@ public class StationService : IStationService
                     dual.ChargingPoint.Disconnect(ChargingSide.Left);
                     state.SessionA = null;
                     ev.HasReservationAtStationId = null;
+                    ev.ScheduledArrivalEventToken = null;
 
                     if (state.SessionB is not null && result is not null)
                     {
@@ -266,6 +268,7 @@ public class StationService : IStationService
                     dual.ChargingPoint.Disconnect(ChargingSide.Right);
                     state.SessionB = null;
                     ev.HasReservationAtStationId = null;
+                    ev.ScheduledArrivalEventToken = null;
 
                     if (state.SessionA is not null && result is not null)
                     {

@@ -59,7 +59,7 @@ public class FindCandidateStationsHandler(
             return;
         var nextCheck = e.Time + timeToStation / 2;
         eventScheduler.ScheduleEvent(new FindCandidateStations(e.EVId, nextCheck));
-        eventScheduler.ScheduleEvent(new ArriveAtStation(
+        ev.ScheduledArrivalEventToken = eventScheduler.ScheduleEvent(new ArriveAtStation(
             e.EVId,
             bestStation.Id,
             ev.CalcDesiredSoC(e.Time + timeToStation),
