@@ -61,6 +61,23 @@ public class JourneyTests
     }
 
     [Fact]
+    public void GetCurrentPosition_DoesNotMutateJourney()
+    {
+        var waypoints = new List<Position>
+        {
+            new(1, 1),
+            new(1, 2),
+        };
+
+        var journey = new Journey(departure: 0, duration: 2, distanceMeters: 10, waypoints);
+
+        _ = journey.GetCurrentPosition(1);
+
+        Assert.Equal(0u, journey.Current.Departure.Seconds);
+        Assert.InRange(journey.Current.DistanceKm, 0.0099f, 0.0101f);
+    }
+
+    [Fact]
     public void EtaToNextStop_IsComputedCorrectly()
     {
         var waypoints = Enumerable.Range(1, 10)
@@ -92,8 +109,9 @@ public class JourneyTests
         journey.UpdateRoute(waypoints, nextStop, departure: 0, duration: 100, newDistanceKm: 1.0f);
 
         var etaToNextStop = journey.Current.EtaToNextStop;
+        const uint outsideApproxTolerance = 31;
 
-        var ex = Assert.Throws<ArgumentException>(() => journey.GetCurrentPosition(etaToNextStop + 1));
+        var ex = Assert.Throws<ArgumentException>(() => journey.GetCurrentPosition(etaToNextStop + outsideApproxTolerance));
         Assert.Contains("after ETA to next stop", ex.Message);
     }
 

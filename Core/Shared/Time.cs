@@ -1,20 +1,20 @@
 namespace Core.Shared;
 /// <summary>
 /// Simple time wrapper with implicit conversion between uint and Time.
-/// The unit of <see cref="T"/> is <b>seconds</b>.
+/// The unit of <see cref="Seconds"/> is <b>seconds</b>.
 /// https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/operators/user-defined-conversion-operators
 /// </summary>
-/// <param name="T"></param>
-public readonly record struct Time(uint T) : IComparable<Time>
+/// <param name="Seconds"></param>
+public readonly record struct Time(uint Seconds) : IComparable<Time>
 {
     /// <inheritdoc/>
-    public int CompareTo(Time other) => T.CompareTo(other.T);
+    public int CompareTo(Time other) => Seconds.CompareTo(other.Seconds);
 
     // Implicitly convert int → Time
     public static implicit operator Time(uint t) => new(t);
 
     // Implicitly convert Time → uint
-    public static implicit operator uint(Time t) => t.T;
+    public static implicit operator uint(Time t) => t.Seconds;
 
     /// <summary>
     /// Seconds in a minute.
@@ -40,7 +40,7 @@ public readonly record struct Time(uint T) : IComparable<Time>
     /// Gets the 0-based day-of-week index for this timestamp.
     /// 0 = Sunday … 6 = Saturday (epoch is Monday).
     /// </summary>
-    public uint DayOfWeekIndex => (T / SecondsPerDay) % 7;
+    public uint DayOfWeekIndex => (Seconds / SecondsPerDay) % 7;
 
     /// <summary>
     /// Gets the day of the week for this timestamp.
@@ -61,7 +61,7 @@ public readonly record struct Time(uint T) : IComparable<Time>
     /// <summary>
     /// Gets the number of seconds elapsed since the start of the current day (00:00).
     /// </summary>
-    public uint SecondsIntoDay => T % SecondsPerDay;
+    public uint SecondsIntoDay => Seconds % SecondsPerDay;
 
     /// <summary>
     /// Gets the hour component (0–23) of the current time of day.
@@ -81,12 +81,12 @@ public readonly record struct Time(uint T) : IComparable<Time>
     /// <summary>
     /// Gets the total number of complete days elapsed since the epoch.
     /// </summary>
-    public uint TotalDays => T / SecondsPerDay;
+    public uint TotalDays => Seconds / SecondsPerDay;
 
     /// <summary>
     /// Gets the total number of complete weeks elapsed since the epoch.
     /// </summary>
-    public uint TotalWeeks => T / SecondsPerWeek;
+    public uint TotalWeeks => Seconds / SecondsPerWeek;
 
     /// <summary>
     /// Constructs a <see cref="Time"/> from explicit day, hour, minute, and second components.
@@ -115,7 +115,7 @@ public readonly record struct Time(uint T) : IComparable<Time>
     /// <returns>True if the 2 Times are within <paramref name="toleranceSeconds"/>.</returns>
     public bool IsApproximately(Time other, uint toleranceSeconds = 30)
     {
-        var diff = T > other.T ? T - other.T : other.T - T;
+        var diff = Seconds > other.Seconds ? Seconds - other.Seconds : other.Seconds - Seconds;
         return diff <= toleranceSeconds;
     }
 }

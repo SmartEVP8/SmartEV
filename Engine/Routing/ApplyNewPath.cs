@@ -21,7 +21,7 @@ public class EVDetourPlanner(IDestinationRouter router)
     /// <param name="currentTime">Used to determine the EV's current position in the journey.</param>
     public void Update(ref EV ev, Station station, Time currentTime)
     {
-        var currentPos = ev.Journey.GetCurrentPosition(currentTime);
+        var currentPos = ev.Advance(currentTime);
         var destination = ev.Journey.Current.Waypoints.Last();
 
         var res = _router.QueryDestinationWithStop(

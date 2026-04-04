@@ -48,7 +48,7 @@ public class FindCandidateStationsHandler(
         if (ev.HasReservationAtStationId == null || ev.HasReservationAtStationId != bestStation.Id)
             return false;
 
-        ev.Journey.GetCurrentPosition(e.Time);
+        ev.Advance(e.Time);
         var remaining = ev.Journey.Current.DurationToNextStop;
 
         if (HasScheduledArriveAtStation(e, ev, bestStation, remaining))
