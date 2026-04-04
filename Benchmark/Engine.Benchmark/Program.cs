@@ -19,7 +19,6 @@ public static class Program
         BenchmarkRunner.Run<Polyline6DecodeParallel>();
         BenchmarkRunner.Run<OsrmRouterBenchmark>();
         BenchmarkRunner.Run<OsrmRouterOneToManyBenchmark>();
-        BenchmarkRunner.Run<UpdateAllEVsBenchMark>();
         BenchmarkRunner.Run<FindCandidateStationsBenchmark>();
     }
 }
