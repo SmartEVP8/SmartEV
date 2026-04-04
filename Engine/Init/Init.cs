@@ -133,7 +133,7 @@ public static class Init
         services.AddSingleton(sp =>
         {
             var router = sp.GetRequiredService<IOSRMRouter>();
-            return new ApplyNewPath(router);
+            return new EVDetourPlanner(router);
         });
 
         services.AddSingleton(sp =>
@@ -187,16 +187,16 @@ public static class Init
             var costStore = sp.GetRequiredService<ICostStore>();
             var stationService = sp.GetRequiredService<StationService>();
             var energyPrices = sp.GetRequiredService<EnergyPrices>();
-            return new ComputeCost(costStore, stationService, energyPrices);
+            return new CostFunction(costStore, stationService, energyPrices);
         });
 
         services.AddSingleton(sp =>
         {
             var findCandidateStationService = sp.GetRequiredService<FindCandidateStationService>();
-            var computeCost = sp.GetRequiredService<ComputeCost>();
+            var computeCost = sp.GetRequiredService<CostFunction>();
             var scheduler = sp.GetRequiredService<EventScheduler>();
             var evStore = sp.GetRequiredService<EVStore>();
-            var applyNewPath = sp.GetRequiredService<ApplyNewPath>();
+            var applyNewPath = sp.GetRequiredService<EVDetourPlanner>();
             return new FindCandidateStationsHandler(findCandidateStationService, computeCost, scheduler, evStore, applyNewPath);
         });
 
