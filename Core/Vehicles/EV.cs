@@ -37,26 +37,6 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     /// </summary>
     public Journey Journey { get; private set; } = journey;
 
-    /// <summary>
-    /// Gets or sets a value indicating whether check if the EV is charging.
-    /// </summary>
-    public bool IsCharging { get; set; } = false;
-
-    /// <summary>
-    /// Determines whether the EV has departed based on the current time
-    /// and the departure time of its journey.
-    /// </summary>
-    /// <param name="currentTime">The current time to compare against the EV's departure time.</param>
-    /// <returns>True if the EV has departed; otherwise, false.</returns>
-    public readonly bool HasDeparted(Time currentTime) => Journey.Original.Departure <= currentTime;
-
-    /// <summary>
-    /// Determines whether the EV has arrived at its destination based on the current time.
-    /// </summary>
-    /// <param name="currentTime">Timestamp.</param>
-    /// <returns>True of false based on if the EV has arrived at its journeys end.</returns>
-    public readonly bool HasArrived(Time currentTime) => Journey.Original.Departure + Journey.Current.Duration <= currentTime;
-
     /// <inheritdoc/>
     public override readonly string ToString() =>
         $"EV(SoC: {Battery.StateOfCharge:P1}, Distance left: {Journey.Current.DistanceKm:F1}km, Energy: {Battery.CurrentChargeKWh:F1}kWh, Efficiency: {ConsumptionWhPerKm}Wh/km)";
