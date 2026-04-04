@@ -105,4 +105,17 @@ public readonly record struct Time(uint T) : IComparable<Time>
     /// <returns>Human readable time.</returns>
     public override string ToString()
         => $"{DayOfWeek} {Hour:D2}:{Minute:D2}:{Second:D2} (day {TotalDays})";
+
+    /// <summary>
+    /// Returns true if this timestamp is within <paramref name="toleranceSeconds"/> of <paramref name="other"/>.
+    /// Useful for guarding against uint rounding errors from integer ceiling/floor arithmetic.
+    /// </summary>
+    /// <param name="other">The time to compare against.</param>
+    /// <param name="toleranceSeconds">Allowed delta in seconds. Defaults to 1.</param>
+    /// <returns>True if the 2 Times are within <paramref name="toleranceSeconds"/>.</returns>
+    public bool IsApproximately(Time other, uint toleranceSeconds = 30)
+    {
+        var diff = T > other.T ? T - other.T : other.T - T;
+        return diff <= toleranceSeconds;
+    }
 }

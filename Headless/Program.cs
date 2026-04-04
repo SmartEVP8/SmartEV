@@ -69,7 +69,7 @@ public static class Program
 
             EVDistributionWindowsSize = 1 * 60,
 
-            EVSpawnFraction = 0.10f,
+            EVSpawnFraction = 0.01f,
 
             PopulationScaler = 0.7f,
 

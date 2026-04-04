@@ -114,6 +114,9 @@ dotnet_diagnostic.SA1204.severity = none
 # SA1202: Elements should be ordered by accessibility
 dotnet_diagnostic.SA1202.severity = none
 
+# SA1407: Arithmetic expressions should declare precedence
+dotnet_diagnostic.SA1407.severity = none
+
 [Tests/**/*.cs]
 dotnet_diagnostic.SA1600.severity = none
 dotnet_diagnostic.SA0001.severity = none
