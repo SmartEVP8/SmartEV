@@ -68,8 +68,8 @@ public class FindCandidateStationsBenchmark
         var costWeigths = new CostWeights(PathDeviation: 1);
         var costStore = new CostStore(costWeigths);
         var stationService = new BenchmarkStationService(stations);
-        var computeCost = new ComputeCost(costStore, stationService, energyPrices);
-        var applyNewPath = new ApplyNewPath(router);
+        var computeCost = new CostFunction(costStore, stationService, energyPrices);
+        var applyNewPath = new EVDetourPlanner(router);
 
         _eventScheduler = new EventScheduler();
         _evStore = new EVStore(_count);

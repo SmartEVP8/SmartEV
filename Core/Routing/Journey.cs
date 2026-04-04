@@ -142,11 +142,11 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
     private List<Position> DeriveNewWaypoints(Time currentTime)
     {
         Time completedTime = Current.Departure + Current.Duration;
-        if (currentTime > completedTime)
+        if (currentTime > completedTime && !currentTime.IsApproximately(completedTime))
             throw new ArgumentException($"Current time: {currentTime} is after the journey has completed: {completedTime}. Overshoot: {currentTime - completedTime}s.");
-        if (currentTime > Current.EtaToNextStop)
+        if (currentTime > Current.EtaToNextStop && !currentTime.IsApproximately(Current.EtaToNextStop))
             throw new ArgumentException($"Current time: {currentTime} is after ETA to next stop: {Current.EtaToNextStop}. Overshoot: {currentTime - Current.EtaToNextStop}s.");
-        if (currentTime < Current.Departure)
+        if (currentTime < Original.Departure)
             throw new ArgumentException($"Current time: {currentTime} is before the journey has started: {Original.Departure}.");
 
         var percentageCompleted = PercentageCompleted(currentTime);
@@ -184,12 +184,20 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
             var nextStopExists = nextStopIndex >= 0;
             var interpolationPassedNextStop = nextStopExists && secondIndex > nextStopIndex;
             if (interpolationPassedNextStop)
-                throw new ArgumentException($"Illegal context: interpolation moved beyond next stop at currentTime={currentTime}. nextStopIndex={nextStopIndex}, segmentIndex={secondIndex}.");
+            {
+                if (!currentTime.IsApproximately(Current.EtaToNextStop))
+                    throw new ArgumentException($"Illegal context: interpolation moved beyond next stop at currentTime={currentTime}. nextStopIndex={nextStopIndex}, segmentIndex={secondIndex}.");
+
+                // Rounding nudged us one segment past the next stop — snap back to it.
+                var nextStopPos = Current.Waypoints[nextStopIndex];
+                var remainingWaypoints = Current.Waypoints.Skip(nextStopIndex + 1).ToList();
+                return new List<Position>([nextStopPos, .. remainingWaypoints]);
+            }
 
             var suffixStartIndex = secondIndex;
-            var remainingWaypoints = Current.Waypoints.Skip(suffixStartIndex).ToList();
+            var remainingWaypoints2 = Current.Waypoints.Skip(suffixStartIndex).ToList();
 
-            return new List<Position>([currentPos, .. remainingWaypoints]);
+            return new List<Position>([currentPos, .. remainingWaypoints2]);
         }
 
         var last = Current.Waypoints[^1];

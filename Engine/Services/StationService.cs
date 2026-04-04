@@ -157,17 +157,6 @@ public class StationService : IStationService
             return;
 
         station.IncrementCancellations();
-
-        if (ev.HasReservationAtStationId != null)
-        {
-            _scheduler.CancelEvent((uint)ev.HasReservationAtStationId);
-        }
-        else
-        {
-            throw new SkillissueException("Should never cancel without a reservation cancellation token");
-        }
-
-        ev.HasReservationAtStationId = null;
     }
 
     /// <summary>
@@ -177,6 +166,8 @@ public class StationService : IStationService
     /// <param name="e">The arrival event.</param>
     public void HandleArrivalAtStation(ArriveAtStation e)
     {
+        ref var evRef = ref _eVStore.Get(e.EVId);
+
         if (_bypassArrivalHandling)
         {
             // TODO: Remove this temporary bypass once the new station-arrival system is in place.
@@ -184,7 +175,7 @@ public class StationService : IStationService
             return;
         }
 
-        var ev = _eVStore.Get(e.EVId);
+        var ev = evRef;
         if (!_stationChargers.TryGetValue(e.StationId, out var chargers))
             return;
 
