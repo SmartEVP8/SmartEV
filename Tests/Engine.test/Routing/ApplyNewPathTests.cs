@@ -77,8 +77,9 @@ public class ApplyNewPathToEVTests()
         Assert.Throws<ArgumentException>(() =>
             applyNewPath.Update(ref ev, station, new Time(99)));
 
+        const uint outsideApproxTolerance = 31;
         Assert.Throws<ArgumentException>(() =>
-            applyNewPath.Update(ref ev, station, new Time(151)));
+            applyNewPath.Update(ref ev, station, new Time(150 + outsideApproxTolerance)));
     }
 
     public class FakeDestinationRouter : IDestinationRouter

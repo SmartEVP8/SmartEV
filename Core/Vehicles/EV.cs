@@ -37,6 +37,20 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     /// </summary>
     public Journey Journey { get; private set; } = journey;
 
+    /// <summary>
+    /// Advances the journey to <paramref name="currentTime"/>, consumes the corresponding energy,
+    /// and returns the EV's current position.
+    /// </summary>
+    /// <param name="currentTime">The simulation time to advance to.</param>
+    /// <returns>The EV's current position after advancing.</returns>
+    public Position Advance(Time currentTime)
+    {
+        var previousJourney = Journey.Current;
+        var currentPosition = Journey.AdvanceTo(currentTime);
+        ConsumeEnergy(previousJourney, currentTime);
+        return currentPosition;
+    }
+
     /// <inheritdoc/>
     public override readonly string ToString() =>
         $"EV(SoC: {Battery.StateOfCharge:P1}, Distance left: {Journey.Current.DistanceKm:F1}km, Energy: {Battery.CurrentChargeKWh:F1}kWh, Efficiency: {ConsumptionWhPerKm}Wh/km)";
@@ -85,16 +99,18 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     }
 
     /// <summary>
-    /// Consumes energy based on the distance traveled between <paramref name="from"/> and <paramref name="to"/>.
+    /// Consumes energy based on the distance traveled along the supplied journey snapshot.
     /// </summary>
-    /// <param name="from">The starting time of the interval which to calculate energy consumption.
-    /// Should be between the journey's departure and arrival times.</param>
-    /// <param name="to">The ending time of the interval which to calculate energy consumption.
-    /// Should be between the journey's departure and arrival times, and greater than <paramref name="from"/>.</param>
-    public readonly void ConsumeEnergy(Time from, Time to)
+    /// <param name="journey">The journey snapshot before the advance.</param>
+    /// <param name="currentTime">The ending time of the interval which to calculate energy consumption.</param>
+    private void ConsumeEnergy(Core.Routing.CurrentJourney journey, Time currentTime)
     {
-        var fractionTraveled = (to - from) / (double)Journey.Current.Duration;
-        var distanceKm = Journey.Current.DistanceKm * fractionTraveled;
+        if (journey.Duration.Seconds == 0)
+            return;
+
+        var fractionTraveled = (currentTime - journey.Departure) / (double)journey.Duration;
+        fractionTraveled = Math.Clamp(fractionTraveled, 0d, 1d);
+        var distanceKm = journey.DistanceKm * fractionTraveled;
         var energyKWh = EnergyForDistanceKWh((float)distanceKm);
         var socLost = energyKWh / Battery.MaxCapacityKWh;
         Battery.StateOfCharge = Math.Clamp(Battery.StateOfCharge - socLost, 0f, 1f);
