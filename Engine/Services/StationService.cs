@@ -157,14 +157,6 @@ public class StationService : IStationService
             return;
 
         station.IncrementCancellations();
-
-        if (ev.ScheduledArrivalEventToken is { } token)
-        {
-            _scheduler.CancelEvent(token);
-        }
-
-        ev.HasReservationAtStationId = null;
-        ev.ScheduledArrivalEventToken = null;
     }
 
     /// <summary>
@@ -175,7 +167,6 @@ public class StationService : IStationService
     public void HandleArrivalAtStation(ArriveAtStation e)
     {
         ref var evRef = ref _eVStore.Get(e.EVId);
-        evRef.ScheduledArrivalEventToken = null;
 
         if (_bypassArrivalHandling)
         {
@@ -234,7 +225,6 @@ public class StationService : IStationService
 
                 state.SessionA = null;
                 ev.HasReservationAtStationId = null;
-                ev.ScheduledArrivalEventToken = null;
                 break;
 
             case DualCharger dual:
@@ -243,7 +233,6 @@ public class StationService : IStationService
                     dual.ChargingPoint.Disconnect(ChargingSide.Left);
                     state.SessionA = null;
                     ev.HasReservationAtStationId = null;
-                    ev.ScheduledArrivalEventToken = null;
 
                     if (state.SessionB is not null && result is not null)
                     {
@@ -268,7 +257,6 @@ public class StationService : IStationService
                     dual.ChargingPoint.Disconnect(ChargingSide.Right);
                     state.SessionB = null;
                     ev.HasReservationAtStationId = null;
-                    ev.ScheduledArrivalEventToken = null;
 
                     if (state.SessionA is not null && result is not null)
                     {

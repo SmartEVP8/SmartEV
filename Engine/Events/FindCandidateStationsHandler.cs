@@ -1,6 +1,8 @@
 namespace Engine.Events;
 
+using Core.Charging;
 using Core.Shared;
+using Core.Vehicles;
 using Engine.Cost;
 using Engine.Events.Middleware;
 using Engine.Routing;
@@ -32,37 +34,46 @@ public class FindCandidateStationsHandler(
         var stationCosts = await findCandidateStationService.ComputeCandidateStationFromCache(e.EVId);
         ref var ev = ref evStore.Get(e.EVId);
         var bestStation = computeCost.Compute(ref ev, stationCosts, e.Time);
-        var durationToStation = (Time)(uint)Math.Ceiling(stationCosts[bestStation.Id]);
-        if (durationToStation <= 60 * 10)
+
+        if (ev.HasReservationAtStationId != null && ev.HasReservationAtStationId == bestStation.Id)
         {
+            ev.Journey.GetCurrentPosition(e.Time);
+            var remaining = ev.Journey.Current.EtaToNextStop - e.Time;
+            if (ScheduleArriveAtStation(e, ev, bestStation, remaining))
+                return;
+
+            var nextCheckTime = e.Time + (remaining / 2);
+            eventScheduler.ScheduleEvent(new FindCandidateStations(e.EVId, nextCheckTime));
             return;
         }
+
         if (ev.HasReservationAtStationId != null)
-        {
-            if (ev.HasReservationAtStationId.Value == bestStation.Id)
-            {
-                _ = ev.Journey.GetCurrentPosition(e.Time);
-                var remaining = ev.Journey.Current.EtaToNextStop - e.Time;
-                if (remaining <= 60 * 10)
-                    return;
-                var nextCheckTime = e.Time + remaining / 2;
-                eventScheduler.ScheduleEvent(new FindCandidateStations(e.EVId, nextCheckTime));
-                return;
-            }
             eventScheduler.ScheduleEvent(new CancelRequest(e.EVId, ev.HasReservationAtStationId.Value, e.Time));
-        }
+
         bestStation.IncrementReservations();
         ev.HasReservationAtStationId = bestStation.Id;
         applyNewPath.ApplyNewPathToEV(ref ev, bestStation, e.Time);
         var timeToStation = ev.Journey.Current.DurationToNextStop;
-        if (timeToStation <= 60 * 10)
+
+        if (ScheduleArriveAtStation(e, ev, bestStation, timeToStation))
             return;
-        var nextCheck = e.Time + timeToStation / 2;
+
+        var nextCheck = e.Time + (timeToStation / 2);
         eventScheduler.ScheduleEvent(new FindCandidateStations(e.EVId, nextCheck));
-        ev.ScheduledArrivalEventToken = eventScheduler.ScheduleEvent(new ArriveAtStation(
+    }
+
+    private bool ScheduleArriveAtStation(FindCandidateStations e, EV ev, Station bestStation, Time durationToStation)
+    {
+        if (durationToStation <= 60 * 10)
+        {
+            eventScheduler.ScheduleEvent(new ArriveAtStation(
             e.EVId,
             bestStation.Id,
-            ev.CalcDesiredSoC(e.Time + timeToStation),
-            e.Time + timeToStation));
+            ev.CalcDesiredSoC(e.Time + durationToStation),
+            e.Time + durationToStation));
+            return true;
+        }
+
+        return false;
     }
 }

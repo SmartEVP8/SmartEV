@@ -33,11 +33,6 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     public ushort? HasReservationAtStationId { get; set; }
 
     /// <summary>
-    /// Gets or sets the scheduler token for the currently planned arrival event.
-    /// </summary>
-    public uint? ScheduledArrivalEventToken { get; set; }
-
-    /// <summary>
     /// Gets the journey of the EV.
     /// </summary>
     public Journey Journey { get; private set; } = journey;
