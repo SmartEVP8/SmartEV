@@ -142,10 +142,9 @@ public static class Init
             var integrator = sp.GetRequiredService<ChargingIntegrator>();
             var scheduler = sp.GetRequiredService<EventScheduler>();
             var evStore = sp.GetRequiredService<EVStore>();
-            var applyNewPath = sp.GetRequiredService<ApplyNewPath>();
             var metrics = sp.GetRequiredService<MetricsService>();
             var snapshotHandler = sp.GetRequiredService<SnapshotEventHandler>();
-            return new StationService(stations.Values, integrator, scheduler, evStore, applyNewPath, metrics, snapshotHandler, bypassArrivalHandling: true);
+            return new StationService(stations.Values, integrator, scheduler, evStore, metrics, snapshotHandler, bypassArrivalHandling: true);
         });
 
         services.AddSingleton(sp =>
@@ -197,7 +196,8 @@ public static class Init
             var computeCost = sp.GetRequiredService<ComputeCost>();
             var scheduler = sp.GetRequiredService<EventScheduler>();
             var evStore = sp.GetRequiredService<EVStore>();
-            return new FindCandidateStationsHandler(findCandidateStationService, computeCost, scheduler, evStore);
+            var applyNewPath = sp.GetRequiredService<ApplyNewPath>();
+            return new FindCandidateStationsHandler(findCandidateStationService, computeCost, scheduler, evStore, applyNewPath);
         });
 
         services.AddSingleton(sp =>

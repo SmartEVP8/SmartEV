@@ -203,13 +203,11 @@ public static class TestData
     {
         var metrics = MetricsService();
         var actualIntegrator = integrator ?? new ChargingIntegrator(10);
-
         return new StationService(
             stations: [.. stations.Values],
             integrator: actualIntegrator,
             scheduler: scheduler,
             evStore: evStore,
-            applyNewPath: new ApplyNewPath(OSRMRouter),
             metrics: metrics,
             snapshotHandler: SnapshotHandler(metrics, scheduler, stations));
     }
