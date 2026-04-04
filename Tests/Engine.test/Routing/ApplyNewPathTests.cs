@@ -34,10 +34,10 @@ public class ApplyNewPathToEVTests()
         {
             ReturnedDuration = 150.0f, // 2.5 minutes, should round to 2
         };
-        var applyNewPath = new ApplyNewPath(fakeRouter);
+        var applyNewPath = new EVDetourPlanner(fakeRouter);
         var currentTime = new Time(10);
 
-        applyNewPath.ApplyNewPathToEV(ref ev, station, currentTime);
+        applyNewPath.Update(ref ev, station, currentTime);
 
         Assert.Equal(150.0f, (uint)ev.Journey.Current.Duration);
         Assert.Equal(10U, (uint)ev.Journey.Current.Departure);
@@ -71,14 +71,14 @@ public class ApplyNewPathToEVTests()
             originalDuration: 50U);
 
         var fakeRouter = new FakeDestinationRouter();
-        var applyNewPath = new ApplyNewPath(fakeRouter);
+        var applyNewPath = new EVDetourPlanner(fakeRouter);
         var station = TestData.Station(1, new Position(5, 5));
 
         Assert.Throws<ArgumentException>(() =>
-            applyNewPath.ApplyNewPathToEV(ref ev, station, new Time(99)));
+            applyNewPath.Update(ref ev, station, new Time(99)));
 
         Assert.Throws<ArgumentException>(() =>
-            applyNewPath.ApplyNewPathToEV(ref ev, station, new Time(151)));
+            applyNewPath.Update(ref ev, station, new Time(151)));
     }
 
     public class FakeDestinationRouter : IDestinationRouter

@@ -21,7 +21,7 @@ public class ComputeCostTest
             { 1, TestData.Station(id: 1, pos: new (0, 0)) },
             { 2, TestData.Station(id: 2, pos: new (0, 0)) },
         });
-        var computeCost = new ComputeCost(costStore, stationService, energyPrices);
+        var computeCost = new CostFunction(costStore, stationService, energyPrices);
         var ev = new EV(
             TestData.Battery(stateOfCharge: 100),
             TestData.Preferences(PriceSensitivity: 0.0f, MinAcceptableCharge: 0f),
@@ -51,7 +51,7 @@ public class ComputeCostTest
             { 1, TestData.Station(id: 1, pos: new (0, 0), queueSize: 1) },
             { 2, TestData.Station(id: 2, pos: new (0, 0), queueSize: 3) },
         });
-        var computeCost = new ComputeCost(costStore, stationService, energyPrices);
+        var computeCost = new CostFunction(costStore, stationService, energyPrices);
         var ev = new EV(
             TestData.Battery(stateOfCharge: 100),
             TestData.Preferences(PriceSensitivity: 0.0f, MinAcceptableCharge: 0f),
@@ -87,7 +87,7 @@ public class ComputeCostTest
             { 2, TestData.Station(id: 2, pos: new (0, 0), queueSize: 1) },
         });
 
-        var computeCost = new ComputeCost(costStore, stationService, energyPrices);
+        var computeCost = new CostFunction(costStore, stationService, energyPrices);
 
         var ev = new EV(
             TestData.Battery(stateOfCharge: 0.5f),
@@ -122,7 +122,7 @@ public class ComputeCostTest
             { 2, TestData.Station(id: 2, pos: new (0, 0), queueSize: 1) },
         });
 
-        var computeCost = new ComputeCost(costStore, stationService, energyPrices);
+        var computeCost = new CostFunction(costStore, stationService, energyPrices);
 
         var ev = new EV(
             TestData.Battery(stateOfCharge: stateOfCharge),
@@ -150,7 +150,7 @@ public class ComputeCostTest
             { 1, TestData.Station(id: 1, pos: new (0, 0), queueSize: 0) },
             { 2, TestData.Station(id: 2, pos: new (0, 0), queueSize: 0) },
         });
-        var computeCost = new ComputeCost(costStore, stationService, energyPrices);
+        var computeCost = new CostFunction(costStore, stationService, energyPrices);
         var ev = new EV(
             TestData.Battery(stateOfCharge: 100),
             TestData.Preferences(PriceSensitivity: 0.0f, MinAcceptableCharge: 0f),
@@ -181,7 +181,7 @@ public class ComputeCostTest
             { 1, TestData.Station(id: 1, pos: new (0, 0), energyPrices: new TestData.FixedEnergyPrices(2.0f)) },
             { 2, TestData.Station(id: 2, pos: new (1, 1), energyPrices: new TestData.FixedEnergyPrices(4.0f)) },
         });
-        var computeCost = new ComputeCost(costStore, stationService, energyPrices);
+        var computeCost = new CostFunction(costStore, stationService, energyPrices);
         var ev = new EV(
             TestData.Battery(stateOfCharge: 50),
             TestData.Preferences(PriceSensitivity: 1.0f, MinAcceptableCharge: 20f),
@@ -208,7 +208,7 @@ public class ComputeCostTest
         var costStore = new TestData.StubCostStore(new CostWeights(PathDeviation: 1));
         var stationService = new TestData.StubStationService(new Dictionary<ushort, Station>());
         var energyPrices = new TestData.FixedEnergyPrices(2.0f);
-        var computeCost = new ComputeCost(costStore, stationService, energyPrices);
+        var computeCost = new CostFunction(costStore, stationService, energyPrices);
         var ev = new EV(
             TestData.Battery(stateOfCharge: 100),
             TestData.Preferences(PriceSensitivity: 0.0f, MinAcceptableCharge: 0f),
@@ -234,7 +234,7 @@ public class ComputeCostTest
             { 1, TestData.Station(id: 1, pos: new (0, 0)) },
             { 2, TestData.Station(id: 2, pos: new (0, 0)) },
         });
-        var computeCost = new ComputeCost(costStore, stationService, energyPrices);
+        var computeCost = new CostFunction(costStore, stationService, energyPrices);
 
         var ev = TestData.EV(
             waypoints: [new(0, 0), new(1, 1)],
@@ -272,7 +272,7 @@ public class ComputeCostTest
             { 20, TestData.Station(id: 20, pos: new (0, 0)) },
             { 30, TestData.Station(id: 30, pos: new (0, 0)) },
         });
-        var computeCost = new ComputeCost(costStore, stationService, energyPrices);
+        var computeCost = new CostFunction(costStore, stationService, energyPrices);
 
         var ev = TestData.EV(
             waypoints: [new(0, 0), new(1, 1)],
