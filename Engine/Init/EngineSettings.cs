@@ -41,16 +41,6 @@ public class EngineSettings
     required public int CurrentAmoutOfEVsInDenmark { get; init; }
 
     /// <summary>
-    /// Gets the interval at which the event for updating EVs should happen at.
-    /// </summary>
-    required public uint IntervalToUpdateEVs { get; init; }
-
-    /// <summary>
-    /// Gets the interval at which the engine checks for urgent EVs.
-    /// </summary>
-    required public float BatteryIntervalForCheckUrgency { get; init; }
-
-    /// <summary>
     /// Gets the number of seconds an EV is expected to spend charging at a station, used for simulating charging time and scheduling.
     /// </summary>
     required public uint ChargingStepSeconds { get; init; }
@@ -75,7 +65,7 @@ public class EngineSettings
     /// Gets the fraction of the total EV population that should be spawned in the simulation.
     /// </summary>
     required public double EVSpawnFraction { get; init; }
-    
+
     /// <summary>
     /// Gets the population scalar used in the gravity model for journey sampling, which controls how population size affects the probability of selecting a destination.
     /// </summary>
