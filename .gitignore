@@ -33,3 +33,7 @@ Core/native/
 
 BenchmarkDotNet.Artifacts/
 
+# DELETE LINES ONCE API FOLDER STRUCTURE IS FINALIZED
+API/node_modules/
+API/package-lock.json
+API/package.json

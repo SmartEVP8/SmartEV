@@ -1,6 +1,58 @@
-@API_HostAddress = http://localhost:5272
+@baseUrl = http://localhost:5000
+@contentType = application/json
 
-GET {{API_HostAddress}}/weatherforecast/
-Accept: application/json
+### Health Check
+GET {{baseUrl}}/health
 
-###
+### Get Connected Clients
+GET {{baseUrl}}/api/simulation/clients
+
+### Initialize Simulation
+POST {{baseUrl}}/api/simulation/initialize
+Content-Type: {{contentType}}
+
+{
+  "costWeights": [
+    { "id": 1, "updatedValue": 0.5 },
+    { "id": 2, "updatedValue": 0.8 }
+  ],
+  "maximumEVs": 1000,
+  "seed": 42
+}
+
+### Get Current Simulation State
+GET {{baseUrl}}/api/simulation/state
+
+### Get Initialization Data
+GET {{baseUrl}}/api/simulation/init
+
+### Broadcast State Update
+POST {{baseUrl}}/api/simulation/broadcast-state
+Content-Type: {{contentType}}
+
+{
+  "totalEVs": 500,
+  "totalCharging": 150
+}
+
+### Broadcast EV Arrival Event
+POST {{baseUrl}}/api/simulation/broadcast-arrival
+Content-Type: {{contentType}}
+
+{
+  "stationId": 1,
+  "time": 3600
+}
+
+### Broadcast Charging End Event
+POST {{baseUrl}}/api/simulation/broadcast-charging-end
+Content-Type: {{contentType}}
+
+{
+  "stationId": 1,
+  "time": 7200
+}
+
+### Reset Simulation State
+POST {{baseUrl}}/api/simulation/reset
+

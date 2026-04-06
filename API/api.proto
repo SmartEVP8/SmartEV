@@ -1,0 +1,92 @@
+syntax = "proto3";
+
+package SmartEV;
+
+// Types
+message Position {
+  double Lat = 1;
+  double Lon = 2;
+}
+
+// Init (When we start program)
+message WeightRanges {
+  int32 id = 1;
+  float minimum = 2;
+  float maximum = 3;
+}
+
+message Chargers {
+  int32 id = 1;
+  int32 MaxPowerKW = 2;
+  bool IsDual = 3;
+  int32 stationId = 4;
+}
+
+message StationInit {
+  uint32 id = 1;
+  Position pos = 2;
+  string address = 3;
+}
+
+message Init {
+  WeightRanges WeightRanges = 1;
+  Chargers chargers = 2;
+  StationInit stationInit = 3;
+}
+
+// Stream (All updates we need to show the state)
+message ArriveAtStation {
+  uint32 stationId = 1;
+  uint32 time = 2;
+}
+
+message EndCharging {
+  uint32 stationId = 1;
+  uint32 time = 2;
+}
+
+message StateSnapShot {
+  uint32 totalEVs = 1;
+  uint32 totalCharging = 2;
+}
+
+// Request
+message EVChargerState {
+  int32 evID = 1;
+  float SoC = 2;
+  float targetSoC = 3;
+}
+
+message ChargerState {
+  bool isActive = 1;
+  float utilization = 2;
+  int32 chargerId = 3;
+  int32 queueSize = 4;
+  repeated EVChargerState evsInQueue = 5;
+}
+
+message EVOnRoute {
+  int32 evId = 1;
+  repeated Position waypoints = 2;
+}
+
+message RequestStationState {
+  repeated ChargerState states = 1;
+  repeated EVOnRoute evsOnRoute = 2;
+}
+
+message CostWeight {
+  int32 id = 1;
+  float updatedValue = 2;
+}
+
+message StationGenerationOptions {
+  float dualChargingPointProbability = 1;
+  int32 totalChargers = 2;
+}
+
+message Initialise {
+  repeated CostWeight costWeights = 1;
+  uint32 maximumEVs = 2;
+  int32 seed = 3;
+}
