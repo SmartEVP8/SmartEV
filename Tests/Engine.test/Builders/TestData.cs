@@ -42,6 +42,10 @@ public static class TestData
 
     public static readonly SpatialGrid SpatialGrid = BuildSpatialGrid(AllStations);
 
+    public static JourneySamplerProvider JourneySamplerProvider(
+    float populationScalar = 1.0f,
+    float distanceScalar = 1.0f) => new(JourneySamplers, populationScalar, distanceScalar);
+
     public static readonly JourneyPipeline JourneySamplers = BuildJourneyPipeline();
 
     private static JourneyPipeline BuildJourneyPipeline()

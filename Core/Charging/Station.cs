@@ -22,7 +22,7 @@ public class Station(ushort id,
     /// <summary>
     /// Gets the position of the station.
     /// </summary>
-    public Position Position => position;
+    public Position Position { get; private set; } = position;
 
     /// <summary>
     /// Gets the id of the station.
@@ -66,6 +66,12 @@ public class Station(ushort id,
 
         return _price;
     }
+
+    /// <summary>
+    /// Sets the position of the station.
+    /// </summary>
+    /// <param name="newPosition">The new position for the station.</param>
+    public void SetPosition(Position newPosition) => Position = newPosition;
 
     /// <summary>
     /// Gets the list of chargers on a station.

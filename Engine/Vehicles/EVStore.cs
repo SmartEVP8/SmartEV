@@ -85,7 +85,11 @@ public class EVStore(int totalCapacity)
     /// Puts the <paramref name="index"/> back in the pool of free indexes.
     /// </summary>
     /// <param name="index">Index to be put back in the pool of free indexes.</param>
-    public void Free(int index) => _freeIndexes.Push(index);
+    public void Free(int index)
+    {
+        _evs[index] = default;
+        _freeIndexes.Push(index);
+    }
 
     /// <summary>Sets the EV at the specified index to the provided EV instance.</summary>
     /// <param name="index">The index to update.</param>

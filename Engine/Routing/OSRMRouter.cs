@@ -2,6 +2,7 @@ namespace Engine.Routing;
 
 using System.Runtime.InteropServices;
 using Core.Charging;
+using Core.Shared;
 
 public record RoutingResult(float[] Durations, float[] Distances);
 
@@ -26,10 +27,12 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
     private static partial void FreeMemory(IntPtr ptr);
 
     [LibraryImport(_lib)]
-    private static partial void RegisterStations(
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static partial bool RegisterStations(
         IntPtr osrm,
         [In] double[] coords,
-        int numStations
+        int numStations,
+        [Out] double[] outSnappedCoords
     );
 
     [LibraryImport(_lib)]
@@ -198,6 +201,7 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
     private void InitStations(List<Station> stations)
     {
         var coords = new double[stations.Count * 2];
+        var snappedCoords = new double[stations.Count * 2];
 
         for (var i = 0; i < stations.Count; i++)
         {
@@ -205,6 +209,15 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
             coords[(i * 2) + 1] = stations[i].Position.Latitude;
         }
 
-        RegisterStations(_osrm, coords, stations.Count);
+        var ok = RegisterStations(_osrm, coords, stations.Count, snappedCoords);
+
+        if (!ok)
+            throw new InvalidOperationException("Failed to snap one or more stations to the road network.");
+
+        for (var i = 0; i < stations.Count; i++)
+        {
+            var newPos = new Position(Longitude: snappedCoords[i * 2], Latitude: snappedCoords[(i * 2) + 1]);
+            stations[i].SetPosition(newPos);
+        }
     }
 }

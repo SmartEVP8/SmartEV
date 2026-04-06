@@ -75,6 +75,16 @@ public class EngineSettings
     /// Gets the fraction of the total EV population that should be spawned in the simulation.
     /// </summary>
     required public double EVSpawnFraction { get; init; }
+    
+    /// <summary>
+    /// Gets the population scalar used in the gravity model for journey sampling, which controls how population size affects the probability of selecting a destination.
+    /// </summary>
+    required public double PopulationScaler { get; init; }
+
+    /// <summary>
+    /// Gets the distance scalar used in the gravity model for journey sampling, which controls how distance affects the probability of selecting a destination.
+    /// </summary>
+    required public double DistanceScaler { get; init; }
 
     /// <summary>
     /// Gets the file paths for various input data required by the engine inclduing energy prices.

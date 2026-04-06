@@ -28,18 +28,24 @@ public class FindCandidateStationsHandler(
     /// <returns>A task representing the asynchronous operation.</returns>
     public async Task Handle(FindCandidateStations e)
     {
-        var ev = evStore.Get(e.EVId);
-        var stationCosts = await findCandidateStationService.ComputeCandidateStationFromCache(e.EVId);
-
-        if (stationCosts.Count == 0)
+        ref var evBeforeAwait = ref evStore.Get(e.EVId);
+        if (evBeforeAwait.Journey is null || e.Time >= evBeforeAwait.Journey.Current.EtaToNextStop)
         {
-            _numberOfNoStations++;
-            Console.WriteLine($"[EV {e.EVId}] has no stations. {ev}. Total number of failed EV's {_numberOfNoStations}");
             evStore.Free(e.EVId);
             return;
         }
 
-        var bestStation = computeCost.Compute(ref ev, stationCosts, e.Time);
+        var stationCosts = await findCandidateStationService.ComputeCandidateStationFromCache(e.EVId);
+        ref var evAfterAwait = ref evStore.Get(e.EVId);
+        if (stationCosts.Count == 0)
+        {
+            _numberOfNoStations++;
+            Console.WriteLine($"[EV {e.EVId}] has no stations. {evAfterAwait}. Total number of failed EV's {_numberOfNoStations}");
+            evStore.Free(e.EVId);
+            return;
+        }
+
+        var bestStation = computeCost.Compute(ref evAfterAwait, stationCosts, e.Time);
         var durationToStation = Math.Ceiling(stationCosts[bestStation.Id]);
         var reservationRequest = new ReservationRequest(e.EVId, bestStation.Id, e.Time, (Time)(uint)durationToStation);
         eventScheduler.ScheduleEvent(reservationRequest);

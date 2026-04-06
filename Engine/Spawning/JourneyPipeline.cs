@@ -25,23 +25,26 @@ public class JourneyPipeline
     /// <summary>
     /// Computes the sampling distributions for source and destination points based on the gravity model.
     /// </summary>
-    /// <param name="scaler">Influence of city population on the gravity weight.
+    /// <param name="populationScaler">Influence of city population on the gravity weight.
     /// A higher scaler increases the weight of larger cities, while a lower scaler reduces it.
     /// </param>
+    /// <param name="distanceScaler">Influence of city distance on the gravity weight.
+    /// A higher scaler increases the weight of closer cities, while a lower scaler reduces it.
+    /// </param>
     /// <returns>Simulation samplers for source and destinations. If no cells are spawnable returns null.</returns>
-    public JourneySamplers Compute(float scaler)
+    public JourneySamplers Compute(float populationScaler, float distanceScaler)
     {
         var cells = _grid.Cells
             .SelectMany(g => g)
             .ToList();
 
         var sourceWeights = cells
-            .Select(c => c.CityInfo.Sum(ci => GravityWeight(ci, scaler)))
+            .Select(c => c.CityInfo.Sum(ci => GravityWeight(ci, populationScaler, distanceScaler)))
             .ToArray();
 
         var destinationSamplers = cells
             .Select(c => new AliasSampler(
-                [.. c.CityInfo.Select(ci => GravityWeight(ci, scaler))]))
+                [.. c.CityInfo.Select(ci => GravityWeight(ci, populationScaler, distanceScaler))]))
             .ToArray();
 
         return new JourneySamplers(
@@ -53,10 +56,10 @@ public class JourneyPipeline
             _grid.HalfLon);
     }
 
-    private static float GravityWeight(CityInfo city, float scaler)
+    private static float GravityWeight(CityInfo city, float populationScaler, float distanceScaler)
     {
         var distance = Math.Max(city.DistToCity, 1.0f);
-        return (float)(Math.Pow(city.Population, scaler) / Math.Pow(distance, 0.8));
+        return (float)(Math.Pow(city.Population, populationScaler) / Math.Pow(distance, distanceScaler));
     }
 
     /// <summary>

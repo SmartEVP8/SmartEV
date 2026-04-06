@@ -20,7 +20,7 @@ public class DestinationArrivalHandler(
     /// <param name="e">The event.</param>
     public void Handle(ArriveAtDestination e)
     {
-        var ev = evStore.Get(e.EVId);
+        ref var ev = ref evStore.Get(e.EVId);
 
         var metric = ArrivalAtDestinationMetric.Collect(ref ev, e.Time);
         metrics.RecordArrival(metric);

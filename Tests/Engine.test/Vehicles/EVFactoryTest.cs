@@ -29,7 +29,7 @@ public class EVFactoryTest
 
         public IJourneySampler Current => _fjs;
 
-        public IJourneySampler Recompute(float scalar) => _fjs;
+        public IJourneySampler Recompute(float distanceScalar, float populationScalar) => _fjs;
     }
 
     private class FakeRouter : IPointToPointRouter
