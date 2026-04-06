@@ -275,4 +275,25 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
 
         return total;
     }
+
+    /// <summary>
+    /// Updates the current journey to have an EV drive towards its destination after charging at a station.
+    /// </summary>
+    /// <param name="timeAtStation">The amount of time spent at a station.</param>
+    public void UpdateRouteToDestination(Time timeAtStation)
+    {
+        var newDeparture = Current.Departure + Current.DurationToNextStop + timeAtStation;
+        var newWaypoints = new List<Position>([Current.NextStop, .. Current.Waypoints.SkipWhile(w => w != Current.NextStop).Skip(1)]);
+        var newDuration = Current.Duration - Current.DurationToNextStop;
+        var newDistanceKm = (float)PathLength(newWaypoints, newWaypoints.Count - 1);
+
+        Current = new CurrentJourney(
+            Departure: newDeparture,
+            Duration: newDuration,
+            DistanceKm: newDistanceKm,
+            Waypoints: newWaypoints,
+            NextStop: newWaypoints.Last(),
+            PathDeviation: Current.PathDeviation,
+            DurationToNextStop: DurationToNextStop(newDuration, newWaypoints, newWaypoints.Last()));
+    }
 }

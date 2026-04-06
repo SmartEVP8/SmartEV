@@ -30,8 +30,7 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
 
         foreach (var (stationId, duration) in stationDurations)
         {
-            var station = stationService.GetStation(stationId)
-                ?? throw new NoNullAllowedException($"Station {stationId} not found.");
+            var station = stationService.GetStation(stationId);
 
             var effectiveQueueCost = CalculateEffectiveQueueSizeCost(station, weights, ev.Battery.Socket);
             var pathDeviationCost = CalculatePathDeviationCost(ref ev, duration, weights, time);

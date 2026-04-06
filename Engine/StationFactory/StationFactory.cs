@@ -110,16 +110,17 @@ public class StationFactory
         var stations = new List<Station>(locations.Count);
         ushort nextStationId = 0;
         var socketIndex = 0;
+        var chargerId = 1;
 
         for (var i = 0; i < locations.Count; i++)
         {
             var chargerCount = chargerCountsPerStation[i];
             var chargers = new List<ChargerBase>(chargerCount);
 
-            for (var chargerId = 1; chargerId <= chargerCount; chargerId++)
+            for (var j = 0; j < chargerCount; j++)
             {
                 var socket = socketPool[socketIndex++];
-                chargers.Add(CreateCharger(chargerId, socket));
+                chargers.Add(CreateCharger(chargerId++, socket));
             }
 
             stations.Add(CreateStation(nextStationId++, locations[i], chargers));
