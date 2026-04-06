@@ -1,12 +1,15 @@
+using Engine.Services;
 using Protocol;
 
 namespace API.Services;
 
 public class SimulationMessageHandler(
     ISimulationStateService stateService,
+    SimulationChannel simulationChannel,
     ILogger<SimulationMessageHandler> logger) : IEnvelopeMessageHandler
 {
     private readonly ISimulationStateService _stateService = stateService;
+    private readonly SimulationChannel _simulationChannel = simulationChannel;
     private readonly ILogger<SimulationMessageHandler> _logger = logger;
 
     public async Task<Envelope> HandleInitRequestAsync(InitRequest request, CancellationToken cancellationToken)
@@ -16,16 +19,17 @@ public class SimulationMessageHandler(
             _logger.LogInformation("Handling InitRequest: maxEvs={MaxEvs}, seed={Seed}",
                 request.MaximumEvs, request.Seed);
 
-            // TODO: Initialize simulation with the provided parameters
-            // This will require integration with Engine/Core projects
+            var command = new InitCommand(
+                request.CostWeights.Select(cw => new SimulationCostWeight(cw.Id, cw.UpdatedValue)).ToList(),
+                request.MaximumEvs,
+                request.Seed,
+                request.StationGeneration?.DualChargingPointProbability ?? 0.5f,
+                request.StationGeneration?.TotalChargers ?? 0,
+                request.ClientId);
+
+            _simulationChannel.CommandWriter.TryWrite(command);
 
             var initData = new InitData();
-            // Note: RepeatedField<T> properties are read-only but populated via Add() or clone operations
-            // TODO: Wire simulation initialization to populate with real data
-            // initData.WeightRanges.Add(...);
-            // initData.Chargers.Add(...);
-            // initData.Stations.Add(...);
-
             var response = new InitResponse
             {
                 Success = true,
@@ -51,14 +55,7 @@ public class SimulationMessageHandler(
         {
             _logger.LogInformation("Handling GetSnapshotRequest");
 
-            // TODO: Get current simulation snapshot from Engine
-            var snapshot = new SimulationSnapshot
-            {
-                TotalEvs = 0,
-                TotalCharging = 0,
-                SimulationTimeMs = 0,
-                // StationStates is a RepeatedField - read-only, populated via Add()
-            };
+            var snapshot = _stateService.GetLatestSnapshot() ?? new Protocol.SimulationSnapshot();
 
             return new Envelope
             {

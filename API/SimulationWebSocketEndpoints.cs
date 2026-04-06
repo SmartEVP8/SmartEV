@@ -33,8 +33,16 @@ public static class SimulationWebSocketEndpoints
 
             // Process the entire connection lifecycle
             var cts = CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted);
-            await ProcessWebSocketConnectionAsync(webSocket, handler, messageProcessor, logger, cts.Token);
+            try
+            {
+                await ProcessWebSocketConnectionAsync(webSocket, handler, messageProcessor, logger, cts.Token);
+            }
+            finally
+            {
+                webSocket.Dispose();
+            }
         });
+
     }
 
     private static async Task ProcessWebSocketConnectionAsync(

@@ -38,13 +38,13 @@ namespace Protocol {
             "UmFuZ2VzUgx3ZWlnaHRSYW5nZXMSLQoIY2hhcmdlcnMYAiADKAsyES5wcm90",
             "b2NvbC5DaGFyZ2VyUghjaGFyZ2VycxIxCghzdGF0aW9ucxgDIAMoCzIVLnBy",
             "b3RvY29sLlN0YXRpb25Jbml0UghzdGF0aW9ucyJWCg5FVkNoYXJnZXJTdGF0",
-            "ZRITCgVldl9pZBgBIAEoDVIEZXZJZBIQCgNzb2MYAiABKAJSA3NvYxIdCgp0",
+            "ZRITCgVldl9pZBgBIAEoBVIEZXZJZBIQCgNzb2MYAiABKAJSA3NvYxIdCgp0",
             "YXJnZXRfc29jGAMgASgCUgl0YXJnZXRTb2MixwEKDENoYXJnZXJTdGF0ZRIb",
             "Cglpc19hY3RpdmUYASABKAhSCGlzQWN0aXZlEiAKC3V0aWxpemF0aW9uGAIg",
             "ASgCUgt1dGlsaXphdGlvbhIdCgpjaGFyZ2VyX2lkGAMgASgNUgljaGFyZ2Vy",
             "SWQSHQoKcXVldWVfc2l6ZRgEIAEoDVIJcXVldWVTaXplEjoKDGV2c19pbl9x",
             "dWV1ZRgFIAMoCzIYLnByb3RvY29sLkVWQ2hhcmdlclN0YXRlUgpldnNJblF1",
-            "ZXVlIlIKCUVWT25Sb3V0ZRITCgVldl9pZBgBIAEoDVIEZXZJZBIwCgl3YXlw",
+            "ZXVlIlIKCUVWT25Sb3V0ZRITCgVldl9pZBgBIAEoBVIEZXZJZBIwCgl3YXlw",
             "b2ludHMYAiADKAsyEi5wcm90b2NvbC5Qb3NpdGlvblIJd2F5cG9pbnRzIqMB",
             "CgxTdGF0aW9uU3RhdGUSHQoKc3RhdGlvbl9pZBgBIAEoDVIJc3RhdGlvbklk",
             "Ej0KDmNoYXJnZXJfc3RhdGVzGAIgAygLMhYucHJvdG9jb2wuQ2hhcmdlclN0",
@@ -68,9 +68,9 @@ namespace Protocol {
             "CgdtZXNzYWdlGAMgASgJUgdtZXNzYWdlIj0KDUVycm9yUmVzcG9uc2USEgoE",
             "Y29kZRgBIAEoDVIEY29kZRIYCgdtZXNzYWdlGAIgASgJUgdtZXNzYWdlImUK",
             "DEFycml2YWxFdmVudBIdCgpzdGF0aW9uX2lkGAEgASgNUglzdGF0aW9uSWQS",
-            "EwoFZXZfaWQYAiABKA1SBGV2SWQSIQoMdGltZXN0YW1wX21zGAMgASgEUgt0",
+            "EwoFZXZfaWQYAiABKAVSBGV2SWQSIQoMdGltZXN0YW1wX21zGAMgASgEUgt0",
             "aW1lc3RhbXBNcyJpChBDaGFyZ2luZ0VuZEV2ZW50Eh0KCnN0YXRpb25faWQY",
-            "ASABKA1SCXN0YXRpb25JZBITCgVldl9pZBgCIAEoDVIEZXZJZBIhCgx0aW1l",
+            "ASABKA1SCXN0YXRpb25JZBITCgVldl9pZBgCIAEoBVIEZXZJZBIhCgx0aW1l",
             "c3RhbXBfbXMYAyABKARSC3RpbWVzdGFtcE1zIvoDCghFbnZlbG9wZRIrCgRp",
             "bml0GAogASgLMhUucHJvdG9jb2wuSW5pdFJlcXVlc3RIAFIEaW5pdBJBCgxn",
             "ZXRfc25hcHNob3QYCyABKAsyHC5wcm90b2NvbC5HZXRTbmFwc2hvdFJlcXVl",
@@ -1732,10 +1732,10 @@ namespace Protocol {
 
     /// <summary>Field number for the "ev_id" field.</summary>
     public const int EvIdFieldNumber = 1;
-    private uint evId_;
+    private int evId_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public uint EvId {
+    public int EvId {
       get { return evId_; }
       set {
         evId_ = value;
@@ -1814,7 +1814,7 @@ namespace Protocol {
     #else
       if (EvId != 0) {
         output.WriteRawTag(8);
-        output.WriteUInt32(EvId);
+        output.WriteInt32(EvId);
       }
       if (Soc != 0F) {
         output.WriteRawTag(21);
@@ -1836,7 +1836,7 @@ namespace Protocol {
     void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
       if (EvId != 0) {
         output.WriteRawTag(8);
-        output.WriteUInt32(EvId);
+        output.WriteInt32(EvId);
       }
       if (Soc != 0F) {
         output.WriteRawTag(21);
@@ -1857,7 +1857,7 @@ namespace Protocol {
     public int CalculateSize() {
       int size = 0;
       if (EvId != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeUInt32Size(EvId);
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(EvId);
       }
       if (Soc != 0F) {
         size += 1 + 4;
@@ -1906,7 +1906,7 @@ namespace Protocol {
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
           case 8: {
-            EvId = input.ReadUInt32();
+            EvId = input.ReadInt32();
             break;
           }
           case 21: {
@@ -1937,7 +1937,7 @@ namespace Protocol {
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
           case 8: {
-            EvId = input.ReadUInt32();
+            EvId = input.ReadInt32();
             break;
           }
           case 21: {
@@ -2338,10 +2338,10 @@ namespace Protocol {
 
     /// <summary>Field number for the "ev_id" field.</summary>
     public const int EvIdFieldNumber = 1;
-    private uint evId_;
+    private int evId_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public uint EvId {
+    public int EvId {
       get { return evId_; }
       set {
         evId_ = value;
@@ -2405,7 +2405,7 @@ namespace Protocol {
     #else
       if (EvId != 0) {
         output.WriteRawTag(8);
-        output.WriteUInt32(EvId);
+        output.WriteInt32(EvId);
       }
       waypoints_.WriteTo(output, _repeated_waypoints_codec);
       if (_unknownFields != null) {
@@ -2420,7 +2420,7 @@ namespace Protocol {
     void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
       if (EvId != 0) {
         output.WriteRawTag(8);
-        output.WriteUInt32(EvId);
+        output.WriteInt32(EvId);
       }
       waypoints_.WriteTo(ref output, _repeated_waypoints_codec);
       if (_unknownFields != null) {
@@ -2434,7 +2434,7 @@ namespace Protocol {
     public int CalculateSize() {
       int size = 0;
       if (EvId != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeUInt32Size(EvId);
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(EvId);
       }
       size += waypoints_.CalculateSize(_repeated_waypoints_codec);
       if (_unknownFields != null) {
@@ -2473,7 +2473,7 @@ namespace Protocol {
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
           case 8: {
-            EvId = input.ReadUInt32();
+            EvId = input.ReadInt32();
             break;
           }
           case 18: {
@@ -2500,7 +2500,7 @@ namespace Protocol {
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
           case 8: {
-            EvId = input.ReadUInt32();
+            EvId = input.ReadInt32();
             break;
           }
           case 18: {
@@ -4385,10 +4385,10 @@ namespace Protocol {
 
     /// <summary>Field number for the "ev_id" field.</summary>
     public const int EvIdFieldNumber = 2;
-    private uint evId_;
+    private int evId_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public uint EvId {
+    public int EvId {
       get { return evId_; }
       set {
         evId_ = value;
@@ -4459,7 +4459,7 @@ namespace Protocol {
       }
       if (EvId != 0) {
         output.WriteRawTag(16);
-        output.WriteUInt32(EvId);
+        output.WriteInt32(EvId);
       }
       if (TimestampMs != 0UL) {
         output.WriteRawTag(24);
@@ -4481,7 +4481,7 @@ namespace Protocol {
       }
       if (EvId != 0) {
         output.WriteRawTag(16);
-        output.WriteUInt32(EvId);
+        output.WriteInt32(EvId);
       }
       if (TimestampMs != 0UL) {
         output.WriteRawTag(24);
@@ -4501,7 +4501,7 @@ namespace Protocol {
         size += 1 + pb::CodedOutputStream.ComputeUInt32Size(StationId);
       }
       if (EvId != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeUInt32Size(EvId);
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(EvId);
       }
       if (TimestampMs != 0UL) {
         size += 1 + pb::CodedOutputStream.ComputeUInt64Size(TimestampMs);
@@ -4551,7 +4551,7 @@ namespace Protocol {
             break;
           }
           case 16: {
-            EvId = input.ReadUInt32();
+            EvId = input.ReadInt32();
             break;
           }
           case 24: {
@@ -4582,7 +4582,7 @@ namespace Protocol {
             break;
           }
           case 16: {
-            EvId = input.ReadUInt32();
+            EvId = input.ReadInt32();
             break;
           }
           case 24: {
@@ -4657,10 +4657,10 @@ namespace Protocol {
 
     /// <summary>Field number for the "ev_id" field.</summary>
     public const int EvIdFieldNumber = 2;
-    private uint evId_;
+    private int evId_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public uint EvId {
+    public int EvId {
       get { return evId_; }
       set {
         evId_ = value;
@@ -4731,7 +4731,7 @@ namespace Protocol {
       }
       if (EvId != 0) {
         output.WriteRawTag(16);
-        output.WriteUInt32(EvId);
+        output.WriteInt32(EvId);
       }
       if (TimestampMs != 0UL) {
         output.WriteRawTag(24);
@@ -4753,7 +4753,7 @@ namespace Protocol {
       }
       if (EvId != 0) {
         output.WriteRawTag(16);
-        output.WriteUInt32(EvId);
+        output.WriteInt32(EvId);
       }
       if (TimestampMs != 0UL) {
         output.WriteRawTag(24);
@@ -4773,7 +4773,7 @@ namespace Protocol {
         size += 1 + pb::CodedOutputStream.ComputeUInt32Size(StationId);
       }
       if (EvId != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeUInt32Size(EvId);
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(EvId);
       }
       if (TimestampMs != 0UL) {
         size += 1 + pb::CodedOutputStream.ComputeUInt64Size(TimestampMs);
@@ -4823,7 +4823,7 @@ namespace Protocol {
             break;
           }
           case 16: {
-            EvId = input.ReadUInt32();
+            EvId = input.ReadInt32();
             break;
           }
           case 24: {
@@ -4854,7 +4854,7 @@ namespace Protocol {
             break;
           }
           case 16: {
-            EvId = input.ReadUInt32();
+            EvId = input.ReadInt32();
             break;
           }
           case 24: {

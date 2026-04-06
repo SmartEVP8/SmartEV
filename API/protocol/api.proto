@@ -50,7 +50,7 @@ message InitData {
 // ============================================================================
 
 message EVChargerState {
-  uint32 ev_id = 1;
+  int32 ev_id = 1;
   float soc = 2;
   float target_soc = 3;
 }
@@ -64,7 +64,7 @@ message ChargerState {
 }
 
 message EVOnRoute {
-  uint32 ev_id = 1;
+  int32 ev_id = 1;
   repeated Position waypoints = 2;
 }
 
@@ -123,13 +123,13 @@ message ErrorResponse {
 
 message ArrivalEvent {
   uint32 station_id = 1;
-  uint32 ev_id = 2;
+  int32 ev_id = 2;
   uint64 timestamp_ms = 3;
 }
 
 message ChargingEndEvent {
   uint32 station_id = 1;
-  uint32 ev_id = 2;
+  int32 ev_id = 2;
   uint64 timestamp_ms = 3;
 }
 

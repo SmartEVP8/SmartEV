@@ -14,6 +14,7 @@ using Engine.StationFactory;
 using Engine.Services;
 using Engine.Vehicles;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Engine.Events.Middleware;
 
 /// <summary>
@@ -27,6 +28,8 @@ public static class Init
     /// <param name="services">The service collection to initialize.</param>
     public static void InitEngine(IServiceCollection services)
     {
+        services.AddSingleton<SimulationChannel>();
+
         services.AddSingleton(sp =>
         {
             var settings = sp.GetRequiredService<EngineSettings>();
@@ -228,7 +231,8 @@ public static class Init
             var checkAndUpdateAllEVsHandler = sp.GetRequiredService<CheckAndUpdateAllEVsHandler>();
             var destinationArrivalHandler = sp.GetRequiredService<DestinationArrivalHandler>();
             var findCandidateStationsHandler = sp.GetRequiredService<FindCandidateStationsHandler>();
-            return new EventDispatcher(stationService, checkUrgencyHandler, snapshotHandler, findCandidateStationsHandler, evService, destinationArrivalHandler, checkAndUpdateAllEVsHandler);
+            var subscriber = sp.GetService<IEngineEventSubscriber>();
+            return new EventDispatcher(stationService, checkUrgencyHandler, snapshotHandler, findCandidateStationsHandler, evService, destinationArrivalHandler, checkAndUpdateAllEVsHandler, subscriber);
         });
 
         services.AddSingleton(sp =>

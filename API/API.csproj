@@ -5,6 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Google.Protobuf"/>
+    <PackageReference Include="Google.Protobuf" />
+    <ProjectReference Include="..\Engine\Engine.csproj" />
   </ItemGroup>
 </Project>
