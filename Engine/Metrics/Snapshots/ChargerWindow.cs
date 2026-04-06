@@ -33,8 +33,8 @@ public struct ChargerWindow
     /// <param name="currentQueueSize">The current queue size at reset time.</param>
     public void Reset(int currentQueueSize)
     {
-        DeliveredKWh = 0;
-        HadActivity = false;
+        DeliveredKWh = default;
+        HadActivity = default;
         QueueSize = currentQueueSize;
     }
 }
