@@ -50,6 +50,7 @@ public class EventScheduler(Dictionary<Type, Action<IMiddlewareEvent>>? preProce
 
         _eventPriorityQueue.TryDequeue(out var e, out var priority);
         _currentTime = priority.Item1;
+
         if (_canceledEvents.Contains(priority.Item2))
         {
             _canceledEvents.Remove(priority.Item2);

@@ -2,7 +2,6 @@ namespace Engine.test.Services;
 
 using Core.Shared;
 using Core.Charging;
-using Core.Charging.ChargingModel;
 using Engine.Events;
 using Engine.Services;
 using Engine.test.Builders;
@@ -105,10 +104,8 @@ public class StationServiceTests
         var charger = TestData.SingleCharger(1, maxPowerKW: maxPowerKW);
         var station = TestData.Station(1, chargers: [charger]);
         var scheduler = new EventScheduler();
-        var integrator = new ChargingIntegrator(stepSeconds: 60);
         var stations = new Dictionary<ushort, Station> { [1] = station };
         var evStore = new EVStore(10);
-        var metrics = TestData.MetricsService();
         var service = TestData.StationService(stations, scheduler, evStore);
         return (service, scheduler, evStore);
     }
@@ -120,7 +117,6 @@ public class StationServiceTests
         var stations = new Dictionary<ushort, Station> { [1] = station };
         var scheduler = new EventScheduler();
         var evStore = new EVStore(10);
-        var metrics = TestData.MetricsService();
         var service = TestData.StationService(stations, scheduler, evStore);
         return (service, scheduler, evStore);
     }

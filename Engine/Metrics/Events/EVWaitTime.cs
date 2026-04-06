@@ -11,7 +11,7 @@ public record EVWaitTimeMetric // Changed to record for better data semantics
     required public int EVId { get; init; }
 
     /// <summary> Gets the ID of the station where the EV waited and started charging. </summary>
-    required public int StationId { get; init; }
+    required public ushort StationId { get; init; }
 
     /// <summary> Gets the simulation time when the EV arrived at the station. </summary>
     required public Time ArrivalAtStationTime { get; init; }
