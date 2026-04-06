@@ -22,6 +22,7 @@ public sealed class MetricsService : IAsyncDisposable
     private readonly IMetricWriter<EVSnapshotMetric>? _cars;
     private readonly IMetricWriter<ArrivalAtDestinationMetric>? _arrivals;
     private readonly IMetricWriter<StationSnapshotMetric>? _stations;
+    private readonly IMetricWriter<ChargerSnapshotMetric>? _chargers;
     private readonly IMetricWriter<EVWaitTimeMetric>? _waitTime;
 
     /// <summary>
@@ -40,6 +41,8 @@ public sealed class MetricsService : IAsyncDisposable
             _arrivals = new MetricWriter<ArrivalAtDestinationMetric>(config.BufferSize, files.GetMetricPath<ArrivalAtDestinationMetric>());
         if (config.RecordStationSnapshots)
             _stations = new MetricWriter<StationSnapshotMetric>(config.BufferSize, files.GetMetricPath<StationSnapshotMetric>());
+        if (config.RecordChargerSnapshots)
+            _chargers = new MetricWriter<ChargerSnapshotMetric>(config.BufferSize, files.GetMetricPath<ChargerSnapshotMetric>());
         if (config.RecordEVWaitTime)
             _waitTime = new MetricWriter<EVWaitTimeMetric>(config.BufferSize, files.GetMetricPath<EVWaitTimeMetric>());
     }
@@ -56,6 +59,10 @@ public sealed class MetricsService : IAsyncDisposable
     /// <param name="metric">The station snapshot metric to record.</param>
     public void RecordStationSnapshot(StationSnapshotMetric metric) => _stations?.Record(metric);
 
+    /// <summary>Records a charger snapshot metric. No-op if charger snapshots are disabled in config.</summary>
+    /// <param name="metric">The charger snapshot metric to record.</param>
+    public void RecordChargerSnapshot(ChargerSnapshotMetric metric) => _chargers?.Record(metric);
+
     /// <summary> Records an EV wait time metric. No-op if EV wait time metrics are disabled in config. </summary>
     /// <param name="metric">The EV wait time metric to record.</param>
     public void RecordWaitTime(EVWaitTimeMetric metric) => _waitTime?.Record(metric);
@@ -70,6 +77,7 @@ public sealed class MetricsService : IAsyncDisposable
         var tasks = new List<Task>();
         if (_cars is not null) tasks.Add(_cars.DisposeAsync().AsTask());
         if (_stations is not null) tasks.Add(_stations.DisposeAsync().AsTask());
+        if (_chargers is not null) tasks.Add(_chargers.DisposeAsync().AsTask());
         if (_arrivals is not null) tasks.Add(_arrivals.DisposeAsync().AsTask());
         if (_waitTime is not null) tasks.Add(_waitTime.DisposeAsync().AsTask());
         await Task.WhenAll(tasks);
