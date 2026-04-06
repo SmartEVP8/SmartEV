@@ -22,7 +22,7 @@ public class EventDispatcher(
         SnapshotEventHandler snapshotEventHandler,
         FindCandidateStationsHandler findCandidateStationsHandler,
         EVService evService,
-    DestinationArrivalHandler destinationArrivalHandler)
+        DestinationArrivalHandler destinationArrivalHandler)
 {
     /// <summary>
     /// Dispatches the event to the correct handler.
@@ -72,7 +72,7 @@ public class EventDispatcher(
             PrintCounts(e);
     }
 
-    private Dictionary<Type, uint> _calledCount = [];
+    private readonly Dictionary<Type, uint> _calledCount = [];
     private int _eventCount;
 
     private void IncrementCount(Event e)

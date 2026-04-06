@@ -45,7 +45,7 @@ public class EVPopulator(EVFactory evFactory, EVStore evStore, IEventScheduler e
                     var departure = ev.Journey.Original.Departure;
                     var reserve = ev.Preferences.MinAcceptableCharge;
 
-                    if (ev.CanCompleteJourney(reserve))
+                    if (ev.CanCompleteJourney(reserve: reserve))
                     {
                         var arrivalTime = departure + ev.Journey.Current.Duration;
                         eventScheduler.ScheduleEvent(new ArriveAtDestination(evId, arrivalTime));
