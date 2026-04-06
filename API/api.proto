@@ -1,25 +1,36 @@
 syntax = "proto3";
 
-package SmartEV;
+package API;
 
-// Types
+// ============================================================================
+// CORE TYPES
+// ============================================================================
+
 message Position {
-  double Lat = 1;
-  double Lon = 2;
+  double lat = 1;
+  double lon = 2;
 }
 
-// Init (When we start program)
+message CostWeight {
+  int32 id = 1;
+  float updated_value = 2;
+}
+
+// ============================================================================
+// INITIALIZATION TYPES
+// ============================================================================
+
 message WeightRanges {
   int32 id = 1;
   float minimum = 2;
   float maximum = 3;
 }
 
-message Chargers {
+message Charger {
   int32 id = 1;
-  int32 MaxPowerKW = 2;
-  bool IsDual = 3;
-  int32 stationId = 4;
+  int32 max_power_kw = 2;
+  bool is_dual = 3;
+  int32 station_id = 4;
 }
 
 message StationInit {
@@ -28,65 +39,138 @@ message StationInit {
   string address = 3;
 }
 
-message Init {
-  WeightRanges WeightRanges = 1;
-  Chargers chargers = 2;
-  StationInit stationInit = 3;
+message InitData {
+  repeated WeightRanges weight_ranges = 1;
+  repeated Charger chargers = 2;
+  repeated StationInit stations = 3;
 }
 
-// Stream (All updates we need to show the state)
-message ArriveAtStation {
-  uint32 stationId = 1;
-  uint32 time = 2;
-}
+// ============================================================================
+// STATE TYPES
+// ============================================================================
 
-message EndCharging {
-  uint32 stationId = 1;
-  uint32 time = 2;
-}
-
-message StateSnapShot {
-  uint32 totalEVs = 1;
-  uint32 totalCharging = 2;
-}
-
-// Request
 message EVChargerState {
-  int32 evID = 1;
-  float SoC = 2;
-  float targetSoC = 3;
+  uint32 ev_id = 1;
+  float soc = 2;
+  float target_soc = 3;
 }
 
 message ChargerState {
-  bool isActive = 1;
+  bool is_active = 1;
   float utilization = 2;
-  int32 chargerId = 3;
-  int32 queueSize = 4;
-  repeated EVChargerState evsInQueue = 5;
+  int32 charger_id = 3;
+  int32 queue_size = 4;
+  repeated EVChargerState evs_in_queue = 5;
 }
 
 message EVOnRoute {
-  int32 evId = 1;
+  uint32 ev_id = 1;
   repeated Position waypoints = 2;
 }
 
-message RequestStationState {
-  repeated ChargerState states = 1;
-  repeated EVOnRoute evsOnRoute = 2;
+message StationState {
+  uint32 station_id = 1;
+  repeated ChargerState charger_states = 2;
+  repeated EVOnRoute evs_on_route = 3;
 }
 
-message CostWeight {
-  int32 id = 1;
-  float updatedValue = 2;
+message SimulationSnapshot {
+  uint32 total_evs = 1;
+  uint32 total_charging = 2;
+  repeated StationState station_states = 3;
+  uint64 simulation_time_ms = 4;
 }
+
+// ============================================================================
+// CLIENT REQUEST TYPES (10-19)
+// ============================================================================
 
 message StationGenerationOptions {
-  float dualChargingPointProbability = 1;
-  int32 totalChargers = 2;
+  float dual_charging_point_probability = 1;
+  int32 total_chargers = 2;
 }
 
-message Initialise {
-  repeated CostWeight costWeights = 1;
-  uint32 maximumEVs = 2;
-  int32 seed = 3;
+message InitRequest {
+  repeated CostWeight cost_weights = 1;
+  StationGenerationOptions station_generation = 2;
+  uint32 maximum_evs = 3;
+  int32 seed = 4;
+  string client_id = 5; // Optional: for session identification
+}
+
+message GetSnapshotRequest {
+  // Empty, but required for request/response symmetry
+}
+
+// ============================================================================
+// SERVER RESPONSE TYPES (20-29)
+// ============================================================================
+
+message InitResponse {
+  bool success = 1;
+  InitData init_data = 2;
+  string message = 3;
+}
+
+message SnapshotResponse {
+  SimulationSnapshot snapshot = 1;
+}
+
+message ErrorResponse {
+  uint32 code = 1;
+  string message = 2;
+  string request_id = 3; // Echo back the failed request for correlation
+}
+
+message AckResponse {
+  // Acknowledge request received
+  string request_id = 1;
+}
+
+// ============================================================================
+// EVENT TYPES (Server -> Client pushes, 30-39)
+// ============================================================================
+
+message ArrivalEvent {
+  uint32 station_id = 1;
+  uint32 ev_id = 2;
+  uint64 timestamp_ms = 3;
+}
+
+message ChargingEndEvent {
+  uint32 station_id = 1;
+  uint32 ev_id = 2;
+  uint64 timestamp_ms = 3;
+}
+
+// ============================================================================
+// ENVELOPE MESSAGE (WebSocket message wrapper)
+// ============================================================================
+
+message Envelope {
+  // request_id: Used for request/response correlation only.
+  // - Client sets this on outbound requests.
+  // - Server echoes it back in the corresponding response or error.
+  // - Server-initiated events (arrival, state_update, etc.) MUST leave this empty.
+  // - Client MUST ignore request_id on unsolicited server events.
+  string request_id = 1;
+
+  // Payload: one of request, response, or event
+  // Timestamps are embedded in individual events/responses, not at envelope level.
+  oneof payload {
+    // Client Requests (10-19)
+    InitRequest init = 10;
+    GetSnapshotRequest get_snapshot = 11;
+
+    // Server Responses (20-29)
+    InitResponse init_response = 20;
+    SnapshotResponse snapshot_response = 21;
+    ErrorResponse error = 22;
+    AckResponse ack = 23;
+
+    // Server Events/Pushes (30-39)
+    ArrivalEvent arrival = 30;
+    ChargingEndEvent charging_end = 31;
+    SimulationSnapshot state_update = 32;
+  }
 }

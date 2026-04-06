@@ -1,0 +1,48 @@
+name: Generate and Publish API
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'API/api.proto'
+      - 'buf.yaml'
+      - 'buf.gen.yaml'
+      - '.github/workflows/publish-api.yml'
+  workflow_dispatch:
+
+jobs:
+  generate-and-publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install buf
+        uses: bufbuild/buf-setup-action@v1
+
+      - name: Generate code
+        run: buf generate
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@smartev'
+
+      - name: Update version
+        run: |
+          cd packages/smartev-api
+          npm version patch --no-git-tag-version
+          cat package.json | grep '"version"'
+
+      - name: Publish to GitHub Packages
+        run: |
+          cd packages/smartev-api
+          npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
