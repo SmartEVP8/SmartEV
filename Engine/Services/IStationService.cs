@@ -12,7 +12,7 @@ public interface IStationService
     /// </summary>
     /// <param name="stationId">The station ID.</param>
     /// <returns>The station.</returns>
-    Station? GetStation(ushort stationId);
+    Station GetStation(ushort stationId);
 
     /// <summary>
     /// Gets the total queue size across all chargers at the station with the given ID.
