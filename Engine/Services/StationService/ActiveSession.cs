@@ -54,7 +54,7 @@ public record ActiveSession(
     private static double GetEnergyFromCurve(List<double> curve, uint stepSeconds, Time sessionStart, Time lastUpdate, Time simNow)
     {
         if (curve.Count == 0) return 0.0;
-        var startOffset = Math.Max(0L, lastUpdate - sessionStart);
+        var startOffset = Math.Max(0, lastUpdate - sessionStart);
         var endOffset = Math.Max(0, simNow - sessionStart);
         var startIndex = Math.Min(curve.Count - 1, (int)(startOffset / stepSeconds));
         var endIndex = Math.Min(curve.Count - 1, (int)(endOffset / stepSeconds));

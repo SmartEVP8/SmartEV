@@ -22,12 +22,12 @@ public record StationSnapshotMetric
     /// <summary>
     /// Gets the total power delivered across all chargers in kW.
     /// </summary>
-    required public float TotalDeliveredKW { get; init; }
+    required public float TotalDeliveredKWh { get; init; }
 
     /// <summary>
     /// Gets the total maximum power capacity across all chargers in kW.
     /// </summary>
-    required public float TotalMaxKW { get; init; }
+    required public float TotalMaxKWh { get; init; }
 
     /// <summary>
     /// Gets the total number of EVs queued across all chargers at snapshot time.

@@ -71,7 +71,7 @@ public static class Program
 
             SimulationEndTime = 10000 * 60,
 
-            SnapshotInterval = 10 * 60,
+            SnapshotInterval = 20 * 60,
 
             EVDistributionWindowsSize = 1 * 60,
 

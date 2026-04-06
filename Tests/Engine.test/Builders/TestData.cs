@@ -18,7 +18,6 @@ using Engine.Vehicles;
 using Engine.Events;
 using Engine.Services;
 using Engine.Spawning;
-using Engine.Init;
 
 /// <summary>
 /// Ugly file for construction of objects more easily where we do not have to specifiy all properties or think about paths.
@@ -88,7 +87,7 @@ public static class TestData
         MetricsService metrics,
         EventScheduler scheduler) =>
         new(
-            rescheduleTime: new Time(3600),
+            rescheduleTime: new Time(1200),
             stationService: stationService,
             metrics: metrics,
             scheduler: scheduler);
@@ -210,7 +209,7 @@ public static class TestData
             evStore: evStore,
             applyNewPath: new ApplyNewPath(OSRMRouter),
             metrics: metrics,
-            snapshotInterval: new Time(3600),
+            snapshotInterval: new Time(1200),
             bypassArrivalHandling: false);
     }
 

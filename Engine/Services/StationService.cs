@@ -29,6 +29,7 @@ public class StationService : IStationService
     private readonly MetricsService _metrics;
     private readonly Time _snapshotInterval;
     private readonly bool _bypassArrivalHandling;
+    private readonly StationMetricsCollector _metricsCollector;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="StationService"/> class.
@@ -58,6 +59,7 @@ public class StationService : IStationService
         _metrics = metrics;
         _snapshotInterval = snapshotInterval;
         _bypassArrivalHandling = bypassArrivalHandling;
+        _metricsCollector = new StationMetricsCollector(snapshotInterval);
 
         foreach (var station in stations)
         {
@@ -79,19 +81,11 @@ public class StationService : IStationService
     public ChargerState? GetChargerState(int chargerId)
         => _chargerIndex.TryGetValue(chargerId, out var state) ? state : null;
 
-    /// <summary>
-    /// Returns the station for the given station id.
-    /// </summary>
-    /// <param name="stationId">The id of the station.</param>
-    /// <returns>The station for the given station id.</returns>
+    /// <inheritdoc/>
     public Station? GetStation(ushort stationId)
         => _stationIndex.TryGetValue(stationId, out var station) ? station : null;
 
-    /// <summary>
-    /// Returns the total queue size for the given station id.
-    /// </summary>
-    /// <param name="stationId">The id of the station.</param>
-    /// <returns>The total queue size for the given station id.</returns>
+    /// <inheritdoc/>
     public int GetTotalQueueSize(ushort stationId)
     {
         if (!_stationChargers.TryGetValue(stationId, out var chargers))
@@ -102,80 +96,26 @@ public class StationService : IStationService
     /// <summary>
     /// Collects all snapshots for the given simulation time.
     /// </summary>
-    /// <param name="simNow">The simulation time.</param>
-    /// <returns>The collected snapshots.</returns>
+    /// <param name="simNow">The current simulation time.</param>
+    /// <returns>A tuple containing the charger and station snapshots.</returns>
     public (IEnumerable<ChargerSnapshotMetric> Chargers, IEnumerable<StationSnapshotMetric> Stations) CollectAllSnapshots(Time simNow)
     {
-        var chargerMetrics = new List<ChargerSnapshotMetric>();
-        var stationMetrics = new List<StationSnapshotMetric>();
-
-        foreach (var (stationId, chargerStates) in _stationChargers)
-        {
-            var station = _stationIndex[stationId];
-            var totalDeliveredKW = 0f;
-            var totalMaxKW = 0f;
-            var totalQueueSize = 0;
-
-            foreach (var state in chargerStates)
-            {
-                state.AccumulateEnergy(simNow);
-                var deliveredKWhInWindow = (float)state.Window.DeliveredKWh;
-
-                var targetEVDemandKWh = 0f;
-                if (state.SessionA is not null)
-                    targetEVDemandKWh += (float)Math.Max(0, (state.SessionA.EV.TargetSoC - state.SessionA.GetCurrentSoC(simNow)) * state.SessionA.EV.CapacityKWh);
-
-                if (state.SessionB is not null)
-                    targetEVDemandKWh += (float)Math.Max(0, (state.SessionB.EV.TargetSoC - state.SessionB.GetCurrentSoC(simNow)) * state.SessionB.EV.CapacityKWh);
-
-                var snapshotDurationHours = _snapshotInterval / 3600f;
-                var maxPossibleKWh = state.Charger.MaxPowerKW * snapshotDurationHours;
-                var utilizationInWindow = maxPossibleKWh > 0
-                    ? Math.Clamp(deliveredKWhInWindow / maxPossibleKWh, 0f, 1f)
-                    : 0f;
-
-                var queueSizeInWindow = state.Queue.Count;
-
-                chargerMetrics.Add(ChargerSnapshotMetric.Collect(
-                    state.Charger,
-                    stationId,
-                    simNow,
-                    queueSizeInWindow,
-                    utilizationInWindow,
-                    deliveredKWhInWindow,
-                    targetEVDemandKWh));
-
-                totalDeliveredKW += deliveredKWhInWindow;
-                totalMaxKW += state.Charger.MaxPowerKW;
-                totalQueueSize += queueSizeInWindow;
-
-                state.Window.Reset(state.Queue.Count);
-            }
-
-            _windowReservations.TryGetValue(stationId, out var reservations);
-            _windowCancellations.TryGetValue(stationId, out var cancellations);
-
-            _windowReservations[stationId] = 0;
-            _windowCancellations[stationId] = 0;
-
-            stationMetrics.Add(new StationSnapshotMetric
-            {
-                SimTime = (uint)simNow,
-                StationId = stationId,
-                TotalDeliveredKW = totalDeliveredKW,
-                TotalMaxKW = totalMaxKW,
-                TotalQueueSize = totalQueueSize,
-                Price = station.GetPrice(simNow),
-                TotalChargers = chargerStates.Count,
-                Reservations = reservations,
-                Cancellations = cancellations,
-            });
-        }
-
-        return (chargerMetrics, stationMetrics);
+        // Delegate all the heavy lifting to the collector class
+        return _metricsCollector.Collect(
+            simNow,
+            _stationChargers,
+            _stationIndex,
+            _windowReservations,
+            _windowCancellations);
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Handles a reservation request from an EV to a station.
+    /// If the EV already has an active reservation, the existing arrival event is cancelled before proceeding.
+    /// Calculates the detoured path through the station, updates the EV's journey, and schedules a new
+    /// arrival event.
+    /// </summary>
+    /// <param name="e">The reservation request event.</param>
     public void HandleReservationRequest(ReservationRequest e)
     {
         ref var ev = ref _eVStore.Get(e.EVId);
@@ -200,7 +140,11 @@ public class StationService : IStationService
             new ArriveAtStation(e.EVId, e.StationId, ev.CalcDesiredSoC(e.Time + e.DurationToStation), e.Time + e.DurationToStation));
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Handles a cancellation request from an EV, decrementing the station's active reservation count,
+    /// clearing the reservation from the EV, and cancelling the scheduled arrival event.
+    /// </summary>
+    /// <param name="e">The cancellation request event.</param>
     public void HandleCancelRequest(CancelRequest e)
     {
         ref var ev = ref _eVStore.Get(e.EVId);
@@ -218,7 +162,11 @@ public class StationService : IStationService
         ev.HasReservationAtStationId = null;
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Called when an EV arrives at a station.
+    /// Finds the best compatible charger, joins its queue, and starts charging only if a side is free.
+    /// </summary>
+    /// <param name="e">The arrival event.</param>
     public void HandleArrivalAtStation(ArriveAtStation e)
     {
         if (_bypassArrivalHandling)
@@ -257,6 +205,14 @@ public class StationService : IStationService
             StartCharging(target, e.Time);
     }
 
+    /// <summary>
+    /// Called when a charging session ends for a specific EV.
+    /// Uses the internally stored IntegrationResult to update remaining car SoC.
+    /// </summary>
+    /// <param name="e">The EndCharging event containing the EVId, ChargerId, and Time of the event.</param>
+    /// <summary>
+    /// Called when a charging session ends for a specific EV.
+    /// </summary>
     public void HandleEndCharging(EndCharging e)
     {
         if (!_chargerIndex.TryGetValue(e.ChargerId, out var state))
@@ -329,6 +285,7 @@ public class StationService : IStationService
                         }
                     }
                 }
+
                 break;
         }
 
@@ -348,8 +305,10 @@ public class StationService : IStationService
                 if (!state.Queue.TryPeek(out var next)) break;
 
                 if (!single.ChargingPoint.TryConnect(next.EV.Socket))
-                    throw new InvalidOperationException(
+                {
+                    throw new SkillissueException(
                         $"Logic Error: EV {next.EVId} reached Charger {single.Id} but TryConnect failed.");
+                }
 
                 state.Queue.Dequeue();
 
