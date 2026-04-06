@@ -60,7 +60,7 @@ internal static class Make
 public class ChargingTest
 {
     [Fact]
-    public void IntegrateSingleToCompletion_NaNTargetSoC_DoesNotCompleteQuickly()
+    public void IntegrateSingleToCompletion_NaNTargetSoC_Throws()
     {
         var integrator = new ChargingIntegrator(stepSeconds: 1);
         var ev = new ConnectedEV(
@@ -72,14 +72,13 @@ public class ChargingTest
             Socket: Socket.CCS2,
             ArrivalTime: 0);
 
-        var integrationTask = Task.Run(() => integrator.IntegrateSingleToCompletion(
+        var ex = Assert.Throws<ArgumentOutOfRangeException>(() => integrator.IntegrateSingleToCompletion(
             simNow: 0,
             maxKW: 100,
             point: Make.SinglePoint(Socket.CCS2),
             ev: ev));
 
-        var completed = integrationTask.Wait(TimeSpan.FromMilliseconds(1000));
-        Assert.False(completed);
+        Assert.Contains("TargetSoC", ex.Message);
     }
 
     [Fact]
