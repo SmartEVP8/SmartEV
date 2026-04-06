@@ -67,6 +67,17 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
     public Time RemainingCurrentRoute(Time currentTime) => Current.Eta - currentTime;
 
     /// <summary>
+    /// Calculates the remaining distance to destination at <paramref name="currentTime"/> without mutating the live journey.
+    /// </summary>
+    /// <param name="currentTime">The current time.</param>
+    /// <returns>The remaining distance to destination in kilometers.</returns>
+    public float RemainingDistanceToDestination(Time currentTime)
+    {
+        var (snapshot, _) = DeriveRouteSnapshot(currentTime);
+        return Math.Max(0f, snapshot.DistanceKm);
+    }
+
+    /// <summary>
     /// Calculates the EV's current position without mutating the live route.
     /// </summary>
     /// <param name="currentTime">The current time.</param>

@@ -102,14 +102,17 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     /// <returns>Returns the percentence that the EV should charge to.</returns>
     public readonly float CalcDesiredSoC(Time arrivalAtStation)
     {
-        var percentageCompleted = (arrivalAtStation - Journey.Current.Departure) / (double)Journey.Current.Duration;
-        var remainingDistanceKm = Journey.Current.DistanceKm * (1.0 - percentageCompleted);
+        if (Battery.MaxCapacityKWh == 0)
+            throw new InvalidOperationException($"Battery capacity must be greater than zero when calculating desired SoC (arrivalAtStation={arrivalAtStation}, {this})");
 
-        var energyToDest = EnergyForDistanceKWh((float)remainingDistanceKm);
+        var remainingDistanceKm = Journey.RemainingDistanceToDestination(arrivalAtStation);
+        var energyToDest = EnergyForDistanceKWh(remainingDistanceKm);
         var percentNeededToDestination = energyToDest / Battery.MaxCapacityKWh;
         var chargeToPercent = percentNeededToDestination + Preferences.MinAcceptableCharge;
-
-        return chargeToPercent > 1f ? 0.8f : chargeToPercent;
+        var desiredSoC = chargeToPercent > 1f ? 0.8f : chargeToPercent;
+        return float.IsFinite(desiredSoC)
+            ? Math.Clamp(desiredSoC, 0f, 1f)
+            : throw new InvalidOperationException($"Calculated desired SoC is not finite (desiredSoC={desiredSoC}, energyToDest={energyToDest}, remainingDistanceKm={remainingDistanceKm}, arrivalAtStation={arrivalAtStation}, {this})");
     }
 
     /// <summary>
@@ -117,7 +120,7 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     /// </summary>
     /// <param name="journey">The journey snapshot before the advance.</param>
     /// <param name="currentTime">The ending time of the interval which to calculate energy consumption.</param>
-    private void ConsumeEnergy(Core.Routing.CurrentJourney journey, Time currentTime)
+    private void ConsumeEnergy(CurrentJourney journey, Time currentTime)
     {
         if (journey.Duration.Seconds == 0)
             return;
