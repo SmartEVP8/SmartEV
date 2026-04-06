@@ -59,7 +59,7 @@ public class StationServiceTests
         // ev1 finishes — service should start ev2
         service.HandleEndCharging(firstEnd);
         Assert.Single(service.GetChargerState(chargerId: 1)!.Queue);
-
+        Assert.IsType<ArriveAtDestination>(scheduler.GetNextEvent());
         var secondEnd = AsEndCharging(scheduler.GetNextEvent());
         Assert.Equal(index2, secondEnd.EVId);
     }
@@ -87,6 +87,7 @@ public class StationServiceTests
         service.HandleEndCharging(ev1End);
 
         // ev2 rescheduled + ev3 newly scheduled
+        Assert.IsType<ArriveAtDestination>(scheduler.GetNextEvent());
         var nextA = AsEndCharging(scheduler.GetNextEvent());
         var nextB = AsEndCharging(scheduler.GetNextEvent());
         Assert.Empty(service.GetChargerState(chargerId: 1)!.Queue);

@@ -43,7 +43,7 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     /// </summary>
     /// <param name="currentTime">The simulation time to advance to.</param>
     /// <returns>The EV's current position after advancing.</returns>
-    public Position Advance(Time currentTime)
+    public readonly Position Advance(Time currentTime)
     {
         var previousJourney = Journey.Current;
         var currentPosition = Journey.AdvanceTo(currentTime);
@@ -59,10 +59,14 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     /// Whether the EV can complete its current journey and still have at least
     /// <paramref name="reserve"/> SoC remaining on arrival.
     /// </summary>
+    /// <param name="timeAtStation">Time spent at a station.</param>
     /// <param name="reserve">Minimum SoC required on arrival. Defaults to 0.1.</param>
     /// <returns>True if the EV can complete its current journey with the specified reserve; otherwise, false.</returns>
-    public readonly bool CanCompleteJourney(float reserve = 0.1f) =>
-        CanReach(Journey.Current.DistanceKm, reserve);
+    public readonly bool CanCompleteJourney(Time? timeAtStation = null, float reserve = 0.1f)
+    {
+        if (timeAtStation != null) Journey.UpdateRouteToDestination(timeAtStation.Value);
+        return CanReach(Journey.Current.DistanceKm, reserve);
+    }
 
     /// <summary>
     /// Whether the EV can reach a point <paramref name="distanceKm"/> away and still
@@ -117,7 +121,7 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     /// </summary>
     /// <param name="journey">The journey snapshot before the advance.</param>
     /// <param name="currentTime">The ending time of the interval which to calculate energy consumption.</param>
-    private void ConsumeEnergy(Core.Routing.CurrentJourney journey, Time currentTime)
+    private readonly void ConsumeEnergy(CurrentJourney journey, Time currentTime)
     {
         if (journey.Duration.Seconds == 0)
             return;
