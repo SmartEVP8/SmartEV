@@ -18,8 +18,7 @@ public class SingleChargingPoint(Connectors connectors) : ISingleChargingPoint
     /// <inheritdoc/>
     public double GetPowerOutput(double maxKW, double soc)
     {
-        var cap = Math.Min(maxKW, _connectors.ActivePowerKW);
-        return cap * ChargingCurve.PowerFraction(soc);
+        return maxKW * ChargingCurve.PowerFraction(soc);
     }
 
     /// <inheritdoc/>

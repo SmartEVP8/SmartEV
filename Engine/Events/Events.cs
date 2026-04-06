@@ -48,8 +48,5 @@ public record ArriveAtDestination(int EVId, Time Time) : Event(Time);
 // EV's are allocated up front and polled once their depature has been reached.
 public record SpawnEVS(Time Time) : Event(Time);
 
-// Spawn
-// Functionality:
-//  - Spawn an EV .
-// - Sample once from urgency to see if it needs to find a charger immediately.
+// Snapshot event for collecting metrics at regular intervals.
 public record SnapshotEvent(Time Time) : Event(Time);
