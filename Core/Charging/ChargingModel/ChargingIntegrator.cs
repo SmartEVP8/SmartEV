@@ -105,6 +105,8 @@ public sealed class ChargingIntegrator(uint stepSeconds)
         ConnectedEV ev,
         Time? runUntilSeconds)
     {
+        ValidateConnectedEV(ev);
+
         var soc = ev.CurrentSoC;
         var targetSoC = ev.TargetSoC;
         Time? finishTime = null;
@@ -171,6 +173,9 @@ public sealed class ChargingIntegrator(uint stepSeconds)
         ConnectedEV evB,
         Time? runUntilSeconds)
     {
+        ValidateConnectedEV(evA);
+        ValidateConnectedEV(evB);
+
         var socA = evA.CurrentSoC;
         var socB = evB.CurrentSoC;
         var targetSoC_A = evA.TargetSoC;
@@ -252,5 +257,14 @@ public sealed class ChargingIntegrator(uint stepSeconds)
             DurationSeconds: t,
             BSoCWhenAFinish: bSoCWhenAFinish ?? socB,
             ASoCWhenBFinish: aSoCWhenBFinish ?? socA);
+    }
+
+    private static void ValidateConnectedEV(ConnectedEV ev)
+    {
+        if (!double.IsFinite(ev.CurrentSoC) || ev.CurrentSoC is < 0 or > 1)
+            throw new ArgumentOutOfRangeException(nameof(ev), $"EV {ev.EVId} has invalid CurrentSoC={ev.CurrentSoC}. Expected finite value in [0,1].");
+
+        if (!double.IsFinite(ev.TargetSoC) || ev.TargetSoC is < 0 or > 1)
+            throw new ArgumentOutOfRangeException(nameof(ev), $"EV {ev.EVId} has invalid TargetSoC={ev.TargetSoC}. Expected finite value in [0,1].");
     }
 }
