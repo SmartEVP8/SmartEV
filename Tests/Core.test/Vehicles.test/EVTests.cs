@@ -48,4 +48,22 @@ public class EVTests
         Assert.False(float.IsInfinity(desired));
         Assert.InRange(desired, 0f, 1f);
     }
+
+    [Fact]
+    public void CalcDesiredSoC_ZeroBatteryCapacity_Throws()
+    {
+        var battery = new Battery(0, 100, 0.5f, Socket.CCS2);
+        var preferences = new Preferences(1f, 0.1f, 10.0f);
+        var waypoints = new List<Position>
+        {
+            new(0, 0),
+            new(1, 0),
+        };
+        var journey = new Journey(departure: 0, duration: 100, distanceMeters: 1_000, waypoints);
+        var ev = new EV(battery, preferences, journey, 150);
+
+        var ex = Assert.Throws<InvalidOperationException>(() => ev.CalcDesiredSoC(arrivalAtStation: 10));
+        Assert.Contains("Battery capacity", ex.Message);
+    }
+
 }
