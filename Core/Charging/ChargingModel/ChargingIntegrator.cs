@@ -29,6 +29,9 @@ public record ConnectedEV(
 /// <param name="DurationSeconds">Wall time covered by this integration run.</param>
 /// <param name="BSoCWhenAFinish">SoC of B at the moment A finished (or final SocB if A never finished first).</param>
 /// <param name="ASoCWhenBFinish">SoC of A at the moment B finished (or final SocA if B never finished first).</param>
+/// <param name="StepSeconds">The time step used for this integration run.</param>
+/// <param name="CumulativeEnergyA">Cummulative energy delivered to A at each step of the integration run.</param>
+/// <param name="CumulativeEnergyB">Cummulative energy delivered to B at each step of the integration run.</param>
 public record IntegrationResult(
     double SocA,
     double SocB,
@@ -39,25 +42,16 @@ public record IntegrationResult(
     double WastedEnergyKWh,
     double DurationSeconds,
     double ASoCWhenBFinish,
-    double BSoCWhenAFinish
+    double BSoCWhenAFinish,
+    uint StepSeconds,
+    List<double> CumulativeEnergyA,
+    List<double> CumulativeEnergyB
     )
 {
     /// <summary>
     /// Gets the total energy delivered to both cars during this run.
     /// </summary>
     public double TotalEnergyKWh { get; } = EnergyDeliveredKWhA + EnergyDeliveredKWhB;
-
-    /// <summary>
-    /// Returns the utilization of the charger.
-    /// </summary>
-    /// <param name="maxKW">The maximum power output of the charger in kilowatts.</param>
-    /// <returns>The utilization as a value between 0.0 and 1.0.</returns>
-    public double Utilization(double maxKW)
-    {
-        if (DurationSeconds <= 0) return 0.0;
-        var maxPossibleKWh = maxKW * (DurationSeconds / 3600.0);
-        return TotalEnergyKWh / maxPossibleKWh;
-    }
 }
 
 /// <summary>
@@ -109,6 +103,7 @@ public sealed class ChargingIntegrator(uint stepSeconds)
         var targetSoC = ev.TargetSoC;
         Time? finishTime = null;
         var energy = 0.0;
+        var cummulativeA = new List<double> { 0.0 };
         var wastedEnergy = 0.0;
         Time t = 0;
 
@@ -147,6 +142,7 @@ public sealed class ChargingIntegrator(uint stepSeconds)
                 }
             }
 
+            cummulativeA.Add(energy);
             t += step;
         }
 
@@ -160,7 +156,10 @@ public sealed class ChargingIntegrator(uint stepSeconds)
             WastedEnergyKWh: wastedEnergy,
             DurationSeconds: t,
             BSoCWhenAFinish: 0.0,
-            ASoCWhenBFinish: 0.0);
+            ASoCWhenBFinish: 0.0,
+            StepSeconds: _stepSeconds,
+            CumulativeEnergyA: cummulativeA,
+            CumulativeEnergyB: []);
     }
 
     private IntegrationResult IntegrateDual(
@@ -179,6 +178,8 @@ public sealed class ChargingIntegrator(uint stepSeconds)
         Time? finishB = null;
         var energyA = 0.0;
         var energyB = 0.0;
+        var cummulativeA = new List<double> { 0.0 };
+        var cummulativeB = new List<double> { 0.0 };
         var wastedEnergy = 0.0;
         double? bSoCWhenAFinish = null;
         double? aSoCWhenBFinish = null;
@@ -238,6 +239,8 @@ public sealed class ChargingIntegrator(uint stepSeconds)
             }
 
             wastedEnergy += (maxKW * stepHours) - (deliveredA + deliveredB);
+            cummulativeA.Add(energyA);
+            cummulativeB.Add(energyB);
             t += step;
         }
 
@@ -251,6 +254,9 @@ public sealed class ChargingIntegrator(uint stepSeconds)
             WastedEnergyKWh: wastedEnergy,
             DurationSeconds: t,
             BSoCWhenAFinish: bSoCWhenAFinish ?? socB,
-            ASoCWhenBFinish: aSoCWhenBFinish ?? socA);
+            ASoCWhenBFinish: aSoCWhenBFinish ?? socA,
+            StepSeconds: _stepSeconds,
+            CumulativeEnergyA: cummulativeA,
+            CumulativeEnergyB: cummulativeB);
     }
 }

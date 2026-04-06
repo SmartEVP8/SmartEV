@@ -1,6 +1,7 @@
-namespace Engine.Events;
+namespace Engine;
 
 using Core.Shared;
+using Engine.Events;
 
 /// <summary>
 /// The Simulation class is responsible for running the simulation by continuously fetching and
@@ -24,6 +25,7 @@ public class Simulation(
         Console.WriteLine("Starting Simulation");
         scheduler.ScheduleEvent(new SpawnEVS(0));
         scheduler.ScheduleEvent(new CheckAndUpdateAllEVs(0));
+        scheduler.ScheduleEvent(new SnapshotEvent(0));
         while (true)
         {
             await HandleNextEvent();

@@ -1,39 +1,37 @@
 namespace Engine.Events;
 
 using Engine.Metrics;
-using Engine.Services;
 using Engine.Metrics.Snapshots;
+using Engine.Services;
 using Core.Shared;
-using Core.Charging;
-using Engine.Vehicles;
 
 /// <summary>
-/// Handles the <see cref="SnapshotEvent"/> by collecting metrics for all stations
-/// and rescheduling itself one hour later for the duration of the simulation.
+/// Handles the <see cref="SnapshotEvent"/> by collecting metrics for all metrics
+/// and rescheduling itself one rescheduling time later.
 /// </summary>
 public class SnapshotEventHandler(
     Time rescheduleTime,
-    Dictionary<ushort, Station> stations,
+    StationService stationService,
     MetricsService metrics,
     EventScheduler scheduler)
 {
     /// <summary>
     /// Iterates over all stations, collects a <see cref="StationSnapshotMetric"/> for each,
-    /// Iterates over all stations, collects a <see cref="StationSnapshotMetric"/> for each,
     /// records them via the <see cref="MetricsService"/>, then reschedules the next
-    /// snapshot one hour later.
+    /// snapshot.
+    /// Also collects an <see cref="EVSnapshotMetric"/>.
     /// </summary>
     /// <param name="e">The snapshot event containing the station list, metrics service,
     /// scheduler, and power delivery.</param>
     public void Handle(SnapshotEvent e)
     {
-        foreach (var station in stations.Values)
-        {
-            var metric = StationSnapshotMetric.Collect(
-                station,
-                e.Time);
-            metrics.RecordStationSnapshot(metric);
-        }
+        var (chargerMetrics, stationMetrics) = stationService.CollectAllSnapshots(e.Time);
+
+        foreach (var stationMetric in stationMetrics)
+            metrics.RecordStationSnapshot(stationMetric);
+
+        foreach (var chargerMetric in chargerMetrics)
+            metrics.RecordChargerSnapshot(chargerMetric);
 
         scheduler.ScheduleEvent(new SnapshotEvent(e.Time + rescheduleTime));
     }

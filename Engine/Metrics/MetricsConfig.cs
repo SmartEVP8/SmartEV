@@ -17,6 +17,9 @@ public sealed class MetricsConfig
     /// <summary>Gets a value indicating whether station snapshots are recorded.</summary>
     public bool RecordStationSnapshots { get; init; }
 
+    /// <summary>Gets a value indicating whether charger snapshots are recorded.</summary>
+    public bool RecordChargerSnapshots { get; init; }
+
     /// <summary> Gets a value indicating whether reservation events are recorded. </summary>
     public bool RecordReservations { get; init; }
 

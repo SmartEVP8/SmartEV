@@ -1,5 +1,6 @@
 namespace Headless;
 
+using Engine;
 using Engine.Cost;
 using Engine.Events;
 using Engine.Grid;
@@ -46,6 +47,7 @@ public static class Program
                 RecordCarSnapshots = true,
                 RecordArrivals = true,
                 RecordStationSnapshots = true,
+                RecordChargerSnapshots = true,
             },
 
             Seed = new Random(42),
@@ -69,14 +71,14 @@ public static class Program
 
             SimulationEndTime = 10000 * 60,
 
-            SnapshotInterval = 1000 * 60,
+            SnapshotInterval = 20 * 60,
 
             EVDistributionWindowsSize = 1 * 60,
 
             EVSpawnFraction = 0.10f,
 
             PopulationScaler = 0.7f,
-            
+
             DistanceScaler = 1.7f,
 
             EnergyPricesPath = new FileInfo(Path.Combine(dataPath.FullName, "energy_prices.csv")),

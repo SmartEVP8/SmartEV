@@ -83,16 +83,14 @@ public static class TestData
     }
 
     public static SnapshotEventHandler SnapshotHandler(
+        StationService stationService,
         MetricsService metrics,
-        EventScheduler scheduler,
-        Dictionary<ushort, Station> stations)
-    {
-        return new(
-            rescheduleTime: new Time(3600),
-            stations: stations,
+        EventScheduler scheduler) =>
+        new(
+            rescheduleTime: new Time(1200),
+            stationService: stationService,
             metrics: metrics,
             scheduler: scheduler);
-    }
 
     public static Station Station(
         ushort id,
@@ -211,7 +209,8 @@ public static class TestData
             evStore: evStore,
             applyNewPath: new ApplyNewPath(OSRMRouter),
             metrics: metrics,
-            snapshotHandler: SnapshotHandler(metrics, scheduler, stations));
+            snapshotInterval: new Time(1200),
+            bypassArrivalHandling: false);
     }
 
     internal sealed class FixedEnergyPrices(float fixedPrice) : EnergyPrices(new FileInfo("data/energy_prices.csv"), new Random(42))

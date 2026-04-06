@@ -60,16 +60,8 @@ public record CheckAndUpdateAllEVs(Time Time) : Event(Time);
 // EV's are allocated up front and polled once their depature has been reached.
 public record SpawnEVS(Time Time) : Event(Time);
 
-// Functionality:
-// - Checks if an EV should look for Stations
+// Checks the urgency of an EV.
 public record CheckUrgency(int EVId, Time Time) : Event(Time);
 
-// Spawn
-// Functionality:
-//  - Spawn an EV .
-// - Sample once from urgency to see if it needs to find a charger immediately.
+// Snapshot event for collecting metrics at regular intervals.
 public record SnapshotEvent(Time Time) : Event(Time);
-
-// Check urgency
-// Functionality:
-//  - Method that checks the urgency for an interval that is based on some car SoC, like every 10% or so.
