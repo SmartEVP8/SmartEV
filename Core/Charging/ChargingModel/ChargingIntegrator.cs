@@ -142,6 +142,7 @@ public sealed class ChargingIntegrator(uint stepSeconds)
                 }
             }
 
+            cummulativeA.Add(energy);
             t += step;
         }
 

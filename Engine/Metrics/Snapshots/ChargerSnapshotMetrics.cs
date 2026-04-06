@@ -25,9 +25,9 @@ public record ChargerSnapshotMetric
     required public int ChargerId { get; init; }
 
     /// <summary>
-    /// Gets the maximum power capacity of this charger in kW.
+    /// Gets the maximum power capacity of this charger in kWh.
     /// </summary>
-    required public float MaxKW { get; init; }
+    required public float MaxKWh { get; init; }
 
     /// <summary>
     /// Gets the maximum number of EVs queued at this charger during the snapshot window.
@@ -53,7 +53,7 @@ public record ChargerSnapshotMetric
     /// <summary>
     /// Gets the remaining energy required by all cars currently at this charger to hit their Target SoC.
     /// </summary>
-    required public float TargetEVDemandKWh { get; init; }
+    required public float TargetEVDemandKW { get; init; }
 
     /// <summary>
     /// Collects a snapshot from a charger at the given simulation time.
@@ -64,19 +64,19 @@ public record ChargerSnapshotMetric
     /// <param name="queueSize">The current queue size for this charger in runtime state.</param>
     /// <param name="utilization">The charger utilization in range [0, 1].</param>
     /// <param name="deliveredKW">The maximum power delivered by this charger during the snapshot window in kW.</param>
-    /// <param name="targetEVDemandKWh">The remaining energy required by all cars currently at this charger to hit their Target SoC.</param>
+    /// <param name="targetEVDemandKW">The remaining energy required by all cars currently at this charger to hit their Target SoC.</param>
     /// <returns>A snapshot metric for the specified charger at the provided simulation time.</returns>
-    public static ChargerSnapshotMetric Collect(ChargerBase charger, ushort stationId, Time simTime, int queueSize, float utilization, float deliveredKW, float targetEVDemandKWh) =>
+    public static ChargerSnapshotMetric Collect(ChargerBase charger, ushort stationId, Time simTime, int queueSize, float utilization, float deliveredKW, float targetEVDemandKW) =>
         new()
         {
             SimTime = (uint)simTime,
             StationId = stationId,
             ChargerId = charger.Id,
-            MaxKW = charger.MaxPowerKW,
+            MaxKWh = charger.MaxPowerKW,
             QueueSize = queueSize,
             Utilization = utilization,
             DeliveredKW = deliveredKW,
             IsDual = charger is DualCharger,
-            TargetEVDemandKWh = targetEVDemandKWh,
+            TargetEVDemandKW = targetEVDemandKW,
         };
 }
