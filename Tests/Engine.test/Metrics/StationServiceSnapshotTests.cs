@@ -5,39 +5,10 @@ using Core.Shared;
 using Engine.Events;
 using Engine.test.Builders;
 using Engine.Vehicles;
+using Engine.Metrics.Snapshots;
+using Engine.Services;
 public class StationServiceSnapshotTests
 {
-    [Fact]
-    public void CollectChargerSnapshots_CapturesWindowActivity_EvenWhenIdleAtTick()
-    {
-        var scheduler = new EventScheduler();
-        var evStore = new EVStore(5);
-        var charger = TestData.SingleCharger(1, maxPowerKW: 120);
-        var station = TestData.Station(1, chargers: [charger]);
-        var stations = new Dictionary<ushort, Station> { [1] = station };
-        var service = TestData.StationService(stations, scheduler, evStore);
-
-        evStore.TryAllocate(
-        (_, ref e) =>
-        {
-            e = TestData.EV();
-            e.Battery.StateOfCharge = 0.1f;
-        }, out var evId);
-
-        service.HandleArrivalAtStation(new ArriveAtStation(evId, 1, 1.0, new Time(0)));
-        var endChargingEvent = scheduler.GetNextEvent() as EndCharging;
-
-        Assert.NotNull(endChargingEvent);
-
-        service.HandleEndCharging(endChargingEvent);
-        var snapshotTime = endChargingEvent.Time + 60;
-        var (chargerSnapshots, _) = service.CollectAllSnapshots(snapshotTime);
-        var snapshots = chargerSnapshots.ToList();
-
-        Assert.Single(snapshots);
-        Assert.Equal(1, snapshots[0].ChargerId);
-    }
-
     [Fact]
     public void CollectAllSnapshots_CapturesAndResetsStationCounters()
     {
@@ -73,5 +44,60 @@ public class StationServiceSnapshotTests
 
         Assert.Equal(0u, nextMetric.Reservations);
         Assert.Equal(0u, nextMetric.Cancellations);
+    }
+
+    [Theory]
+    [InlineData(120, 60.0, 0.5f)] // 120kW charger, 60kWh delivered in 1 hr = 50% utilization
+    [InlineData(150, 150.0, 1.0f)] // 150kW charger, 150kWh delivered in 1 hr = 100% utilization
+    [InlineData(50, 0.0, 0.0f)] // 50kW charger, 0kWh delivered in 1 hr = 0% utilization
+    public void Collect_CalculatesUtilizationAndAggregatesCorrectly(
+            int chargerMaxKw,
+            double deliveredKwh,
+            float expectedUtilization)
+    {
+        var snapshotInterval = new Time(3600);
+        var collector = new StationMetricsCollector(snapshotInterval);
+
+        var expectedQueueSize = 2;
+        var expectedReservations = 5u;
+        var expectedCancellations = 1u;
+
+        var charger = TestData.SingleCharger(1, maxPowerKW: chargerMaxKw);
+        var station = TestData.Station(1, chargers: [charger]);
+
+        var chargerState = new ChargerState(charger, 1)
+        {
+            Window = new ChargerWindow
+            {
+                DeliveredKWh = deliveredKwh,
+                HadActivity = deliveredKwh > 0,
+            },
+        };
+
+        for (var i = 0; i < expectedQueueSize; i++)
+        {
+            chargerState.Queue.Enqueue((i, TestData.ConnectedEV(i, 0.2, 0.8)));
+        }
+
+        var stationChargers = new Dictionary<ushort, List<ChargerState>> { [1] = [chargerState] };
+        var stationIndex = new Dictionary<ushort, Station> { [1] = station };
+        var windowReservations = new Dictionary<ushort, uint> { [1] = expectedReservations };
+        var windowCancellations = new Dictionary<ushort, uint> { [1] = expectedCancellations };
+
+        var (chargers, stations) = collector.Collect(
+            new Time(3600), stationChargers, stationIndex, windowReservations, windowCancellations);
+
+        var cs = chargers.Single();
+        var ss = stations.Single();
+
+        Assert.Equal(deliveredKwh, cs.DeliveredKW);
+        Assert.Equal(expectedUtilization, cs.Utilization);
+        Assert.Equal(expectedQueueSize, cs.QueueSize);
+
+        Assert.Equal(deliveredKwh, ss.TotalDeliveredKWh);
+        Assert.Equal(chargerMaxKw, ss.TotalMaxKWh);
+        Assert.Equal(expectedQueueSize, ss.TotalQueueSize);
+        Assert.Equal(expectedReservations, ss.Reservations);
+        Assert.Equal(expectedCancellations, ss.Cancellations);
     }
 }
