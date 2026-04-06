@@ -1,18 +1,8 @@
-using Smartev.Api.V1;
+using Protocol;
 
-/// <summary>
-/// Manages simulation state. This is a placeholder for integration with Engine/Core.
-/// TODO: Wire this to the actual simulation engine.
-/// </summary>
-public interface ISimulationStateService
-{
-    void SetInitializationData(InitData initData);
-    InitData? GetInitializationData();
-    void UpdateSnapshot(SimulationSnapshot snapshot);
-    SimulationSnapshot? GetLatestSnapshot();
-}
+namespace API.Services;
 
-public class SimulationStateService(ILogger<SimulationStateService> logger) : ISimulationStateService
+public partial class SimulationStateService(ILogger<SimulationStateService> logger) : ISimulationStateService
 {
     private InitData? _initializationData;
     private SimulationSnapshot? _latestSnapshot;
@@ -52,11 +42,7 @@ public class SimulationStateService(ILogger<SimulationStateService> logger) : IS
         try
         {
             _latestSnapshot = snapshot;
-            if (_logger.IsEnabled(LogLevel.Debug))
-            {
-                _logger.LogDebug("Snapshot updated: {TotalEVs} EVs, {TotalCharging} charging",
-                    snapshot.TotalEvs, snapshot.TotalCharging);
-            }
+            LogSnapshotUpdated(snapshot.TotalEvs, snapshot.TotalCharging);
         }
         finally
         {
@@ -76,4 +62,7 @@ public class SimulationStateService(ILogger<SimulationStateService> logger) : IS
             _lockObject.ExitReadLock();
         }
     }
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Snapshot updated: {TotalEVs} EVs, {TotalCharging} charging")]
+    private partial void LogSnapshotUpdated(uint totalEvs, uint totalCharging);
 }

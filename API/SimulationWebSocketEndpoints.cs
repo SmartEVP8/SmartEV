@@ -2,7 +2,7 @@ namespace API;
 
 using API.Services;
 using System.Net.WebSockets;
-using Smartev.Api.V1;
+using Protocol;
 
 /// <summary>
 /// Defines WebSocket endpoints for the simulation protocol.

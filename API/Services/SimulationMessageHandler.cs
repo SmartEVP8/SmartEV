@@ -1,30 +1,13 @@
-using Google.Protobuf;
-using Google.Protobuf.Collections;
-using Smartev.Api.V1;
+using Protocol;
 
 namespace API.Services;
 
-/// <summary>
-/// Processes simulation protocol messages and generates appropriate responses.
-/// </summary>
-public interface IEnvelopeMessageHandler
+public class SimulationMessageHandler(
+    ISimulationStateService stateService,
+    ILogger<SimulationMessageHandler> logger) : IEnvelopeMessageHandler
 {
-    Task<Envelope> HandleInitRequestAsync(InitRequest request, CancellationToken cancellationToken);
-    Task<Envelope> HandleGetSnapshotRequestAsync(GetSnapshotRequest request, CancellationToken cancellationToken);
-}
-
-public class SimulationMessageHandler : IEnvelopeMessageHandler
-{
-    private readonly ISimulationStateService _stateService;
-    private readonly ILogger<SimulationMessageHandler> _logger;
-
-    public SimulationMessageHandler(
-        ISimulationStateService stateService,
-        ILogger<SimulationMessageHandler> logger)
-    {
-        _stateService = stateService;
-        _logger = logger;
-    }
+    private readonly ISimulationStateService _stateService = stateService;
+    private readonly ILogger<SimulationMessageHandler> _logger = logger;
 
     public async Task<Envelope> HandleInitRequestAsync(InitRequest request, CancellationToken cancellationToken)
     {
@@ -89,7 +72,7 @@ public class SimulationMessageHandler : IEnvelopeMessageHandler
         }
     }
 
-    private Envelope CreateErrorResponse(uint code, string message)
+    private static Envelope CreateErrorResponse(uint code, string message)
     {
         return new Envelope
         {

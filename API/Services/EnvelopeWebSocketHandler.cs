@@ -1,6 +1,6 @@
 using System.Net.WebSockets;
 using Google.Protobuf;
-using Smartev.Api.V1;
+using Protocol;
 
 namespace API.Services;
 
@@ -8,7 +8,7 @@ namespace API.Services;
 /// Handles binary protobuf-based WebSocket communication.
 /// For single-client sequential model, just handles serialization/deserialization.
 /// </summary>
-public class EnvelopeWebSocketHandler(
+public partial class EnvelopeWebSocketHandler(
     ILogger<EnvelopeWebSocketHandler> logger)
 {
     private readonly ILogger<EnvelopeWebSocketHandler> _logger = logger;
@@ -27,11 +27,14 @@ public class EnvelopeWebSocketHandler(
                 true,
                 cancellationToken);
 
-            _logger.LogDebug("Sent envelope: {PayloadCase}", envelope.PayloadCase);
+            LogEnvelopeSent(envelope.PayloadCase);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error sending envelope");
         }
     }
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Sent envelope: {PayloadCase}")]
+    private partial void LogEnvelopeSent(Envelope.PayloadOneofCase payloadCase);
 }
