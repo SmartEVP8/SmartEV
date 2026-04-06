@@ -221,6 +221,13 @@ public class StationService : IStationService
     /// <inheritdoc/>
     public void HandleArrivalAtStation(ArriveAtStation e)
     {
+        if (_bypassArrivalHandling)
+        {
+            // TODO: Remove this temporary bypass once the new station-arrival system is in place.
+            _eVStore.Free(e.EVId);
+            return;
+        }
+
         var ev = _eVStore.Get(e.EVId);
         if (!_stationChargers.TryGetValue(e.StationId, out var chargers))
             return;
