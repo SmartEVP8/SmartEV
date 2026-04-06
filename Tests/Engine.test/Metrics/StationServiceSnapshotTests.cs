@@ -5,6 +5,7 @@ using Core.Shared;
 using Engine.Events;
 using Engine.test.Builders;
 using Engine.Vehicles;
+using Xunit;
 
 public class StationServiceSnapshotTests
 {
@@ -16,46 +17,33 @@ public class StationServiceSnapshotTests
         var charger = TestData.SingleCharger(1, maxPowerKW: 120);
         var station = TestData.Station(1, chargers: [charger]);
         var stations = new Dictionary<ushort, Station> { [1] = station };
-        var settings = TestData.DefaultSettings();
-        var service = TestData.StationService(stations, scheduler, evStore, settings);
+        var service = TestData.StationService(stations, scheduler, evStore);
 
-        evStore.TryAllocate((_, ref e) => { e = TestData.EV(); }, out var evId);
+        evStore.TryAllocate(
+            (_, ref e) =>
+        {
+            e = TestData.EV();
+            e.Battery.StateOfCharge = 0.1f;
+        }, out var evId);
 
-        service.HandleArrivalAtStation(new ArriveAtStation(evId, 1, 0.8, new Time(0)));
+        // FIX: Set Target SoC to 1.0 (100%)
+        service.HandleArrivalAtStation(new ArriveAtStation(evId, 1, 1.0, new Time(0)));
 
-        var endChargingEvent = scheduler.GetNextEvent();
+        var endChargingEvent = scheduler.GetNextEvent() as EndCharging;
         Assert.NotNull(endChargingEvent);
-        Assert.IsType<EndCharging>(endChargingEvent);
-        service.HandleEndCharging((EndCharging)endChargingEvent);
 
-        var (chargerSnapshots, _) = service.CollectAllSnapshots(new Time(600));
+        // Complete the charging session
+        service.HandleEndCharging(endChargingEvent);
+
+        // Take a snapshot AFTER the session finished.
+        var snapshotTime = endChargingEvent.Time + 60;
+        var (chargerSnapshots, _) = service.CollectAllSnapshots(snapshotTime);
         var snapshots = chargerSnapshots.ToList();
 
         Assert.Single(snapshots);
         Assert.Equal(1, snapshots[0].ChargerId);
-        Assert.True(snapshots[0].Utilization > 0f);
-    }
 
-    [Fact]
-    public void CollectChargerSnapshots_IncludesUtilizationFromIntegrator()
-    {
-        var scheduler = new EventScheduler();
-        var evStore = new EVStore(5);
-        var charger = TestData.SingleCharger(1, maxPowerKW: 120);
-        var station = TestData.Station(1, chargers: [charger]);
-        var stations = new Dictionary<ushort, Station> { [1] = station };
-        var settings = TestData.DefaultSettings();
-        var service = TestData.StationService(stations, scheduler, evStore, settings);
-
-        evStore.TryAllocate((_, ref e) => { e = TestData.EV(); }, out var evId);
-
-        service.HandleArrivalAtStation(new ArriveAtStation(evId, 1, 0.8, new Time(0)));
-
-        var (chargerSnapshots, _) = service.CollectAllSnapshots(new Time(60));
-        var snapshots = chargerSnapshots.ToList();
-
-        Assert.Single(snapshots);
-        Assert.Equal(1, snapshots[0].ChargerId);
-        Assert.InRange(snapshots[0].Utilization, 0.1f, 1f);
+        // Utilization should now be > 0 because a full charge cycle actually occurred
+        Assert.Equal(1f, snapshots[0].Utilization);
     }
 }

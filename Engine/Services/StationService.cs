@@ -11,7 +11,6 @@ using Engine.Utils;
 using Engine.Metrics;
 using Engine.Metrics.Events;
 using Engine.Metrics.Snapshots;
-using Engine.Init;
 
 /// <summary>
 /// Tracks an active charging session at one side of a charger.
@@ -97,6 +96,7 @@ public class ChargerState(ChargerBase charger, ushort stationId)
     /// <summary>
     /// Accumulates exact energy using the pre-calculated charging curve trajectory.
     /// </summary>
+    /// <param name="simNow">The current simulation time to accumulate energy up to.</param>
     public void AccumulateEnergy(Time simNow)
     {
         if (simNow <= LastEnergyUpdateTime || LastResult is null) return;
@@ -147,7 +147,7 @@ public class StationService : IStationService
     private readonly EVStore _eVStore;
     private readonly ApplyNewPath _applyNewPath;
     private readonly MetricsService _metrics;
-    private readonly EngineSettings _settings;
+    private readonly Time _snapshotInterval;
     private readonly bool _bypassArrivalHandling;
 
     /// <summary>
@@ -159,7 +159,7 @@ public class StationService : IStationService
     /// <param name="evStore">The storage of current EV's.</param>
     /// <param name="applyNewPath">The path deviator to use for calculating route deviations through charging stations.</param>
     /// <param name="metrics">The metrics service to use for recording metrics.</param>
-    /// <param name="settings">The engine settings containing configuration options.</param>
+    /// <param name="snapshotInterval">The interval at which to collect snapshots.</param>
     /// <param name="bypassArrivalHandling">If true, arriving EVs are freed immediately instead of entering charger queues.</param>
     public StationService(
         ICollection<Station> stations,
@@ -168,7 +168,7 @@ public class StationService : IStationService
         EVStore evStore,
         ApplyNewPath applyNewPath,
         MetricsService metrics,
-        EngineSettings settings,
+        Time snapshotInterval,
         bool bypassArrivalHandling = false)
     {
         _integrator = integrator;
@@ -176,8 +176,7 @@ public class StationService : IStationService
         _eVStore = evStore;
         _applyNewPath = applyNewPath;
         _metrics = metrics;
-        _settings = settings;
-        _snapshotHandler = snapshotHandler;
+        _snapshotInterval = snapshotInterval;
         _bypassArrivalHandling = bypassArrivalHandling;
 
         foreach (var station in stations)
@@ -247,7 +246,7 @@ public class StationService : IStationService
                     targetEVDemandKWh += (float)Math.Max(0, (ev.TargetSoC - ev.CurrentSoC) * ev.CapacityKWh);
                 }
 
-                var snapshotDurationHours = _settings.SnapshotInterval / 3600f;
+                var snapshotDurationHours = _snapshotInterval / 3600f;
                 var maxPossibleKWh = state.Charger.MaxPowerKW * snapshotDurationHours;
                 var utilizationInWindow = maxPossibleKWh > 0
                     ? Math.Clamp(deliveredKWhInWindow / maxPossibleKWh, 0f, 1f)
@@ -321,8 +320,13 @@ public class StationService : IStationService
         }
 
         _windowReservations[e.StationId] = _windowReservations.GetValueOrDefault(e.StationId) + 1;
-        ev.HasReservationAtStationId = e.StationId;
+        station.IncrementReservations(); // FIX: Update persistent station counter
+
+        // FIX: Calculate the new path BEFORE overwriting the reservation ID
+        // so the routing engine can correctly detach the old path if one existed.
         _applyNewPath.ApplyNewPathToEV(ref ev, station, e.Time);
+        ev.HasReservationAtStationId = e.StationId;
+
         _scheduler.ScheduleEvent(
             new ArriveAtStation(e.EVId, e.StationId, ev.CalcDesiredSoC(e.Time + e.DurationToStation), e.Time + e.DurationToStation));
     }
@@ -339,6 +343,7 @@ public class StationService : IStationService
             return;
 
         _windowCancellations[e.StationId] = _windowCancellations.GetValueOrDefault(e.StationId) + 1;
+        station.IncrementCancellations();
 
         if (ev.HasReservationAtStationId != null)
         {
@@ -359,13 +364,12 @@ public class StationService : IStationService
     /// <param name="e">The arrival event.</param>
     public void HandleArrivalAtStation(ArriveAtStation e)
     {
-        if (_bypassArrivalHandling)
-        {
-            // TODO: Remove this temporary bypass once the new station-arrival system is in place.
-            _eVStore.Free(e.EVId);
-            return;
-        }
-
+        // if (_bypassArrivalHandling)
+        // {
+        //     // TODO: Remove this temporary bypass once the new station-arrival system is in place.
+        //     _eVStore.Free(e.EVId);
+        //     return; 
+        // }
         var ev = _eVStore.Get(e.EVId);
         if (!_stationChargers.TryGetValue(e.StationId, out var chargers))
             return;

@@ -2,7 +2,6 @@ namespace Engine.test.Services;
 
 using Core.Shared;
 using Core.Charging;
-using Core.Charging.ChargingModel;
 using Engine.Events;
 using Engine.Services;
 using Engine.test.Builders;
@@ -105,8 +104,7 @@ public class StationServiceTests
         var scheduler = new EventScheduler();
         var evStore = new EVStore(1);
         var stations = TestData.Stations((1, 5.0, 5.0));
-        var settings = TestData.DefaultSettings();
-        var service = TestData.StationService(stations, scheduler, evStore, settings);
+        var service = TestData.StationService(stations, scheduler, evStore);
 
         var ev = TestData.EV();
         evStore.Set(0, ref ev);
@@ -122,8 +120,7 @@ public class StationServiceTests
         var scheduler = new EventScheduler();
         var evStore = new EVStore(1);
         var stations = TestData.Stations((1, 1.0, 1.0), (2, 2.0, 2.0));
-        var settings = TestData.DefaultSettings();
-        var service = TestData.StationService(stations, scheduler, evStore, settings);
+        var service = TestData.StationService(stations, scheduler, evStore);
 
         var ev = TestData.EV();
         ev.HasReservationAtStationId = 1;
@@ -155,8 +152,7 @@ public class StationServiceTests
         var scheduler = new EventScheduler();
         var stations = new Dictionary<ushort, Station> { [1] = station };
         var evStore = new EVStore(10);
-        var settings = TestData.DefaultSettings();
-        var service = TestData.StationService(stations, scheduler, evStore, settings);
+        var service = TestData.StationService(stations, scheduler, evStore);
         return (service, scheduler, evStore);
     }
 
@@ -167,8 +163,7 @@ public class StationServiceTests
         var stations = new Dictionary<ushort, Station> { [1] = station };
         var scheduler = new EventScheduler();
         var evStore = new EVStore(10);
-        var settings = TestData.DefaultSettings();
-        var service = TestData.StationService(stations, scheduler, evStore, settings);
+        var service = TestData.StationService(stations, scheduler, evStore);
         return (service, scheduler, evStore);
     }
 

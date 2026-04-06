@@ -164,7 +164,7 @@ public static class Init
             var applyNewPath = sp.GetRequiredService<ApplyNewPath>();
             var metrics = sp.GetRequiredService<MetricsService>();
             var settings = sp.GetRequiredService<EngineSettings>();
-            return new StationService(stations.Values, integrator, scheduler, evStore, applyNewPath, metrics, settings, bypassArrivalHandling: true);
+            return new StationService(stations.Values, integrator, scheduler, evStore, applyNewPath, metrics, settings.SnapshotInterval, bypassArrivalHandling: true);
         });
 
         services.AddSingleton(sp =>

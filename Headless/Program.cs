@@ -71,14 +71,14 @@ public static class Program
 
             SimulationEndTime = 10000 * 60,
 
-            SnapshotInterval = 60 * 60,
+            SnapshotInterval = 10 * 60,
 
             EVDistributionWindowsSize = 1 * 60,
 
             EVSpawnFraction = 0.10f,
 
             PopulationScaler = 0.7f,
-            
+
             DistanceScaler = 1.7f,
 
             EnergyPricesPath = new FileInfo(Path.Combine(dataPath.FullName, "energy_prices.csv")),
