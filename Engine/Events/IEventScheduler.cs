@@ -5,7 +5,6 @@ using Core.Shared;
 /// <summary>
 /// Interface for scheduling events in the simulation.
 /// </summary>
-///
 public interface IEventScheduler
 {
     /// <summary>

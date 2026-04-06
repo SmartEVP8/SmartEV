@@ -91,7 +91,10 @@ public class StationService : IStationService
     }
 
     /// <summary>
-    /// Collects all snapshots for the given simulation time.
+    /// Handles a reservation request from an EV to a station.
+    /// If the EV already has an active reservation, the existing arrival event is cancelled before proceeding.
+    /// Calculates the detoured path through the station, updates the EV's journey, and schedules a new
+    /// arrival event.
     /// </summary>
     /// <param name="simNow">The current simulation time.</param>
     /// <returns>A tuple containing the charger and station snapshots.</returns>
