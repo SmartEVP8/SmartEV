@@ -3,7 +3,6 @@ namespace Engine.test.Metrics;
 using Core.Charging;
 using Core.Shared;
 using Engine.Events;
-using Engine.Services;
 using Engine.test.Builders;
 using Engine.Vehicles;
 
@@ -17,7 +16,8 @@ public class StationServiceSnapshotTests
         var charger = TestData.SingleCharger(1, maxPowerKW: 120);
         var station = TestData.Station(1, chargers: [charger]);
         var stations = new Dictionary<ushort, Station> { [1] = station };
-        var service = TestData.StationService(stations, scheduler, evStore);
+        var settings = TestData.DefaultSettings();
+        var service = TestData.StationService(stations, scheduler, evStore, settings);
 
         evStore.TryAllocate((_, ref e) => { e = TestData.EV(); }, out var evId);
 
@@ -44,7 +44,8 @@ public class StationServiceSnapshotTests
         var charger = TestData.SingleCharger(1, maxPowerKW: 120);
         var station = TestData.Station(1, chargers: [charger]);
         var stations = new Dictionary<ushort, Station> { [1] = station };
-        var service = TestData.StationService(stations, scheduler, evStore);
+        var settings = TestData.DefaultSettings();
+        var service = TestData.StationService(stations, scheduler, evStore, settings);
 
         evStore.TryAllocate((_, ref e) => { e = TestData.EV(); }, out var evId);
 
@@ -55,6 +56,6 @@ public class StationServiceSnapshotTests
 
         Assert.Single(snapshots);
         Assert.Equal(1, snapshots[0].ChargerId);
-        Assert.InRange(snapshots[0].Utilization, 0f, 1f);
+        Assert.InRange(snapshots[0].Utilization, 0.1f, 1f);
     }
 }

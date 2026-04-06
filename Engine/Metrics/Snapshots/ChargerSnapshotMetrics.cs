@@ -64,10 +64,9 @@ public record ChargerSnapshotMetric
     /// <param name="queueSize">The current queue size for this charger in runtime state.</param>
     /// <param name="utilization">The charger utilization in range [0, 1].</param>
     /// <param name="deliveredKW">The maximum power delivered by this charger during the snapshot window in kW.</param>
-    /// <param name="isDual">A value indicating whether this charger is dual or single.</param>
     /// <param name="targetEVDemandKWh">The remaining energy required by all cars currently at this charger to hit their Target SoC.</param>
     /// <returns>A snapshot metric for the specified charger at the provided simulation time.</returns>
-    public static ChargerSnapshotMetric Collect(ChargerBase charger, ushort stationId, Time simTime, int queueSize, float utilization, float deliveredKW, bool isDual, float targetEVDemandKWh) =>
+    public static ChargerSnapshotMetric Collect(ChargerBase charger, ushort stationId, Time simTime, int queueSize, float utilization, float deliveredKW, float targetEVDemandKWh) =>
         new()
         {
             SimTime = (uint)simTime,

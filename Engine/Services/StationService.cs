@@ -177,6 +177,8 @@ public class StationService : IStationService
         foreach (var station in stations)
         {
             _stationIndex[station.Id] = station;
+            _windowReservations[station.Id] = 0;
+            _windowCancellations[station.Id] = 0;
             var states = station.Chargers.Select(c => new ChargerState(c, station.Id)).ToList();
             _stationChargers[station.Id] = states;
             foreach (var cs in states)
@@ -254,7 +256,6 @@ public class StationService : IStationService
                     queueSizeInWindow,
                     utilizationInWindow,
                     deliveredKWhInWindow,
-                    state.Charger is DualCharger,
                     targetEVDemandKWh));
 
                 totalDeliveredKW += deliveredKWhInWindow;
@@ -313,7 +314,7 @@ public class StationService : IStationService
             _scheduler.ScheduleEvent(new CancelRequest(e.EVId, ev.HasReservationAtStationId.Value, e.Time));
         }
 
-        _windowReservations[e.StationId]++;
+        _windowReservations[e.StationId] = _windowReservations.GetValueOrDefault(e.StationId) + 1;
         ev.HasReservationAtStationId = e.StationId;
         _applyNewPath.ApplyNewPathToEV(ref ev, station, e.Time);
         _scheduler.ScheduleEvent(
@@ -331,7 +332,7 @@ public class StationService : IStationService
         if (!_stationIndex.TryGetValue(e.StationId, out var station))
             return;
 
-        _windowCancellations[e.StationId]++;
+        _windowCancellations[e.StationId] = _windowCancellations.GetValueOrDefault(e.StationId) + 1;
 
         if (ev.HasReservationAtStationId != null)
         {

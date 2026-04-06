@@ -209,6 +209,37 @@ public static class TestData
             metrics: metrics,
             settings: settings);
     }
+    public static EngineSettings DefaultSettings() => new()
+    {
+        // Snapshot-specific settings
+        SnapshotInterval = 3600,
+        ChargingStepSeconds = 10,
+
+        // Config objects
+        CostConfig = new(),
+        MetricsConfig = new(),
+        StationFactoryOptions = new(),
+
+        // Metadata/Simulation Control
+        RunId = Guid.NewGuid(),
+        Seed = new Random(42),
+        SimulationEndTime = 86400,
+
+        // EV Logic
+        CurrentAmoutOfEVsInDenmark = 1000,
+        IntervalToUpdateEVs = 60,
+        BatteryIntervalForCheckUrgency = 300,
+        EVDistributionWindowsSize = 3600,
+        EVSpawnFraction = 1.0,
+
+        // Paths (Use dummy strings or actual constants if needed)
+        EnergyPricesPath = new FileInfo("data/energy_prices.csv"),
+        OsrmPath = new FileInfo("data/osrm.json"),
+        CitiesPath = new FileInfo("data/cities.csv"),
+        GridPath = new FileInfo("data/grid.csv"),
+        StationsPath = new FileInfo("data/stations.csv"),
+        PolygonPath = new FileInfo("data/polygon.geojson"),
+    };
 
     internal sealed class FixedEnergyPrices(float fixedPrice) : EnergyPrices(new FileInfo("data/energy_prices.csv"), new Random(42))
     {

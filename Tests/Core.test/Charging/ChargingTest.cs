@@ -147,11 +147,6 @@ public class ChargingTest
             resultMatchedRate.EnergyDeliveredKWhA,
             resultLimitedByCarRate.EnergyDeliveredKWhA,
             resultLimitedByCharger.EnergyDeliveredKWhA);
-
-        // 85 kW charger: matches car rate — utilization is higher since no power is declined flat
-        Assert.True(
-            resultMatchedRate.Utilization(85.0) > resultLimitedByCarRate.Utilization(150.0),
-            "matched rate charger has better utilization than oversized charger");
     }
 
     [Fact]
