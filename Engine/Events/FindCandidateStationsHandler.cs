@@ -34,16 +34,40 @@ public class FindCandidateStationsHandler(
     {
         var candidateStationDurations = await findCandidateStationService.GetCandidateStationFromCache(e.EVId);
         ref var ev = ref evStore.Get(e.EVId);
+
+        if (candidateStationDurations.Count == 0)
+        {
+            HandleNoCandidates(e, ref ev);
+            return;
+        }
+
         var bestStation = costFunction.Compute(ref ev, candidateStationDurations, e.Time);
 
-        if (HasScheduledReservationAtStation(e, ev, bestStation))
+        if (HasScheduledReservationAtStation(e, ref ev, bestStation))
             return;
 
-        ReplaceExistingReservation(e, ev, bestStation);
-        ScheduleArrivalOrReschedule(e, ev, bestStation);
+        ReplaceExistingReservation(e, ref ev, bestStation);
+        ScheduleArrivalOrReschedule(e, ref ev, bestStation);
     }
 
-    private bool HasScheduledReservationAtStation(FindCandidateStations e, EV ev, Station bestStation)
+    private void HandleNoCandidates(FindCandidateStations e, ref EV ev)
+    {
+        if (ev.HasReservationAtStationId is ushort reservedStationId)
+        {
+            var durationToStation = ev.Journey.Current.DurationToNextStop;
+            eventScheduler.ScheduleEvent(new ArriveAtStation(
+                e.EVId,
+                reservedStationId,
+                ev.CalcDesiredSoC(e.Time + durationToStation),
+                e.Time + durationToStation));
+            return;
+        }
+
+        throw new InvalidOperationException(
+            $"No candidate stations available for EV {e.EVId} at {e.Time}. Reserved=null, SoC={ev.Battery.StateOfCharge:P2}, CurrentKWh={ev.Battery.CurrentChargeKWh:F2}, MinAcceptable={ev.Preferences.MinAcceptableCharge:P2}, RemainingToNextStop={ev.Journey.Current.DurationToNextStop}.");
+    }
+
+    private bool HasScheduledReservationAtStation(FindCandidateStations e, ref EV ev, Station bestStation)
     {
         if (ev.HasReservationAtStationId == null || ev.HasReservationAtStationId != bestStation.Id)
             return false;
@@ -51,14 +75,15 @@ public class FindCandidateStationsHandler(
         ev.Advance(e.Time);
         var remaining = ev.Journey.Current.DurationToNextStop;
 
-        if (HasScheduledArriveAtStation(e, ev, bestStation, remaining))
+        if (HasScheduledArriveAtStation(e, ref ev, bestStation, remaining))
             return true;
 
-        eventScheduler.ScheduleEvent(new FindCandidateStations(e.EVId, HalfwayToStation(remaining, e.Time)));
+        var nextTime = HalfwayToStation(remaining, e.Time);
+        eventScheduler.ScheduleEvent(new FindCandidateStations(e.EVId, nextTime));
         return true;
     }
 
-    private void ReplaceExistingReservation(FindCandidateStations e, EV ev, Station bestStation)
+    private void ReplaceExistingReservation(FindCandidateStations e, ref EV ev, Station bestStation)
     {
         if (ev.HasReservationAtStationId != null)
             eventScheduler.ScheduleEvent(new CancelRequest(e.EVId, ev.HasReservationAtStationId.Value, e.Time));
@@ -68,16 +93,17 @@ public class FindCandidateStationsHandler(
         evDetourPlanner.Update(ref ev, bestStation, e.Time);
     }
 
-    private void ScheduleArrivalOrReschedule(FindCandidateStations e, EV ev, Station bestStation)
+    private void ScheduleArrivalOrReschedule(FindCandidateStations e, ref EV ev, Station bestStation)
     {
         var remainingTravelTime = ev.Journey.Current.DurationToNextStop;
-        if (HasScheduledArriveAtStation(e, ev, bestStation, remainingTravelTime))
+        if (HasScheduledArriveAtStation(e, ref ev, bestStation, remainingTravelTime))
             return;
 
-        eventScheduler.ScheduleEvent(new FindCandidateStations(e.EVId, HalfwayToStation(remainingTravelTime, e.Time)));
+        var nextTime = HalfwayToStation(remainingTravelTime, e.Time);
+        eventScheduler.ScheduleEvent(new FindCandidateStations(e.EVId, nextTime));
     }
 
-    private bool HasScheduledArriveAtStation(FindCandidateStations e, EV ev, Station bestStation, Time durationToStation)
+    private bool HasScheduledArriveAtStation(FindCandidateStations e, ref EV ev, Station bestStation, Time durationToStation)
     {
         if (durationToStation <= 60 * 10)
         {
