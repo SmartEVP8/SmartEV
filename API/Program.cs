@@ -1,27 +1,26 @@
 using API;
 using API.Services;
-using OpenApiUi;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container
-builder.Services.AddOpenApi();
-builder.Services.AddSingleton<IWebSocketService, WebSocketService>();
+builder.Services.AddLogging();
 builder.Services.AddSingleton<ISimulationStateService, SimulationStateService>();
+builder.Services.AddSingleton<EnvelopeWebSocketHandler>();
+builder.Services.AddSingleton<IEnvelopeMessageHandler, SimulationMessageHandler>();
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
-    app.UseOpenApiUi(config =>
-    {
-        config.OpenApiSpecPath = "/openapi/v1.json";
-    });
+    app.UseDeveloperExceptionPage();
 }
 
 app.UseHttpsRedirection();
 app.UseWebSockets();
-app.MapSimulationEndpoints();
+
+// Map WebSocket endpoint
+app.MapSimulationWebSocket();
+
 app.Run();

@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package API;
+package proto;
 
 // ============================================================================
 // CORE TYPES
@@ -58,8 +58,8 @@ message EVChargerState {
 message ChargerState {
   bool is_active = 1;
   float utilization = 2;
-  int32 charger_id = 3;
-  int32 queue_size = 4;
+  uint32 charger_id = 3;
+  uint32 queue_size = 4;
   repeated EVChargerState evs_in_queue = 5;
 }
 
@@ -112,19 +112,9 @@ message InitResponse {
   string message = 3;
 }
 
-message SnapshotResponse {
-  SimulationSnapshot snapshot = 1;
-}
-
 message ErrorResponse {
   uint32 code = 1;
   string message = 2;
-  string request_id = 3; // Echo back the failed request for correlation
-}
-
-message AckResponse {
-  // Acknowledge request received
-  string request_id = 1;
 }
 
 // ============================================================================
@@ -148,15 +138,6 @@ message ChargingEndEvent {
 // ============================================================================
 
 message Envelope {
-  // request_id: Used for request/response correlation only.
-  // - Client sets this on outbound requests.
-  // - Server echoes it back in the corresponding response or error.
-  // - Server-initiated events (arrival, state_update, etc.) MUST leave this empty.
-  // - Client MUST ignore request_id on unsolicited server events.
-  string request_id = 1;
-
-  // Payload: one of request, response, or event
-  // Timestamps are embedded in individual events/responses, not at envelope level.
   oneof payload {
     // Client Requests (10-19)
     InitRequest init = 10;
@@ -164,9 +145,8 @@ message Envelope {
 
     // Server Responses (20-29)
     InitResponse init_response = 20;
-    SnapshotResponse snapshot_response = 21;
+    SimulationSnapshot snapshot_response = 21; // response to GetSnapshotRequest
     ErrorResponse error = 22;
-    AckResponse ack = 23;
 
     // Server Events/Pushes (30-39)
     ArrivalEvent arrival = 30;

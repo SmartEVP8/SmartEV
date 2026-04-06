@@ -1,18 +1,25 @@
-using API.Models;
+using Smartev.Api.V1;
 
-namespace API.Services;
+/// <summary>
+/// Manages simulation state. This is a placeholder for integration with Engine/Core.
+/// TODO: Wire this to the actual simulation engine.
+/// </summary>
+public interface ISimulationStateService
+{
+    void SetInitializationData(InitData initData);
+    InitData? GetInitializationData();
+    void UpdateSnapshot(SimulationSnapshot snapshot);
+    SimulationSnapshot? GetLatestSnapshot();
+}
 
 public class SimulationStateService(ILogger<SimulationStateService> logger) : ISimulationStateService
 {
-    private Init? _initializationData;
-    private RequestStationState? _stationState;
-    private StateSnapShot? _latestSnapshot;
-    private readonly List<ArriveAtStation> _arrivals = [];
-    private readonly List<EndCharging> _chargingEnds = [];
+    private InitData? _initializationData;
+    private SimulationSnapshot? _latestSnapshot;
     private readonly ReaderWriterLockSlim _lockObject = new();
     private readonly ILogger<SimulationStateService> _logger = logger;
 
-    public void SetInitializationData(Init initData)
+    public void SetInitializationData(InitData initData)
     {
         _lockObject.EnterWriteLock();
         try
@@ -26,7 +33,7 @@ public class SimulationStateService(ILogger<SimulationStateService> logger) : IS
         }
     }
 
-    public Init? GetInitializationData()
+    public InitData? GetInitializationData()
     {
         _lockObject.EnterReadLock();
         try
@@ -39,38 +46,17 @@ public class SimulationStateService(ILogger<SimulationStateService> logger) : IS
         }
     }
 
-    public void UpdateStationState(RequestStationState stationState)
-    {
-        _lockObject.EnterWriteLock();
-        try
-        {
-            _stationState = stationState;
-        }
-        finally
-        {
-            _lockObject.ExitWriteLock();
-        }
-    }
-
-    public RequestStationState? GetStationState()
-    {
-        _lockObject.EnterReadLock();
-        try
-        {
-            return _stationState;
-        }
-        finally
-        {
-            _lockObject.ExitReadLock();
-        }
-    }
-
-    public void AddStateSnapshot(StateSnapShot snapshot)
+    public void UpdateSnapshot(SimulationSnapshot snapshot)
     {
         _lockObject.EnterWriteLock();
         try
         {
             _latestSnapshot = snapshot;
+            if (_logger.IsEnabled(LogLevel.Debug))
+            {
+                _logger.LogDebug("Snapshot updated: {TotalEVs} EVs, {TotalCharging} charging",
+                    snapshot.TotalEvs, snapshot.TotalCharging);
+            }
         }
         finally
         {
@@ -78,7 +64,7 @@ public class SimulationStateService(ILogger<SimulationStateService> logger) : IS
         }
     }
 
-    public StateSnapShot? GetLatestSnapshot()
+    public SimulationSnapshot? GetLatestSnapshot()
     {
         _lockObject.EnterReadLock();
         try
@@ -88,65 +74,6 @@ public class SimulationStateService(ILogger<SimulationStateService> logger) : IS
         finally
         {
             _lockObject.ExitReadLock();
-        }
-    }
-
-    public void RecordArrival(ArriveAtStation arrival)
-    {
-        _lockObject.EnterWriteLock();
-        try
-        {
-            _arrivals.Add(arrival);
-            _logger.LogDebug("EV arrived at station {StationId} at time {Time}", arrival.StationId, arrival.Time);
-        }
-        finally
-        {
-            _lockObject.ExitWriteLock();
-        }
-    }
-
-    public void RecordChargingEnd(EndCharging charging)
-    {
-        _lockObject.EnterWriteLock();
-        try
-        {
-            _chargingEnds.Add(charging);
-            _logger.LogDebug("Charging ended at station {StationId} at time {Time}", charging.StationId, charging.Time);
-        }
-        finally
-        {
-            _lockObject.ExitWriteLock();
-        }
-    }
-
-    public (List<ArriveAtStation> Arrivals, List<EndCharging> ChargingEnds) GetEvents()
-    {
-        _lockObject.EnterReadLock();
-        try
-        {
-            return (new List<ArriveAtStation>(_arrivals), new List<EndCharging>(_chargingEnds));
-        }
-        finally
-        {
-            _lockObject.ExitReadLock();
-        }
-    }
-
-    public void Clear()
-    {
-        _lockObject.EnterWriteLock();
-        try
-        {
-            _initializationData = null;
-            _stationState = null;
-            _latestSnapshot = null;
-            _arrivals.Clear();
-            _chargingEnds.Clear();
-            _logger.LogInformation("Simulation state cleared");
-        }
-        finally
-        {
-            _lockObject.ExitWriteLock();
         }
     }
 }

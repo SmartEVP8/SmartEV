@@ -1,9 +1,6 @@
-name: buf-push
+name: buf-pull-request
 
-on:
-  push:
-    branches:
-      - main
+on: pull_request
 
 jobs:
   build:
@@ -22,7 +19,3 @@ jobs:
       - uses: bufbuild/buf-breaking-action@v1
         with:
           against: "https://buf.build/smartevp8/api"
-
-      - uses: bufbuild/buf-push-action@v1
-        with:
-          buf_token: ${{ secrets.BUF_TOKEN }}

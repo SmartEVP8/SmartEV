@@ -1,7 +1,10 @@
-version: v1
+version: v2
+modules:
+  - path: API/
+    name: buf.build/smartevp8/api
 breaking:
   use:
     - FILE
 lint:
   use:
-    - STANDARD
+    - BASIC
