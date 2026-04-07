@@ -38,6 +38,7 @@ public class FindCandidateStationsHandler(
         if (candidateStationDurations.Count == 0)
         {
             HandleNoCandidates(e, ref ev);
+            Console.WriteLine($"No candidates found for EV {e.EVId} at time {e.Time}. SoC={ev.Battery.StateOfCharge:P2}, CurrentKWh={ev.Battery.CurrentChargeKWh:F2}, MinAcceptable={ev.Preferences.MinAcceptableCharge:P2}");
             return;
         }
 
@@ -60,6 +61,7 @@ public class FindCandidateStationsHandler(
                 reservedStationId,
                 ev.CalcDesiredSoC(e.Time + durationToStation),
                 e.Time + durationToStation));
+            Console.WriteLine($"No candidates, but has existing reservation for EV {e.EVId} at station {reservedStationId}. Scheduled arrival at time {e.Time + durationToStation}. SoC={ev.Battery.StateOfCharge:P2}, CurrentKWh={ev.Battery.CurrentChargeKWh:F2}, MinAcceptable={ev.Preferences.MinAcceptableCharge:P2}");
             return;
         }
 
@@ -112,6 +114,7 @@ public class FindCandidateStationsHandler(
             bestStation.Id,
             ev.CalcDesiredSoC(e.Time + durationToStation),
             e.Time + durationToStation));
+            Console.WriteLine($"Scheduled arrival for EV {e.EVId} at station {bestStation.Id} at time {e.Time + durationToStation}. SoC={ev.Battery.StateOfCharge:P2}, CurrentKWh={ev.Battery.CurrentChargeKWh:F2}, MinAcceptable={ev.Preferences.MinAcceptableCharge:P2}, RemainingToNextStop={durationToStation}.");
             return true;
         }
 

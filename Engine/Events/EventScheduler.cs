@@ -36,6 +36,7 @@ public class EventScheduler(Dictionary<Type, Action<IMiddlewareEvent>>? preProce
 
         var id = _evSequeenceId++;
         _eventPriorityQueue.Enqueue(e, (timestamp, id));
+        Console.WriteLine($"Scheduled event {e} with id {id} at time {timestamp}");
         return id;
     }
 
