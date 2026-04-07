@@ -4868,6 +4868,13 @@ namespace Protocol {
 
   }
 
+  /// <summary>
+  ///
+  ///Message Envelope
+  ///
+  ///A wrapper message that can contain any of the defined message types.
+  ///This allows us to have a single WebSocket endpoint that can handle all types of messages,
+  /// </summary>
   [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class Envelope : pb::IMessage<Envelope>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE

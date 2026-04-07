@@ -133,10 +133,13 @@ message ChargingEndEvent {
   uint64 timestamp_ms = 3;
 }
 
-// ============================================================================
-// ENVELOPE MESSAGE (WebSocket message wrapper)
-// ============================================================================
 
+/*
+Message Envelope
+
+A wrapper message that can contain any of the defined message types.
+This allows us to have a single WebSocket endpoint that can handle all types of messages,
+*/
 message Envelope {
   oneof payload {
     // Client Requests (10-19)

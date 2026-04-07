@@ -39,3 +39,4 @@ API/package-lock.json
 API/package.json
 # Generated code from buf generate (local development only)
 gen/
+*.lscache

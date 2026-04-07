@@ -1,89 +1,56 @@
-using API;
-using API.Services;
-using Engine.Cost;
+namespace API;
+
+using Services;
 using Engine.Events;
-using Engine.Grid;
 using Engine.Init;
-using Engine.Metrics;
-using Engine.Routing;
-using Engine.Spawning;
 using Engine.Services;
-using Engine.StationFactory;
-using Engine.Vehicles;
 
-var builder = WebApplication.CreateBuilder(args);
-var dataPath = new DirectoryInfo("data/");
-
-// Add services to the container
-builder.Services.AddLogging();
-builder.Services.AddSingleton(new EngineSettings
+public static class Program
 {
-    CostConfig = new CostWeights
+    public static async Task Main(string[] args)
     {
-        EffectiveQueueSize = 0.5f,
-        PathDeviation = 10,
-        PriceSensitivity = 10,
-        AvailableChargerRatio = 1,
-        ExpectedWaitTime = 1,
-        Urgency = 1,
-    },
-    RunId = Guid.NewGuid(),
-    MetricsConfig = new MetricsConfig
-    {
-        BufferSize = 5000,
-        OutputDirectory = new DirectoryInfo("Perkuet"),
-        RecordCarSnapshots = true,
-        RecordArrivals = true,
-        RecordStationSnapshots = true,
-    },
-    Seed = new Random(42),
-    StationFactoryOptions = new StationFactoryOptions
-    {
-        UseDualChargingPoints = true,
-        AllowMultiSocketChargers = true,
-        DualChargingPointProbability = 0.5,
-        MultiSocketChargerProbability = 1,
-        TotalChargers = 10000,
-    },
-    IntervalToUpdateEVs = 5 * 60,
-    BatteryIntervalForCheckUrgency = 0.05f,
-    CurrentAmoutOfEVsInDenmark = 583320,
-    ChargingStepSeconds = 60,
-    SimulationEndTime = 10000 * 60,
-    SnapshotInterval = 1000 * 60,
-    EVDistributionWindowsSize = 1 * 60,
-    EVSpawnFraction = 0.10f,
-    EnergyPricesPath = new FileInfo(Path.Combine(dataPath.FullName, "energy_prices.csv")),
-    OsrmPath = new FileInfo(Path.Combine(dataPath.FullName, "osrm/output.osrm")),
-    CitiesPath = new FileInfo(Path.Combine(dataPath.FullName, "CityInfo.csv")),
-    GridPath = new FileInfo(Path.Combine(dataPath.FullName, "denmark_charging_locations.json")),
-    StationsPath = new FileInfo(Path.Combine(dataPath.FullName, "denmark_charging_locations.json")),
-    PolygonPath = new FileInfo(Path.Combine(dataPath.FullName, "denmark.polygon.json")),
-});
+        var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddSingleton<SimulationChannel>();
-builder.Services.AddSingleton<SimulationEngineService>();
-builder.Services.AddSingleton<IEngineEventSubscriber>(sp => sp.GetRequiredService<SimulationEngineService>());
+        // The Engine registers many heavyweight singletons (OSRM, stations, grids, etc.).
+        // In Development, the default host settings validate the service graph on build,
+        // which can force those singletons to instantiate before Kestrel starts.
+        // That makes the API appear to "hang" and never bind to the port.
+        if (builder.Environment.IsDevelopment())
+        {
+            builder.Host.UseDefaultServiceProvider(options =>
+            {
+                options.ValidateOnBuild = false;
+            });
+        }
 
-Init.InitEngine(builder.Services);
+        // Add services to the container
+        builder.Services.AddLogging();
+        builder.Services.AddSingleton(EngineConfiguration.CreateDefaultSettings());
 
-builder.Services.AddSingleton<ISimulationStateService, SimulationStateService>();
-builder.Services.AddSingleton<EnvelopeWebSocketHandler>();
-builder.Services.AddSingleton<IEnvelopeMessageHandler, SimulationMessageHandler>();
-builder.Services.AddHostedService(sp => sp.GetRequiredService<SimulationEngineService>());
+        builder.Services.AddSingleton<SimulationChannel>();
+        builder.Services.AddSingleton<SimulationEngineService>();
+        builder.Services.AddSingleton<IEngineEventSubscriber>(sp => sp.GetRequiredService<SimulationEngineService>());
 
-var app = builder.Build();
+        Init.InitEngine(builder.Services);
 
-// Configure the HTTP request pipeline
-if (app.Environment.IsDevelopment())
-{
-    app.UseDeveloperExceptionPage();
+        builder.Services.AddSingleton<SimulationStateService>();
+        builder.Services.AddSingleton<SimulationMessageHandler>();
+        builder.Services.AddSingleton<EnvelopeWebSocketHandler>();
+        builder.Services.AddHostedService(sp => sp.GetRequiredService<SimulationEngineService>());
+
+        var app = builder.Build();
+
+        // Configure the HTTP request pipeline
+        if (app.Environment.IsDevelopment())
+        {
+            app.UseDeveloperExceptionPage();
+        }
+
+        app.UseWebSockets();
+
+        // Map WebSocket endpoint
+        app.MapSimulationWebSocket();
+
+        app.Run();
+    }
 }
-
-app.UseHttpsRedirection();
-app.UseWebSockets();
-
-// Map WebSocket endpoint
-app.MapSimulationWebSocket();
-
-app.Run();

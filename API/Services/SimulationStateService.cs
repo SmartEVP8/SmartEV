@@ -1,66 +1,36 @@
-using Protocol;
-
 namespace API.Services;
 
-public partial class SimulationStateService(ILogger<SimulationStateService> logger) : ISimulationStateService
+using Protocol;
+
+/// <summary>
+/// Manages simulation state with simple volatile fields for single-client sequential model.
+/// </summary>
+public partial class SimulationStateService(ILogger<SimulationStateService> logger)
 {
-    private InitData? _initializationData;
-    private SimulationSnapshot? _latestSnapshot;
-    private readonly ReaderWriterLockSlim _lockObject = new();
+    private volatile InitData? _initializationData;
+    private volatile SimulationSnapshot? _latestSnapshot;
     private readonly ILogger<SimulationStateService> _logger = logger;
 
     public void SetInitializationData(InitData initData)
     {
-        _lockObject.EnterWriteLock();
-        try
-        {
-            _initializationData = initData;
-            _logger.LogInformation("Initialization data set");
-        }
-        finally
-        {
-            _lockObject.ExitWriteLock();
-        }
+        _initializationData = initData;
+        _logger.LogInformation("Initialization data set");
     }
 
     public InitData? GetInitializationData()
     {
-        _lockObject.EnterReadLock();
-        try
-        {
-            return _initializationData;
-        }
-        finally
-        {
-            _lockObject.ExitReadLock();
-        }
+        return _initializationData;
     }
 
     public void UpdateSnapshot(SimulationSnapshot snapshot)
     {
-        _lockObject.EnterWriteLock();
-        try
-        {
-            _latestSnapshot = snapshot;
-            LogSnapshotUpdated(snapshot.TotalEvs, snapshot.TotalCharging);
-        }
-        finally
-        {
-            _lockObject.ExitWriteLock();
-        }
+        _latestSnapshot = snapshot;
+        LogSnapshotUpdated(snapshot.TotalEvs, snapshot.TotalCharging);
     }
 
     public SimulationSnapshot? GetLatestSnapshot()
     {
-        _lockObject.EnterReadLock();
-        try
-        {
-            return _latestSnapshot;
-        }
-        finally
-        {
-            _lockObject.ExitReadLock();
-        }
+        return _latestSnapshot;
     }
 
     [LoggerMessage(Level = LogLevel.Debug, Message = "Snapshot updated: {TotalEVs} EVs, {TotalCharging} charging")]

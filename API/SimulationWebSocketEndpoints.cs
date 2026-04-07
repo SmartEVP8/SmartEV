@@ -26,19 +26,24 @@ public static class SimulationWebSocketEndpoints
             }
 
             using var webSocket = await context.WebSockets.AcceptWebSocketAsync();
-            var handler = context.RequestServices.GetRequiredService<EnvelopeWebSocketHandler>();
-            var messageProcessor = context.RequestServices.GetRequiredService<IEnvelopeMessageHandler>();
+            var engineService = context.RequestServices.GetRequiredService<SimulationEngineService>();
+            var messageProcessor = context.RequestServices.GetRequiredService<SimulationMessageHandler>();
+            var envelopeHandler = context.RequestServices.GetRequiredService<EnvelopeWebSocketHandler>();
             var loggerFactory = context.RequestServices.GetRequiredService<ILoggerFactory>();
             var logger = loggerFactory.CreateLogger("SimulationWebSocket");
+
+            // Attach client for event broadcasting
+            engineService.AttachClient(webSocket);
 
             // Process the entire connection lifecycle
             var cts = CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted);
             try
             {
-                await ProcessWebSocketConnectionAsync(webSocket, handler, messageProcessor, logger, cts.Token);
+                await ProcessWebSocketConnectionAsync(webSocket, messageProcessor, envelopeHandler, logger, cts.Token);
             }
             finally
             {
+                engineService.DetachClient();
                 webSocket.Dispose();
             }
         });
@@ -47,8 +52,8 @@ public static class SimulationWebSocketEndpoints
 
     private static async Task ProcessWebSocketConnectionAsync(
         WebSocket webSocket,
-        EnvelopeWebSocketHandler handler,
-        IEnvelopeMessageHandler messageProcessor,
+        SimulationMessageHandler messageProcessor,
+        EnvelopeWebSocketHandler envelopeHandler,
         ILogger logger,
         CancellationToken cancellationToken)
     {
@@ -60,12 +65,14 @@ public static class SimulationWebSocketEndpoints
             {
                 WebSocketReceiveResult result;
                 using var ms = new MemoryStream();
+
                 // Read complete message
                 do
                 {
                     result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), cancellationToken);
                     ms.Write(buffer, 0, result.Count);
-                } while (!result.EndOfMessage);
+                }
+                while (!result.EndOfMessage);
 
                 if (result.MessageType == WebSocketMessageType.Close)
                 {
@@ -88,7 +95,7 @@ public static class SimulationWebSocketEndpoints
 
                         if (responseEnvelope != null)
                         {
-                            await handler.SendEnvelopeAsync(responseEnvelope, webSocket, cancellationToken);
+                            await envelopeHandler.SendAsync(responseEnvelope, webSocket, cancellationToken);
                         }
                     }
                     catch (Exception ex)
@@ -105,7 +112,7 @@ public static class SimulationWebSocketEndpoints
                             },
                         };
 
-                        await handler.SendEnvelopeAsync(errorResponse, webSocket, cancellationToken);
+                        await envelopeHandler.SendAsync(errorResponse, webSocket, cancellationToken);
                     }
                 }
             }
@@ -122,7 +129,7 @@ public static class SimulationWebSocketEndpoints
 
     private static async Task<Envelope?> RouteMessageAsync(
         Envelope envelope,
-        IEnvelopeMessageHandler messageProcessor,
+        SimulationMessageHandler messageProcessor,
         CancellationToken cancellationToken)
     {
         return envelope.PayloadCase switch

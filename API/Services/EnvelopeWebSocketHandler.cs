@@ -1,12 +1,11 @@
+namespace API.Services;
+
 using System.Net.WebSockets;
 using Google.Protobuf;
 using Protocol;
 
-namespace API.Services;
-
 /// <summary>
-/// Handles binary protobuf-based WebSocket communication.
-/// For single-client sequential model, just handles serialization/deserialization.
+/// Handles protobuf envelope serialization and deserialization.
 /// </summary>
 public partial class EnvelopeWebSocketHandler(
     ILogger<EnvelopeWebSocketHandler> logger)
@@ -14,9 +13,9 @@ public partial class EnvelopeWebSocketHandler(
     private readonly ILogger<EnvelopeWebSocketHandler> _logger = logger;
 
     /// <summary>
-    /// Send an Envelope message to the WebSocket.
+    /// Serialize and send an Envelope to the WebSocket.
     /// </summary>
-    public async Task SendEnvelopeAsync(Envelope envelope, WebSocket webSocket, CancellationToken cancellationToken = default)
+    public async Task SendAsync(Envelope envelope, WebSocket webSocket, CancellationToken cancellationToken = default)
     {
         try
         {

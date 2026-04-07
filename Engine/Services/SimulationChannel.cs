@@ -6,7 +6,7 @@ using Engine.Protocol;
 /// <summary>
 /// Owns all bidirectional channels for Engine communication.
 /// Engine: reads commands, writes snapshots and events.
-/// API: writes commands, reads snapshots and events.
+/// API: writes commands, reads snapshots and events, awaits init data.
 /// </summary>
 public sealed class SimulationChannel
 {

@@ -85,6 +85,13 @@ public class StationService : IStationService
     public Station? GetStation(ushort stationId)
         => _stationIndex.TryGetValue(stationId, out var station) ? station : null;
 
+    /// <summary>
+    /// Gets all stations managed by this service.
+    /// </summary>
+    /// <returns>A collection of all stations.</returns>
+    public ICollection<Station> GetAllStations()
+        => _stationIndex.Values;
+
     /// <inheritdoc/>
     public int GetTotalQueueSize(ushort stationId)
     {
