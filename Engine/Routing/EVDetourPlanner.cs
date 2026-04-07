@@ -8,7 +8,7 @@ using Engine.Utils;
 /// <summary>
 /// Calculates detour deviations by querying OSRM routes.
 /// </summary>
-public class EVDetourPlanner(IDestinationRouter router)
+public class EVDetourPlanner(IDestinationRouter router) : IEVDetourPlanner
 {
     private readonly IDestinationRouter _router = router;
 
