@@ -19,11 +19,11 @@ using Engine.Vehicles;
 /// <param name="evStore">EV store for retrieving EV data.</param>
 /// <param name="evDetourPlanner">To update a journey if a better one is found.</param>
 public class FindCandidateStationsHandler(
-    FindCandidateStationService findCandidateStationService,
+    IFindCandidateStationService findCandidateStationService,
     CostFunction costFunction,
-    EventScheduler eventScheduler,
+    IEventScheduler eventScheduler,
     EVStore evStore,
-    EVDetourPlanner evDetourPlanner)
+    IEVDetourPlanner evDetourPlanner)
 {
     /// <summary>
     /// Handles the <see cref="FindCandidateStations"/> event by pre-computing candidate stations.

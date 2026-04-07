@@ -45,6 +45,8 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     /// <returns>The EV's current position after advancing.</returns>
     public readonly Position Advance(Time currentTime)
     {
+        if (currentTime < Journey.Current.Departure)
+            throw new InvalidOperationException($"Cannot advance EV to a time before the current journey's departure (currentTime={currentTime}, departure={Journey.Current.Departure}, {this})");
         var previousJourney = Journey.Current;
         var currentPosition = Journey.AdvanceTo(currentTime);
         ConsumeEnergy(previousJourney, currentTime);
@@ -75,7 +77,7 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     /// <param name="distanceKm">Distance to the target in km.</param>
     /// <param name="reserve">Minimum SoC required on arrival. Defaults to 0.1.</param>
     /// <returns>True if the EV can reach the target with the specified reserve; otherwise, false.</returns>
-    public readonly bool CanReach(float distanceKm, float reserve = 0.1f)
+    private readonly bool CanReach(float distanceKm, float reserve = 0.1f)
     {
         var reserveKWh = Battery.MaxCapacityKWh * reserve;
         var usableKWh = Battery.CurrentChargeKWh - reserveKWh;
@@ -119,12 +121,15 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
             : throw new InvalidOperationException($"Calculated desired SoC is not finite (desiredSoC={desiredSoC}, energyToDest={energyToDest}, remainingDistanceKm={remainingDistanceKm}, arrivalAtStation={arrivalAtStation}, {this})");
     }
 
+    /// <summary>
+    /// Calculates the time for when the battery is depleted 50% from the current SoC.
+    /// </summary>
+    /// <returns>Returns the time it takes to reach 50% of the current SoC.</returns>
     public readonly Time TimeToHalfBattery()
     {
-        var currentKwh = Battery.MaxCapacityKWh * Battery.StateOfCharge;
-        var acceptableKwH = Math.Max(currentKwh, Battery.MaxCapacityKWh * Preferences.MinAcceptableCharge);
-        var halfOfCurrentKwH = acceptableKwH / 2f;
-        var distanceAtHalfBattery = halfOfCurrentKwH / (ConsumptionWhPerKm / 1000f);
+        var percent = Math.Max(Preferences.MinAcceptableCharge, Battery.StateOfCharge / 2);
+        var acceptableKWh = Battery.MaxCapacityKWh * percent;
+        var distanceAtHalfBattery = acceptableKWh / (ConsumptionWhPerKm / 1000f);
         return Journey.TimeToDriveDistance(distanceAtHalfBattery);
     }
 
