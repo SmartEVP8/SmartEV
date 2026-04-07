@@ -9,7 +9,7 @@ using Engine.Routing;
 using Engine.Vehicles;
 
 /// <summary>
-/// Event handler for finding candidate stations for an EV. 
+/// Event handler for finding candidate stations for an EV.
 /// Reschedules itself for every halfway point its station.
 /// If a better station is found, it cancels the existing reservation and creates a new one at the better station.
 /// </summary>
@@ -66,7 +66,7 @@ public class FindCandidateStationsHandler(
         }
 
         throw new InvalidOperationException(
-            $"No candidate stations available for EV {e.EVId} at {e.Time}. Reserved=null, SoC={ev.Battery.StateOfCharge:P2}, CurrentKWh={ev.Battery.CurrentChargeKWh:F2}, MinAcceptable={ev.Preferences.MinAcceptableCharge:P2}, RemainingToNextStop={ev.Journey.Current.DurationToNextStop}.");
+            $"No candidate stations available for EV {e.EVId} at {e.Time}. Reserved=null, SoC={ev.Battery.StateOfCharge:P2}, CurrentKWh={ev.Battery.CurrentChargeKWh:F2}, MinAcceptable={ev.Preferences.MinAcceptableCharge:P2}, RemainingToNextStop={ev.Journey.Current.DurationToNextStop}. Could have driven {(ev.Battery.CurrentChargeKWh - (ev.Battery.MaxCapacityKWh * ev.Preferences.MinAcceptableCharge)) / (ev.ConsumptionWhPerKm / 1000f):F1}km and had {ev.Journey.Current.DistanceKm:F2}km left.");
     }
 
     private bool HasScheduledReservationAtStation(FindCandidateStations e, ref EV ev, Station bestStation)

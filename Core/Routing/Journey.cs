@@ -1,3 +1,4 @@
+using Core.Vehicles;
 namespace Core.Routing;
 
 using Core.Shared;
@@ -282,18 +283,22 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
     /// <param name="timeAtStation">The amount of time spent at a station.</param>
     public void UpdateRouteToDestination(Time timeAtStation)
     {
-        var newDeparture = Current.Departure + Current.DurationToNextStop + timeAtStation;
-        var newWaypoints = new List<Position>([Current.NextStop, .. Current.Waypoints.SkipWhile(w => w != Current.NextStop).Skip(1)]);
-        var newDuration = Current.Duration - Current.DurationToNextStop;
-        var newDistanceKm = (float)PathLength(newWaypoints, newWaypoints.Count - 1);
+        var newDeparture = Current.Departure + timeAtStation;
 
         Current = new CurrentJourney(
             Departure: newDeparture,
-            Duration: newDuration,
-            DistanceKm: newDistanceKm,
-            Waypoints: newWaypoints,
-            NextStop: newWaypoints.Last(),
+            Duration: Current.Duration,
+            DistanceKm: Current.DistanceKm,
+            Waypoints: Current.Waypoints,
+            NextStop: Current.Waypoints.Last(),
             PathDeviation: Current.PathDeviation,
-            DurationToNextStop: DurationToNextStop(newDuration, newWaypoints, newWaypoints.Last()));
+            DurationToNextStop: DurationToNextStop(Current.Duration, Current.Waypoints, Current.Waypoints.Last()));
+    }
+
+    public Time TimeToDriveDistance(float distance)
+    {
+        var speedKmh = Original.DistanceKm / (Original.Duration.Seconds / 3600f);
+        var timeHours = distance / speedKmh;
+        return (uint)Math.Ceiling(timeHours * 3600);
     }
 }

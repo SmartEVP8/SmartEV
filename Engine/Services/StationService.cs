@@ -130,7 +130,7 @@ public class StationService : IStationService
     public void HandleArrivalAtStation(ArriveAtStation e)
     {
         ref var evRef = ref _eVStore.Get(e.EVId);
-
+        evRef.Advance(e.Time);
         if (_bypassArrivalHandling)
         {
             // TODO: Remove this temporary bypass once the new station-arrival system is in place.
@@ -185,19 +185,28 @@ public class StationService : IStationService
 
         state.AccumulateEnergy(e.Time);
         ref var ev = ref _eVStore.Get(e.EVId);
+        var finalSoC = GetSessionSoCAtEnd(state, e.EVId);
 
         switch (state.Charger)
         {
             case SingleCharger single:
-                EndSingleCharging(state, ev, single);
+                EndSingleCharging(state, ref ev, single);
                 break;
 
             case DualCharger dual:
-                EndDualCharging(e, state, ev, dual);
+                EndDualCharging(e, state, ref ev, dual);
                 break;
         }
 
-        var timeAtStation = e.Time - _arrivaleTimes[e.EVId];
+        if (finalSoC is { } soc)
+            ev.Battery.StateOfCharge = (float)Math.Clamp(soc, 0d, 1d);
+
+        if (!_arrivaleTimes.TryGetValue(e.EVId, out var arrivalTime))
+            throw new SkillissueException($"Logic Error: Missing arrival time for EV {e.EVId} at EndCharging. This should never happen.");
+
+        var timeAtStation = e.Time - arrivalTime;
+        _arrivaleTimes.Remove(e.EVId);
+
         if (ev.CanCompleteJourney(timeAtStation, ev.Preferences.MinAcceptableCharge))
         {
             _scheduler.ScheduleEvent(new ArriveAtDestination(e.EVId, e.Time));
@@ -205,7 +214,10 @@ public class StationService : IStationService
         }
         else
         {
-            _scheduler.ScheduleEvent(new FindCandidateStations(e.EVId, e.Time));
+            var halfWayToDestination = ev.Journey.Current.Departure + ev.Journey.Current.DurationToNextStop / 2;
+            var timeToHalfBattery = ev.Journey.Current.Departure + ev.TimeToHalfBattery();
+            var nextTime = Math.Min(halfWayToDestination, timeToHalfBattery);
+            _scheduler.ScheduleEvent(new FindCandidateStations(e.EVId, nextTime));
             Console.WriteLine($"EV {e.EVId} finished charging at station {state.StationId} at time {e.Time}. Scheduled search for next station. SoC={ev.Battery.StateOfCharge:P2}, CurrentKWh={ev.Battery.CurrentChargeKWh:F2}, MinAcceptable={ev.Preferences.MinAcceptableCharge:P2}, RemainingToNextStop={ev.Journey.Current.DurationToNextStop}.");
         }
 
@@ -215,7 +227,7 @@ public class StationService : IStationService
     private void EndDualCharging(
      EndCharging e,
      ChargerState state,
-     EV ev,
+     ref EV ev,
      DualCharger dual)
     {
         if (state.SessionA?.EVId == e.EVId)
@@ -244,7 +256,7 @@ public class StationService : IStationService
         }
     }
 
-    private static void EndSingleCharging(ChargerState state, EV ev, SingleCharger single)
+    private static void EndSingleCharging(ChargerState state, ref EV ev, SingleCharger single)
     {
         single.ChargingPoint.Disconnect();
 
@@ -464,5 +476,14 @@ public class StationService : IStationService
         window.HadActivity = true;
         window.QueueSize = state.Queue.Count;
         state.Window = window;
+    }
+
+    private static double? GetSessionSoCAtEnd(ChargerState state, int eVId)
+    {
+        if (state.SessionA?.EVId == eVId)
+            return state.SessionA.Plan?.SocA ?? state.SessionA.EV.CurrentSoC;
+        if (state.SessionB?.EVId == eVId)
+            return state.SessionB.Plan?.SocB ?? state.SessionB.EV.CurrentSoC;
+        return null;
     }
 }

@@ -115,8 +115,17 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
         var chargeToPercent = percentNeededToDestination + Preferences.MinAcceptableCharge;
         var desiredSoC = chargeToPercent > 1f ? 0.8f : chargeToPercent;
         return float.IsFinite(desiredSoC)
-            ? Math.Clamp(desiredSoC, 0f, 1f)
+            ? Math.Clamp(desiredSoC + 0.01f, 0f, 1f)
             : throw new InvalidOperationException($"Calculated desired SoC is not finite (desiredSoC={desiredSoC}, energyToDest={energyToDest}, remainingDistanceKm={remainingDistanceKm}, arrivalAtStation={arrivalAtStation}, {this})");
+    }
+
+    public readonly Time TimeToHalfBattery()
+    {
+        var currentKwh = Battery.MaxCapacityKWh * Battery.StateOfCharge;
+        var acceptableKwH = Math.Max(currentKwh, Battery.MaxCapacityKWh * Preferences.MinAcceptableCharge);
+        var halfOfCurrentKwH = acceptableKwH / 2f;
+        var distanceAtHalfBattery = halfOfCurrentKwH / (ConsumptionWhPerKm / 1000f);
+        return Journey.TimeToDriveDistance(distanceAtHalfBattery);
     }
 
     /// <summary>
