@@ -190,4 +190,41 @@ public class JourneyTests
 
         Assert.Equal(journey.Current.EtaToNextStop, journey.Current.Eta);
     }
+
+    [Fact]
+    public void UpdateRouteToDestinationTest()
+    {
+        var waypoints = new List<Position> { new(0, 0), new(1, 1), new(2, 2) };
+        var journey = new Journey(departure: 0, duration: 60, distanceMeters: 100, waypoints);
+        journey.UpdateRoute(waypoints, waypoints[1], departure: 0, duration: 60, newDistanceKm: 0.1f);
+        journey.AdvanceTo(30);
+        journey.UpdateRouteToDestination(timeAtStation: 30);
+        Assert.Equal(waypoints[^1].Latitude, journey.Current.Waypoints.Last().Latitude);
+        Assert.Equal(journey.Current.Duration, journey.Current.DurationToNextStop);
+        Assert.Equal(60U, journey.Current.Departure.Seconds); // Due to DurationToNextStop is using Math.Ceiling, we get 31 seconds instead of 30, so total departure time becomes 61 seconds.
+        Assert.Equal(30u, journey.Current.Duration.Seconds); // Also due to Math.Ceiling, we get 29 seconds for DurationToNextStop instead of 30, so the remaining duration becomes 29 seconds.
+    }
+
+    [Fact]
+    public void AdvanceToTest()
+    {
+        var waypoints = new List<Position> { new(0, 0), new(1, 1), new(2, 2) };
+        var journey = new Journey(departure: 0, duration: 60, distanceMeters: 100, waypoints);
+        var currentPos = journey.AdvanceTo(30);
+        Assert.Equal(waypoints[1].Latitude, currentPos.Latitude, precision: 3);
+        Assert.Equal(30u, journey.Current.Departure.Seconds);
+        Assert.Equal(30u, journey.Current.Duration.Seconds);
+    }
+
+    [Fact]
+    public void UpdateRouteTest()
+    {
+        var waypoints = new List<Position> { new(0, 0), new(1, 1), new(2, 2) };
+        var journey = new Journey(departure: 0, duration: 60, distanceMeters: 100, waypoints);
+        var newWaypoints = new List<Position> { new(0, 0), new(1, 1), new(2, 2), new(3, 3) };
+        journey.UpdateRoute(newWaypoints, nextStop: newWaypoints[2], departure: 0, duration: 90, newDistanceKm: 0.1f);
+        Assert.NotEqual(waypoints.Last(), journey.Current.Waypoints.Last());
+        Assert.Equal(newWaypoints.Last(), journey.Current.Waypoints.Last());
+        Assert.Equal(61u, journey.Current.DurationToNextStop.Seconds); // Due to Math.Ceiling, we get 61 seconds instead of 60
+    }
 }

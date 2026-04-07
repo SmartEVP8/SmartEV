@@ -74,6 +74,7 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
     /// <returns>The remaining distance to destination in kilometers.</returns>
     public float RemainingDistanceToDestination(Time currentTime)
     {
+        CheckIfTimeIsBeforeDeparture(currentTime);
         var (snapshot, _) = DeriveRouteSnapshot(currentTime);
         return Math.Max(0f, snapshot.DistanceKm);
     }
@@ -86,6 +87,7 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
     /// <exception cref="ArgumentException">Thrown when the current time is before the journey starts or after it has completed.</exception>
     public Position GetCurrentPosition(Time currentTime)
     {
+        CheckIfTimeIsBeforeDeparture(currentTime);
         var (_, currentPos) = DeriveRouteSnapshot(currentTime);
         return currentPos;
     }
@@ -97,6 +99,7 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
     /// <returns>The position of the car after advancing.</returns>
     public Position AdvanceTo(Time currentTime)
     {
+        CheckIfTimeIsBeforeDeparture(currentTime);
         var (currentJourney, currentPos) = DeriveRouteSnapshot(currentTime);
         Current = currentJourney;
         return currentPos;
@@ -112,6 +115,7 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
     /// <param name="newDistanceKm">The distance of the new journey in kilometers.</param>
     public void UpdateRoute(List<Position> waypoints, Position nextStop, Time departure, Time duration, float newDistanceKm)
     {
+        CheckIfTimeIsBeforeDeparture(departure);
         var deviation = Current.PathDeviation + (departure + duration) - Current.Eta;
         var durationToNextStop = DurationToNextStop(duration, waypoints, nextStop);
         Current = new CurrentJourney(departure, duration, newDistanceKm, waypoints, nextStop, deviation, durationToNextStop);
@@ -283,6 +287,9 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
     /// <param name="timeAtStation">The amount of time spent at a station.</param>
     public void UpdateRouteToDestination(Time timeAtStation)
     {
+        if (timeAtStation < 0)
+            throw new ArgumentException($"Time at station cannot be negative. Provided value: {timeAtStation}.");
+
         var newDeparture = Current.Departure + timeAtStation;
 
         Current = new CurrentJourney(
@@ -300,5 +307,11 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
         var speedKmh = Original.DistanceKm / (Original.Duration.Seconds / 3600f);
         var timeHours = distance / speedKmh;
         return (uint)Math.Ceiling(timeHours * 3600);
+    }
+
+    private void CheckIfTimeIsBeforeDeparture(Time time)
+    {
+        if (time < Current.Departure)
+            throw new ArgumentException($"Current time: {time} is before the current journey has started: {Current.Departure}.");
     }
 }

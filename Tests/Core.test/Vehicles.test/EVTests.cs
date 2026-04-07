@@ -28,6 +28,124 @@ public class EVTests
     }
 
     [Fact]
+    public void CanCompleteJourney_ReturnsTrueWhenEnoughCharge()
+    {
+        var battery = new Battery(100, 100, 1f, Socket.CCS2);
+        var preferences = new Preferences(1f, 0.1f, 10.0f);
+        var waypoints = new List<Position>
+        {
+            new(0, 0),
+            new(10, 0),
+        };
+        var journey = new Journey(departure: 0, duration: 100, distanceMeters: 10000, waypoints);
+        var ev = new EV(battery, preferences, journey, 100);
+
+        Assert.True(ev.CanCompleteJourney(reserve: 0.1f));
+    }
+
+    [Fact]
+    public void CanCompleteJourney_ReturnsFalseWhenNotEnoughCharge()
+    {
+        var battery = new Battery(100, 100, 0.1f, Socket.CCS2);
+        var preferences = new Preferences(1f, 0.1f, 10.0f);
+        var waypoints = new List<Position>
+        {
+            new(0, 0),
+            new(10, 0),
+        };
+        var journey = new Journey(departure: 0, duration: 100, distanceMeters: 10000, waypoints);
+        var ev = new EV(battery, preferences, journey, 100);
+
+        Assert.False(ev.CanCompleteJourney(reserve: 0.1f));
+    }
+
+    [Fact]
+    public void CanReachDestination_ReturnsTrueWhenEnoughCharge()
+    {
+        var battery = new Battery(100, 100, 1f, Socket.CCS2);
+        var preferences = new Preferences(1f, 0.1f, 10.0f);
+        var waypoints = new List<Position>
+        {
+            new(0, 0),
+            new(10, 0),
+        };
+        var journey = new Journey(departure: 0, duration: 100, distanceMeters: 10000, waypoints);
+        var ev = new EV(battery, preferences, journey, 100);
+
+        Assert.True(ev.CanReach(10, reserve: 0.1f));
+    }
+
+    [Fact]
+    public void CanReachDestination_ReturnsFalseWhenNotEnoughCharge()
+    {
+        var battery = new Battery(100, 100, 0.1f, Socket.CCS2);
+        var preferences = new Preferences(1f, 0.1f, 10.0f);
+        var waypoints = new List<Position>
+        {
+            new(0, 0),
+            new(10, 0),
+        };
+        var journey = new Journey(departure: 0, duration: 100, distanceMeters: 10000, waypoints);
+        var ev = new EV(battery, preferences, journey, 100);
+
+        Assert.False(ev.CanReach(10, reserve: 0.1f));
+    }
+
+    [Fact]
+    public void CanReachViaDetour_ReturnsTrueWhenEnoughCharge()
+    {
+        var battery = new Battery(100, 100, 0.2f, Socket.CCS2);
+        var preferences = new Preferences(1f, 0.1f, 10.0f);
+        var waypoints = new List<Position>
+        {
+            new(0, 0),
+            new(5, 0),
+            new(10, 0),
+        };
+        var journey = new Journey(departure: 0, duration: 100, distanceMeters: 10000, waypoints);
+        var ev = new EV(battery, preferences, journey, 100);
+
+        Assert.True(ev.CanReachViaDetour(15, 10, reserve: 0.1f));
+    }
+
+    [Fact]
+    public void CanReachViaDetour_ReturnsFalseWhenNotEnoughCharge()
+    {
+        var battery = new Battery(100, 100, 0.2f, Socket.CCS2);
+        var preferences = new Preferences(1f, 0.1f, 10.0f);
+        var waypoints = new List<Position>
+        {
+            new(0, 0),
+            new(5, 0),
+            new(10, 0),
+        };
+        var journey = new Journey(departure: 0, duration: 100, distanceMeters: 10000, waypoints);
+        var ev = new EV(battery, preferences, journey, 100);
+
+        Assert.False(ev.CanReachViaDetour(1000, 10, reserve: 0.1f));
+    }
+
+    [Fact]
+    public void CalcDesiredSoC_ReturnsCorrectValue()
+    {
+        var battery = new Battery(100, 100, 0.5f, Socket.CCS2);
+        var preferences = new Preferences(1f, 0.3f, 10.0f);
+        var waypoints = new List<Position>
+        {
+            new(0, 0),
+            new(5, 0),
+            new(10, 0),
+        };
+        var journey = new Journey(departure: 0, duration: 25200, distanceMeters: 400000, waypoints);
+        journey.UpdateRoute(waypoints, waypoints[1], departure: 0, duration: 25200, newDistanceKm: 400);
+        var ev = new EV(battery, preferences, journey, 100);
+
+        var desiredSoC = ev.CalcDesiredSoC(12600);
+
+        Assert.Equal(0.51, desiredSoC, precision: 2);
+    }
+
+    [Fact]
     public void CalcDesiredSoC_ZeroDurationJourney_ReturnsFiniteClampedValue()
     {
         var battery = new Battery(100, 100, 0.5f, Socket.CCS2);
