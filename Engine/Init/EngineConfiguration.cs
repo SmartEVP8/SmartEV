@@ -26,7 +26,6 @@ public static class EngineConfiguration
                 EffectiveQueueSize = 0.5f,
                 PathDeviation = 10,
                 PriceSensitivity = 10,
-                AvailableChargerRatio = 1,
                 ExpectedWaitTime = 1,
                 Urgency = 1,
             },

@@ -6,11 +6,12 @@ namespace Engine.Cost;
 public interface ICostStore
 {
     /// <summary>
-    /// Attempts to update the cost weights with the provided update and sequence number.
+    /// Attempts to update a single weight field if the sequence number is greater than the last applied.
     /// </summary>
-    /// <param name="update">The cost weights to update with.</param>
-    /// <param name="seq">The sequence number for the update.</param>
-    void TrySet(CostWeights update, long seq);
+    /// <param name="field">The weight field to update.</param>
+    /// <param name="value">The new value.</param>
+    /// <param name="seq">The sequence number.</param>
+    void TrySet(CostWeightField field, float value, long seq);
 
     /// <summary>
     /// Retrieves the current cost weights from the store.

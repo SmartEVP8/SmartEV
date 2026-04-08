@@ -24,7 +24,11 @@ message WeightRanges {
   int32 id = 1;
   float minimum = 2;
   float maximum = 3;
+  string name = 4;
 }
+
+// Request to get possible weights, ids and their name and valid value ranges
+message GetValidWeightRanges { repeated WeightRanges weightRanges = 1; }
 
 message Charger {
   int32 id = 1;
@@ -39,8 +43,8 @@ message StationInit {
   string address = 3;
 }
 
-message InitData {
-  repeated WeightRanges weight_ranges = 1;
+message InitEngineData {
+  repeated CostWeight costWeights = 1;
   repeated Charger chargers = 2;
   repeated StationInit stations = 3;
 }
@@ -95,26 +99,10 @@ message InitRequest {
   StationGenerationOptions station_generation = 2;
   uint32 maximum_evs = 3;
   int32 seed = 4;
-  string client_id = 5; // Optional: for session identification
 }
 
 message GetSnapshotRequest {
   // Empty, but required for request/response symmetry
-}
-
-// ============================================================================
-// SERVER RESPONSE TYPES (20-29)
-// ============================================================================
-
-message InitResponse {
-  bool success = 1;
-  InitData init_data = 2;
-  string message = 3;
-}
-
-message ErrorResponse {
-  uint32 code = 1;
-  string message = 2;
 }
 
 // ============================================================================
@@ -133,12 +121,12 @@ message ChargingEndEvent {
   uint64 timestamp_ms = 3;
 }
 
-
 /*
 Message Envelope
 
 A wrapper message that can contain any of the defined message types.
-This allows us to have a single WebSocket endpoint that can handle all types of messages,
+This allows us to have a single WebSocket endpoint that can handle all types of
+messages,
 */
 message Envelope {
   oneof payload {
@@ -147,9 +135,8 @@ message Envelope {
     GetSnapshotRequest get_snapshot = 11;
 
     // Server Responses (20-29)
-    InitResponse init_response = 20;
     SimulationSnapshot snapshot_response = 21; // response to GetSnapshotRequest
-    ErrorResponse error = 22;
+    GetValidWeightRanges valid_weight_ranges = 23;
 
     // Server Events/Pushes (30-39)
     ArrivalEvent arrival = 30;

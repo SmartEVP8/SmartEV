@@ -4,6 +4,7 @@ using Services;
 using Engine.Events;
 using Engine.Init;
 using Engine.Services;
+using Engine.Cost;
 
 public static class Program
 {
@@ -50,6 +51,12 @@ public static class Program
 
         // Map WebSocket endpoint
         app.MapSimulationWebSocket();
+
+        app.MapGet("/weights", async () =>
+        {
+            var weights = CostWeightMetadata.All;
+            return Results.Ok(weights);
+        });
 
         app.Run();
     }
