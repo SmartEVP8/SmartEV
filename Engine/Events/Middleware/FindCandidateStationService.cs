@@ -15,7 +15,7 @@ public class FindCandidateStationService(
     IOSRMRouter router,
     Dictionary<ushort, Station> stations,
     SpatialGrid spatialGrid,
-    EVStore evStore)
+    EVStore evStore) : IFindCandidateStationService
 {
     private record StationQuery(Task<Dictionary<ushort, float>> Task);
 

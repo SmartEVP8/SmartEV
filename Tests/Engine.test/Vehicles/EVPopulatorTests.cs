@@ -43,5 +43,15 @@ public class EVPopulatorTests
             Events.Append(e);
             return _count++;
         }
+
+        public Event? GetNextEvent()
+        {
+            if (Events.Count == 0)
+                return null;
+
+            var nextEvent = Events[0];
+            Events.RemoveAt(0);
+            return nextEvent;
+        }
     }
 }

@@ -5,7 +5,7 @@ using Core.Shared;
 /// <summary>
 /// Interface for scheduling events in the simulation.
 /// </summary>
-/// 
+///
 public interface IEventScheduler
 {
     /// <summary>
@@ -19,4 +19,6 @@ public interface IEventScheduler
     /// <param name="e">The event to schedule.</param>
     /// <returns>The token for the scheduled event.</returns>
     uint ScheduleEvent(Event e);
+
+    Event? GetNextEvent();
 }
