@@ -135,7 +135,7 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     /// <param name="currentTime">The ending time of the interval which to calculate energy consumption.</param>
     private readonly void ConsumeEnergy(CurrentJourney journey, Time currentTime)
     {
-        if (journey.Duration.Seconds == 0)
+        if (journey.Duration == 0)
             return;
 
         var fractionTraveled = (currentTime - journey.Departure) / (double)journey.Duration;

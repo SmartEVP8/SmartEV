@@ -56,7 +56,7 @@ public class Station(ushort id,
     /// <returns>The price at the current day and hour.</returns>
     public float GetPrice(Time time)
     {
-        var key = (Day: time.DayOfWeek, Hour: (int)time.Hour);
+        var key = (Day: time.DayOfWeek, Hour: (int)time.Hours);
 
         if (key != _lastPriceUpdate)
         {

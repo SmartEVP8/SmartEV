@@ -91,7 +91,8 @@ public class EVFactory(Random random, IJourneySamplerProvider samplersProvider, 
             destination.Latitude);
 
         var segments = Polyline6ToPoints.DecodePolyline(queryResult.Polyline);
-        return new Journey(departure, (Time)(uint)queryResult.Duration, queryResult.Distance, segments);
+        var durationMs = (uint)Math.Ceiling(queryResult.Duration * Time.MillisecondsPerSecond);
+        return new Journey(departure, (Time)durationMs, queryResult.Distance, segments);
     }
 
     /// <summary>

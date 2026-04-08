@@ -1,46 +1,51 @@
 namespace Core.Shared;
 /// <summary>
 /// Simple time wrapper with implicit conversion between uint and Time.
-/// The unit of <see cref="Seconds"/> is <b>seconds</b>.
+/// The unit of <see cref="Milliseconds"/> is <b>milliseconds</b>.
 /// https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/operators/user-defined-conversion-operators
 /// </summary>
-/// <param name="Seconds"></param>
-public readonly record struct Time(uint Seconds) : IComparable<Time>
+/// <param name="Milliseconds"></param>
+public readonly record struct Time(uint Milliseconds) : IComparable<Time>
 {
     /// <inheritdoc/>
-    public int CompareTo(Time other) => Seconds.CompareTo(other.Seconds);
+    public int CompareTo(Time other) => Milliseconds.CompareTo(other.Milliseconds);
 
     // Implicitly convert int → Time
     public static implicit operator Time(uint t) => new(t);
 
     // Implicitly convert Time → uint
-    public static implicit operator uint(Time t) => t.Seconds;
+    public static implicit operator uint(Time t) => t.Milliseconds;
 
     /// <summary>
-    /// Seconds in a minute.
+    /// Milliseconds in a second.
     /// </summary>
-    public const uint SecondsPerMinute = 60;
+    public const uint MillisecondsPerSecond = 1000;
 
     /// <summary>
-    /// Seconds in an hour.
+    /// Milliseconds in a minute.
     /// </summary>
-    public const uint SecondsPerHour = SecondsPerMinute * 60;
+    public const uint MillisecondsPerMinute = MillisecondsPerSecond * 60;
 
     /// <summary>
-    /// Seconds in a day.
+    /// Milliseconds in an hour.
     /// </summary>
-    public const uint SecondsPerDay = SecondsPerHour * 24;
+    public const uint MillisecondsPerHour = MillisecondsPerMinute * 60;
 
     /// <summary>
-    /// Seconds in a week.
+    /// Milliseconds in a day.
     /// </summary>
-    public const uint SecondsPerWeek = SecondsPerDay * 7;
+    public const uint MillisecondsPerDay = MillisecondsPerHour * 24;
+
+    /// <summary>
+    /// Milliseconds in a week.
+    /// </summary>
+    public const uint MillisecondsPerWeek = MillisecondsPerDay * 7;
 
     /// <summary>
     /// Gets the 0-based day-of-week index for this timestamp.
     /// 0 = Sunday … 6 = Saturday (epoch is Monday).
     /// </summary>
-    public uint DayOfWeekIndex => (Seconds / SecondsPerDay) % 7;
+    public uint DayOfWeekIndex => (Milliseconds / MillisecondsPerDay) % 7;
 
     /// <summary>
     /// Gets the day of the week for this timestamp.
@@ -59,34 +64,39 @@ public readonly record struct Time(uint Seconds) : IComparable<Time>
     };
 
     /// <summary>
-    /// Gets the number of seconds elapsed since the start of the current day (00:00).
+    /// Gets the number of milliseconds elapsed since the start of the current day (00:00).
     /// </summary>
-    public uint SecondsIntoDay => Seconds % SecondsPerDay;
+    public uint MillisecondsIntoDay => Milliseconds % MillisecondsPerDay;
 
     /// <summary>
     /// Gets the hour component (0–23) of the current time of day.
     /// </summary>
-    public uint Hour => SecondsIntoDay / SecondsPerHour;
+    public uint Hours => MillisecondsIntoDay / MillisecondsPerHour;
 
     /// <summary>
     /// Gets the minute component (0–59) of the current time of day.
     /// </summary>
-    public uint Minute => (SecondsIntoDay % SecondsPerHour) / SecondsPerMinute;
+    public uint Minutes => (MillisecondsIntoDay % MillisecondsPerHour) / MillisecondsPerMinute;
 
     /// <summary>
     /// Gets the second component (0–59) of the current time of day.
     /// </summary>
-    public uint Second => SecondsIntoDay % SecondsPerMinute;
+    public uint Seconds => (MillisecondsIntoDay / MillisecondsPerSecond) % 60;
+
+    /// <summary>
+    /// Gets the millisecond component (0–999) of the current time of day.
+    /// </summary>
+    public uint Millisecond => MillisecondsIntoDay % MillisecondsPerSecond;
 
     /// <summary>
     /// Gets the total number of complete days elapsed since the epoch.
     /// </summary>
-    public uint TotalDays => Seconds / SecondsPerDay;
+    public uint TotalDays => Milliseconds / MillisecondsPerDay;
 
     /// <summary>
     /// Gets the total number of complete weeks elapsed since the epoch.
     /// </summary>
-    public uint TotalWeeks => Seconds / SecondsPerWeek;
+    public uint TotalWeeks => Milliseconds / MillisecondsPerWeek;
 
     /// <summary>
     /// Constructs a <see cref="Time"/> from explicit day, hour, minute, and second components.
@@ -95,16 +105,17 @@ public readonly record struct Time(uint Seconds) : IComparable<Time>
     /// <param name="hour">Hour of day (0–23).</param>
     /// <param name="minute">Minute of hour (0–59).</param>
     /// <param name="second">Second of minute (0–59).</param>
+    /// <param name="millisecond">Millisecond of second (0–999).</param>
     /// <returns>A <see cref="Time"/> representing the given point in simulation time.</returns>
-    public static Time From(uint day, uint hour = 0, uint minute = 0, uint second = 0)
-        => new((day * SecondsPerDay) + (hour * SecondsPerHour) + (minute * SecondsPerMinute) + second);
+    public static Time From(uint day, uint hour = 0, uint minute = 0, uint second = 0, uint millisecond = 0)
+        => new((day * MillisecondsPerDay) + (hour * MillisecondsPerHour) + (minute * MillisecondsPerMinute) + (second * MillisecondsPerSecond) + millisecond);
 
     /// <summary>
     /// <returns>Returns a human-readable representation of this timestamp, e.g. <c>"Monday 08:30:00 (day 1)"</c>.</returns>
     /// </summary>
     /// <returns>Human readable time.</returns>
     public override string ToString()
-        => $"{DayOfWeek} {Hour:D2}:{Minute:D2}:{Second:D2} (day {TotalDays})";
+        => $"{DayOfWeek} {Hours:D2}:{Minutes:D2}:{Seconds:D2}.{Millisecond:D3} (day {TotalDays})";
 
     /// <summary>
     /// Returns true if this timestamp is within <paramref name="toleranceSeconds"/> of <paramref name="other"/>.
@@ -115,7 +126,7 @@ public readonly record struct Time(uint Seconds) : IComparable<Time>
     /// <returns>True if the 2 Times are within <paramref name="toleranceSeconds"/>.</returns>
     public bool IsApproximately(Time other, uint toleranceSeconds = 30)
     {
-        var diff = Seconds > other.Seconds ? Seconds - other.Seconds : other.Seconds - Seconds;
-        return diff <= toleranceSeconds;
+        var diff = Milliseconds > other.Milliseconds ? Milliseconds - other.Milliseconds : other.Milliseconds - Milliseconds;
+        return diff <= toleranceSeconds * 1000;
     }
 }

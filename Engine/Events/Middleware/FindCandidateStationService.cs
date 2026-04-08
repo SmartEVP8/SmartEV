@@ -74,7 +74,7 @@ public class FindCandidateStationService(
             if (!ev.CanReachViaDetour(detourDistanceMeters / 1000f, baselineDirectDistanceKm, ev.Preferences.MinAcceptableCharge))
                 continue;
 
-            refinedCandidateDurations[stationId] = detourResult.Durations[i];
+            refinedCandidateDurations[stationId] = detourResult.Durations[i]; // Convert milliseconds to seconds
         }
 
         return refinedCandidateDurations;
