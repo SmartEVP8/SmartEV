@@ -19,7 +19,7 @@ using Engine.Services;
 /// <param name="findCandidateStationsHandler">Where the event <c>FindCandidateStations</c> is handled.</param>
 /// <param name="evService">Where the event <c>SpawnEVS</c> is handled.</param>
 /// <param name="CheckAndUpdateAllEVsHandler">Where the event <c>CheckAndUpdateAllEVs</c> is handled.</param>
-/// <param name="subscriber">Subscriber for protocol events (arrival, charging end). Bridges Engine to API via events.</param>
+/// <param name="eventSubscriber">Optional subscriber to receive notifications of engine events.</param>
 public class EventDispatcher(
         StationService stationService,
         CheckUrgencyHandler checkUrgencyHandler,
@@ -28,10 +28,9 @@ public class EventDispatcher(
         EVService evService,
         DestinationArrivalHandler destinationArrivalHandler,
         CheckAndUpdateAllEVsHandler CheckAndUpdateAllEVsHandler,
-        IEngineEventSubscriber subscriber)
+        IEngineEventSubscriber? eventSubscriber = null)
 {
-    private readonly IEngineEventSubscriber _subscriber = subscriber;
-
+    private readonly IEngineEventSubscriber? _eventSubscriber = eventSubscriber;
     /// <summary>
     /// Dispatches the event to the correct handler.
     /// Has a handler for every <c>Event</c>. If an event is dispatched for which there is no handler, an exception is thrown.
@@ -54,12 +53,12 @@ public class EventDispatcher(
 
             case ArriveAtStation ev:
                 stationService.HandleArrivalAtStation(ev);
-                _subscriber?.OnArrivalAtStation(ev);
+                _eventSubscriber?.OnArrivalAtStation(ev);
                 break;
 
             case EndCharging ev:
                 stationService.HandleEndCharging(ev);
-                _subscriber?.OnChargingEnd(ev);
+                _eventSubscriber?.OnChargingEnd(ev);
                 break;
 
             case FindCandidateStations ev:

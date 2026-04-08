@@ -1,6 +1,7 @@
 namespace API.Services;
 
 using System.Net.WebSockets;
+using Engine;
 using Engine.Events;
 using Engine.Services;
 using Microsoft.Extensions.DependencyInjection;

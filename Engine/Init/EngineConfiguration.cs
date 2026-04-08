@@ -3,6 +3,7 @@ namespace Engine.Init;
 using Engine.Cost;
 using Engine.Metrics;
 using Engine.StationFactory;
+using System.Reflection;
 
 /// <summary>
 /// Factory for creating EngineSettings with default configuration.
@@ -16,8 +17,8 @@ public static class EngineConfiguration
     /// <returns>A configured EngineSettings instance.</returns>
     public static EngineSettings CreateDefaultSettings()
     {
-        var dataPath = new DirectoryInfo("../data");
-        var outputPath = new DirectoryInfo("../Perkuet");
+        var dataPath = FindDataDirectory();
+        var outputPath = new DirectoryInfo(Path.Combine(dataPath.Parent!.FullName, "Headless", "Perkuet"));
 
         return new EngineSettings
         {
@@ -55,6 +56,8 @@ public static class EngineConfiguration
             SnapshotInterval = 1000 * 60,
             EVDistributionWindowsSize = 1 * 60,
             EVSpawnFraction = 0.10f,
+            PopulationScaler = 0.7f,
+            DistanceScaler = 1.7f,
             EnergyPricesPath = new FileInfo(Path.Combine(dataPath.FullName, "energy_prices.csv")),
             OsrmPath = new FileInfo(Path.Combine(dataPath.FullName, "osrm/output.osrm")),
             CitiesPath = new FileInfo(Path.Combine(dataPath.FullName, "CityInfo.csv")),
@@ -62,5 +65,21 @@ public static class EngineConfiguration
             StationsPath = new FileInfo(Path.Combine(dataPath.FullName, "denmark_charging_locations.json")),
             PolygonPath = new FileInfo(Path.Combine(dataPath.FullName, "denmark.polygon.json")),
         };
+    }
+
+    private static DirectoryInfo FindDataDirectory()
+    {
+        var searchDir = new DirectoryInfo(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? Directory.GetCurrentDirectory());
+
+        while (searchDir != null)
+        {
+            var dataDir = new DirectoryInfo(Path.Combine(searchDir.FullName, "data"));
+            if (dataDir.Exists)
+                return dataDir;
+
+            searchDir = searchDir.Parent;
+        }
+
+        throw new DirectoryNotFoundException("Could not find 'data' directory in project hierarchy");
     }
 }

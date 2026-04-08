@@ -231,8 +231,8 @@ public static class Init
             var checkAndUpdateAllEVsHandler = sp.GetRequiredService<CheckAndUpdateAllEVsHandler>();
             var destinationArrivalHandler = sp.GetRequiredService<DestinationArrivalHandler>();
             var findCandidateStationsHandler = sp.GetRequiredService<FindCandidateStationsHandler>();
-            var subscriber = sp.GetService<IEngineEventSubscriber>();
-            return new EventDispatcher(stationService, checkUrgencyHandler, snapshotHandler, findCandidateStationsHandler, evService, destinationArrivalHandler, checkAndUpdateAllEVsHandler, subscriber);
+            var eventSubscriber = sp.GetService<IEngineEventSubscriber>();
+            return new EventDispatcher(stationService, checkUrgencyHandler, snapshotHandler, findCandidateStationsHandler, evService, destinationArrivalHandler, checkAndUpdateAllEVsHandler, eventSubscriber);
         });
 
         services.AddSingleton(sp =>
