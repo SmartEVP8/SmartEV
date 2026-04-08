@@ -74,7 +74,7 @@ public class ApplyNewPathToEVTests()
         var applyNewPath = new EVDetourPlanner(fakeRouter);
         var station = TestData.Station(1, new Position(5, 5));
 
-        Assert.Throws<ArgumentException>(() =>
+        Assert.Throws<InvalidOperationException>(() =>
             applyNewPath.Update(ref ev, station, new Time(99)));
 
         const uint outsideApproxTolerance = 31;

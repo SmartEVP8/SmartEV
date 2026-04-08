@@ -45,6 +45,8 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     /// <returns>The EV's current position after advancing.</returns>
     public readonly Position Advance(Time currentTime)
     {
+        if (currentTime < Journey.Current.Departure)
+            throw new InvalidOperationException($"Cannot advance EV to a time before the current journey's departure (currentTime={currentTime}, departure={Journey.Current.Departure}, {this})");
         var previousJourney = Journey.Current;
         var currentPosition = Journey.AdvanceTo(currentTime);
         ConsumeEnergy(previousJourney, currentTime);
@@ -119,6 +121,10 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
             : throw new InvalidOperationException($"Calculated desired SoC is not finite (desiredSoC={desiredSoC}, energyToDest={energyToDest}, remainingDistanceKm={remainingDistanceKm}, arrivalAtStation={arrivalAtStation}, {this})");
     }
 
+    /// <summary>
+    /// Calculates the time for when the battery is depleted 50% from the current SoC.
+    /// </summary>
+    /// <returns>Returns the time it takes to reach 50% of the current SoC.</returns>
     public readonly Time TimeToHalfBattery()
     {
         var currentKwh = Battery.MaxCapacityKWh * Battery.StateOfCharge;
