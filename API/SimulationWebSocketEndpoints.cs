@@ -9,6 +9,10 @@ using Protocol;
 /// </summary>
 public static class SimulationWebSocketEndpoints
 {
+    /// <summary>
+    /// Maps the WebSocket endpoint for simulation protocol.
+    /// </summary>
+    /// <param name="app">The web application builder.</param>
     public static void MapSimulationWebSocket(this WebApplication app)
     {
         // Health check endpoint (simple HTTP GET)
@@ -47,7 +51,6 @@ public static class SimulationWebSocketEndpoints
                 webSocket.Dispose();
             }
         });
-
     }
 
     private static async Task ProcessWebSocketConnectionAsync(
@@ -90,29 +93,11 @@ public static class SimulationWebSocketEndpoints
                         ms.Seek(0, SeekOrigin.Begin);
                         var envelope = Envelope.Parser.ParseFrom(ms.ToArray());
 
-                        // Route based on payload type
-                        var responseEnvelope = await RouteMessageAsync(envelope, messageProcessor, cancellationToken);
-
-                        if (responseEnvelope != null)
-                        {
-                            await envelopeHandler.SendAsync(responseEnvelope, webSocket, cancellationToken);
-                        }
+                        RouteMessage(envelope, messageProcessor);
                     }
                     catch (Exception ex)
                     {
                         logger.LogError(ex, "Error processing message");
-
-                        // Send error response
-                        var errorResponse = new Envelope
-                        {
-                            Error = new ErrorResponse
-                            {
-                                Code = 400,
-                                Message = "Failed to process message",
-                            },
-                        };
-
-                        await envelopeHandler.SendAsync(errorResponse, webSocket, cancellationToken);
                     }
                 }
             }
@@ -127,27 +112,15 @@ public static class SimulationWebSocketEndpoints
         }
     }
 
-    private static async Task<Envelope?> RouteMessageAsync(
+    private static void RouteMessage(
         Envelope envelope,
-        SimulationMessageHandler messageProcessor,
-        CancellationToken cancellationToken)
+        SimulationMessageHandler messageProcessor)
     {
-        return envelope.PayloadCase switch
+        switch (envelope.PayloadCase)
         {
-            Envelope.PayloadOneofCase.Init when envelope.Init is { } initReq
-                => await messageProcessor.HandleInitRequestAsync(initReq, cancellationToken),
-
-            Envelope.PayloadOneofCase.GetSnapshot when envelope.GetSnapshot is { } snapshotReq
-                => await messageProcessor.HandleGetSnapshotRequestAsync(snapshotReq, cancellationToken),
-
-            _ => new Envelope
-            {
-                Error = new ErrorResponse
-                {
-                    Code = 400,
-                    Message = $"Unknown message type: {envelope.PayloadCase}",
-                },
-            },
-        };
+            case Envelope.PayloadOneofCase.Init when envelope.Init is { } initReq:
+                messageProcessor.HandleInitRequest(initReq);
+                break;
+        }
     }
 }

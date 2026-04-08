@@ -7,7 +7,6 @@ public sealed record InitCommand(
     uint MaximumEvs,
     int Seed,
     float DualChargingPointProbability,
-    int TotalChargers,
-    string? ClientId) : SimulationCommand;
+    int TotalChargers) : SimulationCommand;
 
 public sealed record SimulationCostWeight(int Id, float UpdatedValue);

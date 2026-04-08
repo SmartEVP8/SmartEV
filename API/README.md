@@ -19,3 +19,5 @@ If you change the protocol:
 
 - `cd SmartEV`
 - `buf generate`
+
+Generates code to API/Generated

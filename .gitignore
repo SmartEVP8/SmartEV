@@ -33,10 +33,6 @@ Core/native/
 
 BenchmarkDotNet.Artifacts/
 
-# DELETE LINES ONCE API FOLDER STRUCTURE IS FINALIZED
-API/node_modules/
-API/package-lock.json
-API/package.json
 # Generated code from buf generate (local development only)
-gen/
+API/Generated/
 *.lscache

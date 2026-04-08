@@ -9,27 +9,30 @@ using Protocol;
 
 /// <summary>
 /// Hosts Engine as a BackgroundService. Bridges Engine events to protocol events via SimulationChannel.
-/// Reads commands, translates Engine events to protocol events, and feeds snapshots to state service.
+/// Reads commands and translates Engine events to protocol events for client streaming.
 /// </summary>
 public sealed class SimulationEngineService(
     IServiceProvider services,
     SimulationChannel simulationChannel,
-    SimulationStateService stateService,
     EnvelopeWebSocketHandler envelopeHandler,
     ILogger<SimulationEngineService> logger) : BackgroundService, IEngineEventSubscriber
 {
     private readonly IServiceProvider _services = services;
     private readonly SimulationChannel _simulationChannel = simulationChannel;
-    private readonly SimulationStateService _stateService = stateService;
     private readonly EnvelopeWebSocketHandler _envelopeHandler = envelopeHandler;
     private readonly ILogger<SimulationEngineService> _logger = logger;
 
     private readonly Lazy<Simulation> _simulation = new(() => services.GetRequiredService<Simulation>(), isThreadSafe: true);
     private readonly Lazy<StationService> _stationService = new(() => services.GetRequiredService<StationService>(), isThreadSafe: true);
 
-    private WebSocket? _client;
     private readonly object _clientLock = new();
 
+    private WebSocket? _client;
+
+    /// <summary>
+    /// Attaches a WebSocket client for event broadcasting. Only one client is supported at a time.
+    /// </summary>
+    /// <param name="socket">The WebSocket client to attach.</param>
     public void AttachClient(WebSocket socket)
     {
         lock (_clientLock)
@@ -38,6 +41,9 @@ public sealed class SimulationEngineService(
         }
     }
 
+    /// <summary>
+    /// Detaches the current WebSocket client, if any. Should be called when the client disconnects.
+    /// </summary>
     public void DetachClient()
     {
         lock (_clientLock)
@@ -54,15 +60,68 @@ public sealed class SimulationEngineService(
         }
     }
 
+    /// <summary>
+    /// Builds InitEngineData and sends it to the connected client.
+    /// </summary>
+    private async Task SendInitEngineDataAsync(InitCommand initCommand, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var initData = new InitEngineData();
+
+            foreach (var cw in initCommand.CostWeights)
+            {
+                initData.CostWeights.Add(new CostWeight { Id = cw.Id, UpdatedValue = cw.UpdatedValue });
+            }
+
+            foreach (var station in _stationService.Value.GetAllStations())
+            {
+                var stationInit = new StationInit
+                {
+                    Id = station.Id,
+                    Address = station.Address,
+                    Pos = new Position { Lat = station.Position.Latitude, Lon = station.Position.Longitude },
+                };
+                initData.Stations.Add(stationInit);
+
+                foreach (var charger in station.Chargers)
+                {
+                    var chargerProto = new Charger
+                    {
+                        Id = charger.Id,
+                        MaxPowerKw = charger.MaxPowerKW,
+                        StationId = station.Id,
+                        IsDual = charger.GetSockets().Length > 1,
+                    };
+                    initData.Chargers.Add(chargerProto);
+                }
+            }
+
+            var envelope = new Envelope { InitEngineData = initData };
+            await SendToClientAsync(envelope, cancellationToken);
+
+            _logger.LogInformation(
+                "Sent InitEngineData with {StationCount} stations and {ChargerCount} chargers",
+                initData.Stations.Count,
+                initData.Chargers.Count);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error sending InitEngineData to client");
+        }
+    }
+
+    /// <summary>
+    /// Background service execution method. Runs the Engine and listens for commands from the SimulationChannel.
+    /// </summary>
+    /// <param name="stoppingToken">A token to signal cancellation of the background service.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         try
         {
-            // Run command handler and snapshot reader concurrently
             await Task.WhenAll(
-                HandleCommandsAsync(stoppingToken),
-                HandleSnapshotsAsync(stoppingToken)
-            );
+                HandleCommandsAsync(stoppingToken));
         }
         catch (OperationCanceledException)
         {
@@ -74,36 +133,24 @@ public sealed class SimulationEngineService(
     {
         await foreach (var command in _simulationChannel.CommandReader.ReadAllAsync(stoppingToken))
         {
-            HandleCommand(command);
+            await HandleCommandAsync(command, stoppingToken);
         }
     }
 
-    private async Task HandleSnapshotsAsync(CancellationToken stoppingToken)
-    {
-        await foreach (var snapshot in _simulationChannel.SnapshotReader.ReadAllAsync(stoppingToken))
-        {
-            // Convert from Engine.Protocol.SimulationSnapshot to Protocol.SimulationSnapshot
-            var protoSnapshot = new SimulationSnapshot
-            {
-                TotalEvs = snapshot.TotalEvs,
-                TotalCharging = snapshot.TotalCharging,
-                SimulationTimeMs = snapshot.SimulationTimeMs,
-            };
-
-            // TODO: Map StationStates when available
-            _stateService.UpdateSnapshot(protoSnapshot);
-        }
-    }
-
-    private void HandleCommand(SimulationCommand command)
+    private async Task HandleCommandAsync(SimulationCommand command, CancellationToken cancellationToken = default)
     {
         if (command is InitCommand init)
         {
             _logger.LogInformation("Running simulation with seed={Seed}, maxEvs={MaxEvs}", init.Seed, init.MaximumEvs);
+            await SendInitEngineDataAsync(init, cancellationToken);
             _ = _simulation.Value.Run();
         }
     }
 
+    /// <summary>
+    /// Handles the ArriveAtStation event from the Engine and translates it to an ArrivalEvent for the protocol, then sends it to the client.
+    /// </summary>
+    /// <param name="event">The ArriveAtStation event from the Engine.</param>
     public async void OnArrivalAtStation(ArriveAtStation @event)
     {
         try
@@ -125,6 +172,10 @@ public sealed class SimulationEngineService(
         }
     }
 
+    /// <summary>
+    /// Handles the EndCharging event from the Engine and translates it to a ChargingEndEvent for the protocol, then sends it to the client.
+    /// </summary>
+    /// <param name="event">The EndCharging event from the Engine.</param>
     public async void OnChargingEnd(EndCharging @event)
     {
         try

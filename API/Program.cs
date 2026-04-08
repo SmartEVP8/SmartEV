@@ -34,7 +34,6 @@ public static class Program
 
         Init.InitEngine(builder.Services);
 
-        builder.Services.AddSingleton<SimulationStateService>();
         builder.Services.AddSingleton<SimulationMessageHandler>();
         builder.Services.AddSingleton<EnvelopeWebSocketHandler>();
         builder.Services.AddHostedService(sp => sp.GetRequiredService<SimulationEngineService>());
