@@ -15,9 +15,7 @@
   <ItemGroup>
     <Using Include="Xunit" />
     <ProjectReference Include="..\..\Core\Core.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\Core\Core.csproj" />
+    <ProjectReference Include="..\Engine.test\Engine.test.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\data\energy_prices.csv" Link="data\energy_prices.csv">

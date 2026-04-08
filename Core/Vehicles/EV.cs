@@ -77,7 +77,7 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     /// <param name="distanceKm">Distance to the target in km.</param>
     /// <param name="reserve">Minimum SoC required on arrival. Defaults to 0.1.</param>
     /// <returns>True if the EV can reach the target with the specified reserve; otherwise, false.</returns>
-    public readonly bool CanReach(float distanceKm, float reserve = 0.1f)
+    private readonly bool CanReach(float distanceKm, float reserve = 0.1f)
     {
         var reserveKWh = Battery.MaxCapacityKWh * reserve;
         var usableKWh = Battery.CurrentChargeKWh - reserveKWh;
@@ -127,10 +127,9 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     /// <returns>Returns the time it takes to reach 50% of the current SoC.</returns>
     public readonly Time TimeToHalfBattery()
     {
-        var currentKwh = Battery.MaxCapacityKWh * Battery.StateOfCharge;
-        var acceptableKwH = Math.Max(currentKwh, Battery.MaxCapacityKWh * Preferences.MinAcceptableCharge);
-        var halfOfCurrentKwH = acceptableKwH / 2f;
-        var distanceAtHalfBattery = halfOfCurrentKwH / (ConsumptionWhPerKm / 1000f);
+        var percent = Math.Max(Preferences.MinAcceptableCharge, Battery.StateOfCharge / 2);
+        var acceptableKWh = Battery.MaxCapacityKWh * percent;
+        var distanceAtHalfBattery = acceptableKWh / (ConsumptionWhPerKm / 1000f);
         return Journey.TimeToDriveDistance(distanceAtHalfBattery);
     }
 
