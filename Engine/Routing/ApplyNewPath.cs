@@ -29,7 +29,7 @@ public class EVDetourPlanner(IDestinationRouter router)
 
         var detourPath = Polyline6ToPoints.DecodePolyline(res.Polyline);
         var newWaypoints = new List<Position>([currentPos, .. detourPath]);
-        var roundedDuration = (uint)Math.Ceiling(res.Duration * Time.MillisecondsPerSecond);
+        var roundedDuration = (uint)Math.Ceiling(res.Duration);
         ev.Journey.UpdateRoute(newWaypoints, station.Position, currentTime, (Time)roundedDuration, res.Distance / 1000);
     }
 }

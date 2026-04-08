@@ -36,6 +36,7 @@ public class EVPopulator(EVFactory evFactory, EVStore evStore, IEventScheduler e
                 {
                     var departure = (uint)(currentTime + (i * interval));
                     evStore.Get(indexes[i]) = evFactory.Create(sampledParams[i], departure);
+                    Console.WriteLine($"Created EV with id {indexes[i]} departing at {departure}");
                 });
 
                 for (var i = 0; i < amount; i++)
