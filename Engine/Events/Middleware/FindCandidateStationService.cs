@@ -14,7 +14,7 @@ using Engine.Vehicles;
 public class FindCandidateStationService(
     IOSRMRouter router,
     Dictionary<ushort, Station> stations,
-    SpatialGrid spatialGrid,
+    ISpatialGrid spatialGrid,
     EVStore evStore) : IFindCandidateStationService
 {
     private record StationQuery(Task<Dictionary<ushort, float>> Task);
