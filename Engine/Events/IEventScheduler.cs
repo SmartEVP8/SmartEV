@@ -20,5 +20,9 @@ public interface IEventScheduler
     /// <returns>The token for the scheduled event.</returns>
     uint ScheduleEvent(Event e);
 
+    /// <summary>
+    /// Gets the next event to be executed, or null if there are no more events.
+    /// </summary>
+    /// <returns>The next event to be executed, or null if there are no more events.</returns>
     Event? GetNextEvent();
 }

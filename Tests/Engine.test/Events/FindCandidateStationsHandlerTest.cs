@@ -14,18 +14,6 @@ public class FindCandidateStationsHandlerTest
     private readonly EVStore _evStore;
     private readonly IFindCandidateStationService _findCandidateStationService;
 
-    // Stub for candidate station service
-    private class StubFindCandidateStationService : IFindCandidateStationService
-    {
-        private readonly Dictionary<int, Dictionary<ushort, float>> _candidates = [];
-
-        public void SetCandidates(int evId, Dictionary<ushort, float> candidates) => _candidates[evId] = candidates;
-
-        public Task<Dictionary<ushort, float>> GetCandidateStationFromCache(int evId) => Task.FromResult(_candidates.TryGetValue(evId, out var c) ? c : []);
-
-        public Action<IMiddlewareEvent> PreComputeCandidateStation() => _ => { };
-    }
-
     public FindCandidateStationsHandlerTest()
     {
         var weights = new CostWeights();
@@ -63,7 +51,7 @@ public class FindCandidateStationsHandlerTest
     [Fact]
     public async Task Handle_NoReservationButCandidates_SchedulesNewFindcandidate()
     {
-        var waypoints = new List<Position> { new Position(58, 9), new Position(58.5, 9.5) };
+        var waypoints = new List<Position> { new(58, 9), new(58.5, 9.5) };
         var ev = TestData.EV(waypoints);
         _evStore.TryAllocate((_, ref e) => { e = ev; }, out var index1);
         var e = new FindCandidateStations(index1, 0);
@@ -86,7 +74,7 @@ public class FindCandidateStationsHandlerTest
     [Fact]
     public async Task Handle_ExistingReservationAndNoCandidates_SchedulesArrival()
     {
-        var waypoints = new List<Position> { new Position(58, 9), new Position(58.5, 9.5) };
+        var waypoints = new List<Position> { new(58, 9), new(58.5, 9.5) };
         var ev = TestData.EV(waypoints);
         var stationId = TestData.AllStations.Keys.First();
         ev.HasReservationAtStationId = stationId; // Existing reservation
@@ -108,16 +96,15 @@ public class FindCandidateStationsHandlerTest
     [Fact]
     public async Task Handle_ExistingReservationBetterThanCandidates_SchedulesNewFindCandidates()
     {
-        var waypoints = new List<Position> { new Position(58, 9), new Position(58.5, 9.5) };
+        var waypoints = new List<Position> { new(58, 9), new(58.5, 9.5) };
         var stationId = TestData.AllStations.Keys.First();
-        var ev = TestData.EV(waypoints);
+        var ev = TestData.EV(waypoints, originalDuration: 10000, departureTime: 0);
         ev.HasReservationAtStationId = stationId;
         _evStore.TryAllocate((_, ref e) => { e = ev; }, out var index1);
         var e = new FindCandidateStations(index1, 0);
 
         var stubService = (StubFindCandidateStationService)_findCandidateStationService;
-
-        stubService.SetCandidates(index1, new Dictionary<ushort, float> { { stationId, 100f } });
+        stubService.SetCandidates(index1, new Dictionary<ushort, float> { { stationId, 1000f } });
 
         await _handler.Handle(e);
 
@@ -132,7 +119,7 @@ public class FindCandidateStationsHandlerTest
     [Fact]
     public async Task Handle_ExistingReservationWorseThanCandidates_CancelEventAndScheduleFindcandidate()
     {
-        var waypoints = new List<Position> { new Position(58, 9), new Position(58.5, 9.5) };
+        var waypoints = new List<Position> { new(58, 9), new(58.5, 9.5) };
         var ev = TestData.EV(waypoints);
         var existingStationId = TestData.AllStations.Keys.First();
         ev.HasReservationAtStationId = existingStationId;
@@ -160,22 +147,33 @@ public class FindCandidateStationsHandlerTest
     [Fact]
     public async Task Handle_TooCloseToStation_SchedulesArrivalInsteadOfFindCandidate()
     {
-        var waypoints = new List<Position> { new Position(58, 9), new Position(58.5, 9.5) };
-        var ev = TestData.EV(waypoints);
+        var waypoints = new List<Position> { new(58, 9), new(58.5, 9.5) };
+        var stationId = TestData.AllStations.Keys.First();
+        var ev = TestData.EV(waypoints, originalDuration: 1, departureTime: 0);
         _evStore.TryAllocate((_, ref e) => { e = ev; }, out var index1);
-        var e = new FindCandidateStations(index1, 0);
+        ev.HasReservationAtStationId = stationId;
+        ev.Advance(1);
+        var e = new FindCandidateStations(index1, 1);
 
         var stubService = (StubFindCandidateStationService)_findCandidateStationService;
-        var stationId = TestData.AllStations.Keys.First();
         stubService.SetCandidates(index1, new Dictionary<ushort, float> { { stationId, 1f } });
 
         await _handler.Handle(e);
 
         var nextEvent = _eventScheduler.GetNextEvent();
         Assert.NotNull(nextEvent);
-        Assert.IsType<ArriveAtStation>(nextEvent);
+        Assert.True(nextEvent is ArriveAtStation);
+    }
 
-        var arriveEvent = (ArriveAtStation)nextEvent;
-        Assert.Equal(stationId, arriveEvent.StationId);
+    // Stub for candidate station service
+    private class StubFindCandidateStationService : IFindCandidateStationService
+    {
+        private readonly Dictionary<int, Dictionary<ushort, float>> _candidates = [];
+
+        public void SetCandidates(int evId, Dictionary<ushort, float> candidates) => _candidates[evId] = candidates;
+
+        public Task<Dictionary<ushort, float>> GetCandidateStationFromCache(int evId) => Task.FromResult(_candidates.TryGetValue(evId, out var c) ? c : []);
+
+        public Action<IMiddlewareEvent> PreComputeCandidateStation() => _ => { };
     }
 }

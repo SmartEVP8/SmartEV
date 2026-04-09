@@ -130,7 +130,6 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
     /// <param name="timeAtStation">The amount of time spent at a station.</param>
     public void UpdateRouteToDestination(Time timeAtStation)
     {
-
         var newDeparture = Current.Departure + timeAtStation;
 
         Current = new CurrentJourney(
