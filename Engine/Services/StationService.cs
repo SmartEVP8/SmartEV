@@ -107,6 +107,25 @@ public class StationService : IStationService
     }
 
     /// <summary>
+    /// Handles a reservation request from an EV to a station.
+    /// If the EV already has an active reservation, the existing arrival event is cancelled before proceeding.
+    /// Calculates the detoured path through the station, updates the EV's journey, and schedules a new
+    /// arrival event.
+    /// </summary>
+    /// <param name="simNow">The current simulation time.</param>
+    /// <returns>A tuple containing the charger and station snapshots.</returns>
+    public (IEnumerable<ChargerSnapshotMetric> Chargers, IEnumerable<StationSnapshotMetric> Stations) CollectAllSnapshots(Time simNow)
+    {
+        // Delegate all the heavy lifting to the collector class
+        return _metricsCollector.Collect(
+            simNow,
+            _stationChargers,
+            _stationIndex,
+            _windowReservations,
+            _windowCancellations);
+    }
+
+    /// <summary>
     /// Handles a cancellation request from an EV, decrementing the station's active reservation count,
     /// clearing the reservation from the EV, and cancelling the scheduled arrival event.
     /// </summary>
