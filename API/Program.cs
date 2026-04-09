@@ -7,7 +7,6 @@ using Engine.Cost;
 using API.EngineManager;
 using Protocol;
 using Google.Protobuf;
-using Core.Charging;
 
 public static class Program
 {
@@ -78,7 +77,7 @@ public static class Program
                             Id = charger.Id,
                             MaxPowerKw = charger.MaxPowerKW,
                             StationId = station.Id,
-                            IsDual = (charger is DualCharger),
+                            IsDual = charger.GetSockets().Length > 1,
                         };
                         initData.Chargers.Add(chargerProto);
                     }
@@ -91,7 +90,9 @@ public static class Program
             var envelope = new Envelope { InitEngineData = initData };
             var data = envelope.ToByteArray();
 
-            return result ? Results.Ok(data) : Results.BadRequest("Initialization failed");
+            return result
+                ? Results.File(data, "application/octet-stream")
+                : Results.BadRequest("Initialization failed");
         });
 
         await app.RunAsync();
