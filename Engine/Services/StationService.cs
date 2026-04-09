@@ -20,7 +20,7 @@ public class StationService : IStationService
     private readonly Dictionary<ushort, List<ChargerState>> _stationChargers = [];
     private readonly Dictionary<int, ChargerState> _chargerIndex = [];
     private readonly Dictionary<ushort, Station> _stationIndex = [];
-    private readonly Dictionary<int, uint> _arrivaleTimes = [];
+    private readonly Dictionary<int, uint> _arrivalTimes = [];
     private readonly Dictionary<ushort, uint> _windowReservations = [];
     private readonly Dictionary<ushort, uint> _windowCancellations = [];
     private readonly ChargingIntegrator _integrator;
@@ -28,7 +28,6 @@ public class StationService : IStationService
     private readonly EVStore _eVStore;
     private readonly MetricsService _metrics;
     private readonly Time _snapshotInterval;
-    private readonly bool _bypassArrivalHandling;
     private readonly StationMetricsCollector _metricsCollector;
 
     /// <summary>
@@ -40,22 +39,19 @@ public class StationService : IStationService
     /// <param name="evStore">The storage of current EV's.</param>
     /// <param name="metrics">The metrics service to use for recording metrics.</param>
     /// <param name="snapshotInterval">The interval at which to collect snapshots.</param>
-    /// <param name="bypassArrivalHandling">If true, arriving EVs are freed immediately instead of entering charger queues.</param>
     public StationService(
         ICollection<Station> stations,
         ChargingIntegrator integrator,
         EventScheduler scheduler,
         EVStore evStore,
         MetricsService metrics,
-        Time snapshotInterval,
-        bool bypassArrivalHandling = false)
+        Time snapshotInterval)
     {
         _integrator = integrator;
         _scheduler = scheduler;
         _eVStore = evStore;
         _metrics = metrics;
         _snapshotInterval = snapshotInterval;
-        _bypassArrivalHandling = bypassArrivalHandling;
         _metricsCollector = new StationMetricsCollector(snapshotInterval);
 
         foreach (var station in stations)
@@ -133,12 +129,6 @@ public class StationService : IStationService
     {
         ref var evRef = ref _eVStore.Get(e.EVId);
         evRef.Advance(e.Time);
-        if (_bypassArrivalHandling)
-        {
-            // TODO: Remove this temporary bypass once the new station-arrival system is in place.
-            _eVStore.Free(e.EVId);
-            return;
-        }
 
         var ev = evRef;
         if (!_stationChargers.TryGetValue(e.StationId, out var chargers))
@@ -162,7 +152,7 @@ public class StationService : IStationService
             Socket: ev.Battery.Socket,
             ArrivalTime: e.Time);
 
-        _arrivaleTimes[e.EVId] = e.Time;
+        _arrivalTimes[e.EVId] = e.Time;
 
         target.Queue.Enqueue((e.EVId, connectedEV));
         UpdateWindowStats(target);
@@ -201,11 +191,11 @@ public class StationService : IStationService
         if (finalSoC is { } soc)
             ev.Battery.StateOfCharge = (float)Math.Clamp(soc, 0d, 1d);
 
-        if (!_arrivaleTimes.TryGetValue(e.EVId, out var arrivalTime))
+        if (!_arrivalTimes.TryGetValue(e.EVId, out var arrivalTime))
             throw new SkillissueException($"Logic Error: Missing arrival time for EV {e.EVId} at EndCharging. This should never happen.");
 
         var timeAtStation = e.Time - arrivalTime;
-        _arrivaleTimes.Remove(e.EVId);
+        _arrivalTimes.Remove(e.EVId);
 
         if (ev.CanCompleteJourney(timeAtStation, ev.Preferences.MinAcceptableCharge))
         {
@@ -213,10 +203,7 @@ public class StationService : IStationService
         }
         else
         {
-            var halfWayToDestination = ev.Journey.Current.Departure + ev.Journey.Current.DurationToNextStop / 2;
-            var timeToHalfBattery = ev.Journey.Current.Departure + ev.TimeToHalfBattery();
-            var nextTime = Math.Min(halfWayToDestination, timeToHalfBattery);
-            _scheduler.ScheduleEvent(new FindCandidateStations(e.EVId, nextTime));
+            _scheduler.ScheduleEvent(new FindCandidateStations(e.EVId, ev.TimeToNextFindCandidateCheck(e.Time)));
         }
 
         StartCharging(state, e.Time);

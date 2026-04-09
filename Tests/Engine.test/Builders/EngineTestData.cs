@@ -128,8 +128,7 @@ public static class EngineTestData
             scheduler: scheduler,
             evStore: evStore,
             metrics: metrics,
-            snapshotInterval: new Time(1200),
-            bypassArrivalHandling: false);
+            snapshotInterval: new Time(1200));
     }
 
     internal sealed class StubCostStore(CostWeights weights) : ICostStore

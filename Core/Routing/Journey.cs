@@ -154,6 +154,12 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
         return (uint)Math.Ceiling(timeHours * 3600);
     }
 
+    /// <summary>
+    /// Gets the time it takes to reach half the distance to the next stop.
+    /// </summary>
+    /// <returns>Time to reach halfway to NextStop.</returns>
+    public Time TimeToReachHalfToNextStop() => Current.Departure + Current.DurationToNextStop / 2;
+
     private float PercentageCompleted(Time currentTime)
     {
         if (Current.Duration.Seconds == 0)

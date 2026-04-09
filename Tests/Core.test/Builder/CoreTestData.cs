@@ -37,14 +37,14 @@ public static class CoreTestData
     public static Dictionary<ushort, Station> Stations(params (ushort Id, double Lon, double Lat)[] stations)
         => stations.ToDictionary(s => s.Id, s => Station(s.Id, new Position(s.Lon, s.Lat)));
 
-    public static Journey Journey(List<Position>? waypoints, Time departure = default, Time originalDuration = default)
+    public static Journey Journey(List<Position>? waypoints, Time departure = default, Time originalDuration = default, float distanceMeter = 100)
     {
         if (waypoints == null)
         {
-            return new(departure, originalDuration, 100, new List<Position>([new(0, 0), new(1, 1)]));
+            return new(departure, originalDuration, distanceMeter, new List<Position>([new(0, 0), new(1, 1)]));
         }
 
-        return new(departure, originalDuration, 100, [.. waypoints]);
+        return new(departure, originalDuration, distanceMeter, [.. waypoints]);
     }
 
     public static Battery Battery(
@@ -64,12 +64,13 @@ public static class CoreTestData
         Preferences? preferences = null,
         ushort efficiency = 150,
         uint originalDuration = 100u,
-        Time departureTime = default)
+        Time departureTime = default,
+        float distanceMeter = 100)
     {
         return new(
             battery ?? Battery(),
             preferences ?? Preferences(),
-            Journey(waypoints, originalDuration: originalDuration, departure: departureTime),
+            Journey(waypoints, originalDuration: originalDuration, departure: departureTime, distanceMeter: distanceMeter),
             efficiency);
     }
 
