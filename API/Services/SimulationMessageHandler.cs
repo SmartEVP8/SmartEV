@@ -25,9 +25,9 @@ public class SimulationMessageHandler(
         try
         {
             _logger.LogInformation(
-                "Handling InitRequest: maxEvs={MaxEvs}, seed={Seed}",
-                request.MaximumEvs,
-                request.Seed);
+                "Handling InitRequest: seed={Seed}, maxEvs={MaxEvs}",
+                request.Seed,
+                request.MaximumEvs);
 
             var command = new InitCommand(
                 request.CostWeights.Select(cw => new SimulationCostWeight(cw.Id, cw.UpdatedValue)).ToList(),

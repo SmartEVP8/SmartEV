@@ -4,6 +4,7 @@ using System.Net.WebSockets;
 using Engine;
 using Engine.Events;
 using Engine.Services;
+using Engine.Vehicles;
 using Microsoft.Extensions.DependencyInjection;
 using Protocol;
 
@@ -15,18 +16,18 @@ public sealed class SimulationEngineService(
     IServiceProvider services,
     SimulationChannel simulationChannel,
     EnvelopeWebSocketHandler envelopeHandler,
+    EVStore evStore,
     ILogger<SimulationEngineService> logger) : BackgroundService, IEngineEventSubscriber
 {
-    private readonly IServiceProvider _services = services;
     private readonly SimulationChannel _simulationChannel = simulationChannel;
     private readonly EnvelopeWebSocketHandler _envelopeHandler = envelopeHandler;
+    private readonly EVStore _evStore = evStore;
     private readonly ILogger<SimulationEngineService> _logger = logger;
 
     private readonly Lazy<Simulation> _simulation = new(() => services.GetRequiredService<Simulation>(), isThreadSafe: true);
     private readonly Lazy<StationService> _stationService = new(() => services.GetRequiredService<StationService>(), isThreadSafe: true);
 
     private readonly object _clientLock = new();
-
     private WebSocket? _client;
 
     /// <summary>
@@ -57,57 +58,6 @@ public sealed class SimulationEngineService(
         lock (_clientLock)
         {
             return _client?.State == WebSocketState.Open ? _client : null;
-        }
-    }
-
-    /// <summary>
-    /// Builds InitEngineData and sends it to the connected client.
-    /// </summary>
-    private async Task SendInitEngineDataAsync(InitCommand initCommand, CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            var initData = new InitEngineData();
-
-            foreach (var cw in initCommand.CostWeights)
-            {
-                initData.CostWeights.Add(new CostWeight { Id = cw.Id, UpdatedValue = cw.UpdatedValue });
-            }
-
-            foreach (var station in _stationService.Value.GetAllStations())
-            {
-                var stationInit = new StationInit
-                {
-                    Id = station.Id,
-                    Address = station.Address,
-                    Pos = new Protocol.Position { Lat = station.Position.Latitude, Lon = station.Position.Longitude },
-                };
-                initData.Stations.Add(stationInit);
-
-                foreach (var charger in station.Chargers)
-                {
-                    var chargerProto = new Charger
-                    {
-                        Id = charger.Id,
-                        MaxPowerKw = charger.MaxPowerKW,
-                        StationId = station.Id,
-                        IsDual = charger.GetSockets().Length > 1,
-                    };
-                    initData.Chargers.Add(chargerProto);
-                }
-            }
-
-            var envelope = new Envelope { InitEngineData = initData };
-            await SendToClientAsync(envelope, cancellationToken);
-
-            _logger.LogInformation(
-                "Sent InitEngineData with {StationCount} stations and {ChargerCount} chargers",
-                initData.Stations.Count,
-                initData.Chargers.Count);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error sending InitEngineData to client");
         }
     }
 
@@ -220,5 +170,150 @@ public sealed class SimulationEngineService(
             _logger.LogError(ex, "Error sending envelope to client");
             DetachClient();
         }
+    }
+
+    /// <summary>
+    /// Builds InitEngineData and sends it to the connected client.
+    /// </summary>
+    private async Task SendInitEngineDataAsync(InitCommand initCommand, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var initData = new InitEngineData();
+
+            foreach (var cw in initCommand.CostWeights)
+            {
+                initData.CostWeights.Add(new CostWeight { Id = cw.Id, UpdatedValue = cw.UpdatedValue });
+            }
+
+            foreach (var station in _stationService.Value.GetAllStations())
+            {
+                var stationInit = new StationInit
+                {
+                    Id = station.Id,
+                    Address = station.Address,
+                    Pos = new Position { Lat = station.Position.Latitude, Lon = station.Position.Longitude },
+                };
+                initData.Stations.Add(stationInit);
+
+                foreach (var charger in station.Chargers)
+                {
+                    var chargerProto = new Charger
+                    {
+                        Id = charger.Id,
+                        MaxPowerKw = charger.MaxPowerKW,
+                        StationId = station.Id,
+                        IsDual = charger.GetType().Name == "DualCharger",
+                    };
+                    initData.Chargers.Add(chargerProto);
+                }
+            }
+
+            var envelope = new Envelope { InitEngineData = initData };
+            await SendToClientAsync(envelope, cancellationToken);
+
+            _logger.LogInformation(
+                "Sent InitEngineData with {StationCount} stations and {ChargerCount} chargers",
+                initData.Stations.Count,
+                initData.Chargers.Count);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error sending InitEngineData to client");
+        }
+    }
+
+    private async Task SendStationStateAsync(ushort stationId, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var stationState = new StationState { StationId = stationId };
+            var station = _stationService.Value.GetStation(stationId);
+            if (station == null)
+            {
+                _logger.LogWarning("Station with ID {StationId} not found", stationId);
+                return;
+            }
+
+            foreach (var charger in station.Chargers)
+            {
+                var chargerState = CreateChargerState(charger.Id);
+                stationState.ChargerStates.Add(chargerState);
+            }
+
+            stationState.EvsOnRoute.AddRange(GetEVsOnRoute(stationId));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error sending StationState for station {StationId} to client", stationId);
+        }
+    }
+
+    private Protocol.ChargerState CreateChargerState(int chargerId)
+    {
+        var engineChargerState = _stationService.Value.GetChargerState(chargerId);
+        if (engineChargerState is null)
+            return null!;
+
+        var chargerState = new Protocol.ChargerState
+        {
+            IsActive = !engineChargerState.IsFree,
+            ChargerId = (uint)chargerId,
+            QueueSize = (uint)engineChargerState.Queue.Count,
+        };
+
+        if (engineChargerState.SessionA is not null)
+            chargerState.EvsInQueue.Add(CreateEVChargerState(engineChargerState.SessionA));
+
+        if (engineChargerState.SessionB is not null)
+            chargerState.EvsInQueue.Add(CreateEVChargerState(engineChargerState.SessionB));
+
+        foreach (var (evId, ev) in engineChargerState.Queue)
+        {
+            chargerState.EvsInQueue.Add(new EVChargerState
+            {
+                EvId = evId,
+                Soc = (float)ev.CurrentSoC,
+                TargetSoc = (float)ev.TargetSoC,
+            });
+        }
+
+        return chargerState;
+    }
+
+    private static EVChargerState CreateEVChargerState(ActiveSession session) =>
+        new()
+        {
+            EvId = session.EVId,
+            Soc = (float)session.EV.CurrentSoC,
+            TargetSoc = (float)session.EV.TargetSoC,
+        };
+
+    private EVOnRoute[] GetEVsOnRoute(ushort stationId)
+    {
+        var evsOnRoute = _stationService.Value.GetEVsOnRouteToStation(stationId);
+
+        var result = new List<EVOnRoute>();
+        foreach (var evId in evsOnRoute)
+        {
+            var ev = _evStore.Get(evId);
+            var evOnRoute = new EVOnRoute
+            {
+                EvId = evId,
+            };
+
+            foreach (var waypoint in ev.Journey.Current.Waypoints)
+            {
+                evOnRoute.Waypoints.Add(new Position
+                {
+                    Lat = waypoint.Latitude,
+                    Lon = waypoint.Longitude,
+                });
+            }
+
+            result.Add(evOnRoute);
+        }
+
+        return result.ToArray();
     }
 }

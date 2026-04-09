@@ -35,6 +35,8 @@ public class FindCandidateStationsBenchmark
             => stations.TryGetValue(stationId, out var station) ? station : null;
 
         public int GetTotalQueueSize(ushort stationId) => 0;
+
+        public IEnumerable<int> GetEVsOnRouteToStation(ushort stationId) => [];
     }
 
     /// <summary>
