@@ -78,14 +78,12 @@ public class FindCandidateStationsHandlerTest
         var waypoints = new List<Position> { new(58, 9), new(58.5, 9.5) };
         var ev = CoreTestData.EV(waypoints);
         var stationId = EngineTestData.AllStations.Keys.First();
-        ev.HasReservationAtStationId = stationId; // Existing reservation
+        ev.HasReservationAtStationId = stationId;
         _evStore.TryAllocate((_, ref e) => { e = ev; }, out var index1);
         var e = new FindCandidateStations(index1, 0);
 
-        // Act
         await _handler.Handle(e);
 
-        // Assert
         var nextEvent = _eventScheduler.GetNextEvent();
         Assert.NotNull(nextEvent);
         Assert.IsType<ArriveAtStation>(nextEvent);
@@ -166,7 +164,6 @@ public class FindCandidateStationsHandlerTest
         Assert.True(nextEvent is ArriveAtStation);
     }
 
-    // Stub for candidate station service
     private class StubFindCandidateStationService : IFindCandidateStationService
     {
         private readonly Dictionary<int, Dictionary<ushort, float>> _candidates = [];

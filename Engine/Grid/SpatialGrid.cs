@@ -113,7 +113,7 @@ public class SpatialGrid : ISpatialGrid
         Position w1,
         Position w2,
         double radius,
-        HashSet<ushort> stationsWithInRadius)
+        HashSet<ushort> stationsWithinRadius)
     {
         var minRowCol = ToRowCol(minPos.Latitude, minPos.Longitude);
         var maxRowCol = ToRowCol(maxPos.Latitude, maxPos.Longitude);
@@ -127,14 +127,14 @@ public class SpatialGrid : ISpatialGrid
 
                 foreach (var stationId in list)
                 {
-                    if (stationsWithInRadius.Contains(stationId))
+                    if (stationsWithinRadius.Contains(stationId))
                         continue;
 
                     if (!_stationPositions.TryGetValue(stationId, out var pos))
                         continue;
 
                     if (GeoMath.IsInRadius(pos, w1, w2, radius))
-                        stationsWithInRadius.Add(stationId);
+                        stationsWithinRadius.Add(stationId);
                 }
             }
         }

@@ -21,7 +21,9 @@ public class EVPopulator(EVFactory evFactory, EVStore evStore, IEventScheduler e
     /// <param name="distributionWindow">The time window over which to distribute the spawning events.</param>
     public void CreateEVs(int amount, Time distributionWindow)
     {
-        if (amount <= 0)
+        if (amount < 0)
+            throw new ArgumentException($"Amount of EVs to create cannot be negative (amount={amount}).");
+        else if (amount == 0)
             return;
 
         var currentTime = eventScheduler.CurrentTime;
@@ -42,17 +44,15 @@ public class EVPopulator(EVFactory evFactory, EVStore evStore, IEventScheduler e
                 {
                     var evId = indexes[i];
                     ref var ev = ref evStore.Get(evId);
-                    var departure = ev.Journey.Original.Departure;
-                    var reserve = ev.Preferences.MinAcceptableCharge;
 
-                    if (ev.CanCompleteJourney(reserve: reserve))
+                    if (ev.CanCompleteJourney(minAcceptableCharge: ev.Preferences.MinAcceptableCharge))
                     {
-                        var arrivalTime = departure + ev.Journey.Current.Duration;
+                        var arrivalTime = ev.Journey.Original.Departure + ev.Journey.Current.Duration;
                         eventScheduler.ScheduleEvent(new ArriveAtDestination(evId, arrivalTime));
                     }
                     else
                     {
-                        eventScheduler.ScheduleEvent(new FindCandidateStations(evId, departure));
+                        eventScheduler.ScheduleEvent(new FindCandidateStations(evId, ev.Journey.Original.Departure));
                     }
                 }
             }
