@@ -3,6 +3,7 @@ namespace Engine.test.Events;
 using Engine.Metrics.Events;
 using Core.Vehicles;
 using Engine.test.Builders;
+using Core.test.Builders;
 using Core.Shared;
 
 public class ArriveAtDestinationMetricTest
@@ -18,9 +19,9 @@ public class ArriveAtDestinationMetricTest
         var deviation = 12U;
         var simNow = (Time)(departure + originalDuration + deviation);
 
-        var battery = TestData.Battery();
-        var preferences = TestData.Preferences();
-        var journey = TestData.Journey(waypoints: null, departure: 100U, originalDuration: 50U);
+        var battery = CoreTestData.Battery();
+        var preferences = CoreTestData.Preferences();
+        var journey = CoreTestData.Journey(waypoints: null, departure: 100U, originalDuration: 50U);
         journey.UpdateRoute(new List<Position>([]), new(0, 0), departure: 100, duration: 62U, newDistanceKm: 10);
         var ev = new EV(battery, preferences, journey, 150);
 
@@ -42,9 +43,9 @@ public class ArriveAtDestinationMetricTest
         var deviation = 12U;
         var simNow = (Time)(departure + originalDuration + deviation);
 
-        var battery = TestData.Battery();
-        var preferences = TestData.Preferences();
-        var journey = TestData.Journey(waypoints: null, departure: departure, originalDuration: originalDuration);
+        var battery = CoreTestData.Battery();
+        var preferences = CoreTestData.Preferences();
+        var journey = CoreTestData.Journey(waypoints: null, departure: departure, originalDuration: originalDuration);
         var ev = new EV(battery, preferences, journey, 150);
 
         var metric = ArrivalAtDestinationMetric.Collect(ref ev, simNow);

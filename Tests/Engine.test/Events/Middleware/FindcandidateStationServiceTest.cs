@@ -1,10 +1,10 @@
 namespace Engine.Test.Events.Middleware
 {
     using Core.Shared;
+    using Core.test.Builders;
     using Core.Vehicles;
     using Engine.Events;
     using Engine.Events.Middleware;
-    using Engine.Grid;
     using Engine.Routing;
     using Engine.test.Builders;
     using Engine.Vehicles;
@@ -17,14 +17,14 @@ namespace Engine.Test.Events.Middleware
         public FindCandidateStationServiceTest()
         {
             _evStore = new EVStore(10);
-            var stations = TestData.Stations([
+            var stations = CoreTestData.Stations([
                 (0, 10.2039, 56.1629),
                 (1, 12.6, 55.7),
                 (2, 10.2045, 56.1635),
                 (3, 11.5, 54.5),
                 (4, 10.22, 56.19)
             ]);
-            var spatialGrid = TestData.BuildSpatialGrid(stations);
+            var spatialGrid = EngineTestData.BuildSpatialGrid(stations);
 
             float[] durations = [10f, 7200f, 25f, 9000f, 180f];
             float[] distances = [50f, 1900f, 130f, 2200f, 300f];
@@ -37,9 +37,9 @@ namespace Engine.Test.Events.Middleware
         {
             var waypoints = new List<Position> { new(10.2035, 56.1625), new(10.2050, 56.1640) };
 
-            var battery = TestData.Battery(capacity: 100, maxChargeRate: 100, stateOfCharge: 1.0f);
-            var preferences = TestData.Preferences(MinAcceptableCharge: 0.1f, MaxPathDeviation: 100.0f);
-            var ev = TestData.EV(waypoints, battery, preferences);
+            var battery = CoreTestData.Battery(capacity: 100, maxChargeRate: 100, stateOfCharge: 1.0f);
+            var preferences = CoreTestData.Preferences(MinAcceptableCharge: 0.1f, MaxPathDeviation: 100.0f);
+            var ev = CoreTestData.EV(waypoints, battery, preferences);
             _evStore.TryAllocate((int _, ref EV e) => { e = ev; }, out var evId);
 
             var action = _service.PreComputeCandidateStation();

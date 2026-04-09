@@ -2,14 +2,16 @@ namespace Engine.test.Routing;
 
 using Core.Shared;
 using Engine.Routing;
+
 using Engine.test.Builders;
+using Core.test.Builders;
 
 public class ApplyNewPathToEVTests()
 {
     [Fact]
     public void ApplyNewPath_WhenApplyingSamePath_IsSame()
     {
-        var journey = TestData.Journey(
+        var journey = CoreTestData.Journey(
             waypoints: null,
             departure: new Time(0),
             originalDuration: 60U);
@@ -25,11 +27,11 @@ public class ApplyNewPathToEVTests()
     [Fact]
     public void ApplyNewPathToEV_ConvertsAndRoundsDurationCorrectly()
     {
-        var ev = TestData.EV(waypoints: [
+        var ev = CoreTestData.EV(waypoints: [
             new (0, 0),
             new (10, 10)
         ]);
-        var station = TestData.Station(1, new(5, 5));
+        var station = CoreTestData.Station(1, new(5, 5));
         var fakeRouter = new FakeDestinationRouter
         {
             ReturnedDuration = 150.0f, // 2.5 minutes, should round to 2
@@ -46,7 +48,7 @@ public class ApplyNewPathToEVTests()
     [Fact]
     public void UpdateRoute_AccumulatesPathDeviationCorrectly()
     {
-        var journey = TestData.Journey(
+        var journey = CoreTestData.Journey(
             waypoints: null,
             departure: new Time(100),
             originalDuration: 50U);
@@ -65,19 +67,20 @@ public class ApplyNewPathToEVTests()
     [Fact]
     public void ApplyNewPathToEV_ThrowsArgumentException_WhenTimeIsOutOfBounds()
     {
-        var ev = TestData.EV(
+        var ev = CoreTestData.EV(
             waypoints: [new Position(0, 0), new Position(10, 10)],
             departureTime: new Time(100),
             originalDuration: 50U);
 
         var fakeRouter = new FakeDestinationRouter();
         var applyNewPath = new EVDetourPlanner(fakeRouter);
-        var station = TestData.Station(1, new Position(5, 5));
+        var station = CoreTestData.Station(1, new Position(5, 5));
 
         Assert.Throws<InvalidOperationException>(() =>
             applyNewPath.Update(ref ev, station, new Time(99)));
 
         const uint outsideApproxTolerance = 31;
+
         Assert.Throws<ArgumentException>(() =>
             applyNewPath.Update(ref ev, station, new Time(150 + outsideApproxTolerance)));
     }

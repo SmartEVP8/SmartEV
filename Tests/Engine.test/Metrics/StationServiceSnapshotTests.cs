@@ -4,6 +4,7 @@ using Core.Charging;
 using Core.Shared;
 using Engine.Events;
 using Engine.test.Builders;
+using Core.test.Builders;
 using Engine.Vehicles;
 using Engine.Metrics.Snapshots;
 using Engine.Services;
@@ -62,8 +63,8 @@ public class StationServiceSnapshotTests
         var expectedReservations = 5u;
         var expectedCancellations = 1u;
 
-        var charger = TestData.SingleCharger(1, maxPowerKW: chargerMaxKw);
-        var station = TestData.Station(1, chargers: [charger]);
+        var charger = CoreTestData.SingleCharger(1, maxPowerKW: chargerMaxKw);
+        var station = CoreTestData.Station(1, chargers: [charger]);
 
         var chargerState = new ChargerState(charger, 1)
         {
@@ -76,7 +77,7 @@ public class StationServiceSnapshotTests
 
         for (var i = 0; i < expectedQueueSize; i++)
         {
-            chargerState.Queue.Enqueue((i, TestData.ConnectedEV(i, 0.2, 0.8)));
+            chargerState.Queue.Enqueue((i, EngineTestData.ConnectedEV(i, 0.2, 0.8)));
         }
 
         var stationChargers = new Dictionary<ushort, List<ChargerState>> { [1] = [chargerState] };

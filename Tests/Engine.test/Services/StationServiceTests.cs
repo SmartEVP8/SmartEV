@@ -5,6 +5,7 @@ using Core.Charging;
 using Engine.Events;
 using Engine.Services;
 using Engine.test.Builders;
+using Core.test.Builders;
 using Engine.Vehicles;
 
 public class StationServiceTests
@@ -16,8 +17,8 @@ public class StationServiceTests
         // Both should start charging and have EndCharging events scheduled.
         var (service, scheduler, evStore) = BuildDual();
 
-        evStore.TryAllocate((_, ref e) => { e = TestData.EV(); }, out var index1);
-        evStore.TryAllocate((_, ref e) => { e = TestData.EV(); }, out var index2);
+        evStore.TryAllocate((_, ref e) => { e = CoreTestData.EV(); }, out var index1);
+        evStore.TryAllocate((_, ref e) => { e = CoreTestData.EV(); }, out var index2);
 
         service.HandleArrivalAtStation(new ArriveAtStation(EVId: index1, StationId: 1, TargetSoC: 0.8, Time: 0));
         service.HandleArrivalAtStation(new ArriveAtStation(EVId: index2, StationId: 1, TargetSoC: 0.8, Time: 0));
@@ -41,9 +42,9 @@ public class StationServiceTests
         // After first finishes, second should start.
         var (service, scheduler, evStore) = BuildSingle();
 
-        evStore.TryAllocate((_, ref e) => { e = TestData.EV(); }, out var index1);
-        evStore.TryAllocate((_, ref e) => { e = TestData.EV(); }, out var index2);
-        evStore.TryAllocate((_, ref e) => { e = TestData.EV(); }, out var index3);
+        evStore.TryAllocate((_, ref e) => { e = CoreTestData.EV(); }, out var index1);
+        evStore.TryAllocate((_, ref e) => { e = CoreTestData.EV(); }, out var index2);
+        evStore.TryAllocate((_, ref e) => { e = CoreTestData.EV(); }, out var index3);
 
         service.HandleArrivalAtStation(new ArriveAtStation(EVId: index1, StationId: 1, TargetSoC: 0.6, Time: 0));
         service.HandleArrivalAtStation(new ArriveAtStation(EVId: index2, StationId: 1, TargetSoC: 0.8, Time: 0));
@@ -70,9 +71,9 @@ public class StationServiceTests
         // After one finishes, third should start and power is redistributed.
         var (service, scheduler, evStore) = BuildDual(maxPowerKW: 200);
 
-        evStore.TryAllocate((_, ref e) => { e = TestData.EV(); }, out var index1);
-        evStore.TryAllocate((_, ref e) => { e = TestData.EV(); }, out var index2);
-        evStore.TryAllocate((_, ref e) => { e = TestData.EV(); }, out var index3);
+        evStore.TryAllocate((_, ref e) => { e = CoreTestData.EV(); }, out var index1);
+        evStore.TryAllocate((_, ref e) => { e = CoreTestData.EV(); }, out var index2);
+        evStore.TryAllocate((_, ref e) => { e = CoreTestData.EV(); }, out var index3);
 
         service.HandleArrivalAtStation(new ArriveAtStation(EVId: index1, StationId: 1, TargetSoC: 0.8, Time: 0));
         service.HandleArrivalAtStation(new ArriveAtStation(EVId: index2, StationId: 1, TargetSoC: 0.8, Time: 0));
@@ -101,23 +102,23 @@ public class StationServiceTests
 
     private static (StationService service, EventScheduler scheduler, EVStore evStore) BuildSingle(int maxPowerKW = 150)
     {
-        var charger = TestData.SingleCharger(1, maxPowerKW: maxPowerKW);
-        var station = TestData.Station(1, chargers: [charger]);
+        var charger = CoreTestData.SingleCharger(1, maxPowerKW: maxPowerKW);
+        var station = CoreTestData.Station(1, chargers: [charger]);
         var scheduler = new EventScheduler();
         var stations = new Dictionary<ushort, Station> { [1] = station };
         var evStore = new EVStore(10);
-        var service = TestData.StationService(stations, scheduler, evStore);
+        var service = EngineTestData.StationService(stations, scheduler, evStore);
         return (service, scheduler, evStore);
     }
 
     private static (StationService service, EventScheduler scheduler, EVStore evStore) BuildDual(int maxPowerKW = 150)
     {
-        var charger = TestData.DualCharger(1, maxPowerKW: maxPowerKW);
-        var station = TestData.Station(1, chargers: [charger]);
+        var charger = CoreTestData.DualCharger(1, maxPowerKW: maxPowerKW);
+        var station = CoreTestData.Station(1, chargers: [charger]);
         var stations = new Dictionary<ushort, Station> { [1] = station };
         var scheduler = new EventScheduler();
         var evStore = new EVStore(10);
-        var service = TestData.StationService(stations, scheduler, evStore);
+        var service = EngineTestData.StationService(stations, scheduler, evStore);
         return (service, scheduler, evStore);
     }
 

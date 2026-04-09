@@ -2,8 +2,8 @@ namespace Core.test.Vehicles.test;
 
 using Core.Routing;
 using Core.Shared;
+using Core.test.Builders;
 using Core.Vehicles;
-using Engine.test.Builders;
 
 public class EVTests
 {
@@ -98,22 +98,22 @@ public class EVTests
     [Fact]
     public void CanCompleteJourney_ReturnsTrueWhenEnoughCharge()
     {
-        var ev = TestData.EV(battery: TestData.Battery(stateOfCharge: 1f));
+        var ev = CoreTestData.EV(battery: CoreTestData.Battery(stateOfCharge: 1f));
         Assert.True(ev.CanCompleteJourney(reserve: 0.1f));
     }
 
     [Fact]
     public void CanCompleteJourney_ReturnsFalseWhenNotEnoughCharge()
     {
-        var ev = TestData.EV(battery: TestData.Battery(stateOfCharge: 0.001f));
+        var ev = CoreTestData.EV(battery: CoreTestData.Battery(stateOfCharge: 0.001f));
         Assert.False(ev.CanCompleteJourney(reserve: 0.1f));
     }
 
     [Fact]
     public void CanCompleteJourney_ExactlyEnoughCharge_ReturnsTrue()
     {
-        var ev = TestData.EV(
-            battery: TestData.Battery(capacity: 100, stateOfCharge: 0.1002f),
+        var ev = CoreTestData.EV(
+            battery: CoreTestData.Battery(capacity: 100, stateOfCharge: 0.1002f),
             efficiency: 150);
 
         Assert.True(ev.CanCompleteJourney(reserve: 0.1f));
@@ -122,35 +122,35 @@ public class EVTests
     [Fact]
     public void CanReachViaDetour_ReturnsTrueWhenEnoughCharge()
     {
-        var ev = TestData.EV(battery: TestData.Battery(stateOfCharge: 0.2f));
+        var ev = CoreTestData.EV(battery: CoreTestData.Battery(stateOfCharge: 0.2f));
         Assert.True(ev.CanReachViaDetour(15, 10, reserve: 0.1f));
     }
 
     [Fact]
     public void CanReachViaDetour_ReturnsFalseWhenNotEnoughCharge()
     {
-        var ev = TestData.EV(battery: TestData.Battery(stateOfCharge: 0.2f));
+        var ev = CoreTestData.EV(battery: CoreTestData.Battery(stateOfCharge: 0.2f));
         Assert.False(ev.CanReachViaDetour(1000, 10, reserve: 0.1f));
     }
 
     [Fact]
     public void CanReachViaDetour_DetourEqualsDirect_ZeroExtraCost()
     {
-        var ev = TestData.EV(battery: TestData.Battery(stateOfCharge: 0.2f));
+        var ev = CoreTestData.EV(battery: CoreTestData.Battery(stateOfCharge: 0.2f));
         Assert.True(ev.CanReachViaDetour(10, 10, reserve: 0.1f));
     }
 
     [Fact]
     public void CanReachViaDetour_MassiveDetour_ReturnsFalse()
     {
-        var ev = TestData.EV(battery: TestData.Battery(stateOfCharge: 0.2f));
+        var ev = CoreTestData.EV(battery: CoreTestData.Battery(stateOfCharge: 0.2f));
         Assert.False(ev.CanReachViaDetour(10000, 10, reserve: 0.1f));
     }
 
     [Fact]
     public void TimeToHalfBattery_BasicCalculation()
     {
-        var ev = TestData.EV(battery: TestData.Battery(stateOfCharge: 0.5f));
+        var ev = CoreTestData.EV(battery: CoreTestData.Battery(stateOfCharge: 0.5f));
 
         var result = ev.TimeToHalfBattery();
 
@@ -160,9 +160,9 @@ public class EVTests
     [Fact]
     public void TimeToHalfBattery_SoCBelowMinAcceptable_UsesMinAcceptable()
     {
-        var ev = TestData.EV(
-            battery: TestData.Battery(stateOfCharge: 0.09f),
-            preferences: TestData.Preferences(MinAcceptableCharge: 0.1f));
+        var ev = CoreTestData.EV(
+            battery: CoreTestData.Battery(stateOfCharge: 0.09f),
+            preferences: CoreTestData.Preferences(MinAcceptableCharge: 0.1f));
 
         var timeWithBelowAcceptableCharge = ev.TimeToHalfBattery();
 
@@ -176,9 +176,9 @@ public class EVTests
     [Fact]
     public void TimeToHalfBattery_SoCAboveMinAcceptable_UsesCurrentSoC()
     {
-        var ev = TestData.EV(
-            battery: TestData.Battery(stateOfCharge: 0.8f),
-            preferences: TestData.Preferences(MinAcceptableCharge: 0.1f));
+        var ev = CoreTestData.EV(
+            battery: CoreTestData.Battery(stateOfCharge: 0.8f),
+            preferences: CoreTestData.Preferences(MinAcceptableCharge: 0.1f));
 
         var timeWithHighCharge = ev.TimeToHalfBattery();
 
