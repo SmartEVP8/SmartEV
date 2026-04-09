@@ -80,7 +80,7 @@ public sealed class SimulationEngineService(
                 {
                     Id = station.Id,
                     Address = station.Address,
-                    Pos = new Position { Lat = station.Position.Latitude, Lon = station.Position.Longitude },
+                    Pos = new Protocol.Position { Lat = station.Position.Latitude, Lon = station.Position.Longitude },
                 };
                 initData.Stations.Add(stationInit);
 

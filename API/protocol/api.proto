@@ -50,7 +50,7 @@ message InitEngineData {
 }
 
 // ============================================================================
-// STATE TYPES
+// Snapshots
 // ============================================================================
 
 message EVChargerState {
@@ -81,8 +81,7 @@ message StationState {
 message SimulationSnapshot {
   uint32 total_evs = 1;
   uint32 total_charging = 2;
-  repeated StationState station_states = 3;
-  uint64 simulation_time_ms = 4;
+  uint64 simulation_time_ms = 3;
 }
 
 // ============================================================================
@@ -103,6 +102,10 @@ message InitRequest {
 
 message GetSnapshotRequest {
   // Empty, but required for request/response symmetry
+}
+
+message GetStationSnapshot {
+  uint32 station_id = 1;
 }
 
 // ============================================================================
@@ -133,11 +136,14 @@ message Envelope {
     // Client Requests (10-19)
     InitRequest init = 10;
     GetSnapshotRequest get_snapshot = 11;
+    GetStationSnapshot get_station_snapshot = 12;
 
     // Server Responses (20-29)
     InitEngineData init_engine_data = 20; // response to InitRequest
     SimulationSnapshot snapshot_response = 21; // response to GetSnapshotRequest
     GetValidWeightRanges valid_weight_ranges = 23;
+    StationState station_state_response = 24; // response to GetStationSnapshot
+
 
     // Server Events/Pushes (30-39)
     ArrivalEvent arrival = 30;
