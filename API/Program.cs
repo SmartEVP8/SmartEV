@@ -37,6 +37,15 @@ public static class Program
         builder.Services.AddSingleton<SimulationMessageHandler>();
         builder.Services.AddSingleton<EnvelopeWebSocketHandler>();
         builder.Services.AddHostedService(sp => sp.GetRequiredService<SimulationEngineService>());
+        builder.Services.AddCors(options =>
+        {
+            options.AddPolicy("AllowFrontend", policy =>
+            {
+                policy.WithOrigins("http://localhost:5173")
+                      .AllowAnyMethod()
+                      .AllowAnyHeader();
+            });
+        });
 
         var app = builder.Build();
 
@@ -47,6 +56,8 @@ public static class Program
         }
 
         app.UseWebSockets();
+
+        app.UseCors("AllowFrontend");
 
         // Map WebSocket endpoint
         app.MapSimulationWebSocket();
