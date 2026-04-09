@@ -7,6 +7,7 @@ using Engine.Cost;
 using API.EngineManager;
 using Protocol;
 using Google.Protobuf;
+using Core.Charging;
 
 public static class Program
 {
@@ -77,7 +78,7 @@ public static class Program
                             Id = charger.Id,
                             MaxPowerKw = charger.MaxPowerKW,
                             StationId = station.Id,
-                            IsDual = charger.GetSockets().Length > 1,
+                            IsDual = (charger is DualCharger),
                         };
                         initData.Chargers.Add(chargerProto);
                     }

@@ -1,6 +1,7 @@
 namespace API.EngineManager;
 
 public record CostWeightDTO(int CostId, double Value);
+
 public record EngineInitConfigDTO(
         int MaximumEVs,
         int Seed,
