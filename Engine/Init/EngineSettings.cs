@@ -8,7 +8,7 @@ using Engine.StationFactory;
 /// <summary>
 /// Represents the settings for the engine.
 /// </summary>
-public class EngineSettings
+public record EngineSettings
 {
     /// <summary>
     /// Gets the cost configuration for the engine, which includes various weights and parameters.
@@ -75,7 +75,7 @@ public class EngineSettings
     /// Gets the fraction of the total EV population that should be spawned in the simulation.
     /// </summary>
     required public double EVSpawnFraction { get; init; }
-    
+
     /// <summary>
     /// Gets the population scalar used in the gravity model for journey sampling, which controls how population size affects the probability of selecting a destination.
     /// </summary>

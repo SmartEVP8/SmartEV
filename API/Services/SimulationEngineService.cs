@@ -25,7 +25,7 @@ public sealed class SimulationEngineService(
     private readonly Lazy<Simulation> _simulation = new(() => services.GetRequiredService<Simulation>(), isThreadSafe: true);
     private readonly Lazy<StationService> _stationService = new(() => services.GetRequiredService<StationService>(), isThreadSafe: true);
 
-    private readonly object _clientLock = new();
+    private readonly Lock _clientLock = new();
 
     private WebSocket? _client;
 
@@ -68,11 +68,6 @@ public sealed class SimulationEngineService(
         try
         {
             var initData = new InitEngineData();
-
-            foreach (var cw in initCommand.CostWeights)
-            {
-                initData.CostWeights.Add(new CostWeight { Id = cw.Id, UpdatedValue = cw.UpdatedValue });
-            }
 
             foreach (var station in _stationService.Value.GetAllStations())
             {

@@ -30,7 +30,7 @@ public class SimulationMessageHandler(
                 request.Seed);
 
             var command = new InitCommand(
-                request.CostWeights.Select(cw => new SimulationCostWeight(cw.Id, cw.UpdatedValue)).ToList(),
+                [.. request.CostWeights.Select(cw => new SimulationCostWeight(cw.Id, cw.UpdatedValue))],
                 request.MaximumEvs,
                 request.Seed,
                 request.StationGeneration?.DualChargingPointProbability ?? 0.5f,
