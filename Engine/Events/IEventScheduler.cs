@@ -23,5 +23,8 @@ public interface IEventScheduler
     /// Gets the next event to be executed, or null if there are no more events.
     /// </summary>
     /// <returns>The next event to be executed, or null if there are no more events.</returns>
+    /// 
+    /// 
+    /// 
     Event? GetNextEvent();
 }
