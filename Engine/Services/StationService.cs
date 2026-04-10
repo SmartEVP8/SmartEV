@@ -118,7 +118,6 @@ public class StationService : IStationService
 
         _windowCancellations[e.StationId] = _windowCancellations.GetValueOrDefault(e.StationId) + 1;
         station.IncrementCancellations();
-        Console.WriteLine($"EV {e.EVId} cancelled reservation at station {e.StationId} at time {e.Time}. SoC={ev.Battery.StateOfCharge:P2}, CurrentKWh={ev.Battery.CurrentChargeKWh:F2}, MinAcceptable={ev.Preferences.MinAcceptableCharge:P2}, RemainingToNextStop={ev.Journey.Current.DurationToNextStop}.");
     }
 
     /// <summary>
@@ -156,7 +155,6 @@ public class StationService : IStationService
         _arrivalTimes[e.EVId] = e.Time;
 
         target.Queue.Enqueue((e.EVId, connectedEV));
-        Console.WriteLine($"EV {e.EVId} arrived at station {e.StationId} and joined queue for charger {target.Charger.Id} at time {e.Time}. SoC={ev.Battery.StateOfCharge:P2}, CurrentKWh={ev.Battery.CurrentChargeKWh:F2}, MinAcceptable={ev.Preferences.MinAcceptableCharge:P2}, RemainingToNextStop={ev.Journey.Current.DurationToNextStop}. QueueLength={target.Queue.Count}.");
         UpdateWindowStats(target);
         if (target.IsFree)
             StartCharging(target, e.Time);
@@ -202,12 +200,10 @@ public class StationService : IStationService
         if (ev.CanCompleteJourney(timeAtStation, ev.Preferences.MinAcceptableCharge))
         {
             _scheduler.ScheduleEvent(new ArriveAtDestination(e.EVId, e.Time));
-            Console.WriteLine($"EV {e.EVId} finished charging at station {state.StationId} at time {e.Time}. Scheduled arrival at destination. SoC={ev.Battery.StateOfCharge:P2}, CurrentKWh={ev.Battery.CurrentChargeKWh:F2}, MinAcceptable={ev.Preferences.MinAcceptableCharge:P2}, RemainingToNextStop={ev.Journey.Current.DurationToNextStop}.");
         }
         else
         {
             _scheduler.ScheduleEvent(new FindCandidateStations(e.EVId, ev.TimeToNextFindCandidateCheck(e.Time)));
-            Console.WriteLine($"EV {e.EVId} finished charging at station {state.StationId} at time {e.Time}. Scheduled search for next station. SoC={ev.Battery.StateOfCharge:P2}, CurrentKWh={ev.Battery.CurrentChargeKWh:F2}, MinAcceptable={ev.Preferences.MinAcceptableCharge:P2}, RemainingToNextStop={ev.Journey.Current.DurationToNextStop}.");
         }
 
         StartCharging(state, e.Time);
@@ -298,7 +294,6 @@ public class StationService : IStationService
             state.SessionB = state.SessionB with { Plan = dualResult };
 
         ScheduleEndChargingEventsForDualCharging(state, dual, dualResult);
-        Console.WriteLine($"Started dual charging at station {state.StationId} on charger {dual.Id} at time {simNow}. SoC SessionA={state.SessionA?.EV.CurrentSoC:P2}, SoC SessionB={state.SessionB?.EV.CurrentSoC:P2}, TargetSoC SessionA={state.SessionA?.EV.TargetSoC:P2}, TargetSoC SessionB={state.SessionB?.EV.TargetSoC:P2}.");
         return;
     }
 
@@ -333,7 +328,6 @@ public class StationService : IStationService
         {
             var token = _scheduler.ScheduleEvent(new EndCharging(next.EVId, single.Id, result.FinishTimeA.Value));
             state.SessionA = state.SessionA with { CancellationToken = token };
-            Console.WriteLine($"Scheduled EndCharging for EV {state.SessionA.EVId} at station {state.StationId} on charger {single.Id} at time {result.FinishTimeA.Value}. SoC={state.SessionA.EV.CurrentSoC:P2}, TargetSoC={state.SessionA.EV.TargetSoC:P2}.");
         }
 
         return;

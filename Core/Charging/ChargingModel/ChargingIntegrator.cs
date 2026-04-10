@@ -26,7 +26,7 @@ public record ConnectedEV(
 /// <param name="EnergyDeliveredKWhA">Exact energy delivered to each car during this run.</param>
 /// <param name="EnergyDeliveredKWhB">Exact energy delivered to each car during this run.</param>
 /// <param name="WastedEnergyKWh">Energy the charger could have delivered but no car absorbed.</param>
-/// <param name="DurationSeconds">Wall time covered by this integration run.</param>
+/// <param name="DurationMilliseconds">Time duration for this integration run.</param>
 /// <param name="BSoCWhenAFinish">SoC of B at the moment A finished (or final SocB if A never finished first).</param>
 /// <param name="ASoCWhenBFinish">SoC of A at the moment B finished (or final SocA if B never finished first).</param>
 /// <param name="StepSeconds">The time step used for this integration run.</param>
@@ -40,7 +40,7 @@ public record IntegrationResult(
     double EnergyDeliveredKWhA,
     double EnergyDeliveredKWhB,
     double WastedEnergyKWh,
-    double DurationSeconds,
+    double DurationMilliseconds,
     double ASoCWhenBFinish,
     double BSoCWhenAFinish,
     uint StepSeconds,
@@ -121,7 +121,7 @@ public sealed class ChargingIntegrator(uint stepSeconds)
             Time step = runUntilSeconds.HasValue
                 ? Math.Min(_stepSeconds, runUntilSeconds.Value - t)
                 : _stepSeconds;
-            var stepHours = step / 3600000.0;
+            var stepHours = (double)step / Time.MillisecondsPerHour;
 
             if (!finished)
             {
@@ -156,7 +156,7 @@ public sealed class ChargingIntegrator(uint stepSeconds)
             EnergyDeliveredKWhA: energy,
             EnergyDeliveredKWhB: 0.0,
             WastedEnergyKWh: wastedEnergy,
-            DurationSeconds: t,
+            DurationMilliseconds: t,
             BSoCWhenAFinish: 0.0,
             ASoCWhenBFinish: 0.0,
             StepSeconds: _stepSeconds,
@@ -211,7 +211,7 @@ public sealed class ChargingIntegrator(uint stepSeconds)
             Time step = runUntilSeconds.HasValue
                 ? Math.Min(_stepSeconds, runUntilSeconds.Value - t)
                 : _stepSeconds;
-            var stepHours = step / 3600000.0;
+            var stepHours = (double)step / Time.MillisecondsPerHour;
 
             var (powerA, powerB) = point.GetPowerDistribution(
                 maxKW,
@@ -257,7 +257,7 @@ public sealed class ChargingIntegrator(uint stepSeconds)
             EnergyDeliveredKWhA: energyA,
             EnergyDeliveredKWhB: energyB,
             WastedEnergyKWh: wastedEnergy,
-            DurationSeconds: t,
+            DurationMilliseconds: t,
             BSoCWhenAFinish: bSoCWhenAFinish ?? socB,
             ASoCWhenBFinish: aSoCWhenBFinish ?? socA,
             StepSeconds: _stepSeconds,

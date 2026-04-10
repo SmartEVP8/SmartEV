@@ -81,7 +81,7 @@ public static class EngineTestData
         MetricsService metrics,
         EventScheduler scheduler) =>
         new(
-            rescheduleTime: new Time(1200),
+            rescheduleTime: new Time(1200000),
             stationService: stationService,
             metrics: metrics,
             scheduler: scheduler);
@@ -128,7 +128,7 @@ public static class EngineTestData
             scheduler: scheduler,
             evStore: evStore,
             metrics: metrics,
-            snapshotInterval: new Time(1200));
+            snapshotInterval: new Time(1200000));
     }
 
     internal sealed class StubCostStore(CostWeights weights) : ICostStore
