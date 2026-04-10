@@ -9,7 +9,7 @@ public static class CarsOnRoad
     /// Total registered EVs in Denmark according to DST - January 2026 (Rounded down).
     /// Source: https://www.dst.dk/da/Statistik/udgivelser/NytHtml?cid=51885.
     /// </summary>
-    public const int TotalEVs = 556000;
+    public const int TotalEVs = 583320;
 
     /// <summary>
     /// Minimum number of EVs expected on the road even with almost no congestion.

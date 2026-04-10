@@ -51,6 +51,11 @@ public class EngineSettings
     required public uint SnapshotInterval { get; init; }
 
     /// <summary>
+    ///  Gets the size of the grid cells.
+    /// </summary>
+    required public double GridSize { get; init; }
+
+    /// <summary>
     /// Gets the simulation end time, which determines
     /// when the simulation should stop running.
     /// </summary>

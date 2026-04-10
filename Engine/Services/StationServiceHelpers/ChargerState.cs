@@ -1,4 +1,4 @@
-namespace Engine.Services;
+namespace Engine.Services.StationServiceHelpers;
 
 using Core.Charging;
 using Core.Charging.ChargingModel;
