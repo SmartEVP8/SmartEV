@@ -21,14 +21,14 @@ public interface ISingleChargingPoint : IChargingPoint
     /// </summary>
     /// <param name="socket">The socket to check.</param>
     /// <returns>true if the socket is compatible and the charging point is free.</returns>
-    bool CanConnect(Socket socket);
+    bool CanConnect();
 
     /// <summary>
     /// Attempts to connect a vehicle with the given socket to the charging point.
     /// </summary>
     /// <param name="socket">The socket to connect.</param>
     /// <returns>true if the connection was successful.</returns>
-    bool TryConnect(Socket socket);
+    bool TryConnect();
 
     /// <summary>
     /// Disconnects the currently connected vehicle from the charging point.

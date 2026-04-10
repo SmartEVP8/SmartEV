@@ -5,7 +5,7 @@ using Core.Charging.ChargingModel.Chargepoint;
 using Core.Routing;
 using Core.Shared;
 using Core.Vehicles;
-using System.Collections.Immutable;
+using Core.Vehicles.Configs;
 
 public static class CoreTestData
 {
@@ -34,6 +34,22 @@ public static class CoreTestData
         return new Station(id, string.Empty, string.Empty, position, chargerList, prices);
     }
 
+    public static EVConfig EVConfig(
+        BatteryConfig? batteryConfig = null,
+        ushort efficiency = 150)
+    {
+        var l = batteryConfig ??= new BatteryConfig(
+            maxCapacity: 60,
+            maxChargeRate: 100);
+
+        return new(
+                model: "TestModel",
+                spawnChance: 1.0f,
+                category: "TestCategory",
+                batteryConfig: l,
+                efficiency: efficiency);
+    }
+
     public static Dictionary<ushort, Station> Stations(params (ushort Id, double Lon, double Lat)[] stations)
         => stations.ToDictionary(s => s.Id, s => Station(s.Id, new Position(s.Lon, s.Lat)));
 
@@ -50,8 +66,7 @@ public static class CoreTestData
     public static Battery Battery(
         ushort capacity = 100,
         ushort maxChargeRate = 150,
-        float stateOfCharge = 0.2f,
-        Socket socket = Socket.CCS2) => new(capacity, maxChargeRate, stateOfCharge, socket);
+        float stateOfCharge = 0.2f) => new(capacity, maxChargeRate, stateOfCharge);
 
     public static Preferences Preferences(
         float PriceSensitivity = 1f,
@@ -83,20 +98,20 @@ public static class CoreTestData
 
     private sealed class FakeCharger() : ChargerBase(id: 1, maxPowerKW: 100)
     {
-        public override ImmutableArray<Socket> GetSockets() => [Socket.CCS2];
     }
 
-    public static SingleCharger SingleCharger(int id, int maxPowerKW = 150)
+    public static SingleCharger SingleCharger(int id, ushort maxPowerKW = 150)
     {
-        var connectors = new Connectors([new Connector(Socket.CCS2)]);
+        var connectors = new Connectors((new Connector(maxPowerKW), new Connector(maxPowerKW)));
         var point = new SingleChargingPoint(connectors);
         return new SingleCharger(id, maxPowerKW, point);
     }
 
-    public static DualCharger DualCharger(int id, int maxPowerKW = 150)
+    public static DualCharger DualCharger(int id, ushort maxPowerKW = 150)
     {
-        var point = new DualChargingPoint(new Connectors([new Connector(Socket.CCS2)]));
-        return new DualCharger(id, maxPowerKW, point);
+        var connectors = new Connectors((new Connector(maxPowerKW), new Connector(maxPowerKW)));
+        var dualPoint = new DualChargingPoint(connectors);
+        return new DualCharger(id, maxPowerKW, dualPoint);
     }
 
     private static ChargerBase CreateFakeChargerWithQueue(int queueSize)

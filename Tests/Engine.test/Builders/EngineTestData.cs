@@ -101,7 +101,7 @@ public static class EngineTestData
         return Polyline6ToPoints.DecodePolyline(result.Polyline);
     }
 
-    public static ConnectedEV ConnectedEV(int evId, double currentSoC, double targetSoC, Socket socket = Socket.CCS2)
+    public static ConnectedEV ConnectedEV(int evId, double currentSoC, double targetSoC)
     {
         var model = EVModels.Models.First(m => m.Model == "Volkswagen ID.3");
         return new ConnectedEV(
@@ -110,7 +110,6 @@ public static class EngineTestData
             TargetSoC: targetSoC,
             CapacityKWh: model.BatteryConfig.MaxCapacityKWh,
             MaxChargeRateKW: model.BatteryConfig.ChargeRateKW,
-            Socket: socket,
             ArrivalTime: new Time(0));
     }
 

@@ -37,11 +37,11 @@ public interface IDualChargingPoint : IChargingPoint
         double maxChargeRateKWB);
 
     /// <summary>
-    /// Checks if a vehicle with the given socket can connect to either side of the dual charging point. 
+    /// Checks if a vehicle with the given socket can connect to either side of the dual charging point.
     /// </summary>
     /// <param name="socket">The socket type the vehicle has.</param>
     /// <returns>The side to which the vehicle can connect, or null if it cannot connect.</returns>
-    ChargingSide? CanConnect(Socket socket);
+    ChargingSide? CanConnect();
 
     /// <summary>
     /// Attempts to connect a vehicle with the given socket to the dual charging point.
@@ -49,7 +49,7 @@ public interface IDualChargingPoint : IChargingPoint
     /// </summary>
     /// <param name="socket">The socket type the vehicle has.</param>
     /// <returns>The side to which the vehicle can connect, or null if it cannot connect.</returns>
-    ChargingSide? TryConnect(Socket socket);
+    ChargingSide? TryConnect();
 
     /// <summary>
     /// Disconnects a vehicle from the specified side of the dual charging point.

@@ -1,3 +1,4 @@
+using System.Net.Sockets;
 namespace Engine.StationFactory;
 
 using System.Text.Json;
@@ -46,41 +47,10 @@ public class StationFactory
                 "DualChargingPointProbability must be between 0 and 1.");
         }
 
-        if (options.SocketProbabilities.Count == 0)
-        {
-            throw new ArgumentException(
-                "SocketProbabilities must contain at least one socket type.", nameof(options));
-        }
-
-        if (options.SocketProbabilities.Values.Any(p => p < 0))
-        {
-            throw new ArgumentException(
-                "Socket probabilities cannot be negative.", nameof(options));
-        }
-
-        var totalProbability = options.SocketProbabilities.Values.Sum();
-        if (Math.Abs(totalProbability - 1.0) > 0.01)
-        {
-            throw new ArgumentException(
-                "Socket probabilities must sum approximately to 1.0.", nameof(options));
-        }
-
-        if (options.MultiSocketChargerProbability < 0 || options.MultiSocketChargerProbability > 1)
-        {
-            throw new ArgumentOutOfRangeException(
-                nameof(options.MultiSocketChargerProbability),
-                "MultiSocketChargerProbability must be between 0 and 1.");
-        }
-
-        if (stationsFile == null)
-        {
-            throw new ArgumentNullException(nameof(stationsFile), "Stations file cannot be null.");
-        }
-
         _options = options;
         _random = random;
         _energyPrices = energyPrices;
-        _stationsFile = stationsFile;
+        _stationsFile = stationsFile ?? throw new ArgumentNullException(nameof(stationsFile), "Stations file cannot be null.");
     }
 
     /// <summary>
@@ -102,14 +72,10 @@ public class StationFactory
         if (locations.Count == 0)
             throw new InvalidOperationException("Station locations JSON file was empty.");
 
-        var socketPool = CreateSocketPool();
-        Shuffle(socketPool);
-
         var chargerCountsPerStation = DistributeChargersAcrossStations(locations.Count, _options.TotalChargers);
 
         var stations = new List<Station>(locations.Count);
         ushort nextStationId = 0;
-        var socketIndex = 0;
         var chargerId = 1;
 
         for (var i = 0; i < locations.Count; i++)
@@ -119,8 +85,8 @@ public class StationFactory
 
             for (var j = 0; j < chargerCount; j++)
             {
-                var socket = socketPool[socketIndex++];
-                chargers.Add(CreateCharger(chargerId++, socket));
+
+                chargers.Add(CreateCharger(chargerId++));
             }
 
             stations.Add(CreateStation(nextStationId++, locations[i], chargers));
@@ -163,13 +129,12 @@ public class StationFactory
     /// <returns>
     /// The created charger.
     /// </returns>
-    private ChargerBase CreateCharger(int chargerId, Socket socket)
+    private ChargerBase CreateCharger(int chargerId)
     {
-        int maxPowerKW = socket.PowerKW();
-        return CreateChargingPoint(socket) switch
+        return CreateChargingPoint() switch
         {
-            SingleChargingPoint s => new SingleCharger(chargerId, maxPowerKW, s),
-            DualChargingPoint d => new DualCharger(chargerId, maxPowerKW, d),
+            SingleChargingPoint s => new SingleCharger(chargerId, _options.MaxPowerKW, s),
+            DualChargingPoint d => new DualCharger(chargerId, _options.MaxPowerKW, d),
             var p => throw new InvalidOperationException($"Unknown charging point type: {p.GetType()}")
         };
     }
@@ -178,9 +143,9 @@ public class StationFactory
     /// Creates either a single or dual charging point.
     /// A dual point takes one Connectors set — the right side is always a copy of the left.
     /// </summary>
-    private IChargingPoint CreateChargingPoint(Socket primarySocket)
+    private IChargingPoint CreateChargingPoint()
     {
-        var connectors = CreateConnectorSet(primarySocket);
+        var connectors = CreateConnectorSet();
 
         if (!ShouldCreateDualChargingPoint())
             return new SingleChargingPoint(connectors);
@@ -188,61 +153,11 @@ public class StationFactory
         return new DualChargingPoint(connectors);
     }
 
-    private Connectors CreateConnectorSet(Socket primarySocket)
-    {
-        var connectors = new List<Connector> { new(primarySocket) };
-
-        if (!ShouldCreateMultiSocketCharger())
-            return new Connectors(connectors);
-
-        var availableSockets = _options.SocketProbabilities.Keys
-            .Where(socket => socket != primarySocket)
-            .ToList();
-
-        if (availableSockets.Count == 0)
-            return new Connectors(connectors);
-
-        var secondarySocket = availableSockets[_random.Next(availableSockets.Count)];
-        connectors.Add(new Connector(secondarySocket));
-
-        return new Connectors(connectors);
-    }
+    private Connectors CreateConnectorSet() => new((new Connector(_options.MaxPowerKW), new Connector(_options.MaxPowerKW)));
 
     private bool ShouldCreateDualChargingPoint()
         => _options.UseDualChargingPoints &&
            _random.NextDouble() < _options.DualChargingPointProbability;
-
-    private bool ShouldCreateMultiSocketCharger()
-        => _options.AllowMultiSocketChargers &&
-           _random.NextDouble() < _options.MultiSocketChargerProbability;
-
-    private List<Socket> CreateSocketPool()
-    {
-        var pool = new List<Socket>(_options.TotalChargers);
-        var probabilities = _options.SocketProbabilities.ToList();
-        var assignedCount = 0;
-
-        for (var i = 0; i < probabilities.Count; i++)
-        {
-            var (socket, probability) = probabilities[i];
-            int count;
-
-            if (i == probabilities.Count - 1)
-            {
-                count = _options.TotalChargers - assignedCount;
-            }
-            else
-            {
-                count = (int)Math.Round(probability * _options.TotalChargers);
-                assignedCount += count;
-            }
-
-            for (var j = 0; j < count; j++)
-                pool.Add(socket);
-        }
-
-        return pool;
-    }
 
     /// <summary>
     /// Distributes the total number of chargers across the available stations.
@@ -270,26 +185,5 @@ public class StationFactory
         }
 
         return result;
-    }
-
-    /// <summary>
-    /// Shuffles a list in place using the Fisher-Yates algorithm.
-    /// The shuffle is deterministic for a given seed.
-    /// </summary>
-    /// <remarks>
-    /// This method is used to randomise the order of the socket pool before chargers are
-    /// distributed across stations. Without shuffling, chargers would be assigned in the
-    /// same fixed order as defined in <see cref="CreateSocketPool"/>, which would lead to
-    /// unrealistic clustering of connector types at the first stations.
-    /// </remarks>
-    /// <typeparam name="T">The type of item in the list.</typeparam>
-    /// <param name="list">The list to shuffle.</param>
-    private void Shuffle<T>(IList<T> list)
-    {
-        for (var i = list.Count - 1; i > 0; i--)
-        {
-            var j = _random.Next(i + 1);
-            (list[i], list[j]) = (list[j], list[i]);
-        }
     }
 }

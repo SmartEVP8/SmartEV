@@ -50,15 +50,14 @@ public static class Program
                 RecordChargerSnapshots = true,
             },
 
-            Seed = new Random(42),
+            Seed = new Random(1234),
 
             StationFactoryOptions = new StationFactoryOptions
             {
                 UseDualChargingPoints = true,
-                AllowMultiSocketChargers = true,
                 DualChargingPointProbability = 0.5,
-                MultiSocketChargerProbability = 1,
                 TotalChargers = 10000,
+                MaxPowerKW = 400,
             },
 
             CurrentAmoutOfEVsInDenmark = 583320, // Based on the number of registered EVs in Denmark as of 2026-03-22 https://mobility.dk/nyheder/nu-koerer-hver-femte-personbil-i-danmark-paa-el/

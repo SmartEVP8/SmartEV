@@ -17,12 +17,6 @@ public sealed class SingleCharger(int id, int maxPowerKW, ISingleChargingPoint c
     /// Gets the charging point.
     /// </summary>
     public ISingleChargingPoint ChargingPoint { get; } = chargingPoint;
-
-    /// <summary>
-    /// Gets the sockets available at the given charger.
-    /// </summary>
-    /// <returns> An immutable array of sockets available at the charger. </returns>
-    public override ImmutableArray<Socket> GetSockets() => ChargingPoint.GetSockets();
 }
 
 /// <summary>
@@ -39,9 +33,4 @@ public sealed class DualCharger(int id, int maxPowerKW, IDualChargingPoint charg
     /// </summary>
     public IDualChargingPoint ChargingPoint { get; } = chargingPoint;
 
-    /// <summary>
-    /// Gets the sockets available at the given charger.
-    /// </summary>
-    /// <returns> An immutable array of sockets available at the charger. </returns>
-    public override ImmutableArray<Socket> GetSockets() => ChargingPoint.GetSockets();
 }

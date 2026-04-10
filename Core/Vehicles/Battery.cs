@@ -8,8 +8,7 @@ using Core.Shared;
 /// <param name="capacity">The capacity of the battery.</param>
 /// <param name="maxChargeRate">The maximum charge rate of the battery.</param>
 /// <param name="stateOfCharge">The current state of charge of the battery.</param>
-/// <param name="socket">The socket type of the battery.</param>
-public class Battery(ushort capacity, ushort maxChargeRate, float stateOfCharge, Socket socket)
+public class Battery(ushort capacity, ushort maxChargeRate, float stateOfCharge)
 {
     /// <summary>Gets the capacity of the battery.</summary>
     public ushort MaxCapacityKWh { get; } = capacity;
@@ -19,9 +18,6 @@ public class Battery(ushort capacity, ushort maxChargeRate, float stateOfCharge,
 
     /// <summary>Gets or sets the current state of charge of the battery.</summary>
     public float StateOfCharge { get; set; } = stateOfCharge;
-
-    /// <summary>Gets the socket type of the battery.</summary>
-    public Socket Socket { get; } = socket;
 
     /// <summary>Gets the current usable energy in the battery.</summary>
     public float CurrentChargeKWh => MaxCapacityKWh * StateOfCharge;

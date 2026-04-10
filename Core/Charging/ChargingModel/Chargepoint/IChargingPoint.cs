@@ -9,11 +9,4 @@ using Core.Shared;
 /// </summary>
 public interface IChargingPoint
 {
-    /// <summary>
-    /// Returns the set of sockets supported by the charging point.
-    /// </summary>
-    /// <returns>
-    /// An immutable array containing the sockets supported by the charging point.
-    /// </returns>
-    ImmutableArray<Socket> GetSockets();
 }

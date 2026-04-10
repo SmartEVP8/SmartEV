@@ -52,7 +52,7 @@ public class EVFactory(Random random, IJourneySamplerProvider samplersProvider, 
     public EV Create(SampledEVParams p, Time departure)
     {
         var batteryConfig = p.Config.BatteryConfig;
-        var battery = new Battery(batteryConfig.MaxCapacityKWh, batteryConfig.ChargeRateKW, p.CurrCharge, batteryConfig.Socket);
+        var battery = new Battery(batteryConfig.MaxCapacityKWh, batteryConfig.ChargeRateKW, p.CurrCharge);
         var preferences = new Preferences(p.PriceSensPref, p.MinAcceptableCharge, p.MaxPathDeviation);
         var journey = CreateJourney(departure, p.SourceDest);
         return new EV(battery, preferences, journey, p.Config.Efficiency);
