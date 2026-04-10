@@ -20,23 +20,28 @@ public class Simulation(
     /// the specified end time is reached.
     /// </summary>
     /// <returns>Returns?.</returns>
-    public async Task Run()
+    public async Task Run(CancellationToken cancelToken = default)
     {
         Console.WriteLine("Starting Simulation");
         scheduler.ScheduleEvent(new SpawnEVS(0));
         scheduler.ScheduleEvent(new CheckAndUpdateAllEVs(0));
         scheduler.ScheduleEvent(new SnapshotEvent(0));
+
         while (true)
         {
-            await HandleNextEvent();
+            cancelToken.ThrowIfCancellationRequested();
+            var shouldContinue = await HandleNextEvent(cancelToken);
+            if (!shouldContinue)
+                return;
         }
     }
 
     /// <summary>
     /// Handles the next event in the scheduler.
     /// </summary>
-    private async Task HandleNextEvent()
+    private async Task<bool> HandleNextEvent(CancellationToken cancelToken)
     {
+        cancelToken.ThrowIfCancellationRequested();
         var nextEvent = scheduler.GetNextEvent();
 
         if (nextEvent != null)
@@ -44,15 +49,16 @@ public class Simulation(
             if (nextEvent.Time > runUntilStop)
             {
                 Console.WriteLine("Reached end of simulation time.");
-                Environment.Exit(0);
+                return false;
             }
 
             await dispatcher.Dispatch(nextEvent);
+            return true;
         }
         else
         {
             Console.WriteLine("No more events to process.");
-            Environment.Exit(0);
+            return false;
         }
     }
 }

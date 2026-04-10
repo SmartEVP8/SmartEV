@@ -12,10 +12,7 @@ public sealed class EngineEventSubscriber(
 {
     private readonly ILogger<EngineEventSubscriber> _logger = logger;
 
-    /// <summary>
-    /// Handles the arrival at station event by converting it to a protocol event and sending it to the client.
-    /// </summary>
-    /// <param name="event">The arrival at station event from the engine.</param>
+    /// <inheritdoc/>
     public async void OnArrivalAtStation(ArriveAtStation @event)
     {
         try
@@ -37,13 +34,7 @@ public sealed class EngineEventSubscriber(
         }
     }
 
-    /// <summary>
-    /// Handles the end of charging event by converting it to a protocol event and sending it to the client.
-    /// </summary>
-    /// <param name="event">The end of charging event from the engine.</param> <summary>
-    /// 
-    /// </summary>
-    /// <param name="event"></param>
+    /// <inheritdoc/>
     public async void OnChargingEnd(EndCharging @event)
     {
         try

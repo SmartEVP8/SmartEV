@@ -24,14 +24,15 @@ public sealed class SimulationRunner(
     /// <summary>
     /// Starts the simulation in a background task. If the simulation is already running, this method does nothing.
     /// </summary>
+    /// <param name="cancelToken">Cancellation token that will stop the simulation loop.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    public Task StartAsync()
+    public Task StartAsync(CancellationToken cancelToken = default)
     {
         if (IsRunning)
             return Task.CompletedTask;
 
-        _cts = new CancellationTokenSource();
-        _simulationTask = Task.Run(() => RunLoopAsync(_cts.Token));
+        _cts = CancellationTokenSource.CreateLinkedTokenSource(cancelToken);
+        _simulationTask = Task.Run(() => RunLoopAsync(_cts.Token), _cts.Token);
         return Task.CompletedTask;
     }
 
@@ -47,13 +48,17 @@ public sealed class SimulationRunner(
         _cts?.Cancel();
         if (_simulationTask != null)
             await _simulationTask;
+
+        _cts?.Dispose();
+        _cts = null;
+        _simulationTask = null;
     }
 
-    private async Task RunLoopAsync(CancellationToken stoppingToken)
+    private async Task RunLoopAsync(CancellationToken cancelToken)
     {
         try
         {
-            await simulation.Run();
+            await simulation.Run(cancelToken);
         }
         catch (OperationCanceledException)
         {

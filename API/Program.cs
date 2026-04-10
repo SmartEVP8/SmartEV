@@ -22,7 +22,6 @@ public static class Program
     public static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
-
         builder.Services.AddSingleton<EngineManager.EngineManager>();
         builder.Services.AddCors(options =>
         {
@@ -90,7 +89,7 @@ public static class Program
 
             using var webSocket = await context.WebSockets.AcceptWebSocketAsync();
 
-            await simulationRunner.StartAsync();
+            await simulationRunner.StartAsync(context.RequestAborted);
 
             try
             {

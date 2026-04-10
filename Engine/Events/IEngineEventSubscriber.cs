@@ -6,7 +6,15 @@ namespace Engine.Events;
 /// </summary>
 public interface IEngineEventSubscriber
 {
+    /// <summary>
+    /// Handles the arrival at station event by converting it to a protocol event and sending it to the client.
+    /// </summary>    
+    /// <param name="event">The arrival at station event from the engine.</param>
     void OnArrivalAtStation(ArriveAtStation @event);
 
+    /// <summary>
+    /// Handles the end of charging event by converting it to a protocol event and sending it to the client.
+    /// </summary>
+    /// <param name="event">The end of charging event from the engine.</param>
     void OnChargingEnd(EndCharging @event);
 }

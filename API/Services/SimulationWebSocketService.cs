@@ -54,15 +54,15 @@ public class SimulationWebSocketService(
     /// Handles an incoming WebSocket connection.
     /// </summary>
     /// <param name="webSocket">The WebSocket connection.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <param name="cancelToken">Cancellation token.</param>
     /// <returns>A task representing the asynchronous operation that handles the connection.</returns>
-    public async Task HandleConnectionAsync(WebSocket webSocket, CancellationToken cancellationToken)
+    public async Task HandleConnectionAsync(WebSocket webSocket, CancellationToken cancelToken)
     {
         AttachClient(webSocket);
 
         try
         {
-            await ProcessConnectionAsync(webSocket, cancellationToken);
+            await ProcessConnectionAsync(webSocket, cancelToken);
         }
         finally
         {
@@ -71,20 +71,20 @@ public class SimulationWebSocketService(
         }
     }
 
-    private async Task ProcessConnectionAsync(WebSocket webSocket, CancellationToken cancellationToken)
+    private async Task ProcessConnectionAsync(WebSocket webSocket, CancellationToken cancelToken)
     {
         var buffer = new byte[_bufferSize];
 
         try
         {
-            while (webSocket.State == WebSocketState.Open && !cancellationToken.IsCancellationRequested)
+            while (webSocket.State == WebSocketState.Open && !cancelToken.IsCancellationRequested)
             {
                 WebSocketReceiveResult result;
                 using var ms = new MemoryStream();
 
                 do
                 {
-                    result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), cancellationToken);
+                    result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), cancelToken);
                     ms.Write(buffer, 0, result.Count);
                 }
                 while (!result.EndOfMessage);
@@ -94,13 +94,13 @@ public class SimulationWebSocketService(
                     await webSocket.CloseAsync(
                         WebSocketCloseStatus.NormalClosure,
                         "Closing",
-                        cancellationToken);
+                        cancelToken);
                     break;
                 }
 
                 if (result.MessageType == WebSocketMessageType.Binary)
                 {
-                    await ProcessMessageAsync(ms, cancellationToken);
+                    await ProcessMessageAsync(ms, cancelToken);
                 }
             }
         }
@@ -114,14 +114,14 @@ public class SimulationWebSocketService(
         }
     }
 
-    private async Task ProcessMessageAsync(MemoryStream ms, CancellationToken cancellationToken)
+    private async Task ProcessMessageAsync(MemoryStream ms, CancellationToken cancelToken)
     {
         try
         {
             ms.Seek(0, SeekOrigin.Begin);
             var envelope = Envelope.Parser.ParseFrom(ms.ToArray());
 
-            await RouteMessageAsync(envelope, cancellationToken);
+            await RouteMessageAsync(envelope, cancelToken);
         }
         catch (Exception ex)
         {
@@ -130,7 +130,7 @@ public class SimulationWebSocketService(
     }
 
     /// <inheritdoc/>
-    public async Task SendAsync(Envelope envelope, CancellationToken cancellationToken = default)
+    public async Task SendAsync(Envelope envelope, CancellationToken cancelToken = default)
     {
         var client = GetClient();
         if (client == null)
@@ -145,7 +145,7 @@ public class SimulationWebSocketService(
                 new ArraySegment<byte>(data),
                 WebSocketMessageType.Binary,
                 true,
-                cancellationToken);
+                cancelToken);
 
             _logger.LogDebug("Sent envelope: {PayloadCase}", envelope.PayloadCase);
         }
@@ -156,13 +156,13 @@ public class SimulationWebSocketService(
         }
     }
 
-    private async Task RouteMessageAsync(Envelope envelope, CancellationToken cancellationToken)
+    private async Task RouteMessageAsync(Envelope envelope, CancellationToken cancelToken)
     {
         switch (envelope.PayloadCase)
         {
             case Envelope.PayloadOneofCase.GetStationSnapshot when envelope.GetStationSnapshot != null:
                 var response = snapshotHandler.BuildStationSnapshot(envelope.GetStationSnapshot);
-                await SendAsync(response, cancellationToken);
+                await SendAsync(response, cancelToken);
                 break;
 
             default:
