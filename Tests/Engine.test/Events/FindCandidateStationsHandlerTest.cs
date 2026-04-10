@@ -99,7 +99,7 @@ public class FindCandidateStationsHandlerTest
     {
         var waypoints = new List<Position> { new(58, 9), new(58.5, 9.5) };
         var stationId = EngineTestData.AllStations.Keys.First();
-        var ev = CoreTestData.EV(waypoints, originalDuration: 10000, departureTime: 0);
+        var ev = CoreTestData.EV(waypoints, originalDuration: 10000000, departureTime: 0);
         ev.HasReservationAtStationId = stationId;
         _evStore.TryAllocate((_, ref e) => { e = ev; }, out var index1);
         var e = new FindCandidateStations(index1, 0);
@@ -150,10 +150,11 @@ public class FindCandidateStationsHandlerTest
     {
         var waypoints = new List<Position> { new(58, 9), new(58.5, 9.5) };
         var stationId = EngineTestData.AllStations.Keys.First();
-        var ev = CoreTestData.EV(waypoints, originalDuration: 1, departureTime: 0);
+        var ev = CoreTestData.EV(waypoints, originalDuration: 500000, departureTime: 0);
         _evStore.TryAllocate((_, ref e) => { e = ev; }, out var index1);
-        ev.HasReservationAtStationId = stationId;
-        ev.Advance(1);
+        ref var storedEv = ref _evStore.Get(index1);
+        storedEv.HasReservationAtStationId = stationId;
+        storedEv.Advance(1);
         var e = new FindCandidateStations(index1, 1);
 
         var stubService = (StubFindCandidateStationService)_findCandidateStationService;

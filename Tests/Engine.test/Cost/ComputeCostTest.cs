@@ -26,15 +26,15 @@ public class ComputeCostTest
         var ev = new EV(
             CoreTestData.Battery(stateOfCharge: 100),
             CoreTestData.Preferences(PriceSensitivity: 0.0f, MinAcceptableCharge: 0f),
-            new Journey(new Time(0), new Time(500), 100, new List<Position>([new(0, 0), new(1, 1)])),
+            new Journey(new Time(0), new Time(500000), 100, new List<Position>([new(0, 0), new(1, 1)])),
             150);
 
         var stationA = stationService.GetStation(1);
 
         var stationDurations = new Dictionary<ushort, float>
         {
-            { 1, 500f }, // Deviation = 0
-            { 2, 600f }, // Deviation = 100
+            { 1, 500000f }, // Deviation = 0
+            { 2, 600000f }, // Deviation = 100
         };
 
         var bestStation = computeCost.Compute(ref ev, stationDurations, _time);
@@ -56,13 +56,13 @@ public class ComputeCostTest
         var ev = new EV(
             CoreTestData.Battery(stateOfCharge: 100),
             CoreTestData.Preferences(PriceSensitivity: 0.0f, MinAcceptableCharge: 0f),
-            new Journey(new Time(0), new Time(500), 100, new List<Position>([new(0, 0), new(1, 1)])),
+            new Journey(new Time(0), new Time(500000), 100, new List<Position>([new(0, 0), new(1, 1)])),
             150);
 
         var stationDurations = new Dictionary<ushort, float>
         {
-            { 1, 500f },
-            { 2, 500f },
+            { 1, 500000f },
+            { 2, 500000f },
         };
 
         var bestStation = computeCost.Compute(ref ev, stationDurations, _time);
@@ -93,13 +93,13 @@ public class ComputeCostTest
         var ev = new EV(
             CoreTestData.Battery(stateOfCharge: 0.5f),
             CoreTestData.Preferences(PriceSensitivity: 0.0f, MinAcceptableCharge: 0f),
-            new Journey(new Time(0), new Time(1000), 1000, new List<Position>([new(0, 0), new(1, 1)])),
+            new Journey(new Time(0), new Time(1000000), 1000, new List<Position>([new(0, 0), new(1, 1)])),
             150);
 
         var stationDurations = new Dictionary<ushort, float>
         {
-            { 1, 1000f }, // Deviation = 0 min
-            { 2, 1600f }, // Deviation = (1600 - 1000) / 60 = 10 min
+            { 1, 1000000f }, // Deviation = 0 min
+            { 2, 1600000f }, // Deviation = (1600000 - 1000000) / 60 = 10 min
         };
 
         // Tipping point: 3 cars (queue diff) vs 10 mins (deviation).
@@ -128,13 +128,13 @@ public class ComputeCostTest
         var ev = new EV(
             CoreTestData.Battery(stateOfCharge: stateOfCharge),
             CoreTestData.Preferences(PriceSensitivity: 0.0f, MinAcceptableCharge: 20f),
-            new Journey(new Time(0), new Time(1000), 1000, new List<Position>([new(0, 0), new(1, 1)])),
+            new Journey(new Time(0), new Time(1000000), 1000, new List<Position>([new(0, 0), new(1, 1)])),
             150);
 
         var stationDurations = new Dictionary<ushort, float>
         {
-            { 1, 1000f }, // 0 min deviation
-            { 2, 1500f }, // ~8 min deviation
+            { 1, 1000000f }, // 0 min deviation
+            { 2, 1500000f }, // ~8 min deviation
         };
 
         var bestStation = computeCost.Compute(ref ev, stationDurations, _time);
@@ -155,15 +155,15 @@ public class ComputeCostTest
         var ev = new EV(
             CoreTestData.Battery(stateOfCharge: 100),
             CoreTestData.Preferences(PriceSensitivity: 0.0f, MinAcceptableCharge: 0f),
-            new Journey(new Time(0), new Time(500), 100, new List<Position>([new(0, 0), new(1, 1)])),
+            new Journey(new Time(0), new Time(500000), 100, new List<Position>([new(0, 0), new(1, 1)])),
             150);
 
         var stationA = stationService.GetStation(1);
 
         var stationDurations = new Dictionary<ushort, float>
         {
-            { 1, 500f },
-            { 2, 500f },
+            { 1, 500000f },
+            { 2, 500000f },
         };
 
         var bestStation = computeCost.Compute(ref ev, stationDurations, _time);
@@ -186,15 +186,15 @@ public class ComputeCostTest
         var ev = new EV(
             CoreTestData.Battery(stateOfCharge: 50),
             CoreTestData.Preferences(PriceSensitivity: 1.0f, MinAcceptableCharge: 20f),
-            new Journey(new Time(0), new Time(500), 100, new List<Position>([new(0, 0), new(1, 1)])),
+            new Journey(new Time(0), new Time(500000), 100, new List<Position>([new(0, 0), new(1, 1)])),
             150);
 
         var cheapStation = stationService.GetStation(1);
 
         var stationDurations = new Dictionary<ushort, float>
             {
-                { 1, 500f },
-                { 2, 500f },
+                { 1, 500000f },
+                { 2, 500000f },
             };
 
         var bestStation = computeCost.Compute(ref ev, stationDurations, _time);
@@ -213,7 +213,7 @@ public class ComputeCostTest
         var ev = new EV(
             CoreTestData.Battery(stateOfCharge: 100),
             CoreTestData.Preferences(PriceSensitivity: 0.0f, MinAcceptableCharge: 0f),
-            new Journey(new Time(0), new Time(500), 100, new List<Position>([new(0, 0), new(1, 1)])),
+            new Journey(new Time(0), new Time(500000), 100, new List<Position>([new(0, 0), new(1, 1)])),
             150);
 
         var stationDurations = new Dictionary<ushort, float>();
@@ -246,12 +246,12 @@ public class ComputeCostTest
         ev.Journey.UpdateRoute(
             waypoints: new List<Position>([new(0, 0), new(0.5f, 0.5f), new(1, 1)]),
             nextStop: new(1, 1),
-            departure: new Time(200),
-            duration: new Time(900),
+            departure: new Time(200000),
+            duration: new Time(900000),
             newDistanceKm: 150);
 
-        var stationDurations = new Dictionary<ushort, float> { { 1, 600f }, { 2, 650f } };
-        var bestStation = computeCost.Compute(ref ev, stationDurations, new Time(250));
+        var stationDurations = new Dictionary<ushort, float> { { 1, 600000f }, { 2, 650000f } };
+        var bestStation = computeCost.Compute(ref ev, stationDurations, new Time(250000));
 
         Assert.Equal(1, bestStation.Id);
     }
@@ -279,14 +279,14 @@ public class ComputeCostTest
             waypoints: [new(0, 0), new(1, 1)],
             battery: CoreTestData.Battery(stateOfCharge: 50),
             preferences: CoreTestData.Preferences(PriceSensitivity: 0.0f, MinAcceptableCharge: 0f),
-            originalDuration: 1000);
+            originalDuration: 1000000);
 
         // First reroute at time 100: A -> Station A (10) -> B
         ev.Journey.UpdateRoute(
             waypoints: new List<Position>([new(0, 0), new(0.5f, 0.5f), new(1, 1)]),
             nextStop: new(1, 1),
-            departure: new Time(100),
-            duration: new Time(950),
+            departure: new Time(100000),
+            duration: new Time(950000),
             newDistanceKm: 150);
 
         // Second reroute at time 400: A -> Station A -> Station B (20) -> final destination
@@ -294,15 +294,15 @@ public class ComputeCostTest
         ev.Journey.UpdateRoute(
             waypoints: new List<Position>([new(0, 0), new(0.5f, 0.5f), new(0.8f, 0.8f), new(1, 1)]),
             nextStop: new(1, 1),
-            departure: new Time(400),
-            duration: new Time(800),
+            departure: new Time(400000),
+            duration: new Time(800000),
             newDistanceKm: 150);
 
         // At time 600, choose between two more charging stations
         // Station 20: 600 second detour = 0 deviation (perfect match)
         // Station 30: 650 second detour = ~0.83 min deviation
-        var stationDurations = new Dictionary<ushort, float> { { 20, 600f }, { 30, 650f } };
-        var bestStation = computeCost.Compute(ref ev, stationDurations, new Time(600));
+        var stationDurations = new Dictionary<ushort, float> { { 20, 600000f }, { 30, 650000f } };
+        var bestStation = computeCost.Compute(ref ev, stationDurations, new Time(600000));
 
         Assert.Equal(20, bestStation.Id);
     }

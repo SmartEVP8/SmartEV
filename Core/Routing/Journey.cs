@@ -149,9 +149,9 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
     /// <returns>Returns how long it takes to drive a distance in seconds.</returns>
     public Time TimeToDriveDistance(float distance)
     {
-        var speedKmh = Original.DistanceKm / (Original.Duration / 3600000f);
+        var speedKmh = Original.DistanceKm / (Original.Duration / Time.MillisecondsPerHour);
         var timeHours = distance / speedKmh;
-        return (uint)Math.Ceiling(timeHours * 3600000);
+        return (uint)Math.Ceiling(timeHours * Time.MillisecondsPerHour);
     }
 
     /// <summary>

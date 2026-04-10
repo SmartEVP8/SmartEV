@@ -98,7 +98,7 @@ public class ChargingTest
         var rampHours = (Math.Log(0.8) - Math.Log(0.6)) / 4.0;
         var flatHours = 0.60;
         var taperHours = -Math.Log(0.25) / 3.0;
-        var expectedDurationSeconds = (rampHours + flatHours + taperHours) * 3600.0;
+        var expectedDurationSeconds = (rampHours + flatHours + taperHours) * 3600000.0;
 
         var integrator = new ChargingIntegrator(stepSeconds: 1);
         var ev = Make.EV(currentSoC: 0.05, targetSoC: 0.95, capacityKWh: capacityKWh, maxChargeRateKW: maxKW);
@@ -111,8 +111,8 @@ public class ChargingTest
 
         Assert.Equal(0.95, result.SocA, precision: 4);
         Assert.Equal(expectedEnergyKWh, result.EnergyDeliveredKWhA, precision: 1);
-        Assert.Equal(expectedDurationSeconds, result.DurationSeconds, tolerance: 3.0);
-        Assert.Equal(expectedEnergyKWh + result.WastedEnergyKWh, maxKW * (result.DurationSeconds / 3600.0), precision: 1);
+        Assert.Equal(expectedDurationSeconds, result.DurationMilliseconds, tolerance: 3.0);
+        Assert.Equal(expectedEnergyKWh + result.WastedEnergyKWh, maxKW * (result.DurationMilliseconds / 3600000.0), precision: 1);
         Assert.True(
             result.WastedEnergyKWh > 0,
             "car passes through taper region so some energy is wasted");
@@ -145,23 +145,23 @@ public class ChargingTest
 
         // Car rate caps the 150 kW charger — identical to running at exactly 85 kW
         Assert.Equal(
-            resultMatchedRate.DurationSeconds,
-            resultLimitedByCarRate.DurationSeconds,
+            resultMatchedRate.DurationMilliseconds,
+            resultLimitedByCarRate.DurationMilliseconds,
             tolerance: 1.0);
 
         // 50 kW charger takes longer than the car's full 85 kW rate
         Assert.True(
-            resultLimitedByCharger.DurationSeconds > resultLimitedByCarRate.DurationSeconds,
+            resultLimitedByCharger.DurationMilliseconds > resultLimitedByCarRate.DurationMilliseconds,
             "charging at 50 kW should take longer than at the car's full 85 kW rate");
 
         Assert.Equal(
             resultLimitedByCarRate.EnergyDeliveredKWhA + resultLimitedByCarRate.WastedEnergyKWh,
-            85.0 * (resultLimitedByCarRate.DurationSeconds / 3600.0),
+            85.0 * (resultLimitedByCarRate.DurationMilliseconds / 3600000),
             precision: 1);
 
         Assert.Equal(
             resultLimitedByCharger.EnergyDeliveredKWhA + resultLimitedByCharger.WastedEnergyKWh,
-            50.0 * (resultLimitedByCharger.DurationSeconds / 3600.0),
+            50.0 * (resultLimitedByCharger.DurationMilliseconds / 3600000),
             precision: 1);
 
         // Energy delivered is the same regardless — same SoC delta in all three runs
@@ -219,7 +219,7 @@ public class ChargingTest
 
         Assert.Equal(
             result.EnergyDeliveredKWhA + result.EnergyDeliveredKWhB + result.WastedEnergyKWh,
-            maxKW * (result.DurationSeconds / 3600.0),
+            maxKW * (result.DurationMilliseconds / 3600000),
             precision: 2);
 
         var resultid3Alone = integrator.IntegrateSingleToCompletion(
@@ -234,7 +234,7 @@ public class ChargingTest
 
         Assert.Equal(
             result.TotalEnergyKWh + result.WastedEnergyKWh,
-            maxKW * (result.DurationSeconds / 3600.0),
+            maxKW * (result.DurationMilliseconds / 3600000),
             precision: 2);
     }
 
@@ -285,7 +285,7 @@ public class ChargingTest
         // safety check
         Assert.Equal(
             result.EnergyDeliveredKWhA + result.EnergyDeliveredKWhB + result.WastedEnergyKWh,
-            maxKW * (result.DurationSeconds / 3600.0),
+            maxKW * (result.DurationMilliseconds / 3600000),
             precision: 2);
     }
 }

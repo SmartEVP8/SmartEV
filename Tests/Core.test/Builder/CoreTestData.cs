@@ -63,7 +63,7 @@ public static class CoreTestData
         Battery? battery = null,
         Preferences? preferences = null,
         ushort efficiency = 150,
-        uint originalDuration = 100u,
+        uint originalDuration = 100000u,
         Time departureTime = default,
         float distanceMeter = 100)
     {
