@@ -43,7 +43,7 @@ public static class SimulationWebSocketEndpoints
             var cts = CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted);
             try
             {
-                await ProcessWebSocketConnectionAsync(webSocket, messageProcessor, envelopeHandler, logger, cts.Token);
+                await ProcessWebSocketConnectionAsync(webSocket, messageProcessor, engineService, logger, cts.Token);
             }
             finally
             {
@@ -56,7 +56,7 @@ public static class SimulationWebSocketEndpoints
     private static async Task ProcessWebSocketConnectionAsync(
         WebSocket webSocket,
         SimulationMessageHandler messageProcessor,
-        EnvelopeWebSocketHandler envelopeHandler,
+        SimulationEngineService engineService,
         ILogger logger,
         CancellationToken cancellationToken)
     {
@@ -93,7 +93,7 @@ public static class SimulationWebSocketEndpoints
                         ms.Seek(0, SeekOrigin.Begin);
                         var envelope = Envelope.Parser.ParseFrom(ms.ToArray());
 
-                        RouteMessage(envelope, messageProcessor);
+                        await RouteMessageAsync(envelope, messageProcessor, engineService, cancellationToken);
                     }
                     catch (Exception ex)
                     {
@@ -112,14 +112,20 @@ public static class SimulationWebSocketEndpoints
         }
     }
 
-    private static void RouteMessage(
+    private static async Task RouteMessageAsync(
         Envelope envelope,
-        SimulationMessageHandler messageProcessor)
+        SimulationMessageHandler messageProcessor,
+        SimulationEngineService engineService,
+        CancellationToken cancellationToken)
     {
         switch (envelope.PayloadCase)
         {
-            case Envelope.PayloadOneofCase.Init when envelope.Init is { } initReq:
-                messageProcessor.HandleInitRequest(initReq);
+            case Envelope.PayloadOneofCase.Init when envelope.Init != null:
+                messageProcessor.HandleInitRequest(envelope.Init);
+                break;
+
+            case Envelope.PayloadOneofCase.GetStationSnapshot when envelope.GetStationSnapshot != null:
+                await engineService.OnGetStationSnapshot(envelope.GetStationSnapshot, cancellationToken);
                 break;
         }
     }

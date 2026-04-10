@@ -223,12 +223,19 @@ public sealed class SimulationEngineService(
         }
     }
 
-    private async Task SendStationStateAsync(ushort stationId, CancellationToken cancellationToken = default)
+    /// <summary>
+    /// Handles the GetStationSnapshot client request and sends the current station state back to the client.
+    /// </summary>
+    /// <param name="request">The GetStationSnapshot request containing the station ID.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+    public async Task OnGetStationSnapshot(GetStationSnapshot request, CancellationToken cancellationToken = default)
     {
         try
         {
+            var stationId = request.StationId;
             var stationState = new StationState { StationId = stationId };
-            var station = _stationService.Value.GetStation(stationId);
+            var station = _stationService.Value.GetStation((ushort)stationId);
             if (station == null)
             {
                 _logger.LogWarning("Station with ID {StationId} not found", stationId);
@@ -241,16 +248,30 @@ public sealed class SimulationEngineService(
                 stationState.ChargerStates.Add(chargerState);
             }
 
-            stationState.EvsOnRoute.AddRange(GetEVsOnRoute(stationId));
+            stationState.EvsOnRoute.AddRange(GetEVsOnRoute((ushort)stationId));
+
+            var envelope = new Envelope { StationStateResponse = stationState };
+            await SendToClientAsync(envelope, cancellationToken);
+
+            _logger.LogDebug(
+                "Sent StationState for station {StationId}: {ChargerCount} chargers, {QueueTotal} total queued EVs, {EvsOnRoute} EVs on route",
+                stationId,
+                stationState.ChargerStates.Count,
+                stationState.ChargerStates.Sum(c => c.QueueSize),
+                stationState.EvsOnRoute.Count);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error sending StationState for station {StationId} to client", stationId);
+            _logger.LogError(ex, "Error handling GetStationSnapshot request for station {StationId}", request.StationId);
         }
     }
 
     private Protocol.ChargerState CreateChargerState(int chargerId)
     {
+        // Remove when utilization is implemented
+        var random = new Random(chargerId);
+        var tempUtilization = random.NextSingle();
+
         var engineChargerState = _stationService.Value.GetChargerState(chargerId);
         if (engineChargerState is null)
             return null!;
@@ -258,6 +279,10 @@ public sealed class SimulationEngineService(
         var chargerState = new Protocol.ChargerState
         {
             IsActive = !engineChargerState.IsFree,
+
+            // TODO: Utilization
+            Utilization = tempUtilization,
+
             ChargerId = (uint)chargerId,
             QueueSize = (uint)engineChargerState.Queue.Count,
         };
@@ -314,6 +339,6 @@ public sealed class SimulationEngineService(
             result.Add(evOnRoute);
         }
 
-        return result.ToArray();
+        return [.. result];
     }
 }

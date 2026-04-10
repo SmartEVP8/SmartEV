@@ -24,7 +24,7 @@ public class SimulationMessageHandler(
     {
         try
         {
-            _logger.LogInformation(
+            _logger.LogDebug(
                 "Handling InitRequest: seed={Seed}, maxEvs={MaxEvs}",
                 request.Seed,
                 request.MaximumEvs);
