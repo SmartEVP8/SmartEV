@@ -15,7 +15,7 @@ public sealed class SimulationEngineService(
     IServiceProvider services,
     SimulationChannel simulationChannel,
     EnvelopeWebSocketHandler envelopeHandler,
-    ILogger<SimulationEngineService> logger) : BackgroundService, IEngineEventSubscriber
+    ILogger<SimulationEngineService> logger) : IEngineEventSubscriber, IDisposable
 {
     private readonly IServiceProvider _services = services;
     private readonly SimulationChannel _simulationChannel = simulationChannel;
@@ -28,6 +28,10 @@ public sealed class SimulationEngineService(
     private readonly Lock _clientLock = new();
 
     private WebSocket? _client;
+
+    private Task? _simulationTask;
+    private CancellationTokenSource? _cts;
+    public bool IsRunning => _simulationTask != null && !_simulationTask.IsCompleted;
 
     /// <summary>
     /// Attaches a WebSocket client for event broadcasting. Only one client is supported at a time.
@@ -61,62 +65,32 @@ public sealed class SimulationEngineService(
     }
 
     /// <summary>
-    /// Builds InitEngineData and sends it to the connected client.
+    /// Starts the simulation engine loop manually. Only starts if not already running.
     /// </summary>
-    private async Task SendInitEngineDataAsync(InitCommand initCommand, CancellationToken cancellationToken = default)
+    public async Task StartEngineAsync()
     {
-        try
-        {
-            var initData = new InitEngineData();
-
-            foreach (var station in _stationService.Value.GetAllStations())
-            {
-                var stationInit = new StationInit
-                {
-                    Id = station.Id,
-                    Address = station.Address,
-                    Pos = new Protocol.Position { Lat = station.Position.Latitude, Lon = station.Position.Longitude },
-                };
-                initData.Stations.Add(stationInit);
-
-                foreach (var charger in station.Chargers)
-                {
-                    var chargerProto = new Charger
-                    {
-                        Id = charger.Id,
-                        MaxPowerKw = charger.MaxPowerKW,
-                        StationId = station.Id,
-                        IsDual = charger.GetSockets().Length > 1,
-                    };
-                    initData.Chargers.Add(chargerProto);
-                }
-            }
-
-            var envelope = new Envelope { InitEngineData = initData };
-            await SendToClientAsync(envelope, cancellationToken);
-
-            _logger.LogInformation(
-                "Sent InitEngineData with {StationCount} stations and {ChargerCount} chargers",
-                initData.Stations.Count,
-                initData.Chargers.Count);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error sending InitEngineData to client");
-        }
+        if (IsRunning) return;
+        _cts = new CancellationTokenSource();
+        _simulationTask = Task.Run(() => RunSimulationLoop(_cts.Token));
+        await Task.CompletedTask;
     }
 
     /// <summary>
-    /// Background service execution method. Runs the Engine and listens for commands from the SimulationChannel.
+    /// Stops the simulation engine loop if running.
     /// </summary>
-    /// <param name="stoppingToken">A token to signal cancellation of the background service.</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    public async Task StopEngineAsync()
+    {
+        if (!IsRunning) return;
+        _cts?.Cancel();
+        if (_simulationTask != null)
+            await _simulationTask;
+    }
+
+    private async Task RunSimulationLoop(CancellationToken stoppingToken)
     {
         try
         {
-            await Task.WhenAll(
-                HandleCommandsAsync(stoppingToken));
+            await _simulation.Value.Run();
         }
         catch (OperationCanceledException)
         {
@@ -124,22 +98,10 @@ public sealed class SimulationEngineService(
         }
     }
 
-    private async Task HandleCommandsAsync(CancellationToken stoppingToken)
+    public void Dispose()
     {
-        await foreach (var command in _simulationChannel.CommandReader.ReadAllAsync(stoppingToken))
-        {
-            await HandleCommandAsync(command, stoppingToken);
-        }
-    }
-
-    private async Task HandleCommandAsync(SimulationCommand command, CancellationToken cancellationToken = default)
-    {
-        if (command is InitCommand init)
-        {
-            _logger.LogInformation("Running simulation with seed={Seed}, maxEvs={MaxEvs}", init.Seed, init.MaximumEvs);
-            await SendInitEngineDataAsync(init, cancellationToken);
-            _ = _simulation.Value.Run();
-        }
+        _cts?.Cancel();
+        _cts?.Dispose();
     }
 
     /// <summary>
