@@ -16,8 +16,7 @@ public sealed class SimulationEngineService(
     IServiceProvider services,
     SimulationChannel simulationChannel,
     EnvelopeWebSocketHandler envelopeHandler,
-    EVStore evStore,
-    ILogger<SimulationEngineService> logger) : BackgroundService, IEngineEventSubscriber
+    ILogger<SimulationEngineService> logger) : IEngineEventSubscriber, IDisposable
 {
     private readonly SimulationChannel _simulationChannel = simulationChannel;
     private readonly EnvelopeWebSocketHandler _envelopeHandler = envelopeHandler;
@@ -30,6 +29,10 @@ public sealed class SimulationEngineService(
     private readonly Lock _clientLock = new();
 
     private WebSocket? _client;
+
+    private Task? _simulationTask;
+    private CancellationTokenSource? _cts;
+    public bool IsRunning => _simulationTask != null && !_simulationTask.IsCompleted;
 
     /// <summary>
     /// Attaches a WebSocket client for event broadcasting. Only one client is supported at a time.
@@ -63,16 +66,32 @@ public sealed class SimulationEngineService(
     }
 
     /// <summary>
-    /// Background service execution method. Runs the Engine and listens for commands from the SimulationChannel.
+    /// Starts the simulation engine loop manually. Only starts if not already running.
     /// </summary>
-    /// <param name="stoppingToken">A token to signal cancellation of the background service.</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    public async Task StartEngineAsync()
+    {
+        if (IsRunning) return;
+        _cts = new CancellationTokenSource();
+        _simulationTask = Task.Run(() => RunSimulationLoop(_cts.Token));
+        await Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Stops the simulation engine loop if running.
+    /// </summary>
+    public async Task StopEngineAsync()
+    {
+        if (!IsRunning) return;
+        _cts?.Cancel();
+        if (_simulationTask != null)
+            await _simulationTask;
+    }
+
+    private async Task RunSimulationLoop(CancellationToken stoppingToken)
     {
         try
         {
-            await Task.WhenAll(
-                HandleCommandsAsync(stoppingToken));
+            await _simulation.Value.Run();
         }
         catch (OperationCanceledException)
         {
@@ -80,22 +99,10 @@ public sealed class SimulationEngineService(
         }
     }
 
-    private async Task HandleCommandsAsync(CancellationToken stoppingToken)
+    public void Dispose()
     {
-        await foreach (var command in _simulationChannel.CommandReader.ReadAllAsync(stoppingToken))
-        {
-            await HandleCommandAsync(command, stoppingToken);
-        }
-    }
-
-    private async Task HandleCommandAsync(SimulationCommand command, CancellationToken cancellationToken = default)
-    {
-        if (command is InitCommand init)
-        {
-            _logger.LogInformation("Running simulation with seed={Seed}, maxEvs={MaxEvs}", init.Seed, init.MaximumEvs);
-            await SendInitEngineDataAsync(init, cancellationToken);
-            _ = _simulation.Value.Run();
-        }
+        _cts?.Cancel();
+        _cts?.Dispose();
     }
 
     /// <summary>

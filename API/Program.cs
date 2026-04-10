@@ -51,7 +51,6 @@ public static class Program
                 services.AddSingleton<SimulationChannel>();
                 services.AddSingleton<SimulationEngineService>();
                 services.AddSingleton<IEngineEventSubscriber>(sp => sp.GetRequiredService<SimulationEngineService>());
-                services.AddSingleton<SimulationMessageHandler>();
                 services.AddSingleton<EnvelopeWebSocketHandler>();
             });
 
