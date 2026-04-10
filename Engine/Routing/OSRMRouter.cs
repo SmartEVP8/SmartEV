@@ -14,6 +14,7 @@ public record RouteSegment(float Duration, float Distance, string Polyline);
 public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
 {
     private const string _lib = "osrm_wrapper";
+    private const float _secondsToMilliseconds = Time.MillisecondsPerSecond;
 
     private readonly IntPtr _osrm;
 
@@ -120,6 +121,9 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
             ComputeTableIndexedWithDest(_osrm, evLon, evLat, destLon, destLat, indices, indices.Length, durPtr, distPtr);
         }
 
+        for (var i = 0; i < durations.Length; i++)
+            durations[i] *= _secondsToMilliseconds;
+
         return new RoutingResult(durations, distances);
     }
 
@@ -148,7 +152,7 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
         FreeMemory(result.Polyline);
         FreeMemory(resultPtr);
 
-        return new RouteSegment(result.Duration, result.Distance, polylineStr);
+        return new RouteSegment(result.Duration * _secondsToMilliseconds, result.Distance, polylineStr);
     }
 
     /// <inheritdoc/>
@@ -167,7 +171,7 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
         FreeMemory(result.Polyline);
         FreeMemory(resultPtr);
 
-        return new RouteSegment(result.Duration, result.Distance, polylineStr);
+        return new RouteSegment(result.Duration * _secondsToMilliseconds, result.Distance, polylineStr);
     }
 
     /// <inheritdoc/>
@@ -185,6 +189,9 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
         {
             PointsToPoints(_osrm, srcCoords, numSrcs, dstCoords, numDsts, durPtr, distPtr);
         }
+
+        for (var i = 0; i < durations.Length; i++)
+            durations[i] *= _secondsToMilliseconds;
 
         return new RoutingResult(durations, distances);
     }

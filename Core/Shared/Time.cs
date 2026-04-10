@@ -89,6 +89,11 @@ public readonly record struct Time(uint Milliseconds) : IComparable<Time>
     public uint Millisecond => MillisecondsIntoDay % MillisecondsPerSecond;
 
     /// <summary>
+    ///  Gets the total number of complete seconds elapsed since the epoch.
+    /// </summary>
+    public uint TotalSeconds => Milliseconds / MillisecondsPerSecond;
+
+    /// <summary>
     /// Gets the total number of complete days elapsed since the epoch.
     /// </summary>
     public uint TotalDays => Milliseconds / MillisecondsPerDay;
@@ -117,16 +122,21 @@ public readonly record struct Time(uint Milliseconds) : IComparable<Time>
     public override string ToString()
         => $"{DayOfWeek} {Hours:D2}:{Minutes:D2}:{Seconds:D2}.{Millisecond:D3} (day {TotalDays})";
 
+    public static bool operator <(Time left, Time right) => left.TotalSeconds < right.TotalSeconds;
+    public static bool operator >(Time left, Time right) => left.TotalSeconds > right.TotalSeconds;
+    public static bool operator <=(Time left, Time right) => left.TotalSeconds <= right.TotalSeconds;
+    public static bool operator >=(Time left, Time right) => left.TotalSeconds >= right.TotalSeconds;
+
     /// <summary>
-    /// Returns true if this timestamp is within <paramref name="toleranceSeconds"/> of <paramref name="other"/>.
-    /// Useful for guarding against uint rounding errors from integer ceiling/floor arithmetic.
+    /// Adds two Time values together, returning a new Time.
     /// </summary>
-    /// <param name="other">The time to compare against.</param>
-    /// <param name="toleranceSeconds">Allowed delta in seconds. Defaults to 1.</param>
-    /// <returns>True if the 2 Times are within <paramref name="toleranceSeconds"/>.</returns>
-    public bool IsApproximately(Time other, uint toleranceSeconds = 30)
-    {
-        var diff = Milliseconds > other.Milliseconds ? Milliseconds - other.Milliseconds : other.Milliseconds - Milliseconds;
-        return diff <= toleranceSeconds * 1000;
-    }
+    /// <param name="other">The compared time value in seconds.</param>
+    /// <returns>A new Time representing the sum of the two input Times.</returns>
+    public bool Equals(Time other) => TotalSeconds == other.TotalSeconds;
+
+    /// <summary>
+    /// Returns a hash code for this Time, based on its total number of seconds.
+    /// </summary>
+    /// <returns>A hash code for this Time.</returns>
+    public override int GetHashCode() => TotalSeconds.GetHashCode();
 }
