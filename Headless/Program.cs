@@ -25,6 +25,18 @@ public static class Program
     public static async Task Main()
     {
         var dataPath = new DirectoryInfo("data/");
+        var logDirectory = new DirectoryInfo("logs");
+        logDirectory.Create();
+
+        var logPath = Path.Combine(logDirectory.FullName, $"headless-{DateTime.UtcNow:yyyyMMdd-HHmmss}.log");
+        await using var logStream = new StreamWriter(File.Open(logPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+        {
+            AutoFlush = true,
+        };
+
+        Console.SetOut(logStream);
+        Console.SetError(logStream);
+
         var services = new ServiceCollection();
         var settings = new EngineSettings
         {

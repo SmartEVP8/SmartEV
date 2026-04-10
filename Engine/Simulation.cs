@@ -23,6 +23,7 @@ public class Simulation(
     public async Task Run()
     {
         Console.WriteLine("Starting Simulation");
+        Console.WriteLine("Simulation started at: " + DateTime.Now);
         scheduler.ScheduleEvent(new SpawnEVS(0));
         scheduler.ScheduleEvent(new SnapshotEvent(0));
         while (true)
@@ -43,6 +44,7 @@ public class Simulation(
             if (nextEvent.Time > runUntilStop)
             {
                 Console.WriteLine("Reached end of simulation time.");
+                Console.WriteLine("Simulation ended at: " + DateTime.Now);
                 Environment.Exit(0);
             }
 

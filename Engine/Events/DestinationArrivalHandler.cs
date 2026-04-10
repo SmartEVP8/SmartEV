@@ -25,6 +25,7 @@ public class DestinationArrivalHandler(
         // var metric = ArrivalAtDestinationMetric.Collect(ref ev, e.Time);
         // metrics.RecordArrival(metric);
 
+        Console.WriteLine($"EV {e.EVId} arrived at destination at time {e.Time}. Final state: {ev}");
         evStore.Free(e.EVId);
     }
 }
