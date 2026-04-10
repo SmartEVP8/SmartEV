@@ -1,8 +1,5 @@
 namespace Core.Charging;
 
-using System.Collections.Immutable;
-using Core.Shared;
-
 /// <summary>
 /// Base class for chargers.
 /// </summary>
@@ -19,12 +16,6 @@ public abstract class ChargerBase(int id, int maxPowerKW)
     /// Gets the maximum power output in kilowatts.
     /// </summary>
     public int MaxPowerKW { get; } = maxPowerKW;
-
-    /// <summary>
-    ///  Gets the sockets available at the given charger.
-    /// </summary>
-    /// <returns> An immutable array of sockets available at the charger. </returns>
-    public abstract ImmutableArray<Socket> GetSockets();
 
     /// <summary>Gets a queue of EVs waiting to charge at this charger.</summary>
     /// <remarks>Points to the index of the EV in the list of EVs.</remarks>

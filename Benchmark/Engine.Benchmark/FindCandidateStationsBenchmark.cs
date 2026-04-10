@@ -80,7 +80,7 @@ public class FindCandidateStationsBenchmark
         var random = new Random(1);
         for (var i = 0; i < _count; i++)
         {
-            var battery = new Battery(100, 50, 10 * random.NextSingle(), Socket.CCS2);
+            var battery = new Battery(100, 50, 10 * random.NextSingle());
             var preferences = new Preferences(0.5f, 0.1f, 10.0f);
             var journey = new Journey(new Time(0), new Time(100), 0, new List<Position>([new(10 * random.NextSingle(), 10 * random.NextSingle()), new(20 * random.NextSingle(), 20 * random.NextSingle())]));
             var ev = new EV(battery, preferences, journey, 150);
@@ -99,12 +99,12 @@ public class FindCandidateStationsBenchmark
     /// Measures the full pipeline: pre-computation via OSRM router, cache retrieval, cost computation, and reservation scheduling.
     /// </summary>
     [Benchmark]
-    public void FindCandidateStationsEventScheduling()
+    public async void FindCandidateStationsEventScheduling()
     {
         for (var i = 0; i < _count; i++)
         {
             var ev = new FindCandidateStations(i, new Time(10));
-            _findCandidateStationsHandler.Handle(ev);
+            await _findCandidateStationsHandler.Handle(ev);
         }
     }
 }

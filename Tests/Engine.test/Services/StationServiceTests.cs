@@ -100,7 +100,7 @@ public class StationServiceTests
         Assert.True(ev2Event.Time > ev1End.Time);
     }
 
-    private static (StationService service, EventScheduler scheduler, EVStore evStore) BuildSingle(int maxPowerKW = 150)
+    private static (StationService service, EventScheduler scheduler, EVStore evStore) BuildSingle(ushort maxPowerKW = 150)
     {
         var charger = CoreTestData.SingleCharger(1, maxPowerKW: maxPowerKW);
         var station = CoreTestData.Station(1, chargers: [charger]);
@@ -111,7 +111,7 @@ public class StationServiceTests
         return (service, scheduler, evStore);
     }
 
-    private static (StationService service, EventScheduler scheduler, EVStore evStore) BuildDual(int maxPowerKW = 150)
+    private static (StationService service, EventScheduler scheduler, EVStore evStore) BuildDual(ushort maxPowerKW = 150)
     {
         var charger = CoreTestData.DualCharger(1, maxPowerKW: maxPowerKW);
         var station = CoreTestData.Station(1, chargers: [charger]);

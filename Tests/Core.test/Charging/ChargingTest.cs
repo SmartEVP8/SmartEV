@@ -6,6 +6,7 @@ using Core.Shared;
 using Core.Charging.ChargingModel.Chargepoint;
 using Core.Vehicles;
 using Core.Vehicles.Configs;
+using Core.test.Builders;
 
 internal static class Make
 {
@@ -15,7 +16,6 @@ internal static class Make
                TargetSoC: targetSoC,
                CapacityKWh: model.BatteryConfig.MaxCapacityKWh,
                MaxChargeRateKW: model.BatteryConfig.ChargeRateKW,
-               Socket: model.BatteryConfig.Socket,
                ArrivalTime: new Time(0));
 
     public static ConnectedEV EV(
@@ -28,32 +28,36 @@ internal static class Make
                TargetSoC: targetSoC,
                CapacityKWh: capacityKWh,
                MaxChargeRateKW: maxChargeRateKW,
-               Socket: Socket.CCS2,
                ArrivalTime: new Time(0));
 
     public static SingleChargingPoint SinglePoint(EVConfig model)
     {
-        var c = new Connector(model.BatteryConfig.Socket);
-        var connectors = new Connectors([c]);
-        connectors.Activate(c);
-        return new SingleChargingPoint(connectors);
-    }
-
-    public static SingleChargingPoint SinglePoint(Socket socket)
-    {
-        var c = new Connector(socket);
-        var connectors = new Connectors([c]);
-        connectors.Activate(c);
+        var connectors = MakeConnectors(model.BatteryConfig.ChargeRateKW);
+        connectors.AttachedConnectors.Left.Activate();
         return new SingleChargingPoint(connectors);
     }
 
     public static DualChargingPoint DualPoint(EVConfig model)
     {
-        var socket = model.BatteryConfig.Socket;
-        var point = new DualChargingPoint(new Connectors([new Connector(socket)]));
-        point.TryConnect(socket);
-        point.TryConnect(socket);
-        return point;
+        var connectors = MakeConnectors(model.BatteryConfig.ChargeRateKW);
+        connectors.AttachedConnectors.Left.Activate();
+        connectors.AttachedConnectors.Right.Activate();
+        return new DualChargingPoint(connectors);
+    }
+
+    public static DualChargingPoint DualPoint(ushort maxKW)
+    {
+        var connectors = MakeConnectors(maxKW);
+        connectors.AttachedConnectors.Left.Activate();
+        connectors.AttachedConnectors.Right.Activate();
+        return new DualChargingPoint(connectors);
+    }
+
+    private static Connectors MakeConnectors(ushort maxKW)
+    {
+        var c = new Connector(maxKW);
+        var c2 = new Connector(maxKW);
+        return new Connectors((c, c2));
     }
 }
 
@@ -69,13 +73,12 @@ public class ChargingTest
             TargetSoC: double.NaN,
             CapacityKWh: 60,
             MaxChargeRateKW: 100,
-            Socket: Socket.CCS2,
             ArrivalTime: 0);
-
+        var evConfig = CoreTestData.EVConfig();
         var ex = Assert.Throws<ArgumentOutOfRangeException>(() => integrator.IntegrateSingleToCompletion(
             simNow: 0,
             maxKW: 100,
-            point: Make.SinglePoint(Socket.CCS2),
+            point: Make.SinglePoint(evConfig),
             ev: ev));
 
         Assert.Contains("TargetSoC", ex.Message);
@@ -102,11 +105,11 @@ public class ChargingTest
 
         var integrator = new ChargingIntegrator(stepSeconds: 1);
         var ev = Make.EV(currentSoC: 0.05, targetSoC: 0.95, capacityKWh: capacityKWh, maxChargeRateKW: maxKW);
-
+        var evConfig = CoreTestData.EVConfig(new BatteryConfig((ushort)maxKW, (ushort)capacityKWh));
         var result = integrator.IntegrateSingleToCompletion(
             simNow: 0,
             maxKW: maxKW,
-            point: Make.SinglePoint(Socket.CCS2),
+            point: Make.SinglePoint(evConfig),
             ev: ev);
 
         Assert.Equal(0.95, result.SocA, precision: 4);
@@ -260,7 +263,7 @@ public class ChargingTest
         var result = integrator.IntegrateDualToCompletion(
             simNow: 0,
             maxKW: maxKW,
-            Make.DualPoint(mazda),
+            Make.DualPoint(400),
             evA,
             evB);
 

@@ -24,7 +24,6 @@ public class DestinationArrivalHandler(
 
         // var metric = ArrivalAtDestinationMetric.Collect(ref ev, e.Time);
         // metrics.RecordArrival(metric);
-
         evStore.Free(e.EVId);
     }
 }

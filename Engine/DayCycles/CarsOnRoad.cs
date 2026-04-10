@@ -6,10 +6,9 @@ namespace Engine.DayCycles;
 public static class CarsOnRoad
 {
     /// <summary>
-    /// Total registered EVs in Denmark according to DST - January 2026 (Rounded down).
-    /// Source: https://www.dst.dk/da/Statistik/udgivelser/NytHtml?cid=51885.
+    /// Based on the number of registered EVs in Denmark as of 2026-03-22 https://mobility.dk/nyheder/nu-koerer-hver-femte-personbil-i-danmark-paa-el/.
     /// </summary>
-    public const int TotalEVs = 556000;
+    public const int TotalEVs = 583320;
 
     /// <summary>
     /// Minimum number of EVs expected on the road even with almost no congestion.

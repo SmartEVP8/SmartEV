@@ -1,7 +1,5 @@
 namespace Core.Charging.ChargingModel.Chargepoint;
 
-using Core.Shared;
-
 /// <summary>
 /// Represents a charging point that supports a single vehicle connection.
 /// </summary>
@@ -17,18 +15,16 @@ public interface ISingleChargingPoint : IChargingPoint
     double GetPowerOutput(double maxKW, double soc);
 
     /// <summary>
-    /// Checks if a vehicle with the given socket can connect to the charging point.
+    /// Checks if a vehicle can connect to the charging point.
     /// </summary>
-    /// <param name="socket">The socket to check.</param>
     /// <returns>true if the socket is compatible and the charging point is free.</returns>
-    bool CanConnect(Socket socket);
+    bool CanConnect();
 
     /// <summary>
-    /// Attempts to connect a vehicle with the given socket to the charging point.
+    /// Attempts to connect a vehicle to the charging point.
     /// </summary>
-    /// <param name="socket">The socket to connect.</param>
     /// <returns>true if the connection was successful.</returns>
-    bool TryConnect(Socket socket);
+    bool TryConnect();
 
     /// <summary>
     /// Disconnects the currently connected vehicle from the charging point.

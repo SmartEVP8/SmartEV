@@ -1,39 +1,28 @@
 namespace Core.Charging.ChargingModel.Chargepoint;
 
-using System.Collections.Immutable;
-using Core.Shared;
-
 /// <summary>
 /// A charging point with a single connector; supports one vehicle at a time.
 /// </summary>
 public class SingleChargingPoint(Connectors connectors) : ISingleChargingPoint
 {
-    private readonly ImmutableArray<Socket> _sockets = [.. connectors.Sockets];
-
-    private Connectors _connectors = connectors;
+    private Connector _connector = connectors.AttachedConnectors.Left;
 
     /// <inheritdoc/>
-    public ImmutableArray<Socket> GetSockets() => _sockets;
+    public double GetPowerOutput(double maxKW, double soc) => maxKW * ChargingCurve.PowerFraction(soc);
 
     /// <inheritdoc/>
-    public double GetPowerOutput(double maxKW, double soc)
+    public bool CanConnect() => _connector.IsFree;
+
+    /// <inheritdoc/>
+    public bool TryConnect()
     {
-        return maxKW * ChargingCurve.PowerFraction(soc);
-    }
-
-    /// <inheritdoc/>
-    public bool CanConnect(Socket socket) => _connectors.Supports(socket) && _connectors.IsFree;
-
-    /// <inheritdoc/>
-    public bool TryConnect(Socket socket)
-    {
-        if (!_connectors.IsFree || !_connectors.Supports(socket))
+        if (!_connector.IsFree)
             return false;
 
-        _connectors.Activate(_connectors.GetConnectorFor(socket));
+        _connector.Activate();
         return true;
     }
 
     /// <inheritdoc/>
-    public void Disconnect() => _connectors.Deactivate();
+    public void Disconnect() => _connector.Deactivate();
 }

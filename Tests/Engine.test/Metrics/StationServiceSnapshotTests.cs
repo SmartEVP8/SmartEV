@@ -7,7 +7,7 @@ using Engine.test.Builders;
 using Core.test.Builders;
 using Engine.Vehicles;
 using Engine.Metrics.Snapshots;
-using Engine.Services;
+using Engine.Services.StationServiceHelpers;
 public class StationServiceSnapshotTests
 {
     /*  [Fact]
@@ -52,7 +52,7 @@ public class StationServiceSnapshotTests
     [InlineData(150, 150.0, 1.0f)] // 150kW charger, 150kWh delivered in 1 hr = 100% utilization
     [InlineData(50, 0.0, 0.0f)] // 50kW charger, 0kWh delivered in 1 hr = 0% utilization
     public void Collect_CalculatesUtilizationAndAggregatesCorrectly(
-            int chargerMaxKw,
+            ushort chargerMaxKw,
             double deliveredKwh,
             float expectedUtilization)
     {

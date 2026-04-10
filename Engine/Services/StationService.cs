@@ -11,6 +11,7 @@ using Engine.Metrics;
 using Engine.Metrics.Events;
 using Engine.Metrics.Snapshots;
 using Engine.Utils;
+using Engine.Services.StationServiceHelpers;
 
 /// <summary>
 /// Service responsible for managing the state of stations and chargers, handling events related to reservations, arrivals, and charging sessions.
@@ -135,7 +136,6 @@ public class StationService : IStationService
             return;
 
         var target = chargers
-            .Where(cs => cs.Charger.GetSockets().Contains(ev.Battery.Socket))
             .OrderBy(cs => cs.IsFree ? 0 : 1)
             .ThenBy(cs => cs.Queue.Count)
             .FirstOrDefault();
@@ -149,7 +149,6 @@ public class StationService : IStationService
             TargetSoC: e.TargetSoC,
             CapacityKWh: ev.Battery.MaxCapacityKWh,
             MaxChargeRateKW: ev.Battery.MaxChargeRateKW,
-            Socket: ev.Battery.Socket,
             ArrivalTime: e.Time);
 
         _arrivalTimes[e.EVId] = e.Time;
@@ -280,8 +279,7 @@ public class StationService : IStationService
         {
             var (eVId, eV) = state.Queue.Peek();
             throw new InvalidOperationException(
-                $"Logic Error: DualCharger {dual.Id} is empty, but failed to connect EV {eVId}. " +
-                $"Car Socket: {eV.Socket}. Check if Disconnect() was called in HandleEndCharging.");
+                $"Logic Error: DualCharger {dual.Id} is empty, but failed to connect EV {eVId}. ");
         }
 
         CancelStaleEventsIfPairingChanged(state, (wasAloneA, wasAloneB));
@@ -302,7 +300,7 @@ public class StationService : IStationService
         if (state.SessionA is not null) return;
         if (!state.Queue.TryPeek(out var next)) return;
 
-        if (!single.ChargingPoint.TryConnect(next.EV.Socket))
+        if (!single.ChargingPoint.TryConnect())
         {
             throw new SkillissueException(
                 $"Logic Error: EV {next.EVId} reached Charger {single.Id} but TryConnect failed. ");
@@ -365,8 +363,7 @@ public class StationService : IStationService
     {
         while (state.Queue.TryPeek(out var candidate))
         {
-            var side = dual.ChargingPoint.TryConnect(
-                candidate.EV.Socket);
+            var side = dual.ChargingPoint.TryConnect();
             if (side is null) break;
 
             state.Queue.Dequeue();
