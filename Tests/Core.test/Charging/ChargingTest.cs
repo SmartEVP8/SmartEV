@@ -32,28 +32,28 @@ internal static class Make
 
     public static SingleChargingPoint SinglePoint(EVConfig model)
     {
-        var connectors = makeConnectors(model.BatteryConfig.ChargeRateKW);
-        connectors.AllConnectors.Left.Activate();
+        var connectors = MakeConnectors(model.BatteryConfig.ChargeRateKW);
+        connectors.AttachedConnectors.Left.Activate();
         return new SingleChargingPoint(connectors);
     }
 
     public static DualChargingPoint DualPoint(EVConfig model)
     {
-        var connectors = makeConnectors(model.BatteryConfig.ChargeRateKW);
-        connectors.AllConnectors.Left.Activate();
-        connectors.AllConnectors.Right.Activate();
+        var connectors = MakeConnectors(model.BatteryConfig.ChargeRateKW);
+        connectors.AttachedConnectors.Left.Activate();
+        connectors.AttachedConnectors.Right.Activate();
         return new DualChargingPoint(connectors);
     }
 
     public static DualChargingPoint DualPoint(ushort maxKW)
     {
-        var connectors = makeConnectors(maxKW);
-        connectors.AllConnectors.Left.Activate();
-        connectors.AllConnectors.Right.Activate();
+        var connectors = MakeConnectors(maxKW);
+        connectors.AttachedConnectors.Left.Activate();
+        connectors.AttachedConnectors.Right.Activate();
         return new DualChargingPoint(connectors);
     }
 
-    private static Connectors makeConnectors(ushort maxKW)
+    private static Connectors MakeConnectors(ushort maxKW)
     {
         var c = new Connector(maxKW);
         var c2 = new Connector(maxKW);

@@ -1,8 +1,6 @@
 namespace Core.Charging;
 
 using Core.Charging.ChargingModel.Chargepoint;
-using Core.Shared;
-using System.Collections.Immutable;
 
 /// <summary>
 /// Charger that can support charging one vehicle at a time.
@@ -32,5 +30,4 @@ public sealed class DualCharger(int id, int maxPowerKW, IDualChargingPoint charg
     /// Gets the charging point.
     /// </summary>
     public IDualChargingPoint ChargingPoint { get; } = chargingPoint;
-
 }

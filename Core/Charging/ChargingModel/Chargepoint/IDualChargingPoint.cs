@@ -1,7 +1,5 @@
 namespace Core.Charging.ChargingModel.Chargepoint;
 
-using Core.Shared;
-
 /// <summary>
 /// Specifies which side of a dual charging point a vehicle is connected to.
 /// </summary>
@@ -37,17 +35,15 @@ public interface IDualChargingPoint : IChargingPoint
         double maxChargeRateKWB);
 
     /// <summary>
-    /// Checks if a vehicle with the given socket can connect to either side of the dual charging point.
+    /// Checks if a vehicle can connect to either side of the dual charging point.
     /// </summary>
-    /// <param name="socket">The socket type the vehicle has.</param>
     /// <returns>The side to which the vehicle can connect, or null if it cannot connect.</returns>
     ChargingSide? CanConnect();
 
     /// <summary>
-    /// Attempts to connect a vehicle with the given socket to the dual charging point.
+    /// Attempts to connect a vehicle to the dual charging point.
     /// If the vehicle can connect to either side, it is connected and the method returns the side it was connected to.
     /// </summary>
-    /// <param name="socket">The socket type the vehicle has.</param>
     /// <returns>The side to which the vehicle can connect, or null if it cannot connect.</returns>
     ChargingSide? TryConnect();
 

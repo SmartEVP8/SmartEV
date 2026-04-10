@@ -1,4 +1,3 @@
-using System.Net.Sockets;
 namespace Engine.StationFactory;
 
 using System.Text.Json;
@@ -85,7 +84,6 @@ public class StationFactory
 
             for (var j = 0; j < chargerCount; j++)
             {
-
                 chargers.Add(CreateCharger(chargerId++));
             }
 
@@ -118,13 +116,10 @@ public class StationFactory
     }
 
     /// <summary>
-    /// Creates a charger using a predefined socket type.
+    /// Creates a charger.
     /// </summary>
     /// <param name="chargerId">
     /// The charger identifier within the station.
-    /// </param>
-    /// <param name="socket">
-    /// The socket type assigned to the charger.
     /// </param>
     /// <returns>
     /// The created charger.

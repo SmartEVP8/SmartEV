@@ -65,7 +65,7 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
     // TODO: Think about effective queue size
     private float CalculateEffectiveQueueSizeCost(Station station, CostWeights weights)
     {
-        var totalQueueSize = stationService.GetTotalQueueSize(station.Id) + 0.01f;
+        var totalQueueSize = stationService.GetTotalQueueSize(station.Id);
         var effectiveQueueSize = (float)totalQueueSize / station.Chargers.Count;
         return weights.EffectiveQueueSize * MathF.Pow(effectiveQueueSize, 3);
     }

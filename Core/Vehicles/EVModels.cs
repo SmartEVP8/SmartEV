@@ -1,6 +1,5 @@
 namespace Core.Vehicles;
 
-using Core.Shared;
 using Core.Vehicles.Configs;
 
 /// <summary>

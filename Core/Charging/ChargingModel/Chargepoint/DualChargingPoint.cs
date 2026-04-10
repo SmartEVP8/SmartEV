@@ -2,16 +2,14 @@ namespace Core.Charging.ChargingModel.Chargepoint;
 
 /// <summary>
 /// A charging point with two identical connector sets, allowing two vehicles to charge
-/// simultaneously. Both sides support the same socket types — the right side is always
-/// a copy of the left side's connector configuration.
+/// simultaneously.
 /// Power not consumed by one side (due to charging curve taper or car rate limit) is
 /// redistributed to the other, up to each connector's physical rated limit.
 /// </summary>
 public class DualChargingPoint(Connectors connectors) : IDualChargingPoint
 {
-
-    private Connector _leftSide = connectors.AllConnectors.Left;
-    private Connector _rightSide = connectors.AllConnectors.Right;
+    private Connector _leftSide = connectors.AttachedConnectors.Left;
+    private Connector _rightSide = connectors.AttachedConnectors.Right;
 
     /// <inheritdoc/>
     public (double PowerA, double PowerB) GetPowerDistribution(

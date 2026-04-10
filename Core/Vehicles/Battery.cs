@@ -1,7 +1,5 @@
 namespace Core.Vehicles;
 
-using Core.Shared;
-
 /// <summary>
 /// Represents the battery of an electric vehicle.
 /// </summary>

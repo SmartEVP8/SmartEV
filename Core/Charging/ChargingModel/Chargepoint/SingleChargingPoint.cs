@@ -1,15 +1,11 @@
 namespace Core.Charging.ChargingModel.Chargepoint;
 
-using System.Collections.Immutable;
-using Core.Shared;
-
 /// <summary>
 /// A charging point with a single connector; supports one vehicle at a time.
 /// </summary>
 public class SingleChargingPoint(Connectors connectors) : ISingleChargingPoint
 {
-
-    private Connector _connector = connectors.AllConnectors.Left;
+    private Connector _connector = connectors.AttachedConnectors.Left;
 
     /// <inheritdoc/>
     public double GetPowerOutput(double maxKW, double soc) => maxKW * ChargingCurve.PowerFraction(soc);

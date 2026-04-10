@@ -1,8 +1,5 @@
 namespace Core.Charging;
 
-using System.Collections.Immutable;
-using Core.Shared;
-
 /// <summary>
 /// Base class for chargers.
 /// </summary>
