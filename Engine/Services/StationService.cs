@@ -374,7 +374,7 @@ public class StationService : IStationService
 
                 if (result?.FinishTimeA is not null)
                 {
-                    var token = _scheduler.ScheduleEvent(new EndCharging(next.EVId, single.Id, result.FinishTimeA.Value));
+                    var token = _scheduler.ScheduleEvent(new EndCharging(next.EVId, single.Id, state.StationId, result.FinishTimeA.Value));
                     state.SessionA = state.SessionA with { CancellationToken = token };
                 }
 
@@ -439,13 +439,13 @@ public class StationService : IStationService
 
                 if (state.SessionA is not null && dualResult?.FinishTimeA is not null)
                 {
-                    var token = _scheduler.ScheduleEvent(new EndCharging(state.SessionA.EVId, dual.Id, dualResult.FinishTimeA.Value));
+                    var token = _scheduler.ScheduleEvent(new EndCharging(state.SessionA.EVId, dual.Id, state.StationId, dualResult.FinishTimeA.Value));
                     state.SessionA = state.SessionA with { CancellationToken = token };
                 }
 
                 if (state.SessionB is not null && dualResult?.FinishTimeB is not null)
                 {
-                    var token = _scheduler.ScheduleEvent(new EndCharging(state.SessionB.EVId, dual.Id, dualResult.FinishTimeB.Value));
+                    var token = _scheduler.ScheduleEvent(new EndCharging(state.SessionB.EVId, dual.Id, state.StationId, dualResult.FinishTimeB.Value));
                     state.SessionB = state.SessionB with { CancellationToken = token };
                 }
 
