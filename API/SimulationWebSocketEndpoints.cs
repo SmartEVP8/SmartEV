@@ -1,8 +1,9 @@
 namespace API;
 
 using API.Services;
-using System.Net.WebSockets;
 using Protocol;
+using System.Net.WebSockets;
+using Microsoft.Extensions.Logging;
 
 /// <summary>
 /// Defines WebSocket endpoints for the simulation protocol.
@@ -15,12 +16,12 @@ public static class SimulationWebSocketEndpoints
     /// <param name="app">The web application builder.</param>
     public static void MapSimulationWebSocket(this WebApplication app)
     {
-        // Health check endpoint (simple HTTP GET)
+        // Health check endpoint
         app.MapGet("/health", () => new { status = "healthy", timestamp = DateTime.UtcNow })
-            .WithName("HealthCheck")
-            .Produces<object>();
+           .WithName("HealthCheck")
+           .Produces<object>();
 
-        // Main WebSocket endpoint for simulation protocol
+        // Main WebSocket endpoint
         app.Map("/ws/simulation", async context =>
         {
             if (!context.WebSockets.IsWebSocketRequest)
@@ -29,17 +30,31 @@ public static class SimulationWebSocketEndpoints
                 return;
             }
 
-            using var webSocket = await context.WebSockets.AcceptWebSocketAsync();
-            var engineService = context.RequestServices.GetRequiredService<SimulationEngineService>();
-            var messageProcessor = context.RequestServices.GetRequiredService<SimulationMessageHandler>();
-            var envelopeHandler = context.RequestServices.GetRequiredService<EnvelopeWebSocketHandler>();
-            var loggerFactory = context.RequestServices.GetRequiredService<ILoggerFactory>();
-            var logger = loggerFactory.CreateLogger("SimulationWebSocket");
+            var engineManager = context.RequestServices.GetRequiredService<EngineManager.EngineManager>();
 
-            // Attach client for event broadcasting
+            SimulationEngineService engineService;
+            SimulationMessageHandler messageProcessor;
+            EnvelopeWebSocketHandler envelopeHandler;
+            ILogger logger;
+
+            try
+            {
+                engineService = engineManager.GetEngineService<SimulationEngineService>();
+                messageProcessor = engineManager.GetEngineService<SimulationMessageHandler>();
+                envelopeHandler = engineManager.GetEngineService<EnvelopeWebSocketHandler>();
+                logger = context.RequestServices.GetRequiredService<ILoggerFactory>()
+                    .CreateLogger("SimulationWebSocket");
+            }
+            catch
+            {
+                context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
+                await context.Response.WriteAsync("Engine not initialized.");
+                return;
+            }
+
+            using var webSocket = await context.WebSockets.AcceptWebSocketAsync();
             engineService.AttachClient(webSocket);
 
-            // Process the entire connection lifecycle
             var cts = CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted);
             try
             {
@@ -69,7 +84,6 @@ public static class SimulationWebSocketEndpoints
                 WebSocketReceiveResult result;
                 using var ms = new MemoryStream();
 
-                // Read complete message
                 do
                 {
                     result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), cancellationToken);

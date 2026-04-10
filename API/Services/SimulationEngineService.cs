@@ -27,7 +27,8 @@ public sealed class SimulationEngineService(
     private readonly Lazy<Simulation> _simulation = new(() => services.GetRequiredService<Simulation>(), isThreadSafe: true);
     private readonly Lazy<StationService> _stationService = new(() => services.GetRequiredService<StationService>(), isThreadSafe: true);
 
-    private readonly object _clientLock = new();
+    private readonly Lock _clientLock = new();
+
     private WebSocket? _client;
 
     /// <summary>

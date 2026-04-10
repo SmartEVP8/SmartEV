@@ -44,9 +44,8 @@ message StationInit {
 }
 
 message InitEngineData {
-  repeated CostWeight cost_weights = 1;
-  repeated Charger chargers = 2;
-  repeated StationInit stations = 3;
+  repeated Charger chargers = 1;
+  repeated StationInit stations = 2;
 }
 
 // ============================================================================

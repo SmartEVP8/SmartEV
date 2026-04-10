@@ -2,9 +2,11 @@ namespace API;
 
 using Services;
 using Engine.Events;
-using Engine.Init;
 using Engine.Services;
 using Engine.Cost;
+using API.EngineManager;
+using Protocol;
+using Google.Protobuf;
 
 public static class Program
 {
@@ -12,31 +14,7 @@ public static class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        // The Engine registers many heavyweight singletons (OSRM, stations, grids, etc.).
-        // In Development, the default host settings validate the service graph on build,
-        // which can force those singletons to instantiate before Kestrel starts.
-        // That makes the API appear to "hang" and never bind to the port.
-        if (builder.Environment.IsDevelopment())
-        {
-            builder.Host.UseDefaultServiceProvider(options =>
-            {
-                options.ValidateOnBuild = false;
-            });
-        }
-
-        // Add services to the container
-        builder.Services.AddLogging();
-        builder.Services.AddSingleton(EngineConfiguration.CreateDefaultSettings());
-
-        builder.Services.AddSingleton<SimulationChannel>();
-        builder.Services.AddSingleton<SimulationEngineService>();
-        builder.Services.AddSingleton<IEngineEventSubscriber>(sp => sp.GetRequiredService<SimulationEngineService>());
-
-        Init.InitEngine(builder.Services);
-
-        builder.Services.AddSingleton<SimulationMessageHandler>();
-        builder.Services.AddSingleton<EnvelopeWebSocketHandler>();
-        builder.Services.AddHostedService(sp => sp.GetRequiredService<SimulationEngineService>());
+        builder.Services.AddSingleton<EngineManager.EngineManager>();
         builder.Services.AddCors(options =>
         {
             options.AddPolicy("AllowFrontend", policy =>
@@ -49,17 +27,14 @@ public static class Program
 
         var app = builder.Build();
 
-        // Configure the HTTP request pipeline
         if (app.Environment.IsDevelopment())
         {
             app.UseDeveloperExceptionPage();
         }
 
         app.UseWebSockets();
-
         app.UseCors("AllowFrontend");
 
-        // Map WebSocket endpoint
         app.MapSimulationWebSocket();
 
         app.MapGet("/weights", async () =>
@@ -68,6 +43,58 @@ public static class Program
             return Results.Ok(weights);
         });
 
-        app.Run();
+        app.MapPost("/init-engine", async (EngineManager.EngineManager engineManager, EngineInitConfigDTO config) =>
+        {
+            var result = await engineManager.InitializeAsync(config, services =>
+            {
+                services.AddLogging();
+                services.AddSingleton<SimulationChannel>();
+                services.AddSingleton<SimulationEngineService>();
+                services.AddSingleton<IEngineEventSubscriber>(sp => sp.GetRequiredService<SimulationEngineService>());
+                services.AddSingleton<SimulationMessageHandler>();
+                services.AddSingleton<EnvelopeWebSocketHandler>();
+            });
+
+            var stationService = engineManager.GetEngineService<StationService>();
+            var initData = new InitEngineData();
+
+            try
+            {
+                foreach (var station in stationService.GetAllStations())
+                {
+                    var stationInit = new StationInit
+                    {
+                        Id = station.Id,
+                        Address = station.Address,
+                        Pos = new Position { Lat = station.Position.Latitude, Lon = station.Position.Longitude },
+                    };
+                    initData.Stations.Add(stationInit);
+
+                    foreach (var charger in station.Chargers)
+                    {
+                        var chargerProto = new Charger
+                        {
+                            Id = charger.Id,
+                            MaxPowerKw = charger.MaxPowerKW,
+                            StationId = station.Id,
+                            IsDual = charger.GetSockets().Length > 1,
+                        };
+                        initData.Chargers.Add(chargerProto);
+                    }
+                }
+            }
+            catch
+            {
+            }
+
+            var envelope = new Envelope { InitEngineData = initData };
+            var data = envelope.ToByteArray();
+
+            return result
+                ? Results.File(data, "application/octet-stream")
+                : Results.BadRequest("Initialization failed");
+        });
+
+        await app.RunAsync();
     }
 }
