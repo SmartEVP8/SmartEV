@@ -121,7 +121,7 @@ public sealed class ChargingIntegrator(uint stepSeconds)
             Time step = runUntilSeconds.HasValue
                 ? Math.Min(_stepSeconds, runUntilSeconds.Value - t)
                 : _stepSeconds;
-            var stepHours = step / 3600.0;
+            var stepHours = step / 3600000.0;
 
             if (!finished)
             {
@@ -211,7 +211,7 @@ public sealed class ChargingIntegrator(uint stepSeconds)
             Time step = runUntilSeconds.HasValue
                 ? Math.Min(_stepSeconds, runUntilSeconds.Value - t)
                 : _stepSeconds;
-            var stepHours = step / 3600.0;
+            var stepHours = step / 3600000.0;
 
             var (powerA, powerB) = point.GetPowerDistribution(
                 maxKW,

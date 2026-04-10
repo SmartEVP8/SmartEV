@@ -149,9 +149,9 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
     /// <returns>Returns how long it takes to drive a distance in seconds.</returns>
     public Time TimeToDriveDistance(float distance)
     {
-        var speedKmh = Original.DistanceKm / (Original.Duration.Seconds / 3600f);
+        var speedKmh = Original.DistanceKm / (Original.Duration.Milliseconds / 3600000f);
         var timeHours = distance / speedKmh;
-        return (uint)Math.Ceiling(timeHours * 3600);
+        return (uint)Math.Ceiling(timeHours * 3600000);
     }
 
     /// <summary>
@@ -162,7 +162,7 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
 
     private float PercentageCompleted(Time currentTime)
     {
-        if (Current.Duration.Seconds == 0)
+        if (Current.Duration.Milliseconds == 0)
             return 1f;
 
         var progress = (currentTime - Current.Departure) / (float)Current.Duration;

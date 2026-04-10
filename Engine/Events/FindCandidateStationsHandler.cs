@@ -105,7 +105,7 @@ public class FindCandidateStationsHandler(
 
     private bool HasScheduledArriveAtStation(FindCandidateStations e, ref EV ev, Station bestStation, Time durationToStation)
     {
-        if (durationToStation <= 60 * 10)
+        if (durationToStation <= 60000 * 10)
         {
             eventScheduler.ScheduleEvent(new ArriveAtStation(
             e.EVId,

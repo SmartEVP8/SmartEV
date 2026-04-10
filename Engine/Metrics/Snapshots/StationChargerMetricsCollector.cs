@@ -82,7 +82,7 @@ public class StationMetricsCollector(Time snapshotInterval)
 
             stationMetrics.Add(new StationSnapshotMetric
             {
-                SimTime = (uint)simNow,
+                SimTime = simNow.Seconds,
                 StationId = stationId,
                 TotalDeliveredKWh = totalDeliveredKWh,
                 TotalMaxKWh = totalMaxKWh,

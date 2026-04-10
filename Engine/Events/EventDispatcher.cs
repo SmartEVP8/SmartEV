@@ -1,6 +1,7 @@
 namespace Engine.Events;
 
 using Engine.Services;
+using Engine.Utils;
 
 /// <summary>
 /// The EventDispatcher is responsible for dispatching events to the correct handlers.
@@ -65,7 +66,7 @@ public class EventDispatcher(
                 break;
 
             default:
-                throw new Exception("This should never happen, add a handler");
+                throw new SkillissueException("This should never happen, add a handler");
         }
 
         if (_eventCount % 1000 == 0)
