@@ -6,8 +6,8 @@ using Engine.Services;
 using Core.Shared;
 
 /// <summary>
-/// Handles the <see cref="SnapshotEvent"/> by collecting metrics for all metrics
-/// and rescheduling itself one rescheduling time later.
+/// Handles the <see cref="SnapshotEvent"/> by collecting metrics for all stations and chargers via the <see cref="StationService"/>,
+/// and rescheduling itself later.
 /// </summary>
 public class SnapshotEventHandler(
     Time rescheduleTime,

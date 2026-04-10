@@ -38,24 +38,20 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     public Journey Journey { get; private set; } = journey;
 
     /// <summary>
-    /// Gets or sets a value indicating whether check if the EV is charging.
+    /// Advances the journey to <paramref name="currentTime"/>, consumes the corresponding energy,
+    /// and returns the EV's current position.
     /// </summary>
-    public bool IsCharging { get; set; } = false;
-
-    /// <summary>
-    /// Determines whether the EV has departed based on the current time
-    /// and the departure time of its journey.
-    /// </summary>
-    /// <param name="currentTime">The current time to compare against the EV's departure time.</param>
-    /// <returns>True if the EV has departed; otherwise, false.</returns>
-    public readonly bool HasDeparted(Time currentTime) => Journey.Original.Departure <= currentTime;
-
-    /// <summary>
-    /// Determines whether the EV has arrived at its destination based on the current time.
-    /// </summary>
-    /// <param name="currentTime">Timestamp.</param>
-    /// <returns>True of false based on if the EV has arrived at its journeys end.</returns>
-    public readonly bool HasArrived(Time currentTime) => Journey.Original.Departure + Journey.Current.Duration <= currentTime;
+    /// <param name="currentTime">The simulation time to advance to.</param>
+    /// <returns>The EV's current position after advancing.</returns>
+    public readonly Position Advance(Time currentTime)
+    {
+        if (currentTime < Journey.Current.Departure)
+            throw new InvalidOperationException($"Cannot advance EV to a time before the current journey's departure (currentTime={currentTime}, departure={Journey.Current.Departure}, {this})");
+        var previousJourney = Journey.Current;
+        var currentPosition = Journey.AdvanceTo(currentTime);
+        ConsumeEnergy(previousJourney, currentTime);
+        return currentPosition;
+    }
 
     /// <inheritdoc/>
     public override readonly string ToString() =>
@@ -63,25 +59,43 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
 
     /// <summary>
     /// Whether the EV can complete its current journey and still have at least
-    /// <paramref name="reserve"/> SoC remaining on arrival.
+    /// <paramref name="minAcceptableCharge"/> SoC remaining on arrival.
     /// </summary>
-    /// <param name="reserve">Minimum SoC required on arrival. Defaults to 0.1.</param>
+    /// <param name="timeAtStation">Time spent at a station.</param>
+    /// <param name="minAcceptableCharge">Minimum SoC required on arrival. Defaults to 0.1.</param>
     /// <returns>True if the EV can complete its current journey with the specified reserve; otherwise, false.</returns>
-    public readonly bool CanCompleteJourney(float reserve = 0.1f) =>
-        CanReach(Journey.Current.DistanceKm, reserve);
+    public readonly bool CanCompleteJourney(Time? timeAtStation = null, float minAcceptableCharge = 0.1f)
+    {
+        if (timeAtStation != null) Journey.UpdateRouteToDestination(timeAtStation.Value);
+        return CanReach(Journey.Current.DistanceKm, minAcceptableCharge);
+    }
 
     /// <summary>
     /// Whether the EV can reach a point <paramref name="distanceKm"/> away and still
-    /// have at least <paramref name="reserve"/> SoC remaining on arrival.
+    /// have at least <paramref name="minAcceptableCharge"/> SoC remaining on arrival.
     /// </summary>
     /// <param name="distanceKm">Distance to the target in km.</param>
-    /// <param name="reserve">Minimum SoC required on arrival. Defaults to 0.1.</param>
+    /// <param name="minAcceptableCharge">Minimum SoC required on arrival. Defaults to 0.1.</param>
     /// <returns>True if the EV can reach the target with the specified reserve; otherwise, false.</returns>
-    public readonly bool CanReach(float distanceKm, float reserve = 0.1f)
+    private readonly bool CanReach(float distanceKm, float minAcceptableCharge = 0.1f)
     {
-        var reserveKWh = Battery.MaxCapacityKWh * reserve;
+        var reserveKWh = Battery.MaxCapacityKWh * minAcceptableCharge;
         var usableKWh = Battery.CurrentChargeKWh - reserveKWh;
         return EnergyForDistanceKWh(distanceKm) <= usableKWh;
+    }
+
+    /// <summary>
+    /// Whether the EV can tolerate a detour that goes through a station and still
+    /// keep at least <paramref name="minAcceptableCharge"/> SoC on arrival.
+    /// </summary>
+    /// <param name="detourDistanceKm">The total detour distance from the current position to the destination via the station.</param>
+    /// <param name="directDistanceKm">The direct current-route distance from the current position to the destination.</param>
+    /// <param name="minAcceptableCharge">Minimum SoC required on arrival. Defaults to 0.1.</param>
+    /// <returns>True if the implied station leg is reachable with the specified reserve; otherwise, false.</returns>
+    public readonly bool CanReachViaDetour(float detourDistanceKm, float directDistanceKm, float minAcceptableCharge = 0.1f)
+    {
+        var inferredStationLegKm = Math.Max(0f, detourDistanceKm - directDistanceKm);
+        return CanReach(inferredStationLegKm, minAcceptableCharge);
     }
 
     /// <summary>
@@ -94,27 +108,56 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     /// <returns>Returns the percentence that the EV should charge to.</returns>
     public readonly float CalcDesiredSoC(Time arrivalAtStation)
     {
-        var percentageCompleted = (arrivalAtStation - Journey.Current.Departure) / (double)Journey.Current.Duration;
-        var remainingDistanceKm = Journey.Current.DistanceKm * (1.0 - percentageCompleted);
+        if (Battery.MaxCapacityKWh == 0)
+            throw new InvalidOperationException($"Battery capacity must be greater than zero when calculating desired SoC (arrivalAtStation={arrivalAtStation}, {this})");
 
-        var energyToDest = EnergyForDistanceKWh((float)remainingDistanceKm);
+        var remainingDistanceKm = Journey.RemainingDistanceToDestination(arrivalAtStation);
+        var energyToDest = EnergyForDistanceKWh(remainingDistanceKm);
         var percentNeededToDestination = energyToDest / Battery.MaxCapacityKWh;
+        if (!float.IsFinite(percentNeededToDestination) || percentNeededToDestination < 0f || float.IsNaN(percentNeededToDestination))
+            throw new InvalidOperationException($"Calculated percent needed to destination is invalid (percentNeededToDestination={percentNeededToDestination}, arrivalAtStation={arrivalAtStation}, {this})");
         var chargeToPercent = percentNeededToDestination + Preferences.MinAcceptableCharge;
-
-        return chargeToPercent > 1f ? 0.8f : chargeToPercent;
+        var desiredSoC = chargeToPercent > 1f ? 0.8f : chargeToPercent;
+        return Math.Clamp(desiredSoC + 0.01f, 0f, 1f);
     }
 
     /// <summary>
-    /// Consumes energy based on the distance traveled between <paramref name="from"/> and <paramref name="to"/>.
+    /// Calculates the next time to check for candidate stations, which is the minimum of:
+    /// 1) The time it takes to reach halfway to the next stop, and
+    /// 2) The time it takes to reach half of the remaining battery.
     /// </summary>
-    /// <param name="from">The starting time of the interval which to calculate energy consumption.
-    /// Should be between the journey's departure and arrival times.</param>
-    /// <param name="to">The ending time of the interval which to calculate energy consumption.
-    /// Should be between the journey's departure and arrival times, and greater than <paramref name="from"/>.</param>
-    public readonly void ConsumeEnergy(Time from, Time to)
+    /// <param name="currentTime">The current simulation time.</param>
+    /// <returns>The Time the next FindCandidateStation Event should occur.</returns>
+    public readonly Time TimeToNextFindCandidateCheck(Time currentTime) => Math.Min(Journey.TimeToReachHalfToNextStop(), TimeUntilHalfOfBattery(currentTime));
+
+    private readonly Time TimeUntilHalfOfBattery(Time currentTime)
     {
-        var fractionTraveled = (to - from) / (double)Journey.Current.Duration;
-        var distanceKm = Journey.Current.DistanceKm * fractionTraveled;
+        if (Preferences.MinAcceptableCharge >= Battery.StateOfCharge)
+        {
+            if (currentTime < Journey.Current.Departure)
+                throw new InvalidOperationException($"Current time is before the departure of the current journey (currentTime={currentTime}, departure={Journey.Current.Departure}, {this})");
+            return currentTime;
+        }
+
+        var percent = Math.Max(Preferences.MinAcceptableCharge, Battery.StateOfCharge / 2);
+        var acceptableKWh = Battery.MaxCapacityKWh * percent;
+        var distanceAtHalfBattery = acceptableKWh / (ConsumptionWhPerKm / 1000f);
+        return Journey.Current.Departure + Journey.TimeToDriveDistance(distanceAtHalfBattery);
+    }
+
+    /// <summary>
+    /// Consumes energy based on the distance traveled along the supplied journey snapshot.
+    /// </summary>
+    /// <param name="journey">The journey snapshot before the advance.</param>
+    /// <param name="currentTime">The ending time of the interval which to calculate energy consumption.</param>
+    private readonly void ConsumeEnergy(CurrentJourney journey, Time currentTime)
+    {
+        if (journey.Duration.Seconds == 0)
+            return;
+
+        var fractionTraveled = (currentTime - journey.Departure) / (double)journey.Duration;
+        fractionTraveled = Math.Clamp(fractionTraveled, 0d, 1d);
+        var distanceKm = journey.DistanceKm * fractionTraveled;
         var energyKWh = EnergyForDistanceKWh((float)distanceKm);
         var socLost = energyKWh / Battery.MaxCapacityKWh;
         Battery.StateOfCharge = Math.Clamp(Battery.StateOfCharge - socLost, 0f, 1f);

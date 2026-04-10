@@ -60,6 +60,28 @@ internal static class Make
 public class ChargingTest
 {
     [Fact]
+    public void IntegrateSingleToCompletion_NaNTargetSoC_Throws()
+    {
+        var integrator = new ChargingIntegrator(stepSeconds: 1);
+        var ev = new ConnectedEV(
+            EVId: 1,
+            CurrentSoC: 0.2,
+            TargetSoC: double.NaN,
+            CapacityKWh: 60,
+            MaxChargeRateKW: 100,
+            Socket: Socket.CCS2,
+            ArrivalTime: 0);
+
+        var ex = Assert.Throws<ArgumentOutOfRangeException>(() => integrator.IntegrateSingleToCompletion(
+            simNow: 0,
+            maxKW: 100,
+            point: Make.SinglePoint(Socket.CCS2),
+            ev: ev));
+
+        Assert.Contains("TargetSoC", ex.Message);
+    }
+
+    [Fact]
     public void IntegrateSingleToCompletion()
     {
         // Car charges from 5% to 95% through all three AggressiveTaperCurve regions.

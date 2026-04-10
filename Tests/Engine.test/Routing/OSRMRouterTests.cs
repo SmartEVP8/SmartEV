@@ -4,6 +4,7 @@ using Core.Charging;
 using Core.Shared;
 using Engine.Routing;
 using Engine.test.Builders;
+using Core.test.Builders;
 
 // If this test ever fails report it. We should have been fixed but just in case.
 public class OSRMRouterTests
@@ -18,10 +19,10 @@ public class OSRMRouterTests
     private OSRMRouter CreateRouter(params Position[] positions)
     {
         List<Station> stations = [.. positions.Select((pos, i) =>
-            TestData.Station(
+            CoreTestData.Station(
                 id: (ushort)(i + 1),
                 pos: pos,
-                energyPrices: TestData.EnergyPrices))];
+                energyPrices: CoreTestData.EnergyPrices))];
         var router = new OSRMRouter(new FileInfo(_osrmPath), stations);
         return router;
     }

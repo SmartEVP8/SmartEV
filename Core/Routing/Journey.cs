@@ -51,17 +51,12 @@ public record CurrentJourney(
 public class Journey(Time departure, Time duration, float distanceMeters, List<Position> waypoints)
 {
     /// <summary>Gets the original baseline of the journey.</summary>
-    public OriginalJourney Original { get; } = new(departure, duration, distanceMeters / 1000);
+    public OriginalJourney Original { get; } = new(departure, duration > 0 ? duration : throw new ArgumentOutOfRangeException("Duration Can be zero"), distanceMeters / 1000);
 
     /// <summary>Gets the live state of the journey.</summary>
     public CurrentJourney Current { get; private set; } = new(
         departure, duration, distanceMeters / 1000,
         waypoints, waypoints[^1], PathDeviation: 0, DurationToNextStop: duration);
-
-    /// <summary>Calculates the time elapsed since the journey started.</summary>
-    /// <param name="currentTime">The current time.</param>
-    /// <returns>The elapsed time.</returns>
-    public Time TimeElapsed(Time currentTime) => currentTime - Original.Departure;
 
     /// <summary>
     /// Calculates the remaining time on the current route,
@@ -71,25 +66,46 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
     /// <returns>The remaining time on the current route.</returns>
     public Time RemainingCurrentRoute(Time currentTime) => Current.Eta - currentTime;
 
-    /// <summary>Calculates the distance from the EV's current position to the next stop.</summary>
+    /// <summary>
+    /// Calculates the remaining distance to destination at <paramref name="currentTime"/> without mutating the live journey.
+    /// </summary>
     /// <param name="currentTime">The current time.</param>
-    /// <returns>Returns the distance to the next stop in kilometers.</returns>
-    public float DistanceToNextStop(Time currentTime)
+    /// <returns>The remaining distance to destination in kilometers.</returns>
+    public float RemainingDistanceToDestination(Time currentTime)
     {
-        var currentPos = GetCurrentPosition(currentTime);
-        return (float)GeoMath.EquirectangularDistance(currentPos, Current.NextStop) / 1000;
+        CheckIfTimeIsBeforeDeparture(currentTime);
+        CheckIfTimeIsAfterCompletion(currentTime);
+        var (snapshot, _) = DeriveRouteSnapshot(currentTime);
+        return Math.Max(0f, snapshot.DistanceKm);
     }
 
     /// <summary>
-    /// Calculates the EV's current position. Assumes the speed is always the same.
+    /// Calculates the EV's current position without mutating the live route.
     /// </summary>
     /// <param name="currentTime">The current time.</param>
     /// <returns>The position of the car.</returns>
     /// <exception cref="ArgumentException">Thrown when the current time is before the journey starts or after it has completed.</exception>
     public Position GetCurrentPosition(Time currentTime)
     {
-        DeriveRoute(currentTime);
-        return Current.Waypoints[0];
+        CheckIfTimeIsBeforeDeparture(currentTime);
+        CheckIfTimeIsAfterCompletion(currentTime);
+        var (_, currentPos) = DeriveRouteSnapshot(currentTime);
+        return currentPos;
+    }
+
+    /// <summary>
+    /// Advances the live route to <paramref name="currentTime"/> and returns the current position.
+    /// </summary>
+    /// <param name="currentTime">The simulation time to advance to.</param>
+    /// <returns>The position of the car after advancing.</returns>
+    public Position AdvanceTo(Time currentTime)
+    {
+        CheckIfTimeIsBeforeDeparture(currentTime);
+        CheckIfTimeIsAfterEtaToNextStop(currentTime);
+        CheckIfTimeIsAfterCompletion(currentTime);
+        var (currentJourney, currentPos) = DeriveRouteSnapshot(currentTime);
+        Current = currentJourney;
+        return currentPos;
     }
 
     /// <summary>
@@ -102,19 +118,64 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
     /// <param name="newDistanceKm">The distance of the new journey in kilometers.</param>
     public void UpdateRoute(List<Position> waypoints, Position nextStop, Time departure, Time duration, float newDistanceKm)
     {
+        CheckIfTimeIsBeforeDeparture(departure);
         var deviation = Current.PathDeviation + (departure + duration) - Current.Eta;
         var durationToNextStop = DurationToNextStop(duration, waypoints, nextStop);
         Current = new CurrentJourney(departure, duration, newDistanceKm, waypoints, nextStop, deviation, durationToNextStop);
     }
 
-    private float PercentageCompleted(Time currentTime) => (currentTime - Current.Departure) / (float)Current.Duration;
+    /// <summary>
+    /// Updates the current journey to have an EV drive towards its destination after charging at a station.
+    /// </summary>
+    /// <param name="timeAtStation">The amount of time spent at a station.</param>
+    public void UpdateRouteToDestination(Time timeAtStation)
+    {
+        var newDeparture = Current.Departure + timeAtStation;
+
+        Current = new CurrentJourney(
+            Departure: newDeparture,
+            Duration: Current.Duration,
+            DistanceKm: Current.DistanceKm,
+            Waypoints: Current.Waypoints,
+            NextStop: Current.Waypoints.Last(),
+            PathDeviation: Current.PathDeviation,
+            DurationToNextStop: DurationToNextStop(Current.Duration, Current.Waypoints, Current.Waypoints.Last()));
+    }
+
+    /// <summary>
+    /// Finds the time it would take to drive a given distance based on the original average speed of the journey.
+    /// </summary>
+    /// <param name="distance">The distance a EV has to drive.</param>
+    /// <returns>Returns how long it takes to drive a distance in seconds.</returns>
+    public Time TimeToDriveDistance(float distance)
+    {
+        var speedKmh = Original.DistanceKm / (Original.Duration.Seconds / 3600f);
+        var timeHours = distance / speedKmh;
+        return (uint)Math.Ceiling(timeHours * 3600);
+    }
+
+    /// <summary>
+    /// Gets the time it takes to reach half the distance to the next stop.
+    /// </summary>
+    /// <returns>Time to reach halfway to NextStop.</returns>
+    public Time TimeToReachHalfToNextStop() => Current.Departure + Current.DurationToNextStop / 2;
+
+    private float PercentageCompleted(Time currentTime)
+    {
+        if (Current.Duration.Seconds == 0)
+            return 1f;
+
+        var progress = (currentTime - Current.Departure) / (float)Current.Duration;
+        return Math.Clamp(progress, 0f, 1f);
+    }
 
     /// <summary>
     /// Derives a new journey snapshot at <paramref name="currentTime"/> by trimming elapsed route and
     /// recomputing durations/distances from the interpolated current position.
     /// </summary>
     /// <param name="currentTime">The simulation time to derive state for.</param>
-    private void DeriveRoute(Time currentTime)
+    /// <returns>A new route snapshot together with the interpolated current position.</returns>
+    private (CurrentJourney Journey, Position CurrentPosition) DeriveRouteSnapshot(Time currentTime)
     {
         var percentageCompleted = PercentageCompleted(currentTime);
         var ratio = 1 - percentageCompleted;
@@ -123,7 +184,8 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
         var waypoints = DeriveNewWaypoints(currentTime);
         var durationToNextStop = DurationToNextStop(duration, waypoints, Current.NextStop);
 
-        Current = new CurrentJourney(currentTime, duration, newDistanceKm, waypoints, Current.NextStop, Current.PathDeviation, durationToNextStop);
+        var currentJourney = new CurrentJourney(currentTime, duration, newDistanceKm, waypoints, Current.NextStop, Current.PathDeviation, durationToNextStop);
+        return (currentJourney, waypoints[0]);
     }
 
     /// <summary>
@@ -141,13 +203,9 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
     /// </exception>
     private List<Position> DeriveNewWaypoints(Time currentTime)
     {
-        Time completedTime = Current.Departure + Current.Duration;
-        if (currentTime > completedTime)
-            throw new ArgumentException($"Current time: {currentTime} is after the journey has completed: {completedTime}. Overshoot: {currentTime - completedTime}s.");
-        if (currentTime > Current.EtaToNextStop)
-            throw new ArgumentException($"Current time: {currentTime} is after ETA to next stop: {Current.EtaToNextStop}. Overshoot: {currentTime - Current.EtaToNextStop}s.");
-        if (currentTime < Current.Departure)
-            throw new ArgumentException($"Current time: {currentTime} is before the journey has started: {Original.Departure}.");
+        CheckIfTimeIsAfterCompletion(currentTime);
+        CheckIfTimeIsAfterEtaToNextStop(currentTime);
+        CheckIfTimeIsBeforeDeparture(currentTime);
 
         var percentageCompleted = PercentageCompleted(currentTime);
 
@@ -184,12 +242,20 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
             var nextStopExists = nextStopIndex >= 0;
             var interpolationPassedNextStop = nextStopExists && secondIndex > nextStopIndex;
             if (interpolationPassedNextStop)
-                throw new ArgumentException($"Illegal context: interpolation moved beyond next stop at currentTime={currentTime}. nextStopIndex={nextStopIndex}, segmentIndex={secondIndex}.");
+            {
+                if (!currentTime.IsApproximately(Current.EtaToNextStop))
+                    throw new ArgumentException($"Illegal context: interpolation moved beyond next stop at currentTime={currentTime}. nextStopIndex={nextStopIndex}, segmentIndex={secondIndex}.");
+
+                // Rounding nudged us one segment past the next stop — snap back to it.
+                var nextStopPos = Current.Waypoints[nextStopIndex];
+                var remainingWaypoints = Current.Waypoints.Skip(nextStopIndex + 1).ToList();
+                return new List<Position>([nextStopPos, .. remainingWaypoints]);
+            }
 
             var suffixStartIndex = secondIndex;
-            var remainingWaypoints = Current.Waypoints.Skip(suffixStartIndex).ToList();
+            var remainingWaypoints2 = Current.Waypoints.Skip(suffixStartIndex).ToList();
 
-            return new List<Position>([currentPos, .. remainingWaypoints]);
+            return new List<Position>([currentPos, .. remainingWaypoints2]);
         }
 
         var last = Current.Waypoints[^1];
@@ -248,5 +314,24 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
             total += GeoMath.EquirectangularDistance(waypoints[i], waypoints[i + 1]);
 
         return total;
+    }
+
+    private void CheckIfTimeIsBeforeDeparture(Time time)
+    {
+        if (time < Current.Departure)
+            throw new ArgumentException($"Current time: {time} is before the current journey has started: {Current.Departure}.");
+    }
+
+    private void CheckIfTimeIsAfterCompletion(Time time)
+    {
+        var completedTime = Current.Departure + Current.Duration;
+        if (time > completedTime && !time.IsApproximately(completedTime))
+            throw new ArgumentException($"Current time: {time} is after the journey has completed: {completedTime}. Overshoot: {time - completedTime}s.");
+    }
+
+    private void CheckIfTimeIsAfterEtaToNextStop(Time time)
+    {
+        if (time > Current.EtaToNextStop && !time.IsApproximately(Current.EtaToNextStop))
+            throw new ArgumentException($"Current time: {time} is after ETA to next stop: {Current.EtaToNextStop}. Overshoot: {time - Current.EtaToNextStop}s.");
     }
 }

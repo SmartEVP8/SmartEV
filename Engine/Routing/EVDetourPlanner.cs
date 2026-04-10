@@ -8,7 +8,7 @@ using Engine.Utils;
 /// <summary>
 /// Calculates detour deviations by querying OSRM routes.
 /// </summary>
-public class ApplyNewPath(IDestinationRouter router)
+public class EVDetourPlanner(IDestinationRouter router) : IEVDetourPlanner
 {
     private readonly IDestinationRouter _router = router;
 
@@ -19,9 +19,9 @@ public class ApplyNewPath(IDestinationRouter router)
     /// <param name="ev">The EV to reroute.</param>
     /// <param name="station">The station the EV should reroute through.</param>
     /// <param name="currentTime">Used to determine the EV's current position in the journey.</param>
-    public void ApplyNewPathToEV(ref EV ev, Station station, Time currentTime)
+    public void Update(ref EV ev, Station station, Time currentTime)
     {
-        var currentPos = ev.Journey.GetCurrentPosition(currentTime);
+        var currentPos = ev.Advance(currentTime);
         var destination = ev.Journey.Current.Waypoints.Last();
 
         var res = _router.QueryDestinationWithStop(

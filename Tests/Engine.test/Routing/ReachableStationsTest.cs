@@ -5,6 +5,7 @@ using Core.Vehicles;
 using Core.Charging;
 using Engine.Routing;
 using Engine.test.Builders;
+using Core.test.Builders;
 
 public class ReachableStationsTests
 {
@@ -18,15 +19,15 @@ public class ReachableStationsTests
         ]);
 
         var preferences = new Preferences(0.5f, 0.9f, 50.0f);
-        var ev = TestData.EV(
-                waypoints,
-                TestData.Battery(capacity: 100, maxChargeRate: 150, stateOfCharge: 50));
+        var ev = CoreTestData.EV(
+            waypoints,
+            CoreTestData.Battery(capacity: 100, maxChargeRate: 150, stateOfCharge: 50));
 
         var stations = new Dictionary<ushort, Station>
         {
-            { 1, TestData.Station(1, new (0.5, 0.5)) },
-            { 2, TestData.Station(2, new (2.0, 2.0)) },
-            { 3, TestData.Station(3, new (0.1, 0.1)) },
+            { 1, CoreTestData.Station(1, new (0.5, 0.5)) },
+            { 2, CoreTestData.Station(2, new (2.0, 2.0)) },
+            { 3, CoreTestData.Station(3, new (0.1, 0.1)) },
         };
 
         var nearbyStations = new List<ushort> { 1, 2, 3 };

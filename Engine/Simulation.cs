@@ -24,7 +24,6 @@ public class Simulation(
     {
         Console.WriteLine("Starting Simulation");
         scheduler.ScheduleEvent(new SpawnEVS(0));
-        scheduler.ScheduleEvent(new CheckAndUpdateAllEVs(0));
         scheduler.ScheduleEvent(new SnapshotEvent(0));
         while (true)
         {
