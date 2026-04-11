@@ -111,11 +111,11 @@ message SimulationSnapshot {
 }
 
 /*
-Message Envelope
+   Message Envelope
 
-A wrapper message that can contain any of the defined message types.
-This allows us to have a single WebSocket endpoint that can handle all types of
-messages,
+   A wrapper message that can contain any of the defined message types.
+   This allows us to have a single WebSocket endpoint that can handle all types of
+   messages,
 */
 message Envelope {
   oneof payload {
