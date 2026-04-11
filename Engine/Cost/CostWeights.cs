@@ -12,6 +12,9 @@ public enum CostWeightField
     ExpectedWaitTime,
 }
 
+/// <summary>
+/// Extension method for CostWeightField to convert enum values to user-friendly display names.
+/// </summary>
 public static class CostWeightFieldExtensions
 {
     /// <summary>
@@ -46,6 +49,10 @@ public record WeightMetadata(int Id, float Min, float Max, string Name);
 /// </summary>
 public static class CostWeightMetadata
 {
+    /// <summary>
+    /// Metadata for all supported cost weight fields.
+    /// Used to validate and identify weights when they are updated from the frontend.
+    /// </summary>
     public static readonly IReadOnlyDictionary<CostWeightField, WeightMetadata> All =
         new Dictionary<CostWeightField, WeightMetadata>
         {

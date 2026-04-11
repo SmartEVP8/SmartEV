@@ -6,30 +6,17 @@ package protocol;
 // CORE TYPES
 // ============================================================================
 
+// Represents a geographic position with latitude and longitude
 message Position {
   double lat = 1;
   double lon = 2;
-}
-
-message CostWeight {
-  int32 id = 1;
-  float updated_value = 2;
 }
 
 // ============================================================================
 // INITIALIZATION TYPES
 // ============================================================================
 
-message WeightRanges {
-  int32 id = 1;
-  float minimum = 2;
-  float maximum = 3;
-  string name = 4;
-}
-
-// Request to get possible weights, ids and their name and valid value ranges
-message GetValidWeightRanges { repeated WeightRanges weight_ranges = 1; }
-
+// Represents a charger at a station, including its max power and whether it's dual or single
 message Charger {
   int32 id = 1;
   int32 max_power_kw = 2;
@@ -37,12 +24,14 @@ message Charger {
   int32 station_id = 4;
 }
 
+// Represents the initial data for a station sent from the engine to the client upon connection
 message StationInit {
   uint32 id = 1;
   Position pos = 2;
   string address = 3;
 }
 
+// Initial data sent from the engine to the client upon connection, containing all stations and chargers
 message InitEngineData {
   repeated Charger chargers = 1;
   repeated StationInit stations = 2;
@@ -52,12 +41,14 @@ message InitEngineData {
 // Snapshots
 // ============================================================================
 
+// Represents the state of a single EV in a charger queue.
 message EVChargerState {
   int32 ev_id = 1;
   float soc = 2;
   float target_soc = 3;
 }
 
+// Represents the state of a single charger.
 message ChargerState {
   bool is_active = 1;
   float utilization = 2;
@@ -66,61 +57,51 @@ message ChargerState {
   repeated EVChargerState evs_in_queue = 5;
 }
 
+// Represents an EV currently on route to a station, including its waypoints
 message EVOnRoute {
   int32 ev_id = 1;
   repeated Position waypoints = 2;
 }
 
+// Snapshot of a station's state, including all chargers and EVs currently on route to it
 message StationState {
   uint32 station_id = 1;
   repeated ChargerState charger_states = 2;
   repeated EVOnRoute evs_on_route = 3;
 }
 
-message SimulationSnapshot {
-  uint32 total_evs = 1;
-  uint32 total_charging = 2;
-  uint64 simulation_time_ms = 3;
-}
-
 // ============================================================================
-// CLIENT REQUEST TYPES (10-19)
+// CLIENT REQUEST TYPES
 // ============================================================================
 
-message StationGenerationOptions {
-  float dual_charging_point_probability = 1;
-  int32 total_chargers = 2;
-}
-
-message InitRequest {
-  repeated CostWeight cost_weights = 1;
-  StationGenerationOptions station_generation = 2;
-  uint32 maximum_evs = 3;
-  int32 seed = 4;
-}
-
-message GetSnapshotRequest {
-  // Empty, but required for request/response symmetry
-}
-
+// Request a snapshot of a specific station's state
 message GetStationSnapshot {
   uint32 station_id = 1;
 }
 
 // ============================================================================
-// EVENT TYPES (Server -> Client pushes, 30-39)
+// EVENT TYPES (Server -> Client pushes)
 // ============================================================================
 
+// ArrivalAtStation event trigger in the engine
 message ArrivalEvent {
   uint32 station_id = 1;
   int32 ev_id = 2;
   uint64 timestamp_ms = 3;
 }
 
+// EndCharging event trigger in the engine
 message ChargingEndEvent {
   uint32 station_id = 1;
   int32 ev_id = 2;
   uint64 timestamp_ms = 3;
+}
+
+// Periodic snapshot of the overall simulation state (e.g., every second)
+message SimulationSnapshot {
+  uint32 total_evs = 1;
+  uint32 total_charging = 2;
+  uint64 simulation_time_ms = 3;
 }
 
 /*
@@ -133,16 +114,11 @@ messages,
 message Envelope {
   oneof payload {
     // Client Requests (10-19)
-    InitRequest init = 10;
-    GetSnapshotRequest get_snapshot = 11;
-    GetStationSnapshot get_station_snapshot = 12;
+    GetStationSnapshot get_station_snapshot = 10;
 
     // Server Responses (20-29)
-    InitEngineData init_engine_data = 20; // response to InitRequest
-    SimulationSnapshot snapshot_response = 21; // response to GetSnapshotRequest
-    GetValidWeightRanges valid_weight_ranges = 23;
-    StationState station_state_response = 24; // response to GetStationSnapshot
-
+    InitEngineData init_engine_data = 20;
+    StationState station_state_response = 21; // response to GetStationSnapshot
 
     // Server Events/Pushes (30-39)
     ArrivalEvent arrival = 30;

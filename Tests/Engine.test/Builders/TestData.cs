@@ -248,6 +248,8 @@ public static class TestData
             ? station.Chargers.Sum(c => c.Queue.Count)
             : throw new KeyNotFoundException($"Station {stationId} not found.");
         }
+
+        public IEnumerable<int> GetEVsOnRouteToStation(ushort stationId) => [];
     }
 
     private sealed class FakeCharger() : ChargerBase(id: 1, maxPowerKW: 100)

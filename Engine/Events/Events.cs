@@ -42,7 +42,7 @@ public record ArriveAtStation(int EVId, ushort StationId, double TargetSoC, Time
 //  - Integrate the Recompute functionality.
 // Metrics:
 //  - Record the time an EV spent charging
-public record EndCharging(int EVId, int ChargerId, Time Time) : Event(Time);
+public record EndCharging(int EVId, int ChargerId, ushort StationId, Time Time) : Event(Time);
 
 // Metrics:
 //  - Record if the EV missed its deadline.

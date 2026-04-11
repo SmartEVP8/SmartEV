@@ -20,4 +20,11 @@ public interface IStationService
     /// <param name="stationId">The station ID.</param>
     /// <returns>The total queue size.</returns>
     int GetTotalQueueSize(ushort stationId);
+
+    /// <summary>
+    /// Gets all EVs currently on route to the given station.
+    /// </summary>
+    /// <param name="stationId">The station ID.</param>
+    /// <returns>A collection of EV IDs on route to the station.</returns>
+    IEnumerable<int> GetEVsOnRouteToStation(ushort stationId);
 }
