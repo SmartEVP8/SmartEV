@@ -1,23 +1,28 @@
 namespace API.Services;
 
 using System.Net.WebSockets;
+using Engine.Events;
 using Google.Protobuf;
 using Protocol;
 
 /// <summary>
 /// Manages WebSocket connections and message processing for the simulation protocol.
+/// Also periodically broadcasts simulation snapshots to connected clients.
 /// </summary>
 public class SimulationWebSocketService(
     SnapshotHandler snapshotHandler,
     ILogger<SimulationWebSocketService> logger) : IEventSender
 {
     private const int _bufferSize = 4096;
+    private const int _snapshotIntervalMs = 1000;
 
+    private readonly SnapshotHandler _snapshotHandler = snapshotHandler;
     private readonly ILogger<SimulationWebSocketService> _logger = logger;
 
     private readonly Lock _clientLock = new();
 
     private WebSocket? _client;
+    private Timer? _snapshotTimer;
 
     /// <summary>
     /// Attaches a WebSocket client for event broadcasting. Only one client is supported at a time.
@@ -59,6 +64,7 @@ public class SimulationWebSocketService(
     public async Task HandleConnectionAsync(WebSocket webSocket, CancellationToken cancelToken)
     {
         AttachClient(webSocket);
+        StartSnapshotBroadcast();
 
         try
         {
@@ -66,8 +72,43 @@ public class SimulationWebSocketService(
         }
         finally
         {
+            StopSnapshotBroadcast();
             DetachClient();
             webSocket.Dispose();
+        }
+    }
+
+    private void StartSnapshotBroadcast()
+    {
+        _snapshotTimer = new Timer(
+            async _ => await BroadcastSnapshot(),
+            null,
+            TimeSpan.FromMilliseconds(_snapshotIntervalMs),
+            TimeSpan.FromMilliseconds(_snapshotIntervalMs));
+        _logger.LogDebug("Started snapshot broadcast timer with interval {IntervalMs}ms", _snapshotIntervalMs);
+    }
+
+    private void StopSnapshotBroadcast()
+    {
+        if (_snapshotTimer != null)
+        {
+            _snapshotTimer.Dispose();
+            _snapshotTimer = null;
+            _logger.LogDebug("Stopped snapshot broadcast timer");
+        }
+    }
+
+    private async Task BroadcastSnapshot()
+    {
+        try
+        {
+            var envelope = _snapshotHandler.BuildSimulationSnapshot();
+            await SendAsync(envelope);
+            _logger.LogDebug("Broadcast simulation snapshot");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error broadcasting snapshot");
         }
     }
 
@@ -161,10 +202,9 @@ public class SimulationWebSocketService(
         switch (envelope.PayloadCase)
         {
             case Envelope.PayloadOneofCase.GetStationSnapshot when envelope.GetStationSnapshot != null:
-                var response = snapshotHandler.BuildStationSnapshot(envelope.GetStationSnapshot);
+                var response = _snapshotHandler.BuildStationSnapshot(envelope.GetStationSnapshot);
                 await SendAsync(response, cancelToken);
                 break;
-
             default:
                 _logger.LogWarning("Unknown message type: {PayloadCase}", envelope.PayloadCase);
                 break;

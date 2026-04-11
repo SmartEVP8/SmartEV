@@ -1,5 +1,6 @@
 namespace API.Services;
 
+using Engine.Events;
 using Engine.Services;
 using Engine.Vehicles;
 using Protocol;
@@ -9,15 +10,34 @@ using Protocol;
 /// </summary>
 /// <param name="evStore">The store for managing electric vehicles.</param>
 /// <param name="stationService">The service for managing charging stations.</param>
+/// <param name="eventScheduler">The event scheduler for getting the current simulation time.</param>
 /// <param name="logger">The logger for recording events and errors.</param>
 public class SnapshotHandler(
     EVStore evStore,
     StationService stationService,
+    EventScheduler eventScheduler,
     ILogger<SnapshotHandler> logger)
 {
     private readonly EVStore _evStore = evStore;
     private readonly StationService _stationService = stationService;
+    private readonly EventScheduler _eventScheduler = eventScheduler;
     private readonly ILogger<SnapshotHandler> _logger = logger;
+
+    /// <summary>
+    /// Builds a simulation snapshot response by querying the engine for the current state of the simulation.
+    /// </summary> 
+    /// <returns>The envelope containing the simulation snapshot response.</returns>
+    public Envelope BuildSimulationSnapshot()
+    {
+        var snapshot = new SimulationSnapshot
+        {
+            TotalEvs = _evStore.GetTotalEVsInSimulation(),
+            TotalCharging = _evStore.GetChargingEVCount(),
+            SimulationTimeMs = (ulong)_eventScheduler.CurrentTime,
+        };
+
+        return new Envelope { StateUpdate = snapshot };
+    }
 
     /// <summary>
     /// Builds a station snapshot response by querying the engine for the current state of the specified station.

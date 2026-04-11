@@ -31,6 +31,7 @@ public class EventDispatcher(
         IEngineEventSubscriber? eventSubscriber = null)
 {
     private readonly IEngineEventSubscriber? _eventSubscriber = eventSubscriber;
+
     /// <summary>
     /// Dispatches the event to the correct handler.
     /// Has a handler for every <c>Event</c>. If an event is dispatched for which there is no handler, an exception is thrown.
