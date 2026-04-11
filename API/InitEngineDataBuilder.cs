@@ -42,8 +42,9 @@ public static class InitEngineDataBuilder
                 }
             }
         }
-        catch
+        catch (Exception ex)
         {
+            Console.Error.WriteLine($"Error building initial engine data: {ex}");
         }
 
         return initData;

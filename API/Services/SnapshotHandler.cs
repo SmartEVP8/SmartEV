@@ -18,11 +18,6 @@ public class SnapshotHandler(
     EventScheduler eventScheduler,
     ILogger<SnapshotHandler> logger)
 {
-    private readonly EVStore _evStore = evStore;
-    private readonly StationService _stationService = stationService;
-    private readonly EventScheduler _eventScheduler = eventScheduler;
-    private readonly ILogger<SnapshotHandler> _logger = logger;
-
     /// <summary>
     /// Builds a simulation snapshot response by querying the engine for the current state of the simulation.
     /// </summary> 
@@ -31,9 +26,9 @@ public class SnapshotHandler(
     {
         var snapshot = new SimulationSnapshot
         {
-            TotalEvs = _evStore.GetTotalEVsInSimulation(),
-            TotalCharging = _evStore.GetChargingEVCount(),
-            SimulationTimeMs = (ulong)_eventScheduler.CurrentTime,
+            TotalEvs = evStore.GetTotalEVsInSimulation(),
+            TotalCharging = evStore.GetChargingEVCount(),
+            SimulationTimeMs = (ulong)eventScheduler.CurrentTime,
         };
 
         return new Envelope { StateUpdate = snapshot };
@@ -49,10 +44,10 @@ public class SnapshotHandler(
         var stationId = request.StationId;
         var stationState = new StationState { StationId = stationId };
 
-        var station = _stationService.GetStation((ushort)stationId);
+        var station = stationService.GetStation((ushort)stationId);
         if (station == null)
         {
-            _logger.LogWarning("Station with ID {StationId} not found", stationId);
+            logger.LogWarning("Station with ID {StationId} not found", stationId);
             return new Envelope { StationStateResponse = stationState };
         }
 
@@ -72,7 +67,7 @@ public class SnapshotHandler(
         var random = new Random(chargerId);
         var tempUtilization = random.NextSingle();
 
-        var engineChargerState = _stationService.GetChargerState(chargerId);
+        var engineChargerState = stationService.GetChargerState(chargerId);
         if (engineChargerState is null)
             return null!;
 
@@ -113,12 +108,12 @@ public class SnapshotHandler(
 
     private EVOnRoute[] GetEVsOnRoute(ushort stationId)
     {
-        var evsOnRoute = _stationService.GetEVsOnRouteToStation(stationId);
+        var evsOnRoute = stationService.GetEVsOnRouteToStation(stationId);
 
         var result = new List<EVOnRoute>();
         foreach (var evId in evsOnRoute)
         {
-            var ev = _evStore.Get(evId);
+            var ev = evStore.Get(evId);
             var evOnRoute = new EVOnRoute { EvId = evId };
 
             foreach (var waypoint in ev.Journey.Current.Waypoints)

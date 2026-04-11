@@ -11,7 +11,6 @@ public sealed class SimulationRunner(
     Simulation simulation,
     ILogger<SimulationRunner> logger)
 {
-    private readonly ILogger<SimulationRunner> _logger = logger;
     private Task? _simulationTask;
     private CancellationTokenSource? _cts;
 
@@ -62,7 +61,11 @@ public sealed class SimulationRunner(
         }
         catch (OperationCanceledException)
         {
-            _logger.LogInformation("SimulationRunner stopped");
+            logger.LogInformation("SimulationRunner stopped");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error in SimulationRunner");
         }
     }
 }

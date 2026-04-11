@@ -12,6 +12,12 @@ message Position {
   double lon = 2;
 }
 
+// Represents a cost weight for a specific factor (e.g., Pricesensitivity, PathDeviation etc.)
+message CostWeight {
+  int32 id = 1;
+  float updated_value = 2;
+}
+
 // ============================================================================
 // INITIALIZATION TYPES
 // ============================================================================

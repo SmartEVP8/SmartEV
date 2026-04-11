@@ -1,7 +1,6 @@
 namespace API.Services;
 
 using System.Net.WebSockets;
-using Engine.Events;
 using Google.Protobuf;
 using Protocol;
 
@@ -16,44 +15,7 @@ public class SimulationWebSocketService(
     private const int _bufferSize = 4096;
     private const int _snapshotIntervalMs = 1000;
 
-    private readonly SnapshotHandler _snapshotHandler = snapshotHandler;
-    private readonly ILogger<SimulationWebSocketService> _logger = logger;
-
-    private readonly Lock _clientLock = new();
-
     private WebSocket? _client;
-    private Timer? _snapshotTimer;
-
-    /// <summary>
-    /// Attaches a WebSocket client for event broadcasting. Only one client is supported at a time.
-    /// </summary>
-    /// <param name="socket">The WebSocket client to attach.</param>
-    public void AttachClient(WebSocket socket)
-    {
-        lock (_clientLock)
-        {
-            _client = socket;
-        }
-    }
-
-    /// <summary>
-    /// Detaches the current WebSocket client, if any. Should be called when the client disconnects.
-    /// </summary>
-    public void DetachClient()
-    {
-        lock (_clientLock)
-        {
-            _client = null;
-        }
-    }
-
-    private WebSocket? GetClient()
-    {
-        lock (_clientLock)
-        {
-            return _client?.State == WebSocketState.Open ? _client : null;
-        }
-    }
 
     /// <summary>
     /// Handles an incoming WebSocket connection.
@@ -63,8 +25,10 @@ public class SimulationWebSocketService(
     /// <returns>A task representing the asynchronous operation that handles the connection.</returns>
     public async Task HandleConnectionAsync(WebSocket webSocket, CancellationToken cancelToken)
     {
-        AttachClient(webSocket);
-        StartSnapshotBroadcast();
+        _client = webSocket;
+
+        using var snapshotCts = CancellationTokenSource.CreateLinkedTokenSource(cancelToken);
+        var snapshotLoop = RunSnapshotLoopAsync(snapshotCts.Token);
 
         try
         {
@@ -72,43 +36,44 @@ public class SimulationWebSocketService(
         }
         finally
         {
-            StopSnapshotBroadcast();
-            DetachClient();
+            await snapshotCts.CancelAsync();
+
+            try
+            {
+                await snapshotLoop;
+            }
+            catch (OperationCanceledException)
+            {
+            }
+
+            _client = null;
             webSocket.Dispose();
         }
     }
 
-    private void StartSnapshotBroadcast()
+    /// <inheritdoc/>
+    public async Task SendAsync(Envelope envelope, CancellationToken cancelToken = default)
     {
-        _snapshotTimer = new Timer(
-            async _ => await BroadcastSnapshot(),
-            null,
-            TimeSpan.FromMilliseconds(_snapshotIntervalMs),
-            TimeSpan.FromMilliseconds(_snapshotIntervalMs));
-        _logger.LogDebug("Started snapshot broadcast timer with interval {IntervalMs}ms", _snapshotIntervalMs);
-    }
-
-    private void StopSnapshotBroadcast()
-    {
-        if (_snapshotTimer != null)
+        if (_client?.State != WebSocketState.Open)
         {
-            _snapshotTimer.Dispose();
-            _snapshotTimer = null;
-            _logger.LogDebug("Stopped snapshot broadcast timer");
+            logger.LogWarning("No open WebSocket client to send message");
+            return;
         }
-    }
 
-    private async Task BroadcastSnapshot()
-    {
         try
         {
-            var envelope = _snapshotHandler.BuildSimulationSnapshot();
-            await SendAsync(envelope);
-            _logger.LogDebug("Broadcast simulation snapshot");
+            var data = envelope.ToByteArray();
+            await _client.SendAsync(
+                new ArraySegment<byte>(data),
+                WebSocketMessageType.Binary,
+                true,
+                cancelToken);
+
+            logger.LogDebug("Sent envelope: {PayloadCase}", envelope.PayloadCase);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error broadcasting snapshot");
+            logger.LogError(ex, "Error sending envelope to client");
         }
     }
 
@@ -147,11 +112,11 @@ public class SimulationWebSocketService(
         }
         catch (OperationCanceledException)
         {
-            _logger.LogInformation("WebSocket connection cancelled");
+            logger.LogInformation("WebSocket connection cancelled");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error in WebSocket connection");
+            logger.LogError(ex, "Error in WebSocket connection");
         }
     }
 
@@ -161,39 +126,11 @@ public class SimulationWebSocketService(
         {
             ms.Seek(0, SeekOrigin.Begin);
             var envelope = Envelope.Parser.ParseFrom(ms.ToArray());
-
             await RouteMessageAsync(envelope, cancelToken);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error processing message");
-        }
-    }
-
-    /// <inheritdoc/>
-    public async Task SendAsync(Envelope envelope, CancellationToken cancelToken = default)
-    {
-        var client = GetClient();
-        if (client == null)
-        {
-            return;
-        }
-
-        try
-        {
-            var data = envelope.ToByteArray();
-            await client.SendAsync(
-                new ArraySegment<byte>(data),
-                WebSocketMessageType.Binary,
-                true,
-                cancelToken);
-
-            _logger.LogDebug("Sent envelope: {PayloadCase}", envelope.PayloadCase);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error sending envelope to client");
-            DetachClient();
+            logger.LogError(ex, "Error processing message");
         }
     }
 
@@ -202,12 +139,34 @@ public class SimulationWebSocketService(
         switch (envelope.PayloadCase)
         {
             case Envelope.PayloadOneofCase.GetStationSnapshot when envelope.GetStationSnapshot != null:
-                var response = _snapshotHandler.BuildStationSnapshot(envelope.GetStationSnapshot);
+                var response = snapshotHandler.BuildStationSnapshot(envelope.GetStationSnapshot);
                 await SendAsync(response, cancelToken);
                 break;
             default:
-                _logger.LogWarning("Unknown message type: {PayloadCase}", envelope.PayloadCase);
+                logger.LogWarning("Unknown message type: {PayloadCase}", envelope.PayloadCase);
                 break;
+        }
+    }
+
+    private async Task RunSnapshotLoopAsync(CancellationToken cancelToken)
+    {
+        try
+        {
+            using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(_snapshotIntervalMs));
+            while (await timer.WaitForNextTickAsync(cancelToken))
+            {
+                var envelope = snapshotHandler.BuildSimulationSnapshot();
+                await SendAsync(envelope, cancelToken);
+                logger.LogDebug("Broadcast simulation snapshot");
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected during shutdown.
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Snapshot broadcast loop crashed");
         }
     }
 }

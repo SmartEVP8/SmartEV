@@ -10,8 +10,6 @@ public sealed class EngineEventSubscriber(
     IEventSender eventSender,
     ILogger<EngineEventSubscriber> logger) : IEngineEventSubscriber
 {
-    private readonly ILogger<EngineEventSubscriber> _logger = logger;
-
     /// <inheritdoc/>
     public async void OnArrivalAtStation(ArriveAtStation @event)
     {
@@ -26,11 +24,11 @@ public sealed class EngineEventSubscriber(
 
             var envelope = new Envelope { Arrival = protocolEvent };
             await eventSender.SendAsync(envelope);
-            _logger.LogDebug("EV {EvId} arrived at station {StationId}", @event.EVId, @event.StationId);
+            logger.LogDebug("EV {EvId} arrived at station {StationId}", @event.EVId, @event.StationId);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error handling ArrivalAtStation event");
+            logger.LogError(ex, "Error handling ArrivalAtStation event");
         }
     }
 
@@ -48,11 +46,11 @@ public sealed class EngineEventSubscriber(
 
             var envelope = new Envelope { ChargingEnd = protocolEvent };
             await eventSender.SendAsync(envelope);
-            _logger.LogDebug("EV {EvId} finished charging at station {StationId}", @event.EVId, @event.StationId);
+            logger.LogDebug("EV {EvId} finished charging at station {StationId}", @event.EVId, @event.StationId);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error handling ChargingEnd event");
+            logger.LogError(ex, "Error handling ChargingEnd event");
         }
     }
 }
