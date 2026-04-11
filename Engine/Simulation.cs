@@ -19,6 +19,7 @@ public class Simulation(
     /// and continuously handling the next event until
     /// the specified end time is reached.
     /// </summary>
+    /// <param name="cancelToken">A CancellationToken to allow graceful shutdown of the simulation.</param>
     /// <returns>Returns?.</returns>
     public async Task Run(CancellationToken cancelToken = default)
     {
