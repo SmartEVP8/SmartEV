@@ -2,7 +2,6 @@ namespace Engine.StationFactory;
 
 using System.Text.Json;
 using Core.Charging;
-using Core.Charging.ChargingModel.Chargepoint;
 using Core.Shared;
 
 /// <summary>
@@ -126,29 +125,16 @@ public class StationFactory
     /// </returns>
     private ChargerBase CreateCharger(int chargerId)
     {
-        return CreateChargingPoint() switch
-        {
-            SingleChargingPoint s => new SingleCharger(chargerId, _options.MaxPowerKW, s),
-            DualChargingPoint d => new DualCharger(chargerId, _options.MaxPowerKW, d),
-            var p => throw new InvalidOperationException($"Unknown charging point type: {p.GetType()}")
-        };
-    }
-
-    /// <summary>
-    /// Creates either a single or dual charging point.
-    /// A dual point takes one Connectors set — the right side is always a copy of the left.
-    /// </summary>
-    private IChargingPoint CreateChargingPoint()
-    {
         var connectors = CreateConnectorSet();
 
-        if (!ShouldCreateDualChargingPoint())
-            return new SingleChargingPoint(connectors);
+        if (ShouldCreateDualChargingPoint())
+            return new DualCharger(chargerId, _options.MaxPowerKW, connectors);
 
-        return new DualChargingPoint(connectors);
+        return new SingleCharger(chargerId, _options.MaxPowerKW, connectors);
     }
 
-    private Connectors CreateConnectorSet() => new((new Connector(_options.MaxPowerKW), new Connector(_options.MaxPowerKW)));
+    private Connectors CreateConnectorSet()
+        => new((new Connector(_options.MaxPowerKW), new Connector(_options.MaxPowerKW)));
 
     private bool ShouldCreateDualChargingPoint()
         => _options.UseDualChargingPoints &&

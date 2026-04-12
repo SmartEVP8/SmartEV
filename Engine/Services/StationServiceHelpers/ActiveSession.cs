@@ -1,7 +1,7 @@
 namespace Engine.Services.StationServiceHelpers;
 
+using Core.Charging;
 using Core.Charging.ChargingModel;
-using Core.Charging.ChargingModel.Chargepoint;
 using Core.Shared;
 
 public record ActiveSession(

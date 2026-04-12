@@ -3,7 +3,6 @@ namespace Engine.Services;
 using Core.Charging;
 using Core.Vehicles;
 using Core.Charging.ChargingModel;
-using Core.Charging.ChargingModel.Chargepoint;
 using Core.Shared;
 using Engine.Events;
 using Engine.Vehicles;
@@ -216,7 +215,7 @@ public class StationService : IStationService
     {
         if (state.SessionA?.EVId == e.EVId)
         {
-            dual.ChargingPoint.Disconnect(ChargingSide.Left);
+            dual.Disconnect(ChargingSide.Left);
             var plan = state.SessionA.Plan;
             ev.HasReservationAtStationId = null;
             state.SessionA = null;
@@ -228,7 +227,7 @@ public class StationService : IStationService
         }
         else if (state.SessionB?.EVId == e.EVId)
         {
-            dual.ChargingPoint.Disconnect(ChargingSide.Right);
+            dual.Disconnect(ChargingSide.Right);
             var plan = state.SessionB.Plan;
             ev.HasReservationAtStationId = null;
             state.SessionB = null;
@@ -242,7 +241,7 @@ public class StationService : IStationService
 
     private static void EndSingleCharging(ChargerState state, ref EV ev, SingleCharger single)
     {
-        single.ChargingPoint.Disconnect();
+        single.Disconnect();
 
         state.SessionA = null;
         ev.HasReservationAtStationId = null;
@@ -300,7 +299,7 @@ public class StationService : IStationService
         if (state.SessionA is not null) return;
         if (!state.Queue.TryPeek(out var next)) return;
 
-        if (!single.ChargingPoint.TryConnect())
+        if (!single.TryConnect())
         {
             throw new SkillissueException(
                 $"Logic Error: EV {next.EVId} reached Charger {single.Id} but TryConnect failed. ");
@@ -319,7 +318,7 @@ public class StationService : IStationService
         state.Window = state.Window with { LastEnergyUpdateTime = simNow };
 
         var result = _integrator.IntegrateSingleToCompletion(
-            simNow, single.MaxPowerKW, single.ChargingPoint, state.SessionA.EV);
+            simNow, single.MaxPowerKW, single, state.SessionA.EV);
         state.SessionA = state.SessionA with { Plan = result };
 
         if (result?.FinishTimeA is not null)
@@ -351,7 +350,7 @@ public class StationService : IStationService
 
         if (soc >= session.EV.TargetSoC)
         {
-            dual.ChargingPoint.Disconnect(side);
+            dual.Disconnect(side);
             session = null;
         }
 
@@ -363,7 +362,7 @@ public class StationService : IStationService
     {
         while (state.Queue.TryPeek(out var candidate))
         {
-            var side = dual.ChargingPoint.TryConnect();
+            var side = dual.TryConnect();
             if (side is null) break;
 
             state.Queue.Dequeue();
@@ -420,7 +419,7 @@ public class StationService : IStationService
             };
 
         var result = _integrator.IntegrateDualToCompletion(
-            simNow, dual.MaxPowerKW, dual.ChargingPoint, carA, carB);
+            simNow, dual.MaxPowerKW, dual, carA, carB);
 
         return result;
     }
