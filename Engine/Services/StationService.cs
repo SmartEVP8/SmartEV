@@ -22,6 +22,7 @@ public class StationService : IStationService
     private readonly Dictionary<ushort, Station> _stationIndex = [];
     private readonly Dictionary<ushort, uint> _windowReservations = [];
     private readonly Dictionary<ushort, uint> _windowCancellations = [];
+    private readonly Dictionary<ushort, HashSet<int>> _evsOnRoute = [];
     private readonly ChargingIntegrator _integrator;
     private readonly EventScheduler _scheduler;
     private readonly EVStore _eVStore;
@@ -66,6 +67,7 @@ public class StationService : IStationService
             _stationIndex[station.Id] = station;
             _windowReservations[station.Id] = 0;
             _windowCancellations[station.Id] = 0;
+            _evsOnRoute[station.Id] = [];
             var states = station.Chargers.Select(c => new ChargerState(c, station.Id)).ToList();
             _stationChargers[station.Id] = states;
             foreach (var cs in states)
@@ -98,6 +100,35 @@ public class StationService : IStationService
         if (!_stationChargers.TryGetValue(stationId, out var chargers))
             return 0;
         return chargers.Sum(cs => cs.Queue.Count);
+    }
+
+    /// <summary>
+    /// Gets all EVs currently on route to the given station.
+    /// </summary>
+    /// <param name="stationId">The station ID.</param>
+    /// <returns>A collection of EV IDs on route to the station.</returns>
+    public IEnumerable<int> GetEVsOnRouteToStation(ushort stationId)
+    {
+        if (!_evsOnRoute.TryGetValue(stationId, out var evs))
+            return [];
+        return evs.ToList();
+    }
+
+    private void AddEVOnRoute(int evId, ushort stationId)
+    {
+        if (!_evsOnRoute.TryGetValue(stationId, out var evs))
+        {
+            evs = [];
+            _evsOnRoute[stationId] = evs;
+        }
+
+        evs.Add(evId);
+    }
+
+    private void RemoveEVOnRoute(int evId, ushort stationId)
+    {
+        if (_evsOnRoute.TryGetValue(stationId, out var evs))
+            evs.Remove(evId);
     }
 
     /// <summary>
@@ -134,6 +165,7 @@ public class StationService : IStationService
             if (ev.HasReservationAtStationId.Value == e.StationId)
                 return;
 
+            RemoveEVOnRoute(e.EVId, ev.HasReservationAtStationId.Value);
             _scheduler.ScheduleEvent(new CancelRequest(e.EVId, ev.HasReservationAtStationId.Value, e.Time));
         }
 
@@ -142,6 +174,7 @@ public class StationService : IStationService
 
         _applyNewPath.ApplyNewPathToEV(ref ev, station, e.Time);
         ev.HasReservationAtStationId = e.StationId;
+        AddEVOnRoute(e.EVId, e.StationId);
 
         _scheduler.ScheduleEvent(
             new ArriveAtStation(e.EVId, e.StationId, ev.CalcDesiredSoC(e.Time + e.DurationToStation), e.Time + e.DurationToStation));
@@ -160,6 +193,8 @@ public class StationService : IStationService
 
         _windowCancellations[e.StationId] = _windowCancellations.GetValueOrDefault(e.StationId) + 1;
         station.IncrementCancellations();
+
+        RemoveEVOnRoute(e.EVId, e.StationId);
 
         if (ev.HasReservationAtStationId != null)
             _scheduler.CancelEvent((uint)ev.HasReservationAtStationId);
@@ -186,6 +221,8 @@ public class StationService : IStationService
         var ev = _eVStore.Get(e.EVId);
         if (!_stationChargers.TryGetValue(e.StationId, out var chargers))
             return;
+
+        RemoveEVOnRoute(e.EVId, e.StationId);
 
         var target = chargers
             .Where(cs => cs.Charger.GetSockets().Contains(ev.Battery.Socket))
@@ -337,7 +374,7 @@ public class StationService : IStationService
 
                 if (result?.FinishTimeA is not null)
                 {
-                    var token = _scheduler.ScheduleEvent(new EndCharging(next.EVId, single.Id, result.FinishTimeA.Value));
+                    var token = _scheduler.ScheduleEvent(new EndCharging(next.EVId, single.Id, state.StationId, result.FinishTimeA.Value));
                     state.SessionA = state.SessionA with { CancellationToken = token };
                 }
 
@@ -402,13 +439,13 @@ public class StationService : IStationService
 
                 if (state.SessionA is not null && dualResult?.FinishTimeA is not null)
                 {
-                    var token = _scheduler.ScheduleEvent(new EndCharging(state.SessionA.EVId, dual.Id, dualResult.FinishTimeA.Value));
+                    var token = _scheduler.ScheduleEvent(new EndCharging(state.SessionA.EVId, dual.Id, state.StationId, dualResult.FinishTimeA.Value));
                     state.SessionA = state.SessionA with { CancellationToken = token };
                 }
 
                 if (state.SessionB is not null && dualResult?.FinishTimeB is not null)
                 {
-                    var token = _scheduler.ScheduleEvent(new EndCharging(state.SessionB.EVId, dual.Id, dualResult.FinishTimeB.Value));
+                    var token = _scheduler.ScheduleEvent(new EndCharging(state.SessionB.EVId, dual.Id, state.StationId, dualResult.FinishTimeB.Value));
                     state.SessionB = state.SessionB with { CancellationToken = token };
                 }
 

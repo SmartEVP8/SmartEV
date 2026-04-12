@@ -27,9 +27,9 @@ public class EventSchedulerTest
     [Fact]
     public void CancelEventTest()
     {
-        var request1 = new EndCharging(1, 1, 10);
-        var request2 = new EndCharging(2, 1, 20);
-        var request3 = new EndCharging(3, 1, 15);
+        var request1 = new EndCharging(1, 1, 0, 10);
+        var request2 = new EndCharging(2, 1, 0, 20);
+        var request3 = new EndCharging(3, 1, 0, 15);
 
         _scheduler.ScheduleEvent(request1);
         var ct = _scheduler.ScheduleEvent(request2);
@@ -47,7 +47,7 @@ public class EventSchedulerTest
     {
         var request1 = new ReservationRequest(2, 1, 10, 0);
         var request2 = new ArriveAtStation(2, 1, 0.6f, 20);
-        var request3 = new EndCharging(2, 1, 15);
+        var request3 = new EndCharging(2, 1, 0, 15);
         var request4 = new ArriveAtDestination(2, 25);
 
         _scheduler.ScheduleEvent(request1);

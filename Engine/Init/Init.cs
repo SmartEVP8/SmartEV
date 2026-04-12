@@ -14,7 +14,6 @@ using Engine.StationFactory;
 using Engine.Services;
 using Engine.Vehicles;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Engine.Events.Middleware;
 
 /// <summary>
@@ -28,8 +27,6 @@ public static class Init
     /// <param name="services">The service collection to initialize.</param>
     public static void InitEngine(IServiceCollection services)
     {
-        services.AddSingleton<SimulationChannel>();
-
         services.AddSingleton(sp =>
         {
             var settings = sp.GetRequiredService<EngineSettings>();

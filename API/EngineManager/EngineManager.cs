@@ -14,7 +14,12 @@ using Engine.Init;
 public class EngineManager
 {
     private readonly IServiceCollection _engineServices;
-    private IServiceProvider _engineProvider;
+    private IServiceProvider? _engineProvider;
+
+    /// <summary>
+    /// Gets a value indicating whether the engine has been initialized.
+    /// </summary>
+    public bool IsInitialized => _engineProvider is not null;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EngineManager"/> class.
@@ -50,8 +55,6 @@ public class EngineManager
         }
     }
 
-
-
     private EngineSettings MergeSettings(EngineInitConfigDTO configDTO, EngineSettings defaultSettings)
     {
         return defaultSettings with
@@ -74,5 +77,13 @@ public class EngineManager
     /// <returns>The resolved service instance.</returns>
     public T GetEngineService<T>()
         where T : notnull
-        => _engineProvider.GetRequiredService<T>();
+    {
+        if (_engineProvider is null)
+        {
+            throw new InvalidOperationException(
+                "Engine not initialized. Call /init-engine before using engine-scoped services.");
+        }
+
+        return _engineProvider.GetRequiredService<T>();
+    }
 }
