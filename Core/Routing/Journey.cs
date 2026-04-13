@@ -156,12 +156,6 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
     /// <returns>Time to reach halfway to NextStop.</returns>
     public Time TimeToReachHalfToNextStop() => Current.Departure + Current.DurationToNextStop / 2;
 
-    /// <summary>
-    /// Gets the time it takes to reach half the distance to the next stop.
-    /// </summary>
-    /// <returns>Time to reach halfway to NextStop.</returns>
-    public Time TimeToReachHalfToNextStop() => Current.Departure + Current.DurationToNextStop / 2;
-
     private float PercentageCompleted(Time currentTime)
     {
         if (Current.Duration == 0)
@@ -322,16 +316,10 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
         if (checkBeforeDeparture && time < Current.Departure)
             throw new ArgumentException($"Current time: {time} is before the current journey has started: {Current.Departure}.");
 
-        if (checkAfterEtaToNextStop && time > Current.EtaToNextStop && !time.IsApproximately(Current.EtaToNextStop))
+        if (checkAfterEtaToNextStop && time > Current.EtaToNextStop)
             throw new ArgumentException($"Current time: {time} is after ETA to next stop: {Current.EtaToNextStop}. Overshoot: {time - Current.EtaToNextStop}s.");
 
-        if (checkAfterCompletion && time > completedTime && !time.IsApproximately(completedTime))
+        if (checkAfterCompletion && time > completedTime)
             throw new ArgumentException($"Current time: {time} is after the journey has completed: {completedTime}. Overshoot: {time - completedTime}s.");
-    }
-
-    private void CheckIfTimeIsAfterEtaToNextStop(Time time)
-    {
-        if (time > Current.EtaToNextStop)
-            throw new ArgumentException($"Current time: {time} is after ETA to next stop: {Current.EtaToNextStop}. Overshoot: {time - Current.EtaToNextStop}s.");
     }
 }

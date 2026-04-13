@@ -134,7 +134,6 @@ public class StationService : IStationService
         ref var evRef = ref _eVStore.Get(e.EVId);
         evRef.Advance(e.Time);
 
-        var ev = evRef;
         if (!_stationChargers.TryGetValue(e.StationId, out var chargers))
             throw new SkillissueException($"Logic Error: EV {e.EVId} arrived at station {e.StationId} which does not exist.");
 

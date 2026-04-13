@@ -56,7 +56,7 @@ public class StationServiceSnapshotTests
             double deliveredKwh,
             float expectedUtilization)
     {
-        var snapshotInterval = new Time(3600);
+        var snapshotInterval = new Time(3600000);
         var collector = new StationMetricsCollector(snapshotInterval);
 
         var expectedQueueSize = 2;
