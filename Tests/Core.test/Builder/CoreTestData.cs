@@ -1,7 +1,6 @@
 namespace Core.test.Builders;
 
 using Core.Charging;
-using Core.Charging.ChargingModel.Chargepoint;
 using Core.Routing;
 using Core.Shared;
 using Core.Vehicles;
@@ -98,20 +97,19 @@ public static class CoreTestData
 
     private sealed class FakeCharger() : ChargerBase(id: 1, maxPowerKW: 100)
     {
+        public override bool CanConnect() => throw new NotImplementedException();
     }
 
     public static SingleCharger SingleCharger(int id, ushort maxPowerKW = 150)
     {
         var connectors = new Connectors((new Connector(maxPowerKW), new Connector(maxPowerKW)));
-        var point = new SingleChargingPoint(connectors);
-        return new SingleCharger(id, maxPowerKW, point);
+        return new SingleCharger(id, maxPowerKW, connectors);
     }
 
     public static DualCharger DualCharger(int id, ushort maxPowerKW = 150)
     {
         var connectors = new Connectors((new Connector(maxPowerKW), new Connector(maxPowerKW)));
-        var dualPoint = new DualChargingPoint(connectors);
-        return new DualCharger(id, maxPowerKW, dualPoint);
+        return new DualCharger(id, maxPowerKW, connectors);
     }
 
     private static ChargerBase CreateFakeChargerWithQueue(int queueSize)

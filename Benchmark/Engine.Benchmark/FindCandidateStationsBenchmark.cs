@@ -31,8 +31,8 @@ public class FindCandidateStationsBenchmark
 
     private class BenchmarkStationService(Dictionary<ushort, Station> stations) : IStationService
     {
-        public Station? GetStation(ushort stationId)
-            => stations.TryGetValue(stationId, out var station) ? station : null;
+        public Station GetStation(ushort stationId)
+            => stations.TryGetValue(stationId, out var station) ? station : throw new Exception();
 
         public int GetTotalQueueSize(ushort stationId) => 0;
     }

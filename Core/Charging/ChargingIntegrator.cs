@@ -1,6 +1,5 @@
 namespace Core.Charging.ChargingModel;
 
-using Core.Charging.ChargingModel.Chargepoint;
 using Core.Shared;
 
 /// <summary>
@@ -66,35 +65,35 @@ public sealed class ChargingIntegrator(uint stepSeconds)
     /// </summary>
     /// <param name="simNow">The current simulation time in seconds.</param>
     /// <param name="maxKW">The maximum power output of the charger in kilowatts.</param>
-    /// <param name="point">The single charging point to use for integration.</param>
+    /// <param name="charger">The single charging point to use for integration.</param>
     /// <param name="ev">The connected EV to integrate for.</param>
     /// <returns>An IntegrationResult containing the details of the integration run.</returns>
     public IntegrationResult IntegrateSingleToCompletion(
         Time simNow,
         double maxKW,
-        ISingleChargingPoint point,
-        ConnectedEV ev) => IntegrateSingle(simNow, maxKW, point, ev, runUntilSeconds: null);
+        SingleCharger charger,
+        ConnectedEV ev) => IntegrateSingle(simNow, maxKW, charger, ev, runUntilSeconds: null);
 
     /// <summary>
     /// Integrates the charging sessions of two cars until both reach their target SoC.
     /// </summary>
     /// <param name="simNow">The current simulation time in seconds.</param>
     /// <param name="maxKW">The maximum power output of the charger in kilowatts.</param>
-    /// <param name="point">The dual charging point to use for integration.</param>
+    /// <param name="charger">The dual charging point to use for integration.</param>
     /// <param name="evA">The first connected EV to integrate for.</param>
     /// <param name="evB">The second connected EV to integrate for.</param>
     /// <returns>An IntegrationResult containing the details of the integration run.</returns>
     public IntegrationResult IntegrateDualToCompletion(
         Time simNow,
         double maxKW,
-        IDualChargingPoint point,
+        DualCharger charger,
         ConnectedEV evA,
-        ConnectedEV evB) => IntegrateDual(simNow, maxKW, point, evA, evB, runUntilSeconds: null);
+        ConnectedEV evB) => IntegrateDual(simNow, maxKW, charger, evA, evB, runUntilSeconds: null);
 
     private IntegrationResult IntegrateSingle(
         Time simNow,
         double maxKW,
-        ISingleChargingPoint point,
+        SingleCharger charger,
         ConnectedEV ev,
         Time? runUntilSeconds)
     {
@@ -124,7 +123,7 @@ public sealed class ChargingIntegrator(uint stepSeconds)
 
             if (!finished)
             {
-                var power = point.GetPowerOutput(effectiveMaxKW, soc);
+                var power = charger.GetPowerOutput(effectiveMaxKW, soc);
                 var delta = power * stepHours;
                 var remaining = (targetSoC - soc) * ev.CapacityKWh;
 
@@ -166,7 +165,7 @@ public sealed class ChargingIntegrator(uint stepSeconds)
     private IntegrationResult IntegrateDual(
         Time simNow,
         double maxKW,
-        IDualChargingPoint point,
+        DualCharger charger,
         ConnectedEV evA,
         ConnectedEV evB,
         Time? runUntilSeconds)
@@ -212,7 +211,7 @@ public sealed class ChargingIntegrator(uint stepSeconds)
                 : _stepSeconds;
             var stepHours = step / 3600.0;
 
-            var (powerA, powerB) = point.GetPowerDistribution(
+            var (powerA, powerB) = charger.GetPowerDistribution(
                 maxKW,
                 aFinished ? targetSoC_A : socA,
                 bFinished ? targetSoC_B : socB,
