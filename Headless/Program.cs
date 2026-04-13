@@ -50,7 +50,7 @@ public static class Program
                 RecordChargerSnapshots = true,
             },
 
-            Seed = new Random(1234),
+            Seed = new Random(42),
 
             StationFactoryOptions = new StationFactoryOptions
             {
