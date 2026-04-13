@@ -27,7 +27,7 @@ public class EVPopulator(EVFactory evFactory, EVStore evStore, IEventScheduler e
             return;
 
         var currentTime = eventScheduler.CurrentTime;
-        var interval = distributionWindow / amount;
+        var interval = (double)distributionWindow / amount;
         var indexes = ArrayPool<int>.Shared.Rent(amount);
         try
         {

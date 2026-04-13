@@ -14,15 +14,15 @@ public class ArriveAtDestinationMetricTest
     [Fact]
     public void Collect_ExtractsAllMetricFields()
     {
-        var departure = 100U;
-        var originalDuration = 50U;
-        var deviation = 12U;
+        var departure = 100000U;
+        var originalDuration = 50000U;
+        var deviation = 12000U;
         var simNow = (Time)(departure + originalDuration + deviation);
 
         var battery = CoreTestData.Battery();
         var preferences = CoreTestData.Preferences();
-        var journey = CoreTestData.Journey(waypoints: null, departure: 100U, originalDuration: 50U);
-        journey.UpdateRoute(new List<Position>([]), new(0, 0), departure: 100, duration: 62U, newDistanceKm: 10);
+        var journey = CoreTestData.Journey(waypoints: null, departure: 100000U, originalDuration: 50000U);
+        journey.UpdateRoute(new List<Position>([]), new(0, 0), departure: 100000U, duration: 62000U, newDistanceKm: 10);
         var ev = new EV(battery, preferences, journey, 150);
 
         var metric = ArrivalAtDestinationMetric.Collect(ref ev, simNow);
@@ -38,9 +38,9 @@ public class ArriveAtDestinationMetricTest
     [Fact]
     public void MissedDeadline_ComputedCorrectly()
     {
-        var departure = 100U;
-        var originalDuration = 50U;
-        var deviation = 12U;
+        var departure = 100000U;
+        var originalDuration = 50000U;
+        var deviation = 12000U;
         var simNow = (Time)(departure + originalDuration + deviation);
 
         var battery = CoreTestData.Battery();

@@ -78,9 +78,8 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
     /// </returns>
     private static float CalculatePathDeviationCost(ref EV ev, float detourDuration, CostWeights weights, Time time)
     {
-        const int SecondsPerMinute = 60;
         var remainingCurrentRoute = ev.Journey.RemainingCurrentRoute(time);
-        var extraTimeCostMinutes = (detourDuration - remainingCurrentRoute) / SecondsPerMinute;
+        var extraTimeCostMinutes = (detourDuration - remainingCurrentRoute) / Time.MillisecondsPerMinute;
         return weights.PathDeviation * extraTimeCostMinutes;
     }
 
@@ -93,7 +92,7 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
     private static float CalculatePriceCost(ref EV ev, Station station, CostWeights weights, Time time, EnergyPrices energyPrices)
     {
         var currentPrice = station.GetPrice(time);
-        var averagePrice = energyPrices.GetHourPrice(time.DayOfWeek, (int)time.Hour);
+        var averagePrice = energyPrices.GetHourPrice(time.DayOfWeek, (int)time.Hours);
         return weights.PriceSensitivity * ev.Preferences.PriceSensitivity * (currentPrice - averagePrice) * 100; // Scale factor to convert price difference to a comparable cost value
     }
 

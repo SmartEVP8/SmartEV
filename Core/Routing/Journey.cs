@@ -51,7 +51,7 @@ public record CurrentJourney(
 public class Journey(Time departure, Time duration, float distanceMeters, List<Position> waypoints)
 {
     /// <summary>Gets the original baseline of the journey.</summary>
-    public OriginalJourney Original { get; } = new(departure, duration > 0 ? duration : throw new ArgumentOutOfRangeException("Duration Can be zero"), distanceMeters / 1000);
+    public OriginalJourney Original { get; } = new(departure, duration > 0 ? duration : throw new ArgumentOutOfRangeException("Duration can't be zero"), distanceMeters / 1000);
 
     /// <summary>Gets the live state of the journey.</summary>
     public CurrentJourney Current { get; private set; } = new(
@@ -145,9 +145,9 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
     /// <returns>Returns how long it takes to drive a distance in seconds.</returns>
     public Time TimeToDriveDistance(float distance)
     {
-        var speedKmh = Original.DistanceKm / (Original.Duration.Seconds / 3600f);
+        var speedKmh = Original.DistanceKm / (Original.Duration / Time.MillisecondsPerHour);
         var timeHours = distance / speedKmh;
-        return (uint)Math.Ceiling(timeHours * 3600);
+        return (uint)Math.Ceiling(timeHours * Time.MillisecondsPerHour);
     }
 
     /// <summary>
@@ -158,7 +158,7 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
 
     private float PercentageCompleted(Time currentTime)
     {
-        if (Current.Duration.Seconds == 0)
+        if (Current.Duration == 0)
             return 1f;
 
         var progress = (currentTime - Current.Departure) / (float)Current.Duration;
@@ -237,7 +237,7 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
             var interpolationPassedNextStop = nextStopExists && secondIndex > nextStopIndex;
             if (interpolationPassedNextStop)
             {
-                if (!currentTime.IsApproximately(Current.EtaToNextStop))
+                if (currentTime != Current.EtaToNextStop)
                     throw new ArgumentException($"Illegal context: interpolation moved beyond next stop at currentTime={currentTime}. nextStopIndex={nextStopIndex}, segmentIndex={secondIndex}.");
 
                 // Rounding nudged us one segment past the next stop — snap back to it.
@@ -316,10 +316,10 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
         if (checkBeforeDeparture && time < Current.Departure)
             throw new ArgumentException($"Current time: {time} is before the current journey has started: {Current.Departure}.");
 
-        if (checkAfterEtaToNextStop && time > Current.EtaToNextStop && !time.IsApproximately(Current.EtaToNextStop))
+        if (checkAfterEtaToNextStop && time > Current.EtaToNextStop)
             throw new ArgumentException($"Current time: {time} is after ETA to next stop: {Current.EtaToNextStop}. Overshoot: {time - Current.EtaToNextStop}s.");
 
-        if (checkAfterCompletion && time > completedTime && !time.IsApproximately(completedTime))
+        if (checkAfterCompletion && time > completedTime)
             throw new ArgumentException($"Current time: {time} is after the journey has completed: {completedTime}. Overshoot: {time - completedTime}s.");
     }
 }

@@ -69,7 +69,7 @@ public record ChargerSnapshotMetric
     public static ChargerSnapshotMetric Collect(ChargerBase charger, ushort stationId, Time simTime, int queueSize, float utilization, float deliveredKW, float targetEVDemandKW) =>
         new()
         {
-            SimTime = (uint)simTime,
+            SimTime = simTime,
             StationId = stationId,
             ChargerId = charger.Id,
             MaxKWh = charger.MaxPowerKW,
