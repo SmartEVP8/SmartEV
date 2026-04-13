@@ -17,9 +17,6 @@
     <ProjectReference Include="..\..\Core\Core.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Core\Core.csproj" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="..\..\data\energy_prices.csv" Link="data\energy_prices.csv">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

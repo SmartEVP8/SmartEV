@@ -3,7 +3,7 @@ namespace Engine.test.Routing;
 using Core.Charging;
 using Core.Shared;
 using Engine.Routing;
-using Engine.test.Builders;
+using Core.test.Builders;
 
 // If this test ever fails report it. We should have been fixed but just in case.
 public class OSRMRouterTests
@@ -18,10 +18,10 @@ public class OSRMRouterTests
     private OSRMRouter CreateRouter(params Position[] positions)
     {
         List<Station> stations = [.. positions.Select((pos, i) =>
-            TestData.Station(
+            CoreTestData.Station(
                 id: (ushort)(i + 1),
                 pos: pos,
-                energyPrices: TestData.EnergyPrices))];
+                energyPrices: CoreTestData.EnergyPrices))];
         var router = new OSRMRouter(new FileInfo(_osrmPath), stations);
         return router;
     }
@@ -109,9 +109,9 @@ public class OSRMRouterTests
         var routeSegment2 = router.QuerySingleDestination(_evPosition[0], _evPosition[1], _destPosition[0], _destPosition[1]);
         var routeSegment3 = router.QueryDestinationWithStop(_evPosition[0], _evPosition[1], stationOnRoute.Longitude, stationOnRoute.Latitude, _destPosition[0], _destPosition[1]);
 
-        Assert.Equal(481.5f, duration1[0]);
-        Assert.Equal(481.5f, routeSegment2.Duration);
-        Assert.Equal(481.5f, routeSegment3.Duration);
+        Assert.Equal(481500, duration1[0]);
+        Assert.Equal(481500, routeSegment2.Duration);
+        Assert.Equal(481500, routeSegment3.Duration);
     }
 
     [Fact]
@@ -144,12 +144,12 @@ public class OSRMRouterTests
             _evPosition[0], _evPosition[1], stationLon, stationLat, _destPosition[0], _destPosition[1]);
 
         // Values are baselines from OSRM public API
-        Assert.Equal(272f, singleRes.Duration, 5.0f);          // EV->Station
-        Assert.Equal(477f, singleResDest.Duration, 5.0f);      // EV->Dest
-        Assert.Equal(274f, singleResStationDest.Duration, 5.0f); // Station->Dest
+        Assert.Equal(272000f, singleRes.Duration, 5000f);          // EV->Station
+        Assert.Equal(477000f, singleResDest.Duration, 5000f);      // EV->Dest
+        Assert.Equal(274000f, singleResStationDest.Duration, 5000f); // Station->Dest
 
         // WithStops != sum of independent legs (550s) OSRM waypoint routing takes a different path. Consistent with OSRM public API (587s).
-        Assert.Equal(587f, withStopsRes.Duration, 5.0f);
+        Assert.Equal(587000f, withStopsRes.Duration, 5000f);
     }
 
     [Fact]

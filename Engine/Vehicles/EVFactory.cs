@@ -52,7 +52,7 @@ public class EVFactory(Random random, IJourneySamplerProvider samplersProvider, 
     public EV Create(SampledEVParams p, Time departure)
     {
         var batteryConfig = p.Config.BatteryConfig;
-        var battery = new Battery(batteryConfig.MaxCapacityKWh, batteryConfig.ChargeRateKW, p.CurrCharge, batteryConfig.Socket);
+        var battery = new Battery(batteryConfig.MaxCapacityKWh, batteryConfig.ChargeRateKW, p.CurrCharge);
         var preferences = new Preferences(p.PriceSensPref, p.MinAcceptableCharge, p.MaxPathDeviation);
         var journey = CreateJourney(departure, p.SourceDest);
         return new EV(battery, preferences, journey, p.Config.Efficiency);
@@ -73,7 +73,7 @@ public class EVFactory(Random random, IJourneySamplerProvider samplersProvider, 
                 Config: EVModels.Models[_sampler.Sample(random)],
                 CurrCharge: NextFloatInRange(0.4f, 1f),
                 PriceSensPref: random.NextSingle(),
-                MinAcceptableCharge: NextFloatInRange(0.05f, 0.4f),
+                MinAcceptableCharge: NextFloatInRange(0.05f, 0.2f),
                 MaxPathDeviation: NextFloatInRange(5.0f, 30.0f),
                 SourceDest: samplersProvider.Current.SampleSourceToDest(random));
         }
@@ -91,7 +91,8 @@ public class EVFactory(Random random, IJourneySamplerProvider samplersProvider, 
             destination.Latitude);
 
         var segments = Polyline6ToPoints.DecodePolyline(queryResult.Polyline);
-        return new Journey(departure, (Time)(uint)queryResult.Duration, queryResult.Distance, segments);
+        var durationMS = (uint)Math.Ceiling(queryResult.Duration);
+        return new Journey(departure, durationMS, queryResult.Distance, segments);
     }
 
     /// <summary>

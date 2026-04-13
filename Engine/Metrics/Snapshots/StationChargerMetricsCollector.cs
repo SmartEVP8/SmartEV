@@ -2,7 +2,7 @@ namespace Engine.Metrics.Snapshots;
 
 using Core.Charging;
 using Core.Shared;
-using Engine.Services;
+using Engine.Services.StationServiceHelpers;
 
 /// <summary>
 /// Dedicated service for generating point-in-time metrics snapshots from current station states.
@@ -47,7 +47,7 @@ public class StationMetricsCollector(Time snapshotInterval)
                 if (state.SessionB is not null)
                     targetEVDemandKWh += (float)Math.Max(0, (state.SessionB.EV.TargetSoC - state.SessionB.GetCurrentSoC(simNow)) * state.SessionB.EV.CapacityKWh);
 
-                var snapshotDurationHours = snapshotInterval / 3600f;
+                var snapshotDurationHours = (float)snapshotInterval / Time.MillisecondsPerHour;
                 var maxPossibleKWh = state.Charger.MaxPowerKW * snapshotDurationHours;
                 var utilizationInWindow = maxPossibleKWh > 0
                     ? Math.Clamp(deliveredKWhInWindow / maxPossibleKWh, 0f, 1f)
@@ -82,7 +82,7 @@ public class StationMetricsCollector(Time snapshotInterval)
 
             stationMetrics.Add(new StationSnapshotMetric
             {
-                SimTime = (uint)simNow,
+                SimTime = simNow,
                 StationId = stationId,
                 TotalDeliveredKWh = totalDeliveredKWh,
                 TotalMaxKWh = totalMaxKWh,

@@ -24,11 +24,11 @@ public static class EngineConfiguration
         {
             CostConfig = new CostWeights
             {
-                EffectiveQueueSize = 0.5f,
-                PathDeviation = 10,
-                PriceSensitivity = 10,
+                EffectiveQueueSize = 1,
+                PathDeviation = 0.8f,
+                PriceSensitivity = 0.4f,
                 ExpectedWaitTime = 1,
-                Urgency = 1,
+                Urgency = 0.5f,
             },
             RunId = Guid.NewGuid(),
             MetricsConfig = new MetricsConfig
@@ -43,21 +43,18 @@ public static class EngineConfiguration
             StationFactoryOptions = new StationFactoryOptions
             {
                 UseDualChargingPoints = true,
-                AllowMultiSocketChargers = true,
                 DualChargingPointProbability = 0.5,
-                MultiSocketChargerProbability = 1,
                 TotalChargers = 10000,
             },
-            IntervalToUpdateEVs = 5 * 60,
-            BatteryIntervalForCheckUrgency = 0.05f,
-            CurrentAmoutOfEVsInDenmark = 583320,
-            ChargingStepSeconds = 60,
-            SimulationEndTime = 10000 * 60,
-            SnapshotInterval = 1000 * 60,
-            EVDistributionWindowsSize = 1 * 60,
+            CurrentAmoutOfEVsInDenmark = 583320, // Based on the number of registered EVs in Denmark as of 2026-03-22 https://mobility.dk/nyheder/nu-koerer-hver-femte-personbil-i-danmark-paa-el/
+            ChargingStepSeconds = 60 * 1000,
+            SimulationEndTime = 10000 * 60 * 1000,
+            SnapshotInterval = 1000 * 60 * 1000,
+            EVDistributionWindowsSize = 1 * 60 * 1000,
             EVSpawnFraction = 0.10f,
             PopulationScaler = 0.7f,
             DistanceScaler = 1.7f,
+            GridSize = 0.1,
             EnergyPricesPath = new FileInfo(Path.Combine(dataPath.FullName, "energy_prices.csv")),
             OsrmPath = new FileInfo(Path.Combine(dataPath.FullName, "osrm/output.osrm")),
             CitiesPath = new FileInfo(Path.Combine(dataPath.FullName, "CityInfo.csv")),

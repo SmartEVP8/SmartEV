@@ -1,5 +1,6 @@
 namespace API;
 
+using Core.Charging;
 using Engine.Services;
 using Protocol;
 
@@ -36,7 +37,7 @@ public static class InitEngineDataBuilder
                         Id = charger.Id,
                         MaxPowerKw = charger.MaxPowerKW,
                         StationId = station.Id,
-                        IsDual = charger.GetSockets().Length > 1,
+                        IsDual = charger.GetType() == typeof(DualCharger),
                     };
                     initData.Chargers.Add(chargerProto);
                 }

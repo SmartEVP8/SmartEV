@@ -21,6 +21,6 @@ public class WaitTimeMetricTests
 
         var result = metric.WaitTime;
 
-        Assert.Equal(150u, result.T);
+        Assert.Equal(150u, result.Milliseconds);
     }
 }

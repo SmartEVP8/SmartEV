@@ -16,14 +16,6 @@ public interface IMiddlewareEvent
 public record FindCandidateStations(int EVId, Time Time) : Event(Time), IMiddlewareEvent;
 
 // Functionality:
-//  - Should increase Expected Queue Size by 1 (EQS + 1).
-//  - Produce an arrival event where the expected arrival time is Actual_Arrival_Time * +- 20%.
-//  - Calculate what the path deviation to the station will be from the original journey.
-// Metrics:
-//  - Count of reservation requests and their timestamps for when the reservation requests are made.
-public record ReservationRequest(int EVId, ushort StationId, Time Time, Time DurationToStation) : Event(Time);
-
-// Functionality:
 //  - Should decrease Expected Queue Size by 1 (EQS - 1).
 //  - Calculate the EVs path deviation of the original journey from its current position.
 //  - Get its own urgency and sample once from the urgency graph.
@@ -50,18 +42,11 @@ public record EndCharging(int EVId, int ChargerId, ushort StationId, Time Time) 
 //  - Record the path deviation of an EVs actual journey compared to its original journey.
 public record ArriveAtDestination(int EVId, Time Time) : Event(Time);
 
-// Functionality:
-// - Updates all EV's parallelly to their SoC level and check if should schedule a CheckUrgency event
-public record CheckAndUpdateAllEVs(Time Time) : Event(Time);
-
 // ---------- NON-DOMAIN EVENTS ---------- //
 
 // Spawn new EVs into the future.
 // EV's are allocated up front and polled once their depature has been reached.
 public record SpawnEVS(Time Time) : Event(Time);
-
-// Checks the urgency of an EV.
-public record CheckUrgency(int EVId, Time Time) : Event(Time);
 
 // Snapshot event for collecting metrics at regular intervals.
 public record SnapshotEvent(Time Time) : Event(Time);

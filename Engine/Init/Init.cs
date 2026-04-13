@@ -59,7 +59,7 @@ public static class Init
         {
             var settings = sp.GetRequiredService<EngineSettings>();
             var router = sp.GetRequiredService<IOSRMRouter>();
-            var spawnGrid = InitSpawnGrid(settings.PolygonPath);
+            var spawnGrid = InitSpawnGrid(settings.PolygonPath, settings.GridSize);
             var cities = InitCities(settings.CitiesPath);
             var engineSettings = sp.GetRequiredService<EngineSettings>();
             var journeyPipeline = new JourneyPipeline(spawnGrid, cities, router);
@@ -101,7 +101,7 @@ public static class Init
         {
             var settings = sp.GetRequiredService<EngineSettings>();
             var stations = sp.GetRequiredService<Dictionary<ushort, Station>>();
-            var spawnGrid = InitSpawnGrid(settings.PolygonPath);
+            var spawnGrid = InitSpawnGrid(settings.PolygonPath, settings.GridSize);
             return new SpatialGrid(spawnGrid, stations);
         });
 
@@ -125,25 +125,6 @@ public static class Init
 
         services.AddSingleton(sp =>
         {
-            var eventScheduler = sp.GetRequiredService<EventScheduler>();
-            var evStore = sp.GetRequiredService<EVStore>();
-            var settings = sp.GetRequiredService<EngineSettings>();
-            var random = settings.Seed;
-            return new CheckUrgencyHandler(eventScheduler, evStore, random);
-        });
-
-        services.AddSingleton(sp =>
-        {
-            var eventScheduler = sp.GetRequiredService<EventScheduler>();
-            var evStore = sp.GetRequiredService<EVStore>();
-            var settings = sp.GetRequiredService<EngineSettings>();
-            var intervalSize = settings.IntervalToUpdateEVs;
-            var urgencyInterval = settings.BatteryIntervalForCheckUrgency;
-            return new CheckAndUpdateAllEVsHandler(eventScheduler, evStore, intervalSize, urgencyInterval);
-        });
-
-        services.AddSingleton(sp =>
-        {
             var settings = sp.GetRequiredService<EngineSettings>();
             var steps = settings.ChargingStepSeconds;
             return new ChargingIntegrator(steps);
@@ -152,7 +133,7 @@ public static class Init
         services.AddSingleton(sp =>
         {
             var router = sp.GetRequiredService<IOSRMRouter>();
-            return new ApplyNewPath(router);
+            return new EVDetourPlanner(router);
         });
 
         services.AddSingleton(sp =>
@@ -161,10 +142,9 @@ public static class Init
             var integrator = sp.GetRequiredService<ChargingIntegrator>();
             var scheduler = sp.GetRequiredService<EventScheduler>();
             var evStore = sp.GetRequiredService<EVStore>();
-            var applyNewPath = sp.GetRequiredService<ApplyNewPath>();
             var metrics = sp.GetRequiredService<MetricsService>();
             var settings = sp.GetRequiredService<EngineSettings>();
-            return new StationService(stations.Values, integrator, scheduler, evStore, applyNewPath, metrics, settings.SnapshotInterval, bypassArrivalHandling: false);
+            return new StationService(stations.Values, integrator, scheduler, evStore, metrics, settings.SnapshotInterval);
         });
 
         services.AddSingleton(sp =>
@@ -207,29 +187,29 @@ public static class Init
             var costStore = sp.GetRequiredService<ICostStore>();
             var stationService = sp.GetRequiredService<StationService>();
             var energyPrices = sp.GetRequiredService<EnergyPrices>();
-            return new ComputeCost(costStore, stationService, energyPrices);
+            return new CostFunction(costStore, stationService, energyPrices);
         });
 
         services.AddSingleton(sp =>
         {
             var findCandidateStationService = sp.GetRequiredService<FindCandidateStationService>();
-            var computeCost = sp.GetRequiredService<ComputeCost>();
+            var computeCost = sp.GetRequiredService<CostFunction>();
             var scheduler = sp.GetRequiredService<EventScheduler>();
             var evStore = sp.GetRequiredService<EVStore>();
-            return new FindCandidateStationsHandler(findCandidateStationService, computeCost, scheduler, evStore);
+            var applyNewPath = sp.GetRequiredService<EVDetourPlanner>();
+            var stationService = sp.GetRequiredService<StationService>();
+            return new FindCandidateStationsHandler(findCandidateStationService, computeCost, scheduler, evStore, applyNewPath, stationService);
         });
 
         services.AddSingleton(sp =>
         {
             var stationService = sp.GetRequiredService<StationService>();
-            var checkUrgencyHandler = sp.GetRequiredService<CheckUrgencyHandler>();
             var snapshotHandler = sp.GetRequiredService<SnapshotEventHandler>();
             var evService = sp.GetRequiredService<EVService>();
-            var checkAndUpdateAllEVsHandler = sp.GetRequiredService<CheckAndUpdateAllEVsHandler>();
             var destinationArrivalHandler = sp.GetRequiredService<DestinationArrivalHandler>();
             var findCandidateStationsHandler = sp.GetRequiredService<FindCandidateStationsHandler>();
             var eventSubscriber = sp.GetService<IEngineEventSubscriber>();
-            return new EventDispatcher(stationService, checkUrgencyHandler, snapshotHandler, findCandidateStationsHandler, evService, destinationArrivalHandler, checkAndUpdateAllEVsHandler, eventSubscriber);
+            return new EventDispatcher(stationService, snapshotHandler, findCandidateStationsHandler, evService, destinationArrivalHandler, eventSubscriber);
         });
 
         services.AddSingleton(sp =>
@@ -238,15 +218,14 @@ public static class Init
             var dispatcher = sp.GetRequiredService<EventDispatcher>();
             var settings = sp.GetRequiredService<EngineSettings>();
             var simulationEndTime = settings.SimulationEndTime;
-            var intervalToUpdateEVs = settings.IntervalToUpdateEVs;
             return new Simulation(dispatcher, scheduler, simulationEndTime);
         });
     }
 
-    private static SpawnGrid InitSpawnGrid(FileInfo polygonPath)
+    private static SpawnGrid InitSpawnGrid(FileInfo polygonPath, double size)
     {
         var polygons = PolygonParser.Parse(File.ReadAllText(polygonPath.ToString()));
-        return Polygooner.GenerateGrid(size: 0.1, polygons);
+        return Polygooner.GenerateGrid(size, polygons);
     }
 
     private static List<City> InitCities(FileInfo citiesPath)

@@ -19,7 +19,7 @@ public sealed class EngineEventSubscriber(
             {
                 StationId = @event.StationId,
                 EvId = @event.EVId,
-                TimestampMs = (ulong)@event.Time.T * 1000,
+                TimestampMs = (ulong)@event.Time * 1000,
             };
 
             var envelope = new Envelope { Arrival = protocolEvent };
@@ -41,7 +41,7 @@ public sealed class EngineEventSubscriber(
             {
                 StationId = @event.StationId,
                 EvId = @event.EVId,
-                TimestampMs = (ulong)@event.Time.T * 1000,
+                TimestampMs = (ulong)@event.Time * 1000,
             };
 
             var envelope = new Envelope { ChargingEnd = protocolEvent };

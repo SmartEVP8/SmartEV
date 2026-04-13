@@ -12,6 +12,7 @@
     <PackageReference Include="xunit.runner.visualstudio"/>
     <ProjectReference Include="..\..\Engine\Engine.csproj" />
     <ProjectReference Include="..\..\Core\Core.csproj" />
+    <ProjectReference Include="..\Core.test\Core.test.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Using Include="Xunit"/>

@@ -2,6 +2,7 @@ namespace Engine.test.Spawning;
 
 using Core.Vehicles;
 using Engine.test.Builders;
+using Core.test.Builders;
 using Engine.Vehicles;
 
 public class EVStoreTests
@@ -13,7 +14,7 @@ public class EVStoreTests
         Span<int> evIndexes = stackalloc int[500];
         var success = evStore.TryAllocate(
                 500,
-                (_, ref ev) => ev = TestData.EV(),
+                (_, ref ev) => ev = CoreTestData.EV(),
                 evIndexes);
 
         Assert.True(success);
@@ -26,7 +27,7 @@ public class EVStoreTests
             Assert.Equal(1f, evStore.Get(evIndexes[i]).Preferences.PriceSensitivity);
 
         evStore.Free(evIndexes[0]);
-        var realloc = evStore.TryAllocate(1, (_, ref _) => TestData.EV());
+        var realloc = evStore.TryAllocate(1, (_, ref _) => CoreTestData.EV());
 
         Assert.True(realloc);
         Assert.Equal(0, evStore.AvailableCapacity());
@@ -36,14 +37,14 @@ public class EVStoreTests
     public void SetGet()
     {
         var evStore = new EVStore(1);
-        var success = evStore.TryAllocate(1, (_, ref ev) => ev = TestData.EV());
+        var success = evStore.TryAllocate(1, (_, ref ev) => ev = CoreTestData.EV());
 
         Assert.True(success);
 
         ref var ev = ref evStore.Get(0);
         Assert.Equal(1.0f, ev.Preferences.PriceSensitivity);
 
-        var newEv = TestData.EV(preferences: new Preferences(2, 0, 0));
+        var newEv = CoreTestData.EV(preferences: new Preferences(2, 0, 0));
         evStore.Set(0, ref newEv);
 
         ev = evStore.Get(0);

@@ -12,7 +12,7 @@ using Engine.Services;
 /// <param name="costStore">The cost store.</param>
 /// <param name="stationService">The station service.</param>
 /// <param name="energyPrices">The energy prices.</param>
-public class ComputeCost(ICostStore costStore, IStationService stationService, EnergyPrices energyPrices)
+public class CostFunction(ICostStore costStore, IStationService stationService, EnergyPrices energyPrices)
 {
     /// <summary>
     /// Computes the cost of detouring to each station and selects the station with the lowest cost.
@@ -30,10 +30,9 @@ public class ComputeCost(ICostStore costStore, IStationService stationService, E
 
         foreach (var (stationId, duration) in stationDurations)
         {
-            var station = stationService.GetStation(stationId)
-                ?? throw new NoNullAllowedException($"Station {stationId} not found.");
+            var station = stationService.GetStation(stationId);
 
-            var effectiveQueueCost = CalculateEffectiveQueueSizeCost(station, weights, ev.Battery.Socket);
+            var effectiveQueueCost = CalculateEffectiveQueueSizeCost(station, weights);
             var pathDeviationCost = CalculatePathDeviationCost(ref ev, duration, weights, time);
             var urgencyCost = CalculateUrgencyCost(ref ev, weights);
             var priceCost = CalculatePriceCost(ref ev, station, weights, time, energyPrices);
@@ -64,18 +63,10 @@ public class ComputeCost(ICostStore costStore, IStationService stationService, E
     }
 
     // TODO: Think about effective queue size
-    private float CalculateEffectiveQueueSizeCost(Station station, CostWeights weights, Socket socket)
+    private float CalculateEffectiveQueueSizeCost(Station station, CostWeights weights)
     {
-        var supportingChargers = station.Chargers.Count(s => s.GetSockets().Contains(socket));
-
-        if (supportingChargers == 0)
-        {
-            // Station doesn't support this socket type—return infinite cost to exclude it
-            return float.MaxValue;
-        }
-
         var totalQueueSize = stationService.GetTotalQueueSize(station.Id);
-        var effectiveQueueSize = (float)totalQueueSize / station.Chargers.Count(s => s.GetSockets().Contains(socket));
+        var effectiveQueueSize = (float)totalQueueSize / station.Chargers.Count;
         return weights.EffectiveQueueSize * MathF.Pow(effectiveQueueSize, 3);
     }
 
@@ -87,9 +78,8 @@ public class ComputeCost(ICostStore costStore, IStationService stationService, E
     /// </returns>
     private static float CalculatePathDeviationCost(ref EV ev, float detourDuration, CostWeights weights, Time time)
     {
-        const int SecondsPerMinute = 60;
         var remainingCurrentRoute = ev.Journey.RemainingCurrentRoute(time);
-        var extraTimeCostMinutes = (detourDuration - remainingCurrentRoute) / SecondsPerMinute;
+        var extraTimeCostMinutes = (detourDuration - remainingCurrentRoute) / Time.MillisecondsPerMinute;
         return weights.PathDeviation * extraTimeCostMinutes;
     }
 
@@ -102,7 +92,7 @@ public class ComputeCost(ICostStore costStore, IStationService stationService, E
     private static float CalculatePriceCost(ref EV ev, Station station, CostWeights weights, Time time, EnergyPrices energyPrices)
     {
         var currentPrice = station.GetPrice(time);
-        var averagePrice = energyPrices.GetHourPrice(time.DayOfWeek, (int)time.Hour);
+        var averagePrice = energyPrices.GetHourPrice(time.DayOfWeek, (int)time.Hours);
         return weights.PriceSensitivity * ev.Preferences.PriceSensitivity * (currentPrice - averagePrice) * 100; // Scale factor to convert price difference to a comparable cost value
     }
 

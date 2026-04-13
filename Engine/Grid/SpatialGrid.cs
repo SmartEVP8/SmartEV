@@ -7,7 +7,7 @@ using Core.GeoMath;
 /// <summary>
 /// The SpatialGrid class is a spatial index that allows for efficient querying of stations based on their geographic location.
 /// </summary>
-public class SpatialGrid
+public class SpatialGrid : ISpatialGrid
 {
     private readonly Dictionary<RowCol, List<ushort>> _cells = [];
     private readonly Dictionary<ushort, Position> _stationPositions = [];
@@ -63,16 +63,16 @@ public class SpatialGrid
 
         for (var i = 0; i < waypoints.Count - 1; i++)
         {
-            var wp1 = waypoints[i];
-            var wp2 = waypoints[i + 1];
+            var w1 = waypoints[i];
+            var w2 = waypoints[i + 1];
             var minPos = new Position(
-                Math.Min(wp1.Longitude, wp2.Longitude) - radiusInLonDeg,
-                Math.Min(wp1.Latitude, wp2.Latitude) - radiusInLatDeg);
+                Math.Min(w1.Longitude, w2.Longitude) - radiusInLonDeg,
+                Math.Min(w1.Latitude, w2.Latitude) - radiusInLatDeg);
             var maxPos = new Position(
-                Math.Max(wp1.Longitude, wp2.Longitude) + radiusInLonDeg,
-                Math.Max(wp1.Latitude, wp2.Latitude) + radiusInLatDeg);
+                Math.Max(w1.Longitude, w2.Longitude) + radiusInLonDeg,
+                Math.Max(w1.Latitude, w2.Latitude) + radiusInLatDeg);
 
-            CollectSegment(minPos, maxPos, wp1, wp2, radius, seen);
+            CollectSegment(minPos, maxPos, w1, w2, radius, seen);
         }
 
         return [.. seen];
@@ -105,15 +105,15 @@ public class SpatialGrid
         );
 
     /// <summary>
-    /// Collects station ids for stations that are within the radius of the line segment defined by wp1 and wp2.
+    /// Collects station ids for stations that are within the radius of the line segment defined by w1 and w2.
     /// </summary>
     private void CollectSegment(
         Position minPos,
         Position maxPos,
-        Position wp1,
-        Position wp2,
+        Position w1,
+        Position w2,
         double radius,
-        HashSet<ushort> result)
+        HashSet<ushort> stationsWithinRadius)
     {
         var minRowCol = ToRowCol(minPos.Latitude, minPos.Longitude);
         var maxRowCol = ToRowCol(maxPos.Latitude, maxPos.Longitude);
@@ -127,14 +127,14 @@ public class SpatialGrid
 
                 foreach (var stationId in list)
                 {
-                    if (result.Contains(stationId))
+                    if (stationsWithinRadius.Contains(stationId))
                         continue;
 
                     if (!_stationPositions.TryGetValue(stationId, out var pos))
                         continue;
 
-                    if (GeoMath.IsInRadius(pos, wp1, wp2, radius))
-                        result.Add(stationId);
+                    if (GeoMath.IsInRadius(pos, w1, w2, radius))
+                        stationsWithinRadius.Add(stationId);
                 }
             }
         }

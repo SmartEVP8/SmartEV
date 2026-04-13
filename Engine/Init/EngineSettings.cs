@@ -41,16 +41,6 @@ public record EngineSettings
     required public int CurrentAmoutOfEVsInDenmark { get; init; }
 
     /// <summary>
-    /// Gets the interval at which the event for updating EVs should happen at.
-    /// </summary>
-    required public uint IntervalToUpdateEVs { get; init; }
-
-    /// <summary>
-    /// Gets the interval at which the engine checks for urgent EVs.
-    /// </summary>
-    required public float BatteryIntervalForCheckUrgency { get; init; }
-
-    /// <summary>
     /// Gets the number of seconds an EV is expected to spend charging at a station, used for simulating charging time and scheduling.
     /// </summary>
     required public uint ChargingStepSeconds { get; init; }
@@ -59,6 +49,11 @@ public record EngineSettings
     ///   Gets the interval at which snapshots of the simulation state are taken.
     /// </summary>
     required public uint SnapshotInterval { get; init; }
+
+    /// <summary>
+    ///  Gets the size of the grid cells.
+    /// </summary>
+    required public double GridSize { get; init; }
 
     /// <summary>
     /// Gets the simulation end time, which determines

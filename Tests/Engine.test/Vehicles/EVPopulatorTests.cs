@@ -11,13 +11,13 @@ public class EVPopulatorTests
     [Fact]
     public void CreateEVsSameObjects2Iterations()
     {
-        var journeySamplerProvider = TestData.JourneySamplerProvider();
+        var journeySamplerProvider = EngineTestData.JourneySamplerProvider();
         var fakeScheduler = new FakeScheduler();
         var evStore1 = new EVStore(100);
         var evStore2 = new EVStore(100);
 
-        var evPopulator1 = new EVPopulator(new EVFactory(new Random(1), journeySamplerProvider, TestData.OSRMRouter), evStore1, fakeScheduler);
-        var evPopulator2 = new EVPopulator(new EVFactory(new Random(1), journeySamplerProvider, TestData.OSRMRouter), evStore2, fakeScheduler);
+        var evPopulator1 = new EVPopulator(new EVFactory(new Random(1), journeySamplerProvider, EngineTestData.OSRMRouter), evStore1, fakeScheduler);
+        var evPopulator2 = new EVPopulator(new EVFactory(new Random(1), journeySamplerProvider, EngineTestData.OSRMRouter), evStore2, fakeScheduler);
 
         evPopulator1.CreateEVs(100, 3600);
         evPopulator2.CreateEVs(100, 3600);
@@ -42,6 +42,16 @@ public class EVPopulatorTests
         {
             Events.Append(e);
             return _count++;
+        }
+
+        public Event? GetNextEvent()
+        {
+            if (Events.Count == 0)
+                return null;
+
+            var nextEvent = Events[0];
+            Events.RemoveAt(0);
+            return nextEvent;
         }
     }
 }

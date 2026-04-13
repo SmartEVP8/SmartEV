@@ -1,6 +1,7 @@
 namespace Engine.Events;
 
 using Engine.Services;
+using Engine.Utils;
 
 /// <summary>
 /// The EventDispatcher is responsible for dispatching events to the correct handlers.
@@ -13,21 +14,17 @@ using Engine.Services;
 /// <c>ArriveAtStation</c>,
 /// and <c>EndCharging</c> are handled.
 /// </param>
-/// <param name="checkUrgencyHandler">Where the event <c>CheckUrgency</c> is handled.</param>
 /// <param name="snapshotEventHandler">Where the event <c>Snapshot</c> is handled.</param>
 /// <param name="destinationArrivalHandler">Where the event <c>ArriveAtDestination</c> is handled.</param>
 /// <param name="findCandidateStationsHandler">Where the event <c>FindCandidateStations</c> is handled.</param>
 /// <param name="evService">Where the event <c>SpawnEVS</c> is handled.</param>
-/// <param name="CheckAndUpdateAllEVsHandler">Where the event <c>CheckAndUpdateAllEVs</c> is handled.</param>
 /// <param name="eventSubscriber">Optional subscriber to receive notifications of engine events.</param>
 public class EventDispatcher(
         StationService stationService,
-        CheckUrgencyHandler checkUrgencyHandler,
         SnapshotEventHandler snapshotEventHandler,
         FindCandidateStationsHandler findCandidateStationsHandler,
         EVService evService,
         DestinationArrivalHandler destinationArrivalHandler,
-        CheckAndUpdateAllEVsHandler CheckAndUpdateAllEVsHandler,
         IEngineEventSubscriber? eventSubscriber = null)
 {
     private readonly IEngineEventSubscriber? _eventSubscriber = eventSubscriber;
@@ -44,10 +41,6 @@ public class EventDispatcher(
         IncrementCount(e);
         switch (e)
         {
-            case ReservationRequest ev:
-                stationService.HandleReservationRequest(ev);
-                break;
-
             case CancelRequest ev:
                 stationService.HandleCancelRequest(ev);
                 break;
@@ -70,10 +63,6 @@ public class EventDispatcher(
                 destinationArrivalHandler.Handle(ev);
                 break;
 
-            case CheckUrgency ev:
-                checkUrgencyHandler.Handle(ev);
-                break;
-
             case SnapshotEvent ev:
                 snapshotEventHandler.Handle(ev);
                 break;
@@ -82,19 +71,15 @@ public class EventDispatcher(
                 evService.Handle(ev);
                 break;
 
-            case CheckAndUpdateAllEVs ev:
-                CheckAndUpdateAllEVsHandler.Handle(ev);
-                break;
-
             default:
-                throw new Exception("This should never happen, add a handler");
+                throw new SkillissueException("This should never happen, add a handler");
         }
 
         if (_eventCount % 1000 == 0)
             PrintCounts(e);
     }
 
-    private Dictionary<Type, uint> _calledCount = [];
+    private readonly Dictionary<Type, uint> _calledCount = [];
     private int _eventCount;
 
     private void IncrementCount(Event e)
