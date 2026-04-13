@@ -10,7 +10,7 @@ public class EVTests
     [Fact]
     public void Advance_UpdatesJourneyAndConsumesEnergy()
     {
-        var battery = new Battery(100, 100, 1f, Socket.CCS2);
+        var battery = new Battery(100, 100, 1f);
         var preferences = new Preferences(1f, 0.1f, 10.0f);
         var waypoints = new List<Position>
         {
@@ -31,7 +31,7 @@ public class EVTests
     [Fact]
     public void CalcDesiredSoC_ReturnsCorrectValue()
     {
-        var battery = new Battery(100, 100, 0.5f, Socket.CCS2);
+        var battery = new Battery(100, 100, 0.5f);
         var preferences = new Preferences(1f, 0.3f, 10.0f);
         var waypoints = new List<Position>
         {
@@ -51,7 +51,7 @@ public class EVTests
     [Fact]
     public void CalcDesiredSoC_ZeroBatteryCapacity_Throws()
     {
-        var battery = new Battery(0, 100, 0.5f, Socket.CCS2);
+        var battery = new Battery(0, 100, 0.5f);
         var preferences = new Preferences(1f, 0.1f, 10.0f);
         var waypoints = new List<Position>
         {
@@ -72,7 +72,7 @@ public class EVTests
         var waypoints = new List<Position> { new(0, 0), new(10, 0) };
         var journey = new Journey(departure: 0, duration: 25200000, distanceMeters: 2_000_000, waypoints);
         journey.UpdateRoute(waypoints, waypoints[^1], 0, 25200000, 2000f);
-        var battery = new Battery(50, 100, 0.5f, Socket.CCS2);
+        var battery = new Battery(50, 100, 0.5f);
         var preferences = new Preferences(1f, 0.1f, 10.0f);
         var ev = new EV(battery, preferences, journey, 200);
 
@@ -86,7 +86,7 @@ public class EVTests
     {
         var waypoints = new List<Position> { new(0, 0), new(1, 0) };
         var journey = new Journey(departure: 0, duration: 100000, distanceMeters: 1000, waypoints);
-        var battery = new Battery(100, 100, 0.5f, Socket.CCS2);
+        var battery = new Battery(100, 100, 0.5f);
         var preferences = new Preferences(1f, 0.15f, 10.0f);
         var ev = new EV(battery, preferences, journey, 150);
 

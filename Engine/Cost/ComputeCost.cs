@@ -32,7 +32,7 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
         {
             var station = stationService.GetStation(stationId);
 
-            var effectiveQueueCost = CalculateEffectiveQueueSizeCost(station, weights, ev.Battery.Socket);
+            var effectiveQueueCost = CalculateEffectiveQueueSizeCost(station, weights);
             var pathDeviationCost = CalculatePathDeviationCost(ref ev, duration, weights, time);
             var urgencyCost = CalculateUrgencyCost(ref ev, weights);
             var priceCost = CalculatePriceCost(ref ev, station, weights, time, energyPrices);
@@ -63,18 +63,10 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
     }
 
     // TODO: Think about effective queue size
-    private float CalculateEffectiveQueueSizeCost(Station station, CostWeights weights, Socket socket)
+    private float CalculateEffectiveQueueSizeCost(Station station, CostWeights weights)
     {
-        var supportingChargers = station.Chargers.Count(s => s.GetSockets().Contains(socket));
-
-        if (supportingChargers == 0)
-        {
-            // Station doesn't support this socket type—return infinite cost to exclude it
-            return float.MaxValue;
-        }
-
         var totalQueueSize = stationService.GetTotalQueueSize(station.Id);
-        var effectiveQueueSize = (float)totalQueueSize / station.Chargers.Count(s => s.GetSockets().Contains(socket));
+        var effectiveQueueSize = (float)totalQueueSize / station.Chargers.Count;
         return weights.EffectiveQueueSize * MathF.Pow(effectiveQueueSize, 3);
     }
 

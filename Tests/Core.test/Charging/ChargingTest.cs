@@ -3,9 +3,9 @@ namespace Core.test.Charging;
 using Core.Charging;
 using Core.Charging.ChargingModel;
 using Core.Shared;
-using Core.Charging.ChargingModel.Chargepoint;
 using Core.Vehicles;
 using Core.Vehicles.Configs;
+using Core.test.Builders;
 
 internal static class Make
 {
@@ -15,7 +15,6 @@ internal static class Make
                TargetSoC: targetSoC,
                CapacityKWh: model.BatteryConfig.MaxCapacityKWh,
                MaxChargeRateKW: model.BatteryConfig.ChargeRateKW,
-               Socket: model.BatteryConfig.Socket,
                ArrivalTime: new Time(0));
 
     public static ConnectedEV EV(
@@ -28,33 +27,28 @@ internal static class Make
                TargetSoC: targetSoC,
                CapacityKWh: capacityKWh,
                MaxChargeRateKW: maxChargeRateKW,
-               Socket: Socket.CCS2,
                ArrivalTime: new Time(0));
 
-    public static SingleChargingPoint SinglePoint(EVConfig model)
+    public static SingleCharger SingleCharger(EVConfig model)
     {
-        var c = new Connector(model.BatteryConfig.Socket);
-        var connectors = new Connectors([c]);
-        connectors.Activate(c);
-        return new SingleChargingPoint(connectors);
+        var connectors = MakeConnectors(model.BatteryConfig.ChargeRateKW);
+        return new SingleCharger(id: 0, maxPowerKW: model.BatteryConfig.ChargeRateKW, connectors);
     }
 
-    public static SingleChargingPoint SinglePoint(Socket socket)
+    public static DualCharger DualCharger(EVConfig model)
     {
-        var c = new Connector(socket);
-        var connectors = new Connectors([c]);
-        connectors.Activate(c);
-        return new SingleChargingPoint(connectors);
+        var connectors = MakeConnectors(model.BatteryConfig.ChargeRateKW);
+        return new DualCharger(id: 0, maxPowerKW: model.BatteryConfig.ChargeRateKW, connectors);
     }
 
-    public static DualChargingPoint DualPoint(EVConfig model)
+    public static DualCharger DualCharger(ushort maxKW)
     {
-        var socket = model.BatteryConfig.Socket;
-        var point = new DualChargingPoint(new Connectors([new Connector(socket)]));
-        point.TryConnect(socket);
-        point.TryConnect(socket);
-        return point;
+        var connectors = MakeConnectors(maxKW);
+        return new DualCharger(id: 0, maxPowerKW: maxKW, connectors);
     }
+
+    private static Connectors MakeConnectors(ushort maxKW)
+        => new((new Connector(maxKW), new Connector(maxKW)));
 }
 
 public class ChargingTest
@@ -69,13 +63,12 @@ public class ChargingTest
             TargetSoC: double.NaN,
             CapacityKWh: 60,
             MaxChargeRateKW: 100,
-            Socket: Socket.CCS2,
             ArrivalTime: 0);
-
+        var evConfig = CoreTestData.EVConfig();
         var ex = Assert.Throws<ArgumentOutOfRangeException>(() => integrator.IntegrateSingleToCompletion(
             simNow: 0,
             maxKW: 100,
-            point: Make.SinglePoint(Socket.CCS2),
+            charger: Make.SingleCharger(evConfig),
             ev: ev));
 
         Assert.Contains("TargetSoC", ex.Message);
@@ -102,11 +95,11 @@ public class ChargingTest
 
         var integrator = new ChargingIntegrator(stepSeconds: 1);
         var ev = Make.EV(currentSoC: 0.05, targetSoC: 0.95, capacityKWh: capacityKWh, maxChargeRateKW: maxKW);
-
+        var evConfig = CoreTestData.EVConfig(new BatteryConfig((ushort)maxKW, (ushort)capacityKWh));
         var result = integrator.IntegrateSingleToCompletion(
             simNow: 0,
             maxKW: maxKW,
-            point: Make.SinglePoint(Socket.CCS2),
+            charger: Make.SingleCharger(evConfig),
             ev: ev);
 
         Assert.Equal(0.95, result.SocA, precision: 4);
@@ -129,27 +122,22 @@ public class ChargingTest
 
         var ev = Make.EV(niro, currentSoC: 0.05, targetSoC: 0.95);
         var integrator = new ChargingIntegrator(stepSeconds: 1);
-        var point = Make.SinglePoint(niro);
+        var charger = Make.SingleCharger(niro);
 
-        // Charger at 150 kW — car rate (85 kW) is the bottleneck
         var resultLimitedByCarRate = integrator.IntegrateSingleToCompletion(
-            simNow: 0, maxKW: 150.0, point, ev);
+            simNow: 0, maxKW: 150.0, charger, ev);
 
-        // Charger matches car rate exactly — same outcome expected
         var resultMatchedRate = integrator.IntegrateSingleToCompletion(
-            simNow: 0, maxKW: 85.0, point, ev);
+            simNow: 0, maxKW: 85.0, charger, ev);
 
-        // Charger at 50 kW — charger is the bottleneck, takes longer
         var resultLimitedByCharger = integrator.IntegrateSingleToCompletion(
-            simNow: 0, maxKW: 50.0, point, ev);
+            simNow: 0, maxKW: 50.0, charger, ev);
 
-        // Car rate caps the 150 kW charger — identical to running at exactly 85 kW
         Assert.Equal(
             resultMatchedRate.DurationMilliseconds,
             resultLimitedByCarRate.DurationMilliseconds,
             tolerance: 1.0);
 
-        // 50 kW charger takes longer than the car's full 85 kW rate
         Assert.True(
             resultLimitedByCharger.DurationMilliseconds > resultLimitedByCarRate.DurationMilliseconds,
             "charging at 50 kW should take longer than at the car's full 85 kW rate");
@@ -164,7 +152,6 @@ public class ChargingTest
             50.0 * (resultLimitedByCharger.DurationMilliseconds / 3600000),
             precision: 1);
 
-        // Energy delivered is the same regardless — same SoC delta in all three runs
         Assert.Equal(
             resultMatchedRate.EnergyDeliveredKWhA,
             resultLimitedByCarRate.EnergyDeliveredKWhA,
@@ -174,11 +161,6 @@ public class ChargingTest
     [Fact]
     public void IntegrateDualToCompletion_DistributionShiftsAcrossCurveRegions()
     {
-        // Tesla Model Y: 250 kW charge rate, 75 kWh — starts at 70% (immediately in taper)
-        // Volkswagen ID.3: 170 kW charge rate, 58 kWh — starts at 5% (ramp → flat → taper)
-        // Tesla enters taper immediately and donates surplus to the ID.3.
-        // Tesla has a much smaller SoC delta so finishes first.
-        // ID.3 charges faster than it would alone at half power.
         const double maxKW = 150.0;
 
         var tesla = EVModels.Models.First(m => m.Model == "Tesla Model Y");
@@ -191,7 +173,7 @@ public class ChargingTest
         var result = integrator.IntegrateDualToCompletion(
             simNow: 0,
             maxKW: maxKW,
-            Make.DualPoint(tesla),
+            charger: Make.DualCharger(tesla),
             evA,
             evB);
 
@@ -210,8 +192,8 @@ public class ChargingTest
         var resultId3Alone = integrator.IntegrateSingleToCompletion(
             simNow: 0,
             maxKW: maxKW / 2,
-            Make.SinglePoint(id3),
-            evB);
+            charger: Make.SingleCharger(id3),
+            ev: evB);
 
         Assert.True(
             result.FinishTimeB < resultId3Alone.FinishTimeA,
@@ -222,14 +204,14 @@ public class ChargingTest
             maxKW * (result.DurationMilliseconds / 3600000),
             precision: 2);
 
-        var resultid3Alone = integrator.IntegrateSingleToCompletion(
+        var resultId3AloneVsEvA = integrator.IntegrateSingleToCompletion(
             simNow: 0,
             maxKW: maxKW / 2,
-            Make.SinglePoint(id3),
-            evA);
+            charger: Make.SingleCharger(id3),
+            ev: evA);
 
         Assert.True(
-            result.WastedEnergyKWh < resultid3Alone.WastedEnergyKWh,
+            result.WastedEnergyKWh < resultId3AloneVsEvA.WastedEnergyKWh,
             "dual point wastes less energy than ID.3 alone because Taycan absorbs the surplus");
 
         Assert.Equal(
@@ -241,13 +223,6 @@ public class ChargingTest
     [Fact]
     public void IntegrateDualToCompletion_LowRateCar_DonatesSurplusToHighRateCar()
     {
-        // Mazda MX-30: 50 kW charge rate, 30 kWh
-        // Porsche Taycan: 320 kW charge rate, 97 kWh
-        //
-        // At maxKW=200, nominal=100 each.
-        // physicalCapMazda = min(connectorRating, 50) = 50 kW → surplusMazda = 50 kW every step.
-        // Taycan absorbs all surplus → charges at 150 kW vs Mazda's 50 kW.
-        // Taycan finishes faster than it would at only 100 kW alone.
         const double maxKW = 200.0;
 
         var mazda = EVModels.Models.First(m => m.Model == "Mazda MX-30");
@@ -260,7 +235,7 @@ public class ChargingTest
         var result = integrator.IntegrateDualToCompletion(
             simNow: 0,
             maxKW: maxKW,
-            Make.DualPoint(mazda),
+            charger: Make.DualCharger(400),
             evA,
             evB);
 
@@ -271,18 +246,16 @@ public class ChargingTest
             result.EnergyDeliveredKWhB > result.EnergyDeliveredKWhA,
             "Taycan should receive more energy as Mazda donates its rate-limited surplus");
 
-        // Taycan should finish sooner than it would alone at half power (100 kW).
         var resultTaycanAlone = integrator.IntegrateSingleToCompletion(
             simNow: 0,
             maxKW: maxKW / 2,
-            Make.SinglePoint(taycan),
-            evB);
+            charger: Make.SingleCharger(taycan),
+            ev: evB);
 
         Assert.True(
             result.FinishTimeB < resultTaycanAlone.FinishTimeA,
             "Taycan should finish sooner in dual due to absorbing Mazda's rate-limited surplus");
 
-        // safety check
         Assert.Equal(
             result.EnergyDeliveredKWhA + result.EnergyDeliveredKWhB + result.WastedEnergyKWh,
             maxKW * (result.DurationMilliseconds / 3600000),

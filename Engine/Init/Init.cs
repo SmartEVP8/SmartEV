@@ -59,7 +59,7 @@ public static class Init
         {
             var settings = sp.GetRequiredService<EngineSettings>();
             var router = sp.GetRequiredService<IOSRMRouter>();
-            var spawnGrid = InitSpawnGrid(settings.PolygonPath);
+            var spawnGrid = InitSpawnGrid(settings.PolygonPath, settings.GridSize);
             var cities = InitCities(settings.CitiesPath);
             var engineSettings = sp.GetRequiredService<EngineSettings>();
             var journeyPipeline = new JourneyPipeline(spawnGrid, cities, router);
@@ -101,7 +101,7 @@ public static class Init
         {
             var settings = sp.GetRequiredService<EngineSettings>();
             var stations = sp.GetRequiredService<Dictionary<ushort, Station>>();
-            var spawnGrid = InitSpawnGrid(settings.PolygonPath);
+            var spawnGrid = InitSpawnGrid(settings.PolygonPath, settings.GridSize);
             return new SpatialGrid(spawnGrid, stations);
         });
 
@@ -220,10 +220,10 @@ public static class Init
         });
     }
 
-    private static SpawnGrid InitSpawnGrid(FileInfo polygonPath)
+    private static SpawnGrid InitSpawnGrid(FileInfo polygonPath, double size)
     {
         var polygons = PolygonParser.Parse(File.ReadAllText(polygonPath.ToString()));
-        return Polygooner.GenerateGrid(size: 0.1, polygons);
+        return Polygooner.GenerateGrid(size, polygons);
     }
 
     private static List<City> InitCities(FileInfo citiesPath)
