@@ -30,7 +30,7 @@ public static class CoreTestData
         else
             chargerList = [CreateFakeChargerWithQueue(0)]; // Default: one empty charger
 
-        return new Station(id, string.Empty, string.Empty, position, chargerList, prices);
+        return new Station(id, string.Empty, position, chargerList, prices);
     }
 
     public static EVConfig EVConfig(
