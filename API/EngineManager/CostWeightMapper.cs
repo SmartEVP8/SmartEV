@@ -14,8 +14,8 @@ public static class CostWeightMapper
     /// <param name="current">Domain.</param>
     /// <returns>Domain cost weights with values from the DTO.</returns>
     public static CostWeights ToDomain(
-    this IEnumerable<CostWeightDTO> weights,
-    CostWeights current)
+        this IEnumerable<CostWeightDTO> weights,
+        CostWeights current)
     {
         var dict = weights.ToDictionary(w => w.CostId, w => w.Value);
 

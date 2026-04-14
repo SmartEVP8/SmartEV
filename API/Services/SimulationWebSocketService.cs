@@ -26,27 +26,42 @@ public class SimulationWebSocketService(
     public async Task HandleConnectionAsync(WebSocket webSocket, CancellationToken cancelToken)
     {
         _client = webSocket;
-
         using var snapshotCts = CancellationTokenSource.CreateLinkedTokenSource(cancelToken);
-        var snapshotLoop = RunSnapshotLoopAsync(snapshotCts.Token);
+
+        Task? snapshotLoopTask = null;
 
         try
         {
+            snapshotLoopTask = RunSnapshotLoopAsync(snapshotCts.Token);
             await ProcessConnectionAsync(webSocket, cancelToken);
         }
         finally
         {
             await snapshotCts.CancelAsync();
 
-            try
+            if (snapshotLoopTask != null)
             {
-                await snapshotLoop;
-            }
-            catch (OperationCanceledException)
-            {
+                try
+                {
+                    await snapshotLoopTask;
+                }
+                catch (OperationCanceledException)
+                {
+                    // Expected during shutdown.
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Error stopping snapshot loop");
+                }
             }
 
             _client = null;
+
+            if (webSocket.State == WebSocketState.Open || webSocket.State == WebSocketState.CloseReceived)
+            {
+                await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Server shutting down", CancellationToken.None);
+            }
+
             webSocket.Dispose();
         }
     }
