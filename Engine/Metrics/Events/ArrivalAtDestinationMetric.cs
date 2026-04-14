@@ -11,22 +11,22 @@ public readonly struct ArrivalAtDestinationMetric
     /// <summary>
     /// Gets the expected arrival time at the destination for a journey.
     /// </summary>
-    required public Time ExpectedArrivalTime { get; init; }
+    required public uint ExpectedArrivalTime { get; init; }
 
     /// <summary>
     /// Gets the actual arrival time at the destination for a journey.
     /// </summary>
-    required public Time ActualArrivalTime { get; init; }
+    required public uint ActualArrivalTime { get; init; }
 
     /// <summary>
     /// Gets the path deviation for a journey.
     /// </summary>
-    required public Time PathDeviation { get; init; }
+    required public uint PathDeviation { get; init; }
 
     /// <summary>
     /// Gets the difference between actual and expected arrival time.
     /// </summary>
-    public Time DeltaArrivalTime => ActualArrivalTime - ExpectedArrivalTime;
+    public uint DeltaArrivalTime => ActualArrivalTime - ExpectedArrivalTime;
 
     /// <summary>
     /// Gets a value indicating whether the expected arrival time was missed.
