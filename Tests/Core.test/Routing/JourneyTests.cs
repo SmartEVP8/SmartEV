@@ -209,12 +209,12 @@ public class JourneyTests
         journey.UpdateRouteToDestination(timeAtStation: 30000);
         Assert.Equal(waypoints[^1].Latitude, journey.Current.Waypoints.Last().Latitude);
         Assert.Equal(journey.Current.Duration, journey.Current.DurationToNextStop);
-        Assert.Equal(60000U, journey.Current.Departure.Milliseconds);
+        Assert.Equal(60003U, journey.Current.Departure.Milliseconds);
         Assert.Equal(30000U, journey.Current.Duration.Milliseconds);
     }
 
     [Fact]
-    public void UpdateRouteToDestination_ZeroTime_DepartureUnchanged()
+    public void UpdateRouteToDestination_ZeroTime()
     {
         var waypoints = new List<Position> { new(0, 0), new(1, 1), new(2, 2) };
         var journey = new Journey(0, 60000, 1000, waypoints);
@@ -222,7 +222,7 @@ public class JourneyTests
 
         journey.UpdateRouteToDestination(timeAtStation: 0);
 
-        Assert.Equal(0u, journey.Current.Departure.Milliseconds);
+        Assert.Equal(30003u, journey.Current.Departure.Milliseconds);
         Assert.Equal(waypoints[^1], journey.Current.NextStop);
     }
 
@@ -235,7 +235,7 @@ public class JourneyTests
         journey.UpdateRouteToDestination(timeAtStation: 10000);
 
         Assert.Equal(journey.Current.Duration, journey.Current.DurationToNextStop);
-        Assert.Equal(10000u, journey.Current.Departure.Milliseconds);
+        Assert.Equal(110000u, journey.Current.Departure.Milliseconds);
     }
 
     [Fact]
@@ -246,7 +246,7 @@ public class JourneyTests
 
         journey.UpdateRouteToDestination(timeAtStation: 36000);
 
-        Assert.Equal(37000u, journey.Current.Departure.Milliseconds);
+        Assert.Equal(97000u, journey.Current.Departure.Milliseconds);
     }
 
     [Fact]

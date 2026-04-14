@@ -54,7 +54,9 @@ public class FindCandidateStationsHandler(
     {
         if (ev.HasReservationAtStationId is ushort reservedStationId)
         {
+            ev.Advance(e.Time);
             var durationToStation = ev.Journey.Current.DurationToNextStop;
+
             eventScheduler.ScheduleEvent(new ArriveAtStation(
                 e.EVId,
                 reservedStationId,
@@ -78,7 +80,7 @@ public class FindCandidateStationsHandler(
         if (HasScheduledArriveAtStation(e, ref ev, bestStation, remaining))
             return true;
 
-        var nextTime = HalfwayToStation(remaining, e.Time);
+        var nextTime = ev.TimeToNextFindCandidateCheck(e.Time);
         eventScheduler.ScheduleEvent(new FindCandidateStations(e.EVId, nextTime));
         return true;
     }
@@ -99,7 +101,7 @@ public class FindCandidateStationsHandler(
         if (HasScheduledArriveAtStation(e, ref ev, bestStation, remainingTravelTime))
             return;
 
-        var nextTime = HalfwayToStation(remainingTravelTime, e.Time);
+        var nextTime = ev.TimeToNextFindCandidateCheck(e.Time);
         eventScheduler.ScheduleEvent(new FindCandidateStations(e.EVId, nextTime));
     }
 
@@ -107,6 +109,15 @@ public class FindCandidateStationsHandler(
     {
         if (durationToStation <= Time.MillisecondsPerMinute * 10)
         {
+            if (e.EVId == 582698)
+            {
+                Console.WriteLine(
+                    $"No candidates for EV {e.EVId}. " +
+                    $"SoC={ev.Battery.StateOfCharge:P1}, " +
+                    $"distKm={ev.Journey.Current.DistanceKm:F1}, " +
+                    $"durationToStation={durationToStation / Time.MillisecondsPerMinute:F1}min, TargetSoC={ev.CalcDesiredSoC(e.Time + durationToStation):P1}");
+            }
+
             eventScheduler.ScheduleEvent(new ArriveAtStation(
             e.EVId,
             bestStation.Id,
@@ -117,6 +128,4 @@ public class FindCandidateStationsHandler(
 
         return false;
     }
-
-    private static Time HalfwayToStation(Time remaining, Time currentTime) => currentTime + (remaining / 2);
 }

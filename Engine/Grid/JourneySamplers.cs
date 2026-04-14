@@ -51,7 +51,7 @@ public class JourneySamplers(
         var distance = 0.0;
         var dest = new Position(0, 0);
         var source = new Position(0, 0);
-        while (distance < 0.1)
+        while (distance < 0.5)
         {
             var sourceIndex = _sourceSampler.Sample(random);
             source = SampleInCell(random, sourceIndex);

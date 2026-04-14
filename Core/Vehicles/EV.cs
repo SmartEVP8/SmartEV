@@ -110,15 +110,14 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     {
         if (Battery.MaxCapacityKWh == 0)
             throw new InvalidOperationException($"Battery capacity must be greater than zero when calculating desired SoC (arrivalAtStation={arrivalAtStation}, {this})");
-
         var remainingDistanceKm = Journey.RemainingDistanceToDestination(arrivalAtStation);
         var energyToDest = EnergyForDistanceKWh(remainingDistanceKm);
         var percentNeededToDestination = energyToDest / Battery.MaxCapacityKWh;
-        if (!float.IsFinite(percentNeededToDestination) || percentNeededToDestination < 0f || float.IsNaN(percentNeededToDestination))
-            throw new InvalidOperationException($"Calculated percent needed to destination is invalid (percentNeededToDestination={percentNeededToDestination}, arrivalAtStation={arrivalAtStation}, {this})");
         var chargeToPercent = percentNeededToDestination + Preferences.MinAcceptableCharge;
         var desiredSoC = chargeToPercent > 1f ? 0.8f : chargeToPercent;
-        return Math.Clamp(desiredSoC + 0.01f, 0f, 1f);
+        return float.IsFinite(desiredSoC)
+            ? Math.Clamp(desiredSoC + 0.01f, 0f, 1f)
+            : throw new InvalidOperationException($"Calculated desired SoC is not finite (desiredSoC={desiredSoC}, energyToDest={energyToDest}, remainingDistanceKm={remainingDistanceKm}, arrivalAtStation={arrivalAtStation}, {this})");
     }
 
     /// <summary>
@@ -130,13 +129,13 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     /// <returns>The Time the next FindCandidateStation Event should occur.</returns>
     public readonly Time TimeToNextFindCandidateCheck(Time currentTime) => Math.Min(Journey.TimeToReachHalfToNextStop(), TimeUntilHalfOfBattery(currentTime));
 
-    private readonly Time TimeUntilHalfOfBattery(Time currentTime)
+    public readonly Time TimeUntilHalfOfBattery(Time currentTime)
     {
         if (Preferences.MinAcceptableCharge >= Battery.StateOfCharge)
         {
             if (currentTime < Journey.Current.Departure)
                 throw new InvalidOperationException($"Current time is before the departure of the current journey (currentTime={currentTime}, departure={Journey.Current.Departure}, {this})");
-            return currentTime;
+            return Journey.Current.Departure + 1;
         }
 
         var percent = Math.Max(Preferences.MinAcceptableCharge, Battery.StateOfCharge / 2);
