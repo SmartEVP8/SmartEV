@@ -37,24 +37,23 @@ public class FindCandidateStationService(
         };
     }
 
-    private Dictionary<ushort, float> ComputeCandidates(FindCandidateStations e, double Pathdeviation = 0)
+    private Dictionary<ushort, float> ComputeCandidates(FindCandidateStations e, double PathdeviationMultiplier = 1.0)
     {
         ref var ev = ref evStore.Get(e.EVId);
         var pos = ev.Advance(e.Time);
 
-        if (Pathdeviation == 0)
-            Pathdeviation = ev.Preferences.MaxPathDeviation;
+        var pathDeviationMultiplied = ev.Preferences.MaxPathDeviation * PathdeviationMultiplier;
 
         var filteredStationIds = spatialGrid.GetStationsAlongPolyline(
             ev.Journey.Current.Waypoints,
-            Pathdeviation);
+            pathDeviationMultiplied);
 
         var reachableStationIds = ReachableStations.FindReachableStations(
             ev.Journey.Current.Waypoints,
             ev,
             stations,
             filteredStationIds,
-            Pathdeviation).ToArray();
+            pathDeviationMultiplied).ToArray();
 
         var destination = ev.Journey.Current.Waypoints.Last();
         var detourResult = router.QueryStationsWithDest(
@@ -80,9 +79,9 @@ public class FindCandidateStationService(
             refinedCandidateDurations[stationId] = detourResult.Durations[i];
         }
 
-        if (refinedCandidateDurations.Count == 0 && ev.HasReservationAtStationId == null)
+        if (refinedCandidateDurations.Count == 0 && ev.HasReservationAtStationId == null && ev.DistanceOnCurrentChargeKm() > pathDeviationMultiplied)
         {
-            refinedCandidateDurations = ComputeCandidates(e, Pathdeviation * 1.25);
+            refinedCandidateDurations = ComputeCandidates(e, PathdeviationMultiplier * 1.25);
         }
 
         return refinedCandidateDurations;

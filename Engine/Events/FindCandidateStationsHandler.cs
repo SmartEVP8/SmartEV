@@ -109,15 +109,6 @@ public class FindCandidateStationsHandler(
     {
         if (durationToStation <= Time.MillisecondsPerMinute * 10)
         {
-            if (e.EVId == 582698)
-            {
-                Console.WriteLine(
-                    $"No candidates for EV {e.EVId}. " +
-                    $"SoC={ev.Battery.StateOfCharge:P1}, " +
-                    $"distKm={ev.Journey.Current.DistanceKm:F1}, " +
-                    $"durationToStation={durationToStation / Time.MillisecondsPerMinute:F1}min, TargetSoC={ev.CalcDesiredSoC(e.Time + durationToStation):P1}");
-            }
-
             eventScheduler.ScheduleEvent(new ArriveAtStation(
             e.EVId,
             bestStation.Id,

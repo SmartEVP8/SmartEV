@@ -121,6 +121,12 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     }
 
     /// <summary>
+    /// Calculate how far an EV can drive on current charge in km.
+    /// </summary>
+    /// <returns>Distance in km that a EV can drive.</returns>
+    public readonly float DistanceOnCurrentChargeKm() => Battery.CurrentChargeKWh / (ConsumptionWhPerKm / 1000f);
+
+    /// <summary>
     /// Calculates the next time to check for candidate stations, which is the minimum of:
     /// 1) The time it takes to reach halfway to the next stop, and
     /// 2) The time it takes to reach half of the remaining battery.
@@ -129,7 +135,7 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     /// <returns>The Time the next FindCandidateStation Event should occur.</returns>
     public readonly Time TimeToNextFindCandidateCheck(Time currentTime) => Math.Min(Journey.TimeToReachHalfToNextStop(), TimeUntilHalfOfBattery(currentTime));
 
-    public readonly Time TimeUntilHalfOfBattery(Time currentTime)
+    private readonly Time TimeUntilHalfOfBattery(Time currentTime)
     {
         if (Preferences.MinAcceptableCharge >= Battery.StateOfCharge)
         {
