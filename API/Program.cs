@@ -67,6 +67,26 @@ public static class Program
             return Results.File(data, "application/octet-stream");
         });
 
+        app.MapPatch("/update-weights/{costId}", (
+            EngineManager.EngineManager engineManager,
+            int costId,
+            CostWeightDTO weight) =>
+        {
+            if (!engineManager.IsInitialized)
+            {
+                return Results.BadRequest("Engine not initialized");
+            }
+
+            if (weight.CostId != costId)
+            {
+                return Results.BadRequest("Route costId does not match body costId.");
+            }
+
+            var settings = engineManager.GetEngineService<Engine.Init.EngineSettings>();
+
+            return Results.Ok();
+        });
+
         app.Map("/ws/simulation", async context =>
         {
             if (!context.WebSockets.IsWebSocketRequest)

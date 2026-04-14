@@ -38,8 +38,9 @@ public static class InitEngineDataBuilder
                         Id = charger.Id,
                         MaxPowerKw = charger.MaxPowerKW,
                         StationId = station.Id,
-                        IsDual = charger.GetType() == typeof(DualCharger),
+                        IsDual = charger is DualCharger,
                     };
+
                     initData.Chargers.Add(chargerProto);
                 }
             }
