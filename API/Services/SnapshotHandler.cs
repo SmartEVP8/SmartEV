@@ -1,5 +1,6 @@
 namespace API.Services;
 
+using Core.Charging;
 using Engine.Events;
 using Engine.Services;
 using Engine.Services.StationServiceHelpers;
@@ -64,9 +65,6 @@ public class SnapshotHandler(
 
     private Protocol.ChargerState CreateChargerState(int chargerId)
     {
-        var random = new Random(chargerId);
-        var tempUtilization = random.NextSingle();
-
         var engineChargerState = stationService.GetChargerState(chargerId);
         if (engineChargerState is null)
             return null!;
@@ -74,7 +72,7 @@ public class SnapshotHandler(
         var chargerState = new Protocol.ChargerState
         {
             IsActive = !engineChargerState.IsFree,
-            Utilization = tempUtilization,
+            Utilization = GetUtilization(engineChargerState),
             ChargerId = (uint)chargerId,
             QueueSize = (uint)engineChargerState.Queue.Count,
         };
@@ -96,6 +94,41 @@ public class SnapshotHandler(
         }
 
         return chargerState;
+    }
+
+    private static float GetUtilization(Engine.Services.StationServiceHelpers.ChargerState chargerState)
+    {
+        if (chargerState.SessionA is null && chargerState.SessionB is null)
+            return 0f;
+
+        switch (chargerState.Charger)
+        {
+            case SingleCharger s:
+                {
+                    var ev = chargerState.SessionA?.EV;
+                    var powerOutput = s.GetPowerOutput(s.MaxPowerKW, ev?.CurrentSoC ?? 0.0);
+                    var delivered = Math.Min(powerOutput, ev?.MaxChargeRateKW ?? 0.0);
+                    return (float)(delivered / s.MaxPowerKW);
+                }
+
+            case DualCharger d:
+                {
+                    var evA = chargerState.SessionA?.EV;
+                    var evB = chargerState.SessionB?.EV;
+                    var (powerA, powerB) = d.GetPowerDistribution(
+                        d.MaxPowerKW,
+                        evA?.CurrentSoC ?? 0.0,
+                        evB?.CurrentSoC ?? 0.0,
+                        evA?.MaxChargeRateKW ?? 0.0,
+                        evB?.MaxChargeRateKW ?? 0.0);
+                    var deliveredA = Math.Min(powerA, evA?.MaxChargeRateKW ?? 0.0);
+                    var deliveredB = Math.Min(powerB, evB?.MaxChargeRateKW ?? 0.0);
+                    return (float)((deliveredA + deliveredB) / d.MaxPowerKW);
+                }
+
+            default:
+                throw new InvalidOperationException("Unknown charger type");
+        }
     }
 
     private static EVChargerState CreateEVChargerState(ActiveSession session) =>
