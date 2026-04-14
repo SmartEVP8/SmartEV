@@ -1,6 +1,7 @@
 namespace Core.Charging;
 
 using Core.Charging.ChargingModel;
+using Core.Shared;
 
 /// <summary>
 /// Charger that supports one vehicle at a time.
@@ -22,8 +23,10 @@ public sealed class SingleCharger(int id, int maxPowerKW, Connectors connectors)
     public double GetPowerOutput(double maxKW, double soc)
         => maxKW * ChargingCurve.PowerFraction(soc);
 
-    /// <inheritdoc/>
-    public override bool CanConnect() => _connector.IsFree;
+    /// <summary>
+    /// Gets or sets the active charging session at side A, or null if free. Always used for single chargers.
+    /// </summary>
+    public ActiveSession? Session { get; set; }
 
     /// <summary>
     /// Attempts to connect a vehicle. Returns false if already occupied.
@@ -38,4 +41,36 @@ public sealed class SingleCharger(int id, int maxPowerKW, Connectors connectors)
 
     /// <summary>Disconnects the currently connected vehicle.</summary>
     public void Disconnect() => _connector.Deactivate();
+
+    /// <inheritdoc/>
+    public override bool IsFree => Session is null;
+
+    /// <inheritdoc/>
+    public override void AccumulateEnergy(Time now)
+    {
+        if (now <= Window.LastEnergyUpdateTime)
+            return;
+
+        if (Session is not null)
+            Window = Window with { DeliveredKWh = Window.DeliveredKWh + Session.GetDeliveredKWh(Window.LastEnergyUpdateTime, now) };
+
+        Window = Window with { LastEnergyUpdateTime = now };
+    }
+
+    /// <inheritdoc/>
+    public override void UpdateWindowStats()
+    {
+        var isActive = Queue.Count > 0
+            || Session is not null
+            || Window.DeliveredKWh > 0;
+
+        if (!isActive)
+            return;
+
+        Window = Window with
+        {
+            HadActivity = true,
+            QueueSize = Queue.Count,
+        };
+    }
 }

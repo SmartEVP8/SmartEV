@@ -1,6 +1,5 @@
 namespace Engine.test.Services;
 
-using Core.Shared;
 using Core.Charging;
 using Engine.Events;
 using Engine.Services;
@@ -10,18 +9,20 @@ using Engine.Vehicles;
 
 public class StationServiceTests
 {
+    private ushort stationId = 1;
+
     [Fact]
     public void TwoCars_DualCharger_BothReceiveCharge()
     {
         // Two cars arrive at a dual charger simultaneously.
         // Both should start charging and have EndCharging events scheduled.
-        var (service, scheduler, evStore) = BuildDual();
+        var (service, scheduler, evStore, _) = BuildDual();
 
-        evStore.TryAllocate((_, ref e) => { e = CoreTestData.EV(); }, out var index1);
-        evStore.TryAllocate((_, ref e) => { e = CoreTestData.EV(); }, out var index2);
+        evStore.TryAllocate((_, ref e) => { e = CoreTestData.EV(); e.HasReservationAtStationId = stationId; }, out var index1);
+        evStore.TryAllocate((_, ref e) => { e = CoreTestData.EV(); e.HasReservationAtStationId = stationId; }, out var index2);
 
-        service.HandleArrivalAtStation(new ArriveAtStation(EVId: index1, StationId: 1, TargetSoC: 0.8, Time: 0));
-        service.HandleArrivalAtStation(new ArriveAtStation(EVId: index2, StationId: 1, TargetSoC: 0.8, Time: 0));
+        service.HandleArrivalAtStation(new ArriveAtStation(EVId: index1, StationId: stationId, TargetSoC: 0.8, Time: 0));
+        service.HandleArrivalAtStation(new ArriveAtStation(EVId: index2, StationId: stationId, TargetSoC: 0.8, Time: 0));
 
         var end1 = AsEndCharging(scheduler.GetNextEvent());
         var end2 = AsEndCharging(scheduler.GetNextEvent());
@@ -40,25 +41,25 @@ public class StationServiceTests
     {
         // Single charger: first EV starts immediately, second and third queue.
         // After first finishes, second should start.
-        var (service, scheduler, evStore) = BuildSingle();
+        var (service, scheduler, evStore, charger) = BuildSingle();
 
-        evStore.TryAllocate((_, ref e) => { e = CoreTestData.EV(); }, out var index1);
-        evStore.TryAllocate((_, ref e) => { e = CoreTestData.EV(); }, out var index2);
-        evStore.TryAllocate((_, ref e) => { e = CoreTestData.EV(); }, out var index3);
+        evStore.TryAllocate((_, ref e) => { e = CoreTestData.EV(); e.HasReservationAtStationId = stationId; }, out var index1);
+        evStore.TryAllocate((_, ref e) => { e = CoreTestData.EV(); e.HasReservationAtStationId = stationId; }, out var index2);
+        evStore.TryAllocate((_, ref e) => { e = CoreTestData.EV(); e.HasReservationAtStationId = stationId; }, out var index3);
 
         service.HandleArrivalAtStation(new ArriveAtStation(EVId: index1, StationId: 1, TargetSoC: 0.6, Time: 0));
-        service.HandleArrivalAtStation(new ArriveAtStation(EVId: index2, StationId: 1, TargetSoC: 0.8, Time: 0));
-        service.HandleArrivalAtStation(new ArriveAtStation(EVId: index3, StationId: 1, TargetSoC: 0.8, Time: 0));
+        service.HandleArrivalAtStation(new ArriveAtStation(EVId: index2, StationId: 1, TargetSoC: 0.8, Time: 1));
+        service.HandleArrivalAtStation(new ArriveAtStation(EVId: index3, StationId: 1, TargetSoC: 0.8, Time: 2));
 
         // Only ev1 should have an EndCharging scheduled — ev2 and ev3 are queued
         var firstEnd = AsEndCharging(scheduler.GetNextEvent());
         Assert.Equal(index1, firstEnd.EVId);
-        Assert.Equal(2, service.GetChargerState(chargerId: 1)!.Queue.Count);
+        Assert.Equal(2, charger.Queue.Count);
         Assert.Null(scheduler.GetNextEvent());
 
         // ev1 finishes — service should start ev2
         service.HandleEndCharging(firstEnd);
-        Assert.Single(service.GetChargerState(chargerId: 1)!.Queue);
+        Assert.Single(charger.Queue);
         Assert.IsType<ArriveAtDestination>(scheduler.GetNextEvent());
         var secondEnd = AsEndCharging(scheduler.GetNextEvent());
         Assert.Equal(index2, secondEnd.EVId);
@@ -69,20 +70,20 @@ public class StationServiceTests
     {
         // Dual charger — first two EVs fill both sides, third queues.
         // After one finishes, third should start and power is redistributed.
-        var (service, scheduler, evStore) = BuildDual(maxPowerKW: 200);
+        var (service, scheduler, evStore, charger) = BuildDual(maxPowerKW: 200);
 
-        evStore.TryAllocate((_, ref e) => { e = CoreTestData.EV(); }, out var index1);
-        evStore.TryAllocate((_, ref e) => { e = CoreTestData.EV(); }, out var index2);
-        evStore.TryAllocate((_, ref e) => { e = CoreTestData.EV(); }, out var index3);
+        evStore.TryAllocate((_, ref e) => { e = CoreTestData.EV(); e.HasReservationAtStationId = 1; }, out var index1);
+        evStore.TryAllocate((_, ref e) => { e = CoreTestData.EV(); e.HasReservationAtStationId = 1; }, out var index2);
+        evStore.TryAllocate((_, ref e) => { e = CoreTestData.EV(); e.HasReservationAtStationId = 1; }, out var index3);
 
         service.HandleArrivalAtStation(new ArriveAtStation(EVId: index1, StationId: 1, TargetSoC: 0.8, Time: 0));
-        service.HandleArrivalAtStation(new ArriveAtStation(EVId: index2, StationId: 1, TargetSoC: 0.8, Time: 0));
-        service.HandleArrivalAtStation(new ArriveAtStation(EVId: index3, StationId: 1, TargetSoC: 0.8, Time: 0));
+        service.HandleArrivalAtStation(new ArriveAtStation(EVId: index2, StationId: 1, TargetSoC: 0.8, Time: 1));
+        service.HandleArrivalAtStation(new ArriveAtStation(EVId: index3, StationId: 1, TargetSoC: 0.8, Time: 2));
 
         // Both sides occupied — ev3 is queued
         var ev1End = AsEndCharging(scheduler.GetNextEvent());
         Assert.Equal(index1, ev1End.EVId);
-        Assert.Single(service.GetChargerState(chargerId: 1)!.Queue);
+        Assert.Single(charger.Queue);
 
         service.HandleEndCharging(ev1End);
 
@@ -90,7 +91,7 @@ public class StationServiceTests
         Assert.IsType<ArriveAtDestination>(scheduler.GetNextEvent());
         var nextA = AsEndCharging(scheduler.GetNextEvent());
         var nextB = AsEndCharging(scheduler.GetNextEvent());
-        Assert.Empty(service.GetChargerState(chargerId: 1)!.Queue);
+        Assert.Empty(charger.Queue);
 
         var ev2Event = nextA.EVId == index2 ? nextA : nextB;
         var ev3Event = nextA.EVId == index3 ? nextA : nextB;
@@ -100,7 +101,7 @@ public class StationServiceTests
         Assert.True(ev2Event.Time > ev1End.Time);
     }
 
-    private static (StationService service, EventScheduler scheduler, EVStore evStore) BuildSingle(ushort maxPowerKW = 150)
+    private static (StationService service, EventScheduler scheduler, EVStore evStore, ChargerBase charger) BuildSingle(ushort maxPowerKW = 150)
     {
         var charger = CoreTestData.SingleCharger(1, maxPowerKW: maxPowerKW);
         var station = CoreTestData.Station(1, chargers: [charger]);
@@ -108,10 +109,10 @@ public class StationServiceTests
         var stations = new Dictionary<ushort, Station> { [1] = station };
         var evStore = new EVStore(10);
         var service = EngineTestData.StationService(stations, scheduler, evStore);
-        return (service, scheduler, evStore);
+        return (service, scheduler, evStore, charger);
     }
 
-    private static (StationService service, EventScheduler scheduler, EVStore evStore) BuildDual(ushort maxPowerKW = 150)
+    private static (StationService service, EventScheduler scheduler, EVStore evStore, ChargerBase charger) BuildDual(ushort maxPowerKW = 150)
     {
         var charger = CoreTestData.DualCharger(1, maxPowerKW: maxPowerKW);
         var station = CoreTestData.Station(1, chargers: [charger]);
@@ -119,7 +120,7 @@ public class StationServiceTests
         var scheduler = new EventScheduler();
         var evStore = new EVStore(10);
         var service = EngineTestData.StationService(stations, scheduler, evStore);
-        return (service, scheduler, evStore);
+        return (service, scheduler, evStore, charger);
     }
 
     private static EndCharging AsEndCharging(Event? e)

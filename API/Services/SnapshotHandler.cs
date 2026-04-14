@@ -1,5 +1,6 @@
 namespace API.Services;
 
+using System.Reflection.Metadata.Ecma335;
 using Core.Charging;
 using Engine.Events;
 using Engine.Services;
@@ -54,7 +55,7 @@ public class SnapshotHandler(
 
         foreach (var charger in station.Chargers)
         {
-            var chargerState = CreateChargerState(charger.Id);
+            var chargerState = CreateChargerState(charger);
             stationState.ChargerStates.Add(chargerState);
         }
 
@@ -63,32 +64,40 @@ public class SnapshotHandler(
         return new Envelope { StationStateResponse = stationState };
     }
 
-    private Protocol.ChargerState CreateChargerState(int chargerId)
+    private ChargerState CreateChargerState(ChargerBase charger)
     {
-        var engineChargerState = stationService.GetChargerState(chargerId);
-        if (engineChargerState is null)
-            return null!;
-
-        var chargerState = new Protocol.ChargerState
+        ActiveSession? sessionA;
+        ActiveSession? sessionB;
+        switch (charger)
         {
-            IsActive = !engineChargerState.IsFree,
-            Utilization = GetUtilization(engineChargerState),
-            ChargerId = (uint)chargerId,
-            QueueSize = (uint)engineChargerState.Queue.Count,
-        };
+            case SingleCharger s:
+                sessionA = s.Session;
+                sessionB = null;
+                break;
 
-        if (chargerState.QueueSize > 1)
-        {
-            logger.LogInformation("Queue size for charger {ChargerId}: {QueueSize}", chargerId, chargerState.QueueSize);
+            case DualCharger d:
+                sessionA = d.SessionA;
+                sessionB = d.SessionB;
+                break;
+            default:
+                throw new InvalidOperationException($"Unknown charger type: {charger.GetType()}");
         }
 
-        if (engineChargerState.SessionA is not null)
-            chargerState.EvsInQueue.Add(CreateEVChargerState(engineChargerState.SessionA));
+        var chargerState = new ChargerState
+        {
+            IsActive = !charger.IsFree,
+            Utilization = GetUtilization(charger),
+            ChargerId = (uint)charger.Id,
+            QueueSize = (uint)charger.Queue.Count,
+        };
 
-        if (engineChargerState.SessionB is not null)
-            chargerState.EvsInQueue.Add(CreateEVChargerState(engineChargerState.SessionB));
+        if (sessionA is not null)
+            chargerState.EvsInQueue.Add(CreateEVChargerState(sessionA));
 
-        foreach (var (evId, ev) in engineChargerState.Queue)
+        if (sessionB is not null)
+            chargerState.EvsInQueue.Add(CreateEVChargerState(sessionB));
+
+        foreach (var (evId, ev) in charger.Queue)
         {
             chargerState.EvsInQueue.Add(new EVChargerState
             {
@@ -101,39 +110,38 @@ public class SnapshotHandler(
         return chargerState;
     }
 
-    private static float GetUtilization(Engine.Services.StationServiceHelpers.ChargerState chargerState)
+    private static float GetUtilization(ChargerBase charger)
     {
-        if (chargerState.SessionA is null && chargerState.SessionB is null)
-            return 0f;
-
-        switch (chargerState.Charger)
+        return charger switch
         {
-            case SingleCharger s:
-                {
-                    var ev = chargerState.SessionA?.EV;
-                    var powerOutput = s.GetPowerOutput(s.MaxPowerKW, ev?.CurrentSoC ?? 0.0);
-                    var delivered = Math.Min(powerOutput, ev?.MaxChargeRateKW ?? 0.0);
-                    return (float)(delivered / s.MaxPowerKW);
-                }
+            SingleCharger s when s.Session is not null && s.Session.EV is { } ev =>
+                CalculateUtilization(s.GetPowerOutput(s.MaxPowerKW, ev.CurrentSoC), ev.MaxChargeRateKW, s.MaxPowerKW),
+            DualCharger d =>
+                CalculateDualUtilization(d),
+            _ => 0f
+        };
+    }
 
-            case DualCharger d:
-                {
-                    var evA = chargerState.SessionA?.EV;
-                    var evB = chargerState.SessionB?.EV;
-                    var (powerA, powerB) = d.GetPowerDistribution(
-                        d.MaxPowerKW,
-                        evA?.CurrentSoC ?? 0.0,
-                        evB?.CurrentSoC ?? 0.0,
-                        evA?.MaxChargeRateKW ?? 0.0,
-                        evB?.MaxChargeRateKW ?? 0.0);
-                    var deliveredA = Math.Min(powerA, evA?.MaxChargeRateKW ?? 0.0);
-                    var deliveredB = Math.Min(powerB, evB?.MaxChargeRateKW ?? 0.0);
-                    return (float)((deliveredA + deliveredB) / d.MaxPowerKW);
-                }
+    private static float CalculateUtilization(double power, double maxRate, double limit) => (float)(Math.Min(power, maxRate) / limit);
 
-            default:
-                throw new InvalidOperationException("Unknown charger type");
-        }
+    private static float CalculateDualUtilization(DualCharger d)
+    {
+        var evA = d.SessionA?.EV;
+        var evB = d.SessionB?.EV;
+
+        if (evA is null && evB is null) return 0f;
+
+        var (pA, pB) = d.GetPowerDistribution(
+            d.MaxPowerKW,
+            evA?.CurrentSoC ?? 0,
+            evB?.CurrentSoC ?? 0,
+            evA?.MaxChargeRateKW ?? 0,
+            evB?.MaxChargeRateKW ?? 0);
+
+        var delivered = Math.Min(pA, evA?.MaxChargeRateKW ?? 0) +
+                        Math.Min(pB, evB?.MaxChargeRateKW ?? 0);
+
+        return (float)(delivered / d.MaxPowerKW);
     }
 
     private static EVChargerState CreateEVChargerState(ActiveSession session) =>

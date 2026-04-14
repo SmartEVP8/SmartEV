@@ -13,13 +13,11 @@ using Engine.Utils;
 /// managing connection, integration, scheduling, and disconnection for one vehicle at a time.
 /// </summary>
 /// <param name="charger">The single charger this handler manages.</param>
-/// <param name="state">The runtime state of the charger.</param>
 /// <param name="integrator">The charging integrator used to simulate the session.</param>
 /// <param name="scheduler">The event scheduler used to schedule end charging events.</param>
 /// <param name="metrics">The metrics service used to record wait times.</param>
 public class SingleChargerHandler(
     SingleCharger charger,
-    ChargerState state,
     ChargingIntegrator integrator,
     EventScheduler scheduler,
     MetricsService metrics)
@@ -30,14 +28,15 @@ public class SingleChargerHandler(
     /// Does nothing if a session is already active or the queue is empty.
     /// </summary>
     /// <param name="simNow">The current simulation time.</param>
+    /// <param name="stationId">The stations id.</param>
     /// <exception cref="SkillissueException">
     /// Thrown if the connector reports as occupied when it should be free,
     /// indicating a logic error in session tracking.
     /// </exception>
-    public void StartNext(Time simNow)
+    public void StartNext(Time simNow, ushort stationId)
     {
-        if (state.SessionA is not null) return;
-        if (!state.Queue.TryPeek(out var next)) return;
+        if (charger.Session is not null) return;
+        if (!charger.Queue.TryPeek(out var next)) return;
 
         if (!charger.TryConnect())
         {
@@ -45,26 +44,26 @@ public class SingleChargerHandler(
                 $"Logic Error: EV {next.EVId} reached Charger {charger.Id} but TryConnect failed.");
         }
 
-        state.Queue.Dequeue();
+        charger.Queue.Dequeue();
 
         metrics.RecordWaitTime(new EVWaitTimeMetric
         {
             EVId = next.EVId,
-            StationId = state.StationId,
+            StationId = stationId,
             ArrivalAtStationTime = next.EV.ArrivalTime,
             StartChargingTime = simNow,
         });
 
-        state.SessionA = new ActiveSession(next.EVId, next.EV, simNow, null, null, null);
-        state.Window = state.Window with { LastEnergyUpdateTime = simNow };
+        charger.Session = new ActiveSession(next.EVId, next.EV, simNow, null, null, null);
+        charger.Window = charger.Window with { LastEnergyUpdateTime = simNow };
 
         var result = integrator.IntegrateSingleToCompletion(simNow, charger.MaxPowerKW, charger, next.EV);
-        state.SessionA = state.SessionA with { Plan = result };
+        charger.Session = charger.Session with { Plan = result };
 
         if (result.FinishTimeA is { } finishTime)
         {
-            var token = scheduler.ScheduleEvent(new EndCharging(next.EVId, charger.Id, state.StationId, finishTime));
-            state.SessionA = state.SessionA with { CancellationToken = token };
+            var token = scheduler.ScheduleEvent(new EndCharging(next.EVId, charger.Id, stationId, finishTime));
+            charger.Session = charger.Session with { CancellationToken = token };
         }
     }
 
@@ -79,11 +78,11 @@ public class SingleChargerHandler(
     /// </returns>
     public double? EndSession(int evId, Time simNow)
     {
-        if (state.SessionA?.EVId != evId) return null;
+        if (charger.Session?.EVId != evId) return null;
 
-        var finalSoC = state.SessionA.Plan?.SocA ?? state.SessionA.EV.CurrentSoC;
+        var finalSoC = charger.Session.Plan?.SocA ?? charger.Session.EV.CurrentSoC;
         charger.Disconnect();
-        state.SessionA = null;
+        charger.Session = null;
         return finalSoC;
     }
 }
