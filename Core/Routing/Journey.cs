@@ -39,6 +39,9 @@ public record CurrentJourney(
 
     /// <summary>Gets the estimated time of arrival for the configured next stop.</summary>
     public Time EtaToNextStop => Departure + DurationToNextStop;
+
+    /// <summary>Gets the distance to the next stop.</summary>
+    public float DistanceToNextStopKm => Duration == 0 ? 0f : DistanceKm * ((float)DurationToNextStop / Duration);
 }
 
 /// <summary>

@@ -28,11 +28,6 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     public ushort ConsumptionWhPerKm { get; } = efficiency;
 
     /// <summary>
-    /// Gets or sets a reservation at a station for the EV.
-    /// </summary>
-    public ushort? HasReservationAtStationId { get; set; }
-
-    /// <summary>
     /// Gets the journey of the EV.
     /// </summary>
     public Journey Journey { get; private set; } = journey;
@@ -119,6 +114,23 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
         var chargeToPercent = percentNeededToDestination + Preferences.MinAcceptableCharge;
         var desiredSoC = chargeToPercent > 1f ? 0.8f : chargeToPercent;
         return Math.Clamp(desiredSoC + 0.01f, 0f, 1f);
+    }
+
+    /// <summary>Estimates the SoC when reaching the next stop.</summary>
+    /// <returns>The projected SoC at arrival to the next stop.</returns>
+    public readonly float EstimateSoCAtNextStop()
+    {
+        if (Battery.MaxCapacityKWh <= 0)
+            throw new InvalidOperationException($"Battery capacity must be greater than zero ({this})");
+
+        var journey = Journey.Current;
+
+        if (journey.Duration == 0)
+            return Battery.StateOfCharge;
+
+        var energyNeededKWh = EnergyForDistanceKWh(journey.DistanceToNextStopKm);
+        var socDrop = energyNeededKWh / Battery.MaxCapacityKWh;
+        return Math.Clamp(Battery.StateOfCharge - socDrop, 0f, 1f);
     }
 
     /// <summary>

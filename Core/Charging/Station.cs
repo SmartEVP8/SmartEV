@@ -73,7 +73,7 @@ public class Station(ushort id,
     private float _price;
 }
 
-public record Reservation(int EVId, Time TimeOfArrival, double SoC, double TargetSoC) : IComparable<Reservation>
+public record Reservation(int EVId, Time TimeOfArrival, double SoCAtArrival, double TargetSoC) : IComparable<Reservation>
 {
     /// <inheritdoc/>
     public int CompareTo(Reservation? other)

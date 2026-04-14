@@ -37,10 +37,6 @@ public class EventDispatcher(
         IncrementCount(e);
         switch (e)
         {
-            case CancelRequest ev:
-                stationService.HandleCancelRequest(ev);
-                break;
-
             case ArriveAtStation ev:
                 stationService.HandleArrivalAtStation(ev);
                 break;

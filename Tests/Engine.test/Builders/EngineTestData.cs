@@ -151,13 +151,6 @@ public static class EngineTestData
             ? station
             : throw new KeyNotFoundException($"Station {stationId} not found.");
         }
-
-        public int GetTotalQueueSize(ushort stationId)
-        {
-            return _stations.TryGetValue(stationId, out var station)
-            ? station.Chargers.Sum(c => c.Queue.Count)
-            : throw new KeyNotFoundException($"Station {stationId} not found.");
-        }
     }
 
     private static Dictionary<ushort, Station> CreateAllStations()

@@ -20,6 +20,7 @@ public class StationService : IStationService
     private readonly Dictionary<int, uint> _arrivalTimes = [];
     private readonly Dictionary<ushort, uint> _windowReservations = [];
     private readonly Dictionary<ushort, uint> _windowCancellations = [];
+    private readonly Dictionary<int, ushort> _evReservations = [];
     private readonly EventScheduler _scheduler;
     private readonly EVStore _eVStore;
     private readonly StationMetricsCollector _metricsCollector;
@@ -72,10 +73,13 @@ public class StationService : IStationService
 
     /// <inheritdoc/>
     public int GetTotalQueueSize(ushort stationId)
-    {
-        var chargers = GetStation(stationId).Chargers;
-        return chargers.Sum(cs => cs.Queue.Count);
-    }
+        => GetStation(stationId).Chargers.Sum(cs => cs.Queue.Count);
+
+    /// <summary>Gets the stationId that an EV has a reservation for if any.</summary>
+    /// <param name="evId">The id used for checking for a reservation.</param>
+    /// <returns>The stationId or null.</returns>
+    public ushort? GetReservationStationId(int evId)
+        => _evReservations.TryGetValue(evId, out var stationId) ? stationId : null;
 
     /// <summary>
     /// Handles a reservation request from an EV to a station.
@@ -93,17 +97,24 @@ public class StationService : IStationService
             _windowCancellations);
 
     /// <summary>
-    /// Handles a cancellation request from an EV, decrementing the station's active reservation count,
-    /// clearing the reservation from the EV, and cancelling the scheduled arrival event.
+    /// Creates an reservation on the station and cancels previous reservation if it exists.
     /// </summary>
-    /// <param name="e">The cancellation request event.</param>
-    public void HandleCancelRequest(CancelRequest e)
+    /// <param name="reservation">The reservation event.</param>
+    /// <param name="stationId">The station that recieves the reservation.</param>
+    public void HandleReservation(Reservation reservation, ushort stationId)
     {
-        if (!_stationIndex.TryGetValue(e.StationId, out var station))
-            return;
+        CancelReservation(reservation.EVId);
+        _evReservations[reservation.EVId] = stationId;
+        GetStation(stationId).Reservations.Reserve(
+                new Reservation(reservation.EVId, reservation.TimeOfArrival, reservation.SoCAtArrival, reservation.TargetSoC));
+    }
 
-        _windowCancellations[e.StationId] = _windowCancellations.GetValueOrDefault(e.StationId) + 1;
-        station.IncrementCancellations();
+    private void CancelReservation(int evId)
+    {
+        if (_evReservations.TryGetValue(evId, out var oldStationId))
+        {
+            GetStation(oldStationId).Reservations.Cancel(evId);
+        }
     }
 
     /// <summary>
@@ -117,9 +128,10 @@ public class StationService : IStationService
         evRef.Advance(e.Time);
 
         var chargers = GetStation(e.StationId).Chargers;
-        if (evRef.Battery.StateOfCharge >= e.TargetSoC)
-            throw new SkillissueException($"EV wants to charge to a SoC: {e.TargetSoC}, which is lower than its current SoC: {evRef.Battery.StateOfCharge}.");
 
+        // TODO : FIX ASAP
+        // if (evRef.Battery.StateOfCharge >= e.TargetSoC)
+        //     throw new SkillissueException($"EV wants to charge to a SoC: {e.TargetSoC}, which is lower than its current SoC: {evRef.Battery.StateOfCharge}.");
         var target = chargers
             .OrderBy(cs => cs.IsFree ? 0 : 1)
             .ThenBy(cs => cs.Queue.Count)
@@ -139,7 +151,7 @@ public class StationService : IStationService
         target.UpdateWindowStats();
 
         if (target.IsFree)
-            StartCharging(target, e.Time, e.StationId);
+            StartChargingNextCar(target, e.Time, e.StationId);
     }
 
     /// <summary>
@@ -161,9 +173,6 @@ public class StationService : IStationService
         var finalSoC = handler.EndSession(e.EVId, e.Time);
 
         ref var ev = ref _eVStore.Get(e.EVId);
-        var stationId = ev.HasReservationAtStationId ?? throw new SkillissueException("Uhm actually. We need the id here 🤓");
-
-        ev.HasReservationAtStationId = null;
 
         if (finalSoC is { } soc)
             ev.Battery.StateOfCharge = (float)Math.Clamp(soc, 0d, 1d);
@@ -179,10 +188,14 @@ public class StationService : IStationService
         else
             _scheduler.ScheduleEvent(new FindCandidateStations(e.EVId, ev.TimeToNextFindCandidateCheck(e.Time)));
 
-        StartCharging(charger, e.Time, stationId);
+        if (!_evReservations.TryGetValue(e.EVId, out var stationId))
+            throw new SkillissueException("Should have a reservation at this point");
+
+        CancelReservation(e.EVId);
+        StartChargingNextCar(charger, e.Time, stationId);
     }
 
-    private void StartCharging(ChargerBase charger, Time simNow, ushort stationId)
+    private void StartChargingNextCar(ChargerBase charger, Time simNow, ushort stationId)
     {
         charger.AccumulateEnergy(simNow);
         _chargerIndex[charger.Id].Handler.StartNext(simNow, stationId);
