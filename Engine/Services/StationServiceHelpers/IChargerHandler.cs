@@ -11,7 +11,8 @@ public interface IChargerHandler
     /// Attempts to dequeue and start charging the next EV(s) in the queue.
     /// </summary>
     /// <param name="simNow">The current simulation time.</param>
-    void StartNext(Time simNow);
+    /// <param name="stationId">The station id.</param>
+    void StartNext(Time simNow, ushort stationId);
 
     /// <summary>
     /// Ends the session for the given EV and disconnects it from the charger.

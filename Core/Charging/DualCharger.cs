@@ -1,6 +1,7 @@
 namespace Core.Charging;
 
 using Core.Charging.ChargingModel;
+using Core.Shared;
 
 /// <summary>
 /// Charger that supports one or two vehicles simultaneously, redistributing
@@ -14,6 +15,16 @@ public sealed class DualCharger(int id, int maxPowerKW, Connectors connectors)
 {
     private Connector _left = connectors.AttachedConnectors.Left;
     private Connector _right = connectors.AttachedConnectors.Right;
+
+    /// <summary>
+    /// Gets or sets the active charging session at side A, or null if free. Always used for single chargers.
+    /// </summary>
+    public ActiveSession? SessionA { get; set; }
+
+    /// <summary>
+    /// Gets or sets the active charging session at side B, or null if free. Always null for single chargers.
+    /// </summary>
+    public ActiveSession? SessionB { get; set; }
 
     /// <summary>
     /// Distributes power between two sides. Surplus from one side due to charging
@@ -47,10 +58,6 @@ public sealed class DualCharger(int id, int maxPowerKW, Connectors connectors)
             Math.Min(ceilB + Math.Max(0, surplusA), physicalCapB));
     }
 
-    /// <inheritdoc/>
-    public override bool CanConnect()
-        => _left.IsFree || _right.IsFree;
-
     /// <summary>
     /// Attempts to connect a vehicle to the first free side.
     /// </summary>
@@ -75,5 +82,40 @@ public sealed class DualCharger(int id, int maxPowerKW, Connectors connectors)
         if (!connector.IsFree) return false;
         connector.Activate();
         return true;
+    }
+
+    /// <inheritdoc/>
+    public override bool IsFree => SessionA is null || SessionB is null;
+
+    /// <inheritdoc/>
+    public override void AccumulateEnergy(Time now)
+    {
+        if (now <= Window.LastEnergyUpdateTime) return;
+
+        if (SessionA is not null)
+            Window = Window with { DeliveredKWh = Window.DeliveredKWh + SessionA.GetDeliveredKWh(Window.LastEnergyUpdateTime, now) };
+
+        if (SessionB is not null)
+            Window = Window with { DeliveredKWh = Window.DeliveredKWh + SessionB.GetDeliveredKWh(Window.LastEnergyUpdateTime, now) };
+
+        Window = Window with { LastEnergyUpdateTime = now };
+    }
+
+    /// <inheritdoc/>
+    public override void UpdateWindowStats()
+    {
+        var isActive = Queue.Count > 0
+            || SessionA is not null
+            || SessionB is not null
+            || Window.DeliveredKWh > 0;
+
+        if (!isActive)
+            return;
+
+        Window = Window with
+        {
+            HadActivity = true,
+            QueueSize = Queue.Count,
+        };
     }
 }

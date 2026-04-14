@@ -15,8 +15,7 @@ using Engine.Services.StationServiceHelpers;
 /// </summary>
 public class StationService : IStationService
 {
-    private readonly Dictionary<ushort, List<ChargerState>> _stationChargers = [];
-    private readonly Dictionary<int, (ChargerState State, IChargerHandler Handler)> _chargerIndex = [];
+    private readonly Dictionary<int, (ChargerBase State, IChargerHandler Handler)> _chargerIndex = [];
     private readonly Dictionary<ushort, Station> _stationIndex = [];
     private readonly Dictionary<int, uint> _arrivalTimes = [];
     private readonly Dictionary<ushort, uint> _windowReservations = [];
@@ -52,21 +51,16 @@ public class StationService : IStationService
             _windowReservations[station.Id] = 0;
             _windowCancellations[station.Id] = 0;
 
-            var states = new List<ChargerState>();
             foreach (var charger in station.Chargers)
             {
-                var state = new ChargerState(charger, station.Id);
                 IChargerHandler handler = charger switch
                 {
-                    SingleCharger s => new SingleChargerHandler(s, state, integrator, scheduler, metrics),
-                    DualCharger d => new DualChargerHandler(d, state, integrator, scheduler, metrics),
+                    SingleCharger s => new SingleChargerHandler(s, integrator, scheduler, metrics),
+                    DualCharger d => new DualChargerHandler(d, integrator, scheduler, metrics),
                     _ => throw new InvalidOperationException($"Unknown charger type: {charger.GetType()}")
                 };
-                states.Add(state);
-                _chargerIndex[charger.Id] = (state, handler);
+                _chargerIndex[charger.Id] = (charger, handler);
             }
-
-            _stationChargers[station.Id] = states;
         }
     }
 
@@ -79,20 +73,9 @@ public class StationService : IStationService
     /// <inheritdoc/>
     public int GetTotalQueueSize(ushort stationId)
     {
-        if (!_stationChargers.TryGetValue(stationId, out var chargers))
-            return 0;
+        var chargers = GetStation(stationId).Chargers;
         return chargers.Sum(cs => cs.Queue.Count);
     }
-
-    /// <summary>
-    /// Returns the charger state for the given charger id.
-    /// </summary>
-    /// <param name="chargerId">The id of the charger.</param>
-    /// <returns>The charger state for the given charger id.</returns>
-    public ChargerState GetChargerState(int chargerId)
-        => _chargerIndex.TryGetValue(chargerId, out var entry)
-        ? entry.State
-        : throw new SkillissueException($"Trying to get charger state {chargerId} which does not exist.");
 
     /// <summary>
     /// Handles a reservation request from an EV to a station.
@@ -105,7 +88,6 @@ public class StationService : IStationService
     public (IEnumerable<ChargerSnapshotMetric> Chargers, IEnumerable<StationSnapshotMetric> Stations) CollectAllSnapshots(Time simNow)
         => _metricsCollector.Collect(
             simNow,
-            _stationChargers,
             _stationIndex,
             _windowReservations,
             _windowCancellations);
@@ -134,9 +116,7 @@ public class StationService : IStationService
         ref var evRef = ref _eVStore.Get(e.EVId);
         evRef.Advance(e.Time);
 
-        if (!_stationChargers.TryGetValue(e.StationId, out var chargers))
-            throw new SkillissueException($"Logic Error: EV {e.EVId} arrived at station {e.StationId} which does not exist.");
-
+        var chargers = GetStation(e.StationId).Chargers;
         if (evRef.Battery.StateOfCharge >= e.TargetSoC)
             throw new SkillissueException($"EV wants to charge to a SoC: {e.TargetSoC}, which is lower than its current SoC: {evRef.Battery.StateOfCharge}.");
 
@@ -156,10 +136,10 @@ public class StationService : IStationService
 
         _arrivalTimes[e.EVId] = e.Time;
         target.Queue.Enqueue((e.EVId, connectedEV));
-        UpdateWindowStats(target);
+        target.UpdateWindowStats();
 
         if (target.IsFree)
-            StartCharging(target, e.Time);
+            StartCharging(target, e.Time, e.StationId);
     }
 
     /// <summary>
@@ -175,12 +155,14 @@ public class StationService : IStationService
         if (!_chargerIndex.TryGetValue(e.ChargerId, out var entry))
             return;
 
-        var (state, handler) = entry;
-        state.AccumulateEnergy(e.Time);
+        var (charger, handler) = entry;
+        charger.AccumulateEnergy(e.Time);
 
         var finalSoC = handler.EndSession(e.EVId, e.Time);
 
         ref var ev = ref _eVStore.Get(e.EVId);
+        var stationId = ev.HasReservationAtStationId ?? throw new SkillissueException("Uhm actually. We need the id here 🤓");
+
         ev.HasReservationAtStationId = null;
 
         if (finalSoC is { } soc)
@@ -197,28 +179,13 @@ public class StationService : IStationService
         else
             _scheduler.ScheduleEvent(new FindCandidateStations(e.EVId, ev.TimeToNextFindCandidateCheck(e.Time)));
 
-        StartCharging(state, e.Time);
+        StartCharging(charger, e.Time, stationId);
     }
 
-    private void StartCharging(ChargerState state, Time simNow)
+    private void StartCharging(ChargerBase charger, Time simNow, ushort stationId)
     {
-        state.AccumulateEnergy(simNow);
-        _chargerIndex[state.Charger.Id].Handler.StartNext(simNow);
-        UpdateWindowStats(state);
-    }
-
-    private static void UpdateWindowStats(ChargerState state)
-    {
-        var hasActivity = state.Queue.Count > 0
-            || state.SessionA is not null
-            || state.SessionB is not null
-            || state.Window.DeliveredKWh > 0;
-
-        if (!hasActivity) return;
-
-        var window = state.Window;
-        window.HadActivity = true;
-        window.QueueSize = state.Queue.Count;
-        state.Window = window;
+        charger.AccumulateEnergy(simNow);
+        _chargerIndex[charger.Id].Handler.StartNext(simNow, stationId);
+        charger.UpdateWindowStats();
     }
 }
