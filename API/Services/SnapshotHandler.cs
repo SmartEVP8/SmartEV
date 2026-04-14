@@ -1,5 +1,6 @@
 namespace API.Services;
 
+using Core.Charging;
 using Engine.Events;
 using Engine.Services;
 using Engine.Services.StationServiceHelpers;
@@ -64,9 +65,6 @@ public class SnapshotHandler(
 
     private Protocol.ChargerState CreateChargerState(int chargerId)
     {
-        var random = new Random(chargerId);
-        var tempUtilization = random.NextSingle();
-
         var engineChargerState = stationService.GetChargerState(chargerId);
         if (engineChargerState is null)
             return null!;
@@ -74,7 +72,7 @@ public class SnapshotHandler(
         var chargerState = new Protocol.ChargerState
         {
             IsActive = !engineChargerState.IsFree,
-            Utilization = tempUtilization,
+            Utilization = GetUtilization(engineChargerState),
             ChargerId = (uint)chargerId,
             QueueSize = (uint)engineChargerState.Queue.Count,
         };
@@ -96,6 +94,30 @@ public class SnapshotHandler(
         }
 
         return chargerState;
+    }
+
+    private static float GetUtilization(Engine.Services.StationServiceHelpers.ChargerState chargerState)
+    {
+        switch (chargerState.Charger)
+        {
+            case SingleCharger s:
+                var powerOutput = s.GetPowerOutput(
+                    s.MaxPowerKW,
+                    chargerState.SessionA?.EV.CurrentSoC ?? 0.0);
+                return (float)(powerOutput / s.MaxPowerKW);
+
+            case DualCharger d:
+                var (powerA, powerB) = d.GetPowerDistribution(
+                    d.MaxPowerKW,
+                    chargerState.SessionA?.EV.CurrentSoC ?? 0.0,
+                    chargerState.SessionB?.EV.CurrentSoC ?? 0.0,
+                    chargerState.SessionA?.EV.MaxChargeRateKW ?? 0.0,
+                    chargerState.SessionB?.EV.MaxChargeRateKW ?? 0.0);
+                return (float)((powerA + powerB) / d.MaxPowerKW);
+
+            default:
+                throw new InvalidOperationException("Unknown charger type");
+        }
     }
 
     private static EVChargerState CreateEVChargerState(ActiveSession session) =>
