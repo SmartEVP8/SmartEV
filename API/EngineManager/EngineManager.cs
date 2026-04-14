@@ -9,7 +9,7 @@ using Engine.Init;
 ///
 /// Note: This manager creates its own internal service provider for engine services.
 /// It does NOT integrate engine-scoped services into the main API DI container.
-/// To access engine services elsewhere, resolve them via EngineManager.GetEngineService<T>().
+/// To access engine services elsewhere, resolve them via <see cref="EngineManager.GetEngineService{T}"/>.
 /// </summary>
 public class EngineManager
 {
@@ -31,6 +31,7 @@ public class EngineManager
     /// Rebuilds the engine's internal service provider and dependencies.
     /// </summary>
     /// <param name="configDTO">The engine configuration DTO.</param>
+    /// <param name="configureServices">Optional callback to register additional engine-scoped services.</param>
     /// <returns>True if initialization succeeded.</returns>
     public async Task<bool> InitializeAsync(
         EngineInitConfigDTO configDTO,
@@ -55,11 +56,11 @@ public class EngineManager
         }
     }
 
-    private EngineSettings MergeSettings(EngineInitConfigDTO configDTO, EngineSettings defaultSettings)
+    private static EngineSettings MergeSettings(EngineInitConfigDTO configDTO, EngineSettings defaultSettings)
     {
         return defaultSettings with
         {
-            CurrentAmoutOfEVsInDenmark = configDTO.MaximumEVs,
+            CurrentAmountOfEVsInDenmark = configDTO.MaximumEVs,
             Seed = new Random(configDTO.Seed),
             StationFactoryOptions = defaultSettings.StationFactoryOptions with
             {

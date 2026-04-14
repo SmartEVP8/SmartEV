@@ -102,20 +102,6 @@ public class EVStore(int totalCapacity)
     public ref EV Get(int index) => ref _evs[index];
 
     /// <summary>
-    /// Gets all currently allocated EV indexes.
-    /// </summary>
-    /// <returns>An enumerable of allocated EV indexes.</returns>
-    public IEnumerable<int> GetAllocatedIndexes()
-    {
-        var free = new HashSet<int>(_freeIndexes);
-        for (var i = 0; i < totalCapacity; i++)
-        {
-            if (!free.Contains(i))
-                yield return i;
-        }
-    }
-
-    /// <summary>
     /// Gets the total capacity of the EVStore, which is the maximum number of EV instances it can hold.
     /// </summary>
     public int Count => totalCapacity;

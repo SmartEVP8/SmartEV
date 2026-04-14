@@ -38,7 +38,7 @@ public record EngineSettings
     /// <summary>
     /// Gets the current amount of EVs in Denmark.
     /// </summary>
-    required public int CurrentAmoutOfEVsInDenmark { get; init; }
+    required public int CurrentAmountOfEVsInDenmark { get; init; }
 
     /// <summary>
     /// Gets the number of seconds an EV is expected to spend charging at a station, used for simulating charging time and scheduling.
