@@ -93,7 +93,7 @@ message GetStationSnapshot {
 message SimulationSnapshot {
   uint32 total_evs = 1;
   uint32 total_charging = 2;
-  uint64 simulation_time_ms = 3;
+  uint32 simulation_time_ms = 3;
 }
 
 /*

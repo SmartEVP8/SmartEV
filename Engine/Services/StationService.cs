@@ -197,7 +197,7 @@ public class StationService : IStationService
 
         _arrivalTimes[e.EVId] = e.Time;
         target.Queue.Enqueue((e.EVId, connectedEV));
-        _eVStore.Get(e.EVId).UpdateState(EVState.Queueing);
+        _eVStore.Get(e.EVId).EVState = EVState.Queueing;
         UpdateWindowStats(target);
 
         if (target.IsFree)
@@ -230,7 +230,7 @@ public class StationService : IStationService
 
         _arrivalTimes.Remove(e.EVId);
         var timeAtStation = e.Time - arrivalTime;
-        ev.UpdateState(EVState.Driving);
+        ev.EVState = EVState.Driving;
 
         if (ev.CanCompleteJourney(timeAtStation, ev.Preferences.MinAcceptableCharge))
             _scheduler.ScheduleEvent(new ArriveAtDestination(e.EVId, e.Time));
@@ -242,13 +242,15 @@ public class StationService : IStationService
 
     private void StartCharging(ChargerState state, Time simNow)
     {
-        var nextEvId = state.Queue.Count > 0 ? state.Queue.Peek().EVId : (int?)null;
+        int? nextEvId = state.Queue.TryPeek(out var top)
+            ? top.EVId
+            : null;
 
         state.AccumulateEnergy(simNow);
         _chargerIndex[state.Charger.Id].Handler.StartNext(simNow);
 
         if (nextEvId.HasValue)
-            _eVStore.Get(nextEvId.Value).UpdateState(EVState.Charging);
+            _eVStore.Get(nextEvId.Value).EVState = EVState.Charging;
 
         UpdateWindowStats(state);
     }

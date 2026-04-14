@@ -30,7 +30,7 @@ public class SnapshotHandler(
         {
             TotalEvs = evStore.GetTotalEVsInSimulation(),
             TotalCharging = evStore.GetChargingEVCount(),
-            SimulationTimeMs = (ulong)eventScheduler.CurrentTime,
+            SimulationTimeMs = eventScheduler.CurrentTime,
         };
 
         return new Envelope { StateUpdate = snapshot };
@@ -76,6 +76,11 @@ public class SnapshotHandler(
             ChargerId = (uint)chargerId,
             QueueSize = (uint)engineChargerState.Queue.Count,
         };
+
+        if (chargerState.QueueSize > 1)
+        {
+            logger.LogInformation("Queue size for charger {ChargerId}: {QueueSize}", chargerId, chargerState.QueueSize);
+        }
 
         if (engineChargerState.SessionA is not null)
             chargerState.EvsInQueue.Add(CreateEVChargerState(engineChargerState.SessionA));

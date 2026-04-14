@@ -48,15 +48,9 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     public Journey Journey { get; private set; } = journey;
 
     /// <summary> 
-    /// Gets the current state of the EV.
+    /// Gets or sets the current state of the EV.
     /// </summary>
-    public EVState EVState { get; private set; } = EVState.Driving;
-
-    /// <summary>
-    /// Updates the state of the EV to the specified new state.
-    /// </summary>
-    /// <param name="newState">The new state to set for the EV.</param>
-    public void UpdateState(EVState newState) => EVState = newState;
+    public EVState EVState { get; set; } = EVState.Driving;
 
     /// <summary>
     /// Advances the journey to <paramref name="currentTime"/>, consumes the corresponding energy,

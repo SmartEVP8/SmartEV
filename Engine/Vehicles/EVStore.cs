@@ -116,15 +116,5 @@ public class EVStore(int totalCapacity)
     /// Gets the total number of EVs currently charging.
     /// </summary>
     /// <returns>The count of EVs actively charging.</returns>
-    public uint GetChargingEVCount()
-    {
-        var count = 0u;
-        for (var i = 0; i < totalCapacity; i++)
-        {
-            if (_evs[i].EVState == EVState.Charging)
-                count++;
-        }
-
-        return count;
-    }
+    public uint GetChargingEVCount() => (uint)_evs.Count(ev => ev.EVState == EVState.Charging);
 }

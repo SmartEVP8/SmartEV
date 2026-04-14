@@ -45,6 +45,7 @@ public static class Program
         {
             var result = await engineManager.InitializeAsync(config, services =>
             {
+                services.AddSingleton(provider => app.Services.GetRequiredService<ILoggerFactory>());
                 services.AddLogging();
                 services.AddSingleton<IEngineEventSubscriber, EngineEventSubscriber>();
                 services.AddSingleton<SnapshotHandler>();
