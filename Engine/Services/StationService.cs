@@ -137,6 +137,9 @@ public class StationService : IStationService
         if (!_stationChargers.TryGetValue(e.StationId, out var chargers))
             throw new SkillissueException($"Logic Error: EV {e.EVId} arrived at station {e.StationId} which does not exist.");
 
+        if (evRef.Battery.StateOfCharge >= e.TargetSoC)
+            throw new SkillissueException($"EV wants to charge to a SoC: {e.TargetSoC}, which is lower than its current SoC: {evRef.Battery.StateOfCharge}.");
+
         var target = chargers
             .OrderBy(cs => cs.IsFree ? 0 : 1)
             .ThenBy(cs => cs.Queue.Count)
