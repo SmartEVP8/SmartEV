@@ -17,10 +17,11 @@ public static class InitEngineDataBuilder
     public static InitEngineData BuildInitEngineData(StationService stationService)
     {
         var initData = new InitEngineData();
+        var stations = stationService.GetAllStations();
 
         try
         {
-            foreach (var station in stationService.GetAllStations())
+            foreach (var station in stations)
             {
                 var stationInit = new StationInit
                 {

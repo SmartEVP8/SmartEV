@@ -22,6 +22,7 @@ public static class EngineConfiguration
 
         return new EngineSettings
         {
+            Seed = new Random(42),
             CostConfig = new CostWeights
             {
                 EffectiveQueueSize = 1,
@@ -39,7 +40,6 @@ public static class EngineConfiguration
                 RecordArrivals = true,
                 RecordStationSnapshots = true,
             },
-            Seed = new Random(42),
             StationFactoryOptions = new StationFactoryOptions
             {
                 UseDualChargingPoints = true,

@@ -89,20 +89,6 @@ message GetStationSnapshot {
 // EVENT TYPES (Server -> Client pushes)
 // ============================================================================
 
-// ArrivalAtStation event trigger in the engine
-message ArrivalEvent {
-  uint32 station_id = 1;
-  int32 ev_id = 2;
-  uint64 timestamp_ms = 3;
-}
-
-// EndCharging event trigger in the engine
-message ChargingEndEvent {
-  uint32 station_id = 1;
-  int32 ev_id = 2;
-  uint64 timestamp_ms = 3;
-}
-
 // Periodic snapshot of the overall simulation state (e.g., every second)
 message SimulationSnapshot {
   uint32 total_evs = 1;
@@ -127,8 +113,6 @@ message Envelope {
     StationState station_state_response = 21; // response to GetStationSnapshot
 
     // Server Events/Pushes (30-39)
-    ArrivalEvent arrival = 30;
-    ChargingEndEvent charging_end = 31;
-    SimulationSnapshot state_update = 32;
+    SimulationSnapshot state_update = 30;
   }
 }

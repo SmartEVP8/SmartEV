@@ -135,7 +135,7 @@ public class EVStore(int totalCapacity)
         var count = 0u;
         for (var i = 0; i < totalCapacity; i++)
         {
-            if (_evs[i].EVState == State.Charging)
+            if (_evs[i].EVState == EVState.Charging)
                 count++;
         }
 

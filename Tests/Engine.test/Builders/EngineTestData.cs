@@ -160,6 +160,11 @@ public static class EngineTestData
         }
 
         public IEnumerable<int> GetEVsOnRouteToStation(ushort stationId) => [];
+
+        public void AddEVOnRoute(int evId, ushort stationId)
+        {
+            // No-op for testing
+        }
     }
 
     private static Dictionary<ushort, Station> CreateAllStations()

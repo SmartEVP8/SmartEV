@@ -38,11 +38,10 @@ public class SnapshotHandler(
     /// <summary>
     /// Builds a station snapshot response by querying the engine for the current state of the specified station.
     /// </summary>
-    /// <param name="request">The request for the station snapshot.</param>
+    /// <param name="stationId">The ID of the station for which to build the snapshot.</param>
     /// <returns>The envelope containing the station snapshot response.</returns>
-    public Envelope BuildStationSnapshot(GetStationSnapshot request)
+    public Envelope BuildStationSnapshot(uint stationId)
     {
-        var stationId = request.StationId;
         var stationState = new StationState { StationId = stationId };
 
         var station = stationService.GetStation((ushort)stationId);

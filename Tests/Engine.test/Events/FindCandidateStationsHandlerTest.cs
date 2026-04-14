@@ -7,6 +7,9 @@ using Engine.Routing;
 using Engine.test.Builders;
 using Core.test.Builders;
 using Engine.Vehicles;
+using Core.Charging.ChargingModel;
+using Engine.Metrics;
+using Engine.Services;
 
 public class FindCandidateStationsHandlerTest
 {
@@ -28,6 +31,7 @@ public class FindCandidateStationsHandlerTest
             EngineTestData.StationService(stations, _eventScheduler, _evStore),
             CoreTestData.EnergyPrices);
         var evDetourPlanner = new EVDetourPlanner(router);
+        var stationService = new StationService(stations.Values, new ChargingIntegrator(10), _eventScheduler, _evStore, new MetricsService(new MetricsConfig(), Guid.NewGuid()), new Time(1200000));
 
         _findCandidateStationService = new StubFindCandidateStationService();
 
@@ -36,7 +40,8 @@ public class FindCandidateStationsHandlerTest
             costFunction,
             _eventScheduler,
             _evStore,
-            evDetourPlanner);
+            evDetourPlanner,
+            stationService);
     }
 
     [Fact]

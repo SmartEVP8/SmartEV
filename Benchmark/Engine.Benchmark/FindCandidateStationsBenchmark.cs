@@ -14,6 +14,8 @@ using Engine.Routing;
 using Engine.Parsers;
 using Engine.Grid;
 using Engine.Services;
+using Core.Charging.ChargingModel;
+using Engine.Metrics;
 
 /// <summary>
 /// Benchmark for the FindCandidateStationsHandler,
@@ -27,6 +29,7 @@ public class FindCandidateStationsBenchmark
     private const int _count = 5800;
     private EventScheduler _eventScheduler = null!;
     private EVStore _evStore = null!;
+    private StationService _stationService = null!;
     private FindCandidateStationsHandler _findCandidateStationsHandler = null!;
 
     private class BenchmarkStationService(Dictionary<ushort, Station> stations) : IStationService
@@ -37,6 +40,11 @@ public class FindCandidateStationsBenchmark
         public int GetTotalQueueSize(ushort stationId) => 0;
 
         public IEnumerable<int> GetEVsOnRouteToStation(ushort stationId) => [];
+
+        public void AddEVOnRoute(int evId, ushort stationId)
+        {
+            // No-op for benchmarking
+        }
     }
 
     /// <summary>
@@ -73,11 +81,15 @@ public class FindCandidateStationsBenchmark
         var computeCost = new CostFunction(costStore, stationService, energyPrices);
         var applyNewPath = new EVDetourPlanner(router);
 
+        var config = new MetricsConfig();
+        var guid = Guid.NewGuid();
+
         _eventScheduler = new EventScheduler();
         _evStore = new EVStore(_count);
+        _stationService = new StationService(stations.Values, new ChargingIntegrator(10), _eventScheduler, _evStore, new MetricsService(config, guid), new Time(1200000));
 
         var findCandidateStationService = new FindCandidateStationService(router, stations, spatialGrid, _evStore);
-        _findCandidateStationsHandler = new FindCandidateStationsHandler(findCandidateStationService, computeCost, _eventScheduler, _evStore, applyNewPath);
+        _findCandidateStationsHandler = new FindCandidateStationsHandler(findCandidateStationService, computeCost, _eventScheduler, _evStore, applyNewPath, _stationService);
 
         var random = new Random(1);
         for (var i = 0; i < _count; i++)

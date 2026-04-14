@@ -6,7 +6,7 @@ using Core.Shared;
 /// <summary>
 /// Defines the possible states of an EV.
 /// </summary>
-public enum State
+public enum EVState
 {
     Driving,
     Queueing,
@@ -50,7 +50,13 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     /// <summary> 
     /// Gets the current state of the EV.
     /// </summary>
-    public State EVState { get; private set; } = State.Driving;
+    public EVState EVState { get; private set; } = EVState.Driving;
+
+    /// <summary>
+    /// Updates the state of the EV to the specified new state.
+    /// </summary>
+    /// <param name="newState">The new state to set for the EV.</param>
+    public void UpdateState(EVState newState) => EVState = newState;
 
     /// <summary>
     /// Advances the journey to <paramref name="currentTime"/>, consumes the corresponding energy,

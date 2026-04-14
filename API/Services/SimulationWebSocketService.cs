@@ -139,7 +139,7 @@ public class SimulationWebSocketService(
         switch (envelope.PayloadCase)
         {
             case Envelope.PayloadOneofCase.GetStationSnapshot when envelope.GetStationSnapshot != null:
-                var response = snapshotHandler.BuildStationSnapshot(envelope.GetStationSnapshot);
+                var response = snapshotHandler.BuildStationSnapshot(envelope.GetStationSnapshot.StationId);
                 await SendAsync(response, cancelToken);
                 break;
             default:

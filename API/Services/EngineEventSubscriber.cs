@@ -7,6 +7,7 @@ using Protocol;
 /// Bridges engine events to protocol events and sends them to the connected client.
 /// </summary>
 public sealed class EngineEventSubscriber(
+    SnapshotHandler snapshotHandler,
     IEventSender eventSender,
     ILogger<EngineEventSubscriber> logger) : IEngineEventSubscriber
 {
@@ -15,16 +16,8 @@ public sealed class EngineEventSubscriber(
     {
         try
         {
-            var protocolEvent = new ArrivalEvent
-            {
-                StationId = @event.StationId,
-                EvId = @event.EVId,
-                TimestampMs = (ulong)@event.Time * 1000,
-            };
-
-            var envelope = new Envelope { Arrival = protocolEvent };
+            var envelope = snapshotHandler.BuildStationSnapshot(@event.StationId);
             await eventSender.SendAsync(envelope);
-            logger.LogDebug("EV {EvId} arrived at station {StationId}", @event.EVId, @event.StationId);
         }
         catch (Exception ex)
         {
@@ -37,16 +30,8 @@ public sealed class EngineEventSubscriber(
     {
         try
         {
-            var protocolEvent = new ChargingEndEvent
-            {
-                StationId = @event.StationId,
-                EvId = @event.EVId,
-                TimestampMs = (ulong)@event.Time * 1000,
-            };
-
-            var envelope = new Envelope { ChargingEnd = protocolEvent };
+            var envelope = snapshotHandler.BuildStationSnapshot(@event.StationId);
             await eventSender.SendAsync(envelope);
-            logger.LogDebug("EV {EvId} finished charging at station {StationId}", @event.EVId, @event.StationId);
         }
         catch (Exception ex)
         {
