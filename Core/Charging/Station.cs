@@ -33,14 +33,9 @@ public class Station(ushort id,
     public string Address => address;
 
     /// <summary>
-    /// Gets the total number of reservation requests ever made to this station.
+    /// The stations reservations.
     /// </summary>
-    public ushort TotalReservations { get; private set; }
-
-    /// <summary>
-    /// Gets the total number of cancellation requests ever made to this station.
-    /// </summary>
-    public ushort TotalCancellations { get; private set; }
+    public readonly Reservations Reservations = new();
 
     /// <summary>
     /// Gets the current price of energy at this station based on the time of day.
@@ -76,26 +71,82 @@ public class Station(ushort id,
     private (DayOfWeek Day, int Hour) _lastPriceUpdate = ((DayOfWeek)(-1), -1);
 
     private float _price;
+}
+
+public record Reservation(int EVId, Time TimeOfArrival, double SoCAtArrival, double TargetSoC) : IComparable<Reservation>
+{
+    /// <inheritdoc/>
+    public int CompareTo(Reservation? other)
+    {
+        if (other is null) return 1;
+        if (TimeOfArrival < other.TimeOfArrival) return -1;
+        if (TimeOfArrival > other.TimeOfArrival) return 1;
+        return EVId.CompareTo(other.EVId);
+    }
+}
+
+/// <summary>
+/// Manages a stations reservations.
+/// </summary>
+public class Reservations()
+{
+    private readonly SortedSet<Reservation> _reservations = [];
+    private readonly Dictionary<int, Reservation> _index = [];
+    private uint _totalReservationsInPeriod;
+    private uint _totalCancellationsInPeriod;
+
 
     /// <summary>
-    /// Collects the reservation and cancellation counts since the last snapshot, then resets both counters.
+    /// Gets all the ev ids that have a reservation on the station.
     /// </summary>
-    /// <returns> Returns the reservation and cancellation counts since the last snapshot.</returns>
-    public (ushort reservations, ushort cancellations) CountReservationsCancellations()
+    public IReadOnlyList<int> GetEVsOnRoute => [.. _index.Keys];
+
+    /// <summary>
+    /// Returns reservation and cancellation counts since the last snapshot, then resets both counters.
+    /// </summary>
+    /// <returns>A tuple with the number of reservations and cancellations that the stations has had since last call.</returns>
+    public (uint Reservations, uint Cancellations) SnapshotAndResetCounters()
     {
-        var reservationsAndCancellations = (TotalReservations, TotalCancellations);
-        TotalReservations = 0;
-        TotalCancellations = 0;
-        return reservationsAndCancellations;
+        var snapshot = (_totalReservationsInPeriod, _totalCancellationsInPeriod);
+        _totalReservationsInPeriod = 0;
+        _totalCancellationsInPeriod = 0;
+        return snapshot;
     }
 
     /// <summary>
-    /// Increments the amount of reservations on a station, and updates the total amount of reservations.
+    /// Gets the next reservation by time of arrival.
     /// </summary>
-    public void IncrementReservations() => TotalReservations++;
+    /// <param name="res">The next reservation, or <see langword="null"/> if no reservations exist.</param>
+    /// <returns><see langword="true"/> if a reservation was found, <see langword="false"/> otherwise.</returns>
+    public bool TryGetNext(out Reservation? res)
+    {
+        res = _reservations.Min;
+        return res is not null;
+    }
 
     /// <summary>
-    /// Decrements the amount of reservations on a station, and updates the total amount of cancellations.
+    /// Adds a reservation to the station and increments the reservation counter.
     /// </summary>
-    public void IncrementCancellations() => TotalCancellations++;
+    /// <param name="reservation">The reservation to add.</param>
+    public void Reserve(Reservation reservation)
+    {
+        _reservations.Add(reservation);
+        _index[reservation.EVId] = reservation;
+        _totalReservationsInPeriod++;
+    }
+
+    /// <summary>
+    /// Cancels the reservation associated with the given EV id, removing it from the station and incrementing the cancellation counter.
+    /// Does nothing if no reservation exists for the given id.
+    /// </summary>
+    /// <param name="evId">The id of the EV whose reservation should be cancelled.</param>
+    public void Cancel(int evId)
+    {
+        if (_index.TryGetValue(evId, out var reservation))
+        {
+            _reservations.Remove(reservation);
+            _index.Remove(evId);
+            _totalCancellationsInPeriod++;
+        }
+    }
 }

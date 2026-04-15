@@ -1,7 +1,6 @@
 namespace API;
 
 using Core.Charging;
-using Engine.Services;
 using Protocol;
 
 /// <summary>
@@ -12,12 +11,11 @@ public static class InitEngineDataBuilder
     /// <summary>
     /// Builds the initial engine data by querying the station service for the current state of all stations and chargers.
     /// </summary>
-    /// <param name="stationService">The station service to query.</param>
+    /// <param name="stations">All the stations.</param>
     /// <returns>The initial engine data.</returns>
-    public static InitEngineData BuildInitEngineData(StationService stationService)
+    public static InitEngineData BuildInitEngineData(List<Station> stations)
     {
         var initData = new InitEngineData();
-        var stations = stationService.GetAllStations();
 
         try
         {

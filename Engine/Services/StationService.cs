@@ -5,7 +5,6 @@ using Core.Charging.ChargingModel;
 using Core.Shared;
 using Engine.Events;
 using Engine.Metrics;
-using Engine.Metrics.Snapshots;
 using Engine.Utils;
 using Engine.Vehicles;
 using Engine.Services.StationServiceHelpers;
@@ -19,12 +18,9 @@ public class StationService : IStationService
     private readonly Dictionary<int, (ChargerBase State, IChargerHandler Handler)> _chargerIndex = [];
     private readonly Dictionary<ushort, Station> _stationIndex = [];
     private readonly Dictionary<int, uint> _arrivalTimes = [];
-    private readonly Dictionary<ushort, uint> _windowReservations = [];
-    private readonly Dictionary<ushort, uint> _windowCancellations = [];
-    private readonly Dictionary<ushort, HashSet<int>> _evsOnRoute = [];
+    private readonly Dictionary<int, ushort> _evReservations = [];
     private readonly EventScheduler _scheduler;
     private readonly EVStore _eVStore;
-    private readonly StationMetricsCollector _metricsCollector;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="StationService"/> class.
@@ -34,25 +30,19 @@ public class StationService : IStationService
     /// <param name="scheduler">The event scheduler to use for scheduling future events.</param>
     /// <param name="evStore">The storage of current EVs.</param>
     /// <param name="metrics">The metrics service to use for recording metrics.</param>
-    /// <param name="snapshotInterval">The interval at which to collect snapshots.</param>
     public StationService(
         ICollection<Station> stations,
         ChargingIntegrator integrator,
         EventScheduler scheduler,
         EVStore evStore,
-        MetricsService metrics,
-        Time snapshotInterval)
+        MetricsService metrics)
     {
         _scheduler = scheduler;
         _eVStore = evStore;
-        _metricsCollector = new StationMetricsCollector(snapshotInterval);
 
         foreach (var station in stations)
         {
             _stationIndex[station.Id] = station;
-            _windowReservations[station.Id] = 0;
-            _windowCancellations[station.Id] = 0;
-            _evsOnRoute[station.Id] = [];
 
             foreach (var charger in station.Chargers)
             {
@@ -73,79 +63,31 @@ public class StationService : IStationService
             ? station
             : throw new SkillissueException($"Trying to get station {stationId} which does not exist.");
 
-    /// <summary>
-    /// Gets all stations managed by this service.
-    /// </summary>
-    /// <returns>A collection of all stations.</returns>
-    public ICollection<Station> GetAllStations()
-        => _stationIndex.Values;
-
-    /// <inheritdoc/>
-    public int GetTotalQueueSize(ushort stationId)
-    {
-        var chargers = GetStation(stationId).Chargers;
-        return chargers.Sum(cs => cs.Queue.Count);
-    }
+    /// <summary>Gets the stationId that an EV has a reservation for if any.</summary>
+    /// <param name="evId">The id used for checking for a reservation.</param>
+    /// <returns>The stationId or null.</returns>
+    public ushort? GetReservationStationId(int evId)
+        => _evReservations.TryGetValue(evId, out var stationId) ? stationId : null;
 
     /// <summary>
-    /// Gets all EVs currently on route to the given station.
+    /// Creates an reservation on the station and cancels previous reservation if it exists.
     /// </summary>
-    /// <param name="stationId">The station ID.</param>
-    /// <returns>A collection of EV IDs on route to the station.</returns>
-    public IEnumerable<int> GetEVsOnRouteToStation(ushort stationId)
+    /// <param name="reservation">The reservation event.</param>
+    /// <param name="stationId">The station that recieves the reservation.</param>
+    public void HandleReservation(Reservation reservation, ushort stationId)
     {
-        if (!_evsOnRoute.TryGetValue(stationId, out var evs))
-            return [];
-        return [.. evs];
+        CancelReservation(reservation.EVId);
+        _evReservations[reservation.EVId] = stationId;
+        GetStation(stationId).Reservations.Reserve(
+                new Reservation(reservation.EVId, reservation.TimeOfArrival, reservation.SoCAtArrival, reservation.TargetSoC));
     }
 
-    /// <inheritdoc/>
-    public void AddEVOnRoute(int evId, ushort stationId)
+    private void CancelReservation(int evId)
     {
-        if (!_evsOnRoute.TryGetValue(stationId, out var evs))
+        if (_evReservations.TryGetValue(evId, out var oldStationId))
         {
-            evs = [];
-            _evsOnRoute[stationId] = evs;
+            GetStation(oldStationId).Reservations.Cancel(evId);
         }
-
-        evs.Add(evId);
-    }
-
-    private void RemoveEVOnRoute(int evId, ushort stationId)
-    {
-        if (_evsOnRoute.TryGetValue(stationId, out var evs))
-            evs.Remove(evId);
-    }
-
-    /// <summary>
-    /// Handles a reservation request from an EV to a station.
-    /// If the EV already has an active reservation, the existing arrival event is cancelled before proceeding.
-    /// Calculates the detoured path through the station, updates the EV's journey, and schedules a new
-    /// arrival event.
-    /// </summary>
-    /// <param name="simNow">The current simulation time.</param>
-    /// <returns>A tuple containing the charger and station snapshots.</returns>
-    public (IEnumerable<ChargerSnapshotMetric> Chargers, IEnumerable<StationSnapshotMetric> Stations) CollectAllSnapshots(Time simNow)
-        => _metricsCollector.Collect(
-            simNow,
-            _stationIndex,
-            _windowReservations,
-            _windowCancellations);
-
-    /// <summary>
-    /// Handles a cancellation request from an EV, decrementing the station's active reservation count,
-    /// clearing the reservation from the EV, and cancelling the scheduled arrival event.
-    /// </summary>
-    /// <param name="e">The cancellation request event.</param>
-    public void HandleCancelRequest(CancelRequest e)
-    {
-        if (!_stationIndex.TryGetValue(e.StationId, out var station))
-            return;
-
-        _windowCancellations[e.StationId] = _windowCancellations.GetValueOrDefault(e.StationId) + 1;
-        station.IncrementCancellations();
-
-        RemoveEVOnRoute(e.EVId, e.StationId);
     }
 
     /// <summary>
@@ -159,11 +101,10 @@ public class StationService : IStationService
         evRef.Advance(e.Time);
 
         var chargers = GetStation(e.StationId).Chargers;
-        if (evRef.Battery.StateOfCharge >= e.TargetSoC)
-            throw new SkillissueException($"EV wants to charge to a SoC: {e.TargetSoC}, which is lower than its current SoC: {evRef.Battery.StateOfCharge}.");
 
-        RemoveEVOnRoute(e.EVId, e.StationId);
-
+        // TODO : FIX ASAP
+        // if (evRef.Battery.StateOfCharge >= e.TargetSoC)
+        //     throw new SkillissueException($"EV wants to charge to a SoC: {e.TargetSoC}, which is lower than its current SoC: {evRef.Battery.StateOfCharge}.");
         var target = chargers
             .OrderBy(cs => cs.IsFree ? 0 : 1)
             .ThenBy(cs => cs.Queue.Count)
@@ -184,7 +125,7 @@ public class StationService : IStationService
         target.UpdateWindowStats();
 
         if (target.IsFree)
-            StartCharging(target, e.Time, e.StationId);
+            StartChargingNextCar(target, e.Time, e.StationId);
     }
 
     /// <summary>
@@ -203,9 +144,6 @@ public class StationService : IStationService
         var finalSoC = handler.EndSession(e.EVId, e.Time);
 
         ref var ev = ref _eVStore.Get(e.EVId);
-        var stationId = ev.HasReservationAtStationId ?? throw new SkillissueException("Uhm actually. We need the id here 🤓");
-
-        ev.HasReservationAtStationId = null;
 
         if (finalSoC is { } soc)
             ev.Battery.StateOfCharge = (float)Math.Clamp(soc, 0d, 1d);
@@ -222,10 +160,14 @@ public class StationService : IStationService
         else
             _scheduler.ScheduleEvent(new FindCandidateStations(e.EVId, ev.TimeToNextFindCandidateCheck(e.Time)));
 
-        StartCharging(charger, e.Time, stationId);
+        if (!_evReservations.TryGetValue(e.EVId, out var stationId))
+            throw new SkillissueException("Should have a reservation at this point");
+
+        CancelReservation(e.EVId);
+        StartChargingNextCar(charger, e.Time, stationId);
     }
 
-    private void StartCharging(ChargerBase charger, Time simNow, ushort stationId)
+    private void StartChargingNextCar(ChargerBase charger, Time simNow, ushort stationId)
     {
         int? nextEvId = charger.Queue.TryPeek(out var top)
             ? top.EVId

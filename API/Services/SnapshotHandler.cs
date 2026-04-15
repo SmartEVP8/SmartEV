@@ -1,10 +1,8 @@
 namespace API.Services;
 
-using System.Reflection.Metadata.Ecma335;
 using Core.Charging;
 using Engine.Events;
 using Engine.Services;
-using Engine.Services.StationServiceHelpers;
 using Engine.Vehicles;
 using Protocol;
 
@@ -23,7 +21,7 @@ public class SnapshotHandler(
 {
     /// <summary>
     /// Builds a simulation snapshot response by querying the engine for the current state of the simulation.
-    /// </summary> 
+    /// </summary>
     /// <returns>The envelope containing the simulation snapshot response.</returns>
     public Envelope BuildSimulationSnapshot()
     {
@@ -154,7 +152,8 @@ public class SnapshotHandler(
 
     private EVOnRoute[] GetEVsOnRoute(ushort stationId)
     {
-        var evsOnRoute = stationService.GetEVsOnRouteToStation(stationId);
+        var station = stationService.GetStation(stationId);
+        var evsOnRoute = station.Reservations.GetEVsOnRoute;
 
         var result = new List<EVOnRoute>();
         foreach (var evId in evsOnRoute)

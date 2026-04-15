@@ -8,6 +8,7 @@ using API.EngineManager;
 using Protocol;
 using Google.Protobuf;
 using Microsoft.Extensions.Logging;
+using Core.Charging;
 
 /// <summary>
 /// Entry point for the SmartEV API application.
@@ -59,8 +60,8 @@ public static class Program
                 return Results.BadRequest("Initialization failed");
             }
 
-            var stationService = engineManager.GetEngineService<StationService>();
-            var initData = InitEngineDataBuilder.BuildInitEngineData(stationService);
+            var stations = engineManager.GetEngineService<List<Station>>();
+            var initData = InitEngineDataBuilder.BuildInitEngineData(stations);
 
             var envelope = new Envelope { InitEngineData = initData };
             var data = envelope.ToByteArray();

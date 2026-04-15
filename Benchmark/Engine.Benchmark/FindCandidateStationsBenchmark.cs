@@ -86,9 +86,9 @@ public class FindCandidateStationsBenchmark
 
         _eventScheduler = new EventScheduler();
         _evStore = new EVStore(_count);
-        _stationService = new StationService(stations.Values, new ChargingIntegrator(10), _eventScheduler, _evStore, new MetricsService(config, guid), new Time(1200000));
+        _stationService = new StationService(stations.Values, new ChargingIntegrator(10), _eventScheduler, _evStore, new MetricsService(config, guid));
 
-        var findCandidateStationService = new FindCandidateStationService(router, stations, spatialGrid, _evStore);
+        var findCandidateStationService = new FindCandidateStationService(router, stations, spatialGrid, _evStore, _stationService);
         _findCandidateStationsHandler = new FindCandidateStationsHandler(findCandidateStationService, computeCost, _eventScheduler, _evStore, applyNewPath, _stationService);
 
         var random = new Random(1);

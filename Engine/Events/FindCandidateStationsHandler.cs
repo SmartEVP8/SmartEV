@@ -18,14 +18,14 @@ using Engine.Vehicles;
 /// <param name="eventScheduler">Event scheduler for scheduling reservation requests.</param>
 /// <param name="evStore">EV store for retrieving EV data.</param>
 /// <param name="evDetourPlanner">To update a journey if a better one is found.</param>
-/// <param name="stationService">Service for managing station data.</param>
+/// <param name="stationService">To check for ev reservations.</param>
 public class FindCandidateStationsHandler(
     IFindCandidateStationService findCandidateStationService,
     CostFunction costFunction,
     IEventScheduler eventScheduler,
     EVStore evStore,
     IEVDetourPlanner evDetourPlanner,
-    IStationService stationService)
+    StationService stationService)
 {
     /// <summary>
     /// Handles the <see cref="FindCandidateStations"/> event by pre-computing candidate stations.
@@ -36,6 +36,7 @@ public class FindCandidateStationsHandler(
     {
         var candidateStationDurations = await findCandidateStationService.GetCandidateStationFromCache(e.EVId);
         ref var ev = ref evStore.Get(e.EVId);
+        ev.Advance(e.Time);
 
         if (candidateStationDurations.Count == 0)
         {
@@ -45,16 +46,27 @@ public class FindCandidateStationsHandler(
 
         var bestStation = costFunction.Compute(ref ev, candidateStationDurations, e.Time);
 
-        if (HasScheduledReservationAtStation(e, ref ev, bestStation))
-            return;
+        if (stationService.GetReservationStationId(e.EVId) != bestStation.Id)
+            evDetourPlanner.Update(ref ev, bestStation, e.Time);
 
-        ReplaceExistingReservation(e, ref ev, bestStation);
-        ScheduleArrivalOrReschedule(e, ref ev, bestStation);
+        var remaining = ev.Journey.Current.DurationToNextStop;
+        var etaAtStation = e.Time + remaining;
+        var targetSoC = ev.CalcDesiredSoC(etaAtStation);
+        var socAtArrival = ev.EstimateSoCAtNextStop();
+        stationService.HandleReservation(new Reservation(e.EVId, etaAtStation, socAtArrival, targetSoC), bestStation.Id);
+
+        if (remaining <= Time.MillisecondsPerMinute * 10)
+        {
+            eventScheduler.ScheduleEvent(new ArriveAtStation(e.EVId, bestStation.Id, targetSoC, etaAtStation));
+            return;
+        }
+
+        eventScheduler.ScheduleEvent(new FindCandidateStations(e.EVId, ev.TimeToNextFindCandidateCheck(e.Time)));
     }
 
     private void HandleNoCandidates(FindCandidateStations e, ref EV ev)
     {
-        if (ev.HasReservationAtStationId is ushort reservedStationId)
+        if (stationService.GetReservationStationId(e.EVId) is ushort reservedStationId)
         {
             ev.Advance(e.Time);
             var durationToStation = ev.Journey.Current.DurationToNextStop;
@@ -67,59 +79,6 @@ public class FindCandidateStationsHandler(
             return;
         }
 
-        throw new InvalidOperationException(
-            $"No candidate stations available for EV {e.EVId} at {e.Time}.");
-    }
-
-    private bool HasScheduledReservationAtStation(FindCandidateStations e, ref EV ev, Station bestStation)
-    {
-        if (ev.HasReservationAtStationId == null || ev.HasReservationAtStationId != bestStation.Id)
-            return false;
-
-        ev.Advance(e.Time);
-        var remaining = ev.Journey.Current.DurationToNextStop;
-
-        if (HasScheduledArriveAtStation(e, ref ev, bestStation, remaining))
-            return true;
-
-        var nextTime = ev.TimeToNextFindCandidateCheck(e.Time);
-        eventScheduler.ScheduleEvent(new FindCandidateStations(e.EVId, nextTime));
-        return true;
-    }
-
-    private void ReplaceExistingReservation(FindCandidateStations e, ref EV ev, Station bestStation)
-    {
-        if (ev.HasReservationAtStationId != null)
-            eventScheduler.ScheduleEvent(new CancelRequest(e.EVId, ev.HasReservationAtStationId.Value, e.Time));
-
-        ev.HasReservationAtStationId = bestStation.Id;
-        bestStation.IncrementReservations();
-        evDetourPlanner.Update(ref ev, bestStation, e.Time);
-        stationService.AddEVOnRoute(e.EVId, bestStation.Id);
-    }
-
-    private void ScheduleArrivalOrReschedule(FindCandidateStations e, ref EV ev, Station bestStation)
-    {
-        var remainingTravelTime = ev.Journey.Current.DurationToNextStop;
-        if (HasScheduledArriveAtStation(e, ref ev, bestStation, remainingTravelTime))
-            return;
-
-        var nextTime = ev.TimeToNextFindCandidateCheck(e.Time);
-        eventScheduler.ScheduleEvent(new FindCandidateStations(e.EVId, nextTime));
-    }
-
-    private bool HasScheduledArriveAtStation(FindCandidateStations e, ref EV ev, Station bestStation, Time durationToStation)
-    {
-        if (durationToStation <= Time.MillisecondsPerMinute * 10)
-        {
-            eventScheduler.ScheduleEvent(new ArriveAtStation(
-            e.EVId,
-            bestStation.Id,
-            ev.CalcDesiredSoC(e.Time + durationToStation),
-            e.Time + durationToStation));
-            return true;
-        }
-
-        return false;
+        throw new InvalidOperationException($"No candidate stations available for EV {e.EVId} at {e.Time}.");
     }
 }
