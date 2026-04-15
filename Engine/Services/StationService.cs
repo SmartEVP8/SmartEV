@@ -9,6 +9,7 @@ using Engine.Metrics.Snapshots;
 using Engine.Utils;
 using Engine.Vehicles;
 using Engine.Services.StationServiceHelpers;
+using Core.Vehicles;
 
 /// <summary>
 /// Service responsible for managing the state of stations and chargers, handling events related to reservations, arrivals, and charging sessions.
@@ -20,6 +21,7 @@ public class StationService : IStationService
     private readonly Dictionary<int, uint> _arrivalTimes = [];
     private readonly Dictionary<ushort, uint> _windowReservations = [];
     private readonly Dictionary<ushort, uint> _windowCancellations = [];
+    private readonly Dictionary<ushort, HashSet<int>> _evsOnRoute = [];
     private readonly EventScheduler _scheduler;
     private readonly EVStore _eVStore;
     private readonly StationMetricsCollector _metricsCollector;
@@ -50,6 +52,7 @@ public class StationService : IStationService
             _stationIndex[station.Id] = station;
             _windowReservations[station.Id] = 0;
             _windowCancellations[station.Id] = 0;
+            _evsOnRoute[station.Id] = [];
 
             foreach (var charger in station.Chargers)
             {
@@ -70,11 +73,48 @@ public class StationService : IStationService
             ? station
             : throw new SkillissueException($"Trying to get station {stationId} which does not exist.");
 
+    /// <summary>
+    /// Gets all stations managed by this service.
+    /// </summary>
+    /// <returns>A collection of all stations.</returns>
+    public ICollection<Station> GetAllStations()
+        => _stationIndex.Values;
+
     /// <inheritdoc/>
     public int GetTotalQueueSize(ushort stationId)
     {
         var chargers = GetStation(stationId).Chargers;
         return chargers.Sum(cs => cs.Queue.Count);
+    }
+
+    /// <summary>
+    /// Gets all EVs currently on route to the given station.
+    /// </summary>
+    /// <param name="stationId">The station ID.</param>
+    /// <returns>A collection of EV IDs on route to the station.</returns>
+    public IEnumerable<int> GetEVsOnRouteToStation(ushort stationId)
+    {
+        if (!_evsOnRoute.TryGetValue(stationId, out var evs))
+            return [];
+        return [.. evs];
+    }
+
+    /// <inheritdoc/>
+    public void AddEVOnRoute(int evId, ushort stationId)
+    {
+        if (!_evsOnRoute.TryGetValue(stationId, out var evs))
+        {
+            evs = [];
+            _evsOnRoute[stationId] = evs;
+        }
+
+        evs.Add(evId);
+    }
+
+    private void RemoveEVOnRoute(int evId, ushort stationId)
+    {
+        if (_evsOnRoute.TryGetValue(stationId, out var evs))
+            evs.Remove(evId);
     }
 
     /// <summary>
@@ -104,6 +144,8 @@ public class StationService : IStationService
 
         _windowCancellations[e.StationId] = _windowCancellations.GetValueOrDefault(e.StationId) + 1;
         station.IncrementCancellations();
+
+        RemoveEVOnRoute(e.EVId, e.StationId);
     }
 
     /// <summary>
@@ -119,6 +161,8 @@ public class StationService : IStationService
         var chargers = GetStation(e.StationId).Chargers;
         if (evRef.Battery.StateOfCharge >= e.TargetSoC)
             throw new SkillissueException($"EV wants to charge to a SoC: {e.TargetSoC}, which is lower than its current SoC: {evRef.Battery.StateOfCharge}.");
+
+        RemoveEVOnRoute(e.EVId, e.StationId);
 
         var target = chargers
             .OrderBy(cs => cs.IsFree ? 0 : 1)
@@ -136,6 +180,7 @@ public class StationService : IStationService
 
         _arrivalTimes[e.EVId] = e.Time;
         target.Queue.Enqueue((e.EVId, connectedEV));
+        _eVStore.Get(e.EVId).EVState = EVState.Queueing;
         target.UpdateWindowStats();
 
         if (target.IsFree)
@@ -147,9 +192,6 @@ public class StationService : IStationService
     /// Uses the internally stored IntegrationResult to update remaining car SoC.
     /// </summary>
     /// <param name="e">The EndCharging event containing the EVId, ChargerId, and Time of the event.</param>
-    /// <summary>
-    /// Called when a charging session ends for a specific EV.
-    /// </summary>
     public void HandleEndCharging(EndCharging e)
     {
         if (!_chargerIndex.TryGetValue(e.ChargerId, out var entry))
@@ -173,6 +215,7 @@ public class StationService : IStationService
 
         _arrivalTimes.Remove(e.EVId);
         var timeAtStation = e.Time - arrivalTime;
+        ev.EVState = EVState.Driving;
 
         if (ev.CanCompleteJourney(timeAtStation, ev.Preferences.MinAcceptableCharge))
             _scheduler.ScheduleEvent(new ArriveAtDestination(e.EVId, e.Time));
@@ -184,8 +227,16 @@ public class StationService : IStationService
 
     private void StartCharging(ChargerBase charger, Time simNow, ushort stationId)
     {
+        int? nextEvId = charger.Queue.TryPeek(out var top)
+            ? top.EVId
+            : null;
+
         charger.AccumulateEnergy(simNow);
         _chargerIndex[charger.Id].Handler.StartNext(simNow, stationId);
+
+        if (nextEvId.HasValue)
+            _eVStore.Get(nextEvId.Value).EVState = EVState.Charging;
+
         charger.UpdateWindowStats();
     }
 }

@@ -1,11 +1,9 @@
 namespace Engine.StationFactory;
 
-using Core.Shared;
-
 /// <summary>
 /// Options controlling deterministic station generation behaviour.
 /// </summary>
-public class StationFactoryOptions
+public record StationFactoryOptions
 {
     /// <summary>
     /// Gets a value indicating whether dual charging points may be generated.

@@ -4,8 +4,8 @@ using Core.Charging;
 using Core.Shared;
 using Core.Vehicles;
 using Engine.Cost;
-using Engine.Events.Middleware;
 using Engine.Routing;
+using Engine.Services;
 using Engine.Vehicles;
 
 /// <summary>
@@ -18,12 +18,14 @@ using Engine.Vehicles;
 /// <param name="eventScheduler">Event scheduler for scheduling reservation requests.</param>
 /// <param name="evStore">EV store for retrieving EV data.</param>
 /// <param name="evDetourPlanner">To update a journey if a better one is found.</param>
+/// <param name="stationService">Service for managing station data.</param>
 public class FindCandidateStationsHandler(
     IFindCandidateStationService findCandidateStationService,
     CostFunction costFunction,
     IEventScheduler eventScheduler,
     EVStore evStore,
-    IEVDetourPlanner evDetourPlanner)
+    IEVDetourPlanner evDetourPlanner,
+    IStationService stationService)
 {
     /// <summary>
     /// Handles the <see cref="FindCandidateStations"/> event by pre-computing candidate stations.
@@ -93,6 +95,7 @@ public class FindCandidateStationsHandler(
         ev.HasReservationAtStationId = bestStation.Id;
         bestStation.IncrementReservations();
         evDetourPlanner.Update(ref ev, bestStation, e.Time);
+        stationService.AddEVOnRoute(e.EVId, bestStation.Id);
     }
 
     private void ScheduleArrivalOrReschedule(FindCandidateStations e, ref EV ev, Station bestStation)

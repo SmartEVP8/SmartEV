@@ -52,7 +52,7 @@ public static class Init
         services.AddSingleton(sp =>
         {
             var settings = sp.GetRequiredService<EngineSettings>();
-            return new EVStore(settings.CurrentAmoutOfEVsInDenmark);
+            return new EVStore(settings.CurrentAmountOfEVsInDenmark);
         });
 
         services.AddSingleton<IJourneySamplerProvider>(sp =>
@@ -197,7 +197,8 @@ public static class Init
             var scheduler = sp.GetRequiredService<EventScheduler>();
             var evStore = sp.GetRequiredService<EVStore>();
             var applyNewPath = sp.GetRequiredService<EVDetourPlanner>();
-            return new FindCandidateStationsHandler(findCandidateStationService, computeCost, scheduler, evStore, applyNewPath);
+            var stationService = sp.GetRequiredService<StationService>();
+            return new FindCandidateStationsHandler(findCandidateStationService, computeCost, scheduler, evStore, applyNewPath, stationService);
         });
 
         services.AddSingleton(sp =>
@@ -207,7 +208,8 @@ public static class Init
             var evService = sp.GetRequiredService<EVService>();
             var destinationArrivalHandler = sp.GetRequiredService<DestinationArrivalHandler>();
             var findCandidateStationsHandler = sp.GetRequiredService<FindCandidateStationsHandler>();
-            return new EventDispatcher(stationService, snapshotHandler, findCandidateStationsHandler, evService, destinationArrivalHandler);
+            var eventSubscriber = sp.GetService<IEngineEventSubscriber>();
+            return new EventDispatcher(stationService, snapshotHandler, findCandidateStationsHandler, evService, destinationArrivalHandler, eventSubscriber);
         });
 
         services.AddSingleton(sp =>

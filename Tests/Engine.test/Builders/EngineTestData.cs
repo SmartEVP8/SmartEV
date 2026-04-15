@@ -158,6 +158,13 @@ public static class EngineTestData
             ? station.Chargers.Sum(c => c.Queue.Count)
             : throw new KeyNotFoundException($"Station {stationId} not found.");
         }
+
+        public IEnumerable<int> GetEVsOnRouteToStation(ushort stationId) => [];
+
+        public void AddEVOnRoute(int evId, ushort stationId)
+        {
+            // No-op for testing
+        }
     }
 
     private static Dictionary<ushort, Station> CreateAllStations()

@@ -4,6 +4,16 @@ using Core.Routing;
 using Core.Shared;
 
 /// <summary>
+/// Defines the possible states of an EV.
+/// </summary>
+public enum EVState
+{
+    Driving,
+    Queueing,
+    Charging,
+}
+
+/// <summary>
 /// Represents an electric vehicle (EV) with a battery, preferences, a journey, and an efficiency rating.
 /// </summary>
 /// <param name="battery">The battery of the EV.</param>
@@ -36,6 +46,11 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     /// Gets the journey of the EV.
     /// </summary>
     public Journey Journey { get; private set; } = journey;
+
+    /// <summary> 
+    /// Gets or sets the current state of the EV.
+    /// </summary>
+    public EVState EVState { get; set; } = EVState.Driving;
 
     /// <summary>
     /// Advances the journey to <paramref name="currentTime"/>, consumes the corresponding energy,

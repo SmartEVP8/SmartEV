@@ -18,13 +18,17 @@ using Engine.Utils;
 /// <param name="destinationArrivalHandler">Where the event <c>ArriveAtDestination</c> is handled.</param>
 /// <param name="findCandidateStationsHandler">Where the event <c>FindCandidateStations</c> is handled.</param>
 /// <param name="evService">Where the event <c>SpawnEVS</c> is handled.</param>
+/// <param name="eventSubscriber">Optional subscriber to receive notifications of engine events.</param>
 public class EventDispatcher(
         StationService stationService,
         SnapshotEventHandler snapshotEventHandler,
         FindCandidateStationsHandler findCandidateStationsHandler,
         EVService evService,
-        DestinationArrivalHandler destinationArrivalHandler)
+        DestinationArrivalHandler destinationArrivalHandler,
+        IEngineEventSubscriber? eventSubscriber = null)
 {
+    private readonly IEngineEventSubscriber? _eventSubscriber = eventSubscriber;
+
     /// <summary>
     /// Dispatches the event to the correct handler.
     /// Has a handler for every <c>Event</c>. If an event is dispatched for which there is no handler, an exception is thrown.
@@ -43,10 +47,12 @@ public class EventDispatcher(
 
             case ArriveAtStation ev:
                 stationService.HandleArrivalAtStation(ev);
+                _eventSubscriber?.OnArrivalAtStation(ev);
                 break;
 
             case EndCharging ev:
                 stationService.HandleEndCharging(ev);
+                _eventSubscriber?.OnChargingEnd(ev);
                 break;
 
             case FindCandidateStations ev:
