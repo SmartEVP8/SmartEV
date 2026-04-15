@@ -14,13 +14,11 @@ using Engine.Metrics.Events;
 /// and disconnection for up to two vehicles simultaneously.
 /// </summary>
 /// <param name="charger">The dual charger this handler manages.</param>
-/// <param name="state">The runtime state of the charger.</param>
 /// <param name="integrator">The charging integrator used to simulate sessions.</param>
 /// <param name="scheduler">The event scheduler used to schedule end charging events.</param>
 /// <param name="metrics">The metrics service used to record wait times.</param>
 public class DualChargerHandler(
     DualCharger charger,
-    ChargerState state,
     ChargingIntegrator integrator,
     EventScheduler scheduler,
     MetricsService metrics)
@@ -36,27 +34,27 @@ public class DualChargerHandler(
     /// Thrown if the charger has no active sessions after attempting to connect queued vehicles,
     /// indicating a logic error in connection tracking.
     /// </exception>
-    public void StartNext(Time simNow)
+    public void StartNext(Time simNow, ushort stationId)
     {
-        var wasAloneA = state.SessionA is not null && state.SessionB is null;
-        var wasAloneB = state.SessionB is not null && state.SessionA is null;
+        var wasAloneA = charger.SessionA is not null && charger.SessionB is null;
+        var wasAloneB = charger.SessionB is not null && charger.SessionA is null;
 
-        ConnectQueuedVehicles(simNow);
+        ConnectQueuedVehicles(simNow, stationId);
 
-        if (state.SessionA is null && state.SessionB is null && state.Queue.Count > 0)
+        if (charger.SessionA is null && charger.SessionB is null && charger.Queue.Count > 0)
         {
             throw new InvalidOperationException(
-                $"Logic Error: DualCharger {charger.Id} is empty but failed to connect EV {state.Queue.Peek().EVId}.");
+                $"Logic Error: DualCharger {charger.Id} is empty but failed to connect EV {charger.Queue.Peek().EVId}.");
         }
 
         CancelStaleEventsIfPairingChanged((wasAloneA, wasAloneB));
 
         var result = IntegrateDual(simNow);
 
-        if (state.SessionA is not null)
-            state.SessionA = state.SessionA with { Plan = result };
-        if (state.SessionB is not null)
-            state.SessionB = state.SessionB with { Plan = result };
+        if (charger.SessionA is not null)
+            charger.SessionA = charger.SessionA with { Plan = result };
+        if (charger.SessionB is not null)
+            charger.SessionB = charger.SessionB with { Plan = result };
 
         ScheduleEndEvents(result);
     }
@@ -73,23 +71,23 @@ public class DualChargerHandler(
     /// </returns>
     public double? EndSession(int evId, Time simNow)
     {
-        if (state.SessionA?.EVId == evId)
+        if (charger.SessionA?.EVId == evId)
         {
-            var finalSoC = state.SessionA.Plan?.SocA ?? state.SessionA.EV.CurrentSoC;
-            var bSoC = state.SessionA.Plan?.BSoCWhenAFinish;
+            var finalSoC = charger.SessionA.Plan?.SocA ?? charger.SessionA.EV.CurrentSoC;
+            var bSoC = charger.SessionA.Plan?.BSoCWhenAFinish;
             charger.Disconnect(ChargingSide.Left);
-            state.SessionA = null;
-            state.SessionB = UpdateRemainingSession(ChargingSide.Right, bSoC, state.SessionB);
+            charger.SessionA = null;
+            charger.SessionB = UpdateRemainingSession(ChargingSide.Right, bSoC, charger.SessionB);
             return finalSoC;
         }
 
-        if (state.SessionB?.EVId == evId)
+        if (charger.SessionB?.EVId == evId)
         {
-            var finalSoC = state.SessionB.Plan?.SocB ?? state.SessionB.EV.CurrentSoC;
-            var aSoC = state.SessionB.Plan?.ASoCWhenBFinish;
+            var finalSoC = charger.SessionB.Plan?.SocB ?? charger.SessionB.EV.CurrentSoC;
+            var aSoC = charger.SessionB.Plan?.ASoCWhenBFinish;
             charger.Disconnect(ChargingSide.Right);
-            state.SessionB = null;
-            state.SessionA = UpdateRemainingSession(ChargingSide.Left, aSoC, state.SessionA);
+            charger.SessionB = null;
+            charger.SessionA = UpdateRemainingSession(ChargingSide.Left, aSoC, charger.SessionA);
             return finalSoC;
         }
 
@@ -101,28 +99,28 @@ public class DualChargerHandler(
     /// or the queue is empty.
     /// </summary>
     /// <param name="simNow">The current simulation time.</param>
-    private void ConnectQueuedVehicles(Time simNow)
+    private void ConnectQueuedVehicles(Time simNow, ushort stationId)
     {
-        while (state.Queue.TryPeek(out var candidate))
+        while (charger.Queue.TryPeek(out var candidate))
         {
             var side = charger.TryConnect();
             if (side is null) break;
 
-            state.Queue.Dequeue();
+            charger.Queue.Dequeue();
 
             metrics.RecordWaitTime(new EVWaitTimeMetric
             {
                 EVId = candidate.EVId,
-                StationId = state.StationId,
+                StationId = stationId,
                 ArrivalAtStationTime = candidate.EV.ArrivalTime,
                 StartChargingTime = simNow,
             });
 
             var session = new ActiveSession(candidate.EVId, candidate.EV, simNow, side, null, null);
-            state.Window = state.Window with { LastEnergyUpdateTime = simNow };
+            charger.Window = charger.Window with { LastEnergyUpdateTime = simNow };
 
-            if (side == ChargingSide.Left) state.SessionA = session;
-            else state.SessionB = session;
+            if (side == ChargingSide.Left) charger.SessionA = session;
+            else charger.SessionB = session;
         }
     }
 
@@ -133,13 +131,13 @@ public class DualChargerHandler(
     /// <param name="before">Whether side A or B was occupied before the new vehicle connected.</param>
     private void CancelStaleEventsIfPairingChanged((bool hadA, bool hadB) before)
     {
-        var nowHasBoth = state.SessionA is not null && state.SessionB is not null;
+        var nowHasBoth = charger.SessionA is not null && charger.SessionB is not null;
         if (before is { hadA: true, hadB: true } || !nowHasBoth) return;
 
-        if (before.hadA && !before.hadB && state.SessionA?.CancellationToken is { } tA)
+        if (before.hadA && !before.hadB && charger.SessionA?.CancellationToken is { } tA)
             scheduler.CancelEvent(tA);
 
-        if (before.hadB && !before.hadA && state.SessionB?.CancellationToken is { } tB)
+        if (before.hadB && !before.hadA && charger.SessionB?.CancellationToken is { } tB)
             scheduler.CancelEvent(tB);
     }
 
@@ -153,12 +151,12 @@ public class DualChargerHandler(
     /// </returns>
     private IntegrationResult? IntegrateDual(Time simNow)
     {
-        if (state.SessionA is null && state.SessionB is null) return null;
+        if (charger.SessionA is null && charger.SessionB is null) return null;
 
-        var carA = state.SessionA?.EV
-            ?? state.SessionB!.EV with { CurrentSoC = state.SessionB.EV.TargetSoC };
-        var carB = state.SessionB?.EV
-            ?? state.SessionA!.EV with { CurrentSoC = state.SessionA.EV.TargetSoC };
+        var carA = charger.SessionA?.EV
+            ?? charger.SessionB!.EV with { CurrentSoC = charger.SessionB.EV.TargetSoC };
+        var carB = charger.SessionB?.EV
+            ?? charger.SessionA!.EV with { CurrentSoC = charger.SessionA.EV.TargetSoC };
 
         return integrator.IntegrateDualToCompletion(simNow, charger.MaxPowerKW, charger, carA, carB);
     }
@@ -169,16 +167,16 @@ public class DualChargerHandler(
     /// <param name="result">The integration result containing finish times for each side.</param>
     private void ScheduleEndEvents(IntegrationResult? result)
     {
-        if (state.SessionA is not null && result?.FinishTimeA is { } finishA)
+        if (charger.SessionA is not null && result?.FinishTimeA is { } finishA)
         {
-            var token = scheduler.ScheduleEvent(new EndCharging(state.SessionA.EVId, charger.Id, finishA));
-            state.SessionA = state.SessionA with { CancellationToken = token };
+            var token = scheduler.ScheduleEvent(new EndCharging(charger.SessionA.EVId, charger.Id, finishA));
+            charger.SessionA = charger.SessionA with { CancellationToken = token };
         }
 
-        if (state.SessionB is not null && result?.FinishTimeB is { } finishB)
+        if (charger.SessionB is not null && result?.FinishTimeB is { } finishB)
         {
-            var token = scheduler.ScheduleEvent(new EndCharging(state.SessionB.EVId, charger.Id, finishB));
-            state.SessionB = state.SessionB with { CancellationToken = token };
+            var token = scheduler.ScheduleEvent(new EndCharging(charger.SessionB.EVId, charger.Id, finishB));
+            charger.SessionB = charger.SessionB with { CancellationToken = token };
         }
     }
 

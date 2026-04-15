@@ -47,7 +47,6 @@ public class StationTest
     private Station CreateStation() =>
         new(
             id: 1,
-            name: "Test Station",
             address: "Test Street 1",
             position: new Position(10.0, 56.0),
             chargers: [],

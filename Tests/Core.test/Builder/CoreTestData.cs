@@ -1,6 +1,7 @@
 namespace Core.test.Builders;
 
 using Core.Charging;
+using Core.Charging.ChargingModel;
 using Core.Routing;
 using Core.Shared;
 using Core.Vehicles;
@@ -30,7 +31,7 @@ public static class CoreTestData
         else
             chargerList = [CreateFakeChargerWithQueue(0)]; // Default: one empty charger
 
-        return new Station(id, string.Empty, string.Empty, position, chargerList, prices);
+        return new Station(id, string.Empty, position, chargerList, prices);
     }
 
     public static EVConfig EVConfig(
@@ -97,7 +98,11 @@ public static class CoreTestData
 
     private sealed class FakeCharger() : ChargerBase(id: 1, maxPowerKW: 100)
     {
-        public override bool CanConnect() => throw new NotImplementedException();
+        public override void AccumulateEnergy(Time now) => throw new NotImplementedException();
+
+        public override void UpdateWindowStats() => throw new NotImplementedException();
+
+        public override bool IsFree => throw new NotImplementedException();
     }
 
     public static SingleCharger SingleCharger(int id, ushort maxPowerKW = 150)
@@ -112,12 +117,13 @@ public static class CoreTestData
         return new DualCharger(id, maxPowerKW, connectors);
     }
 
-    private static ChargerBase CreateFakeChargerWithQueue(int queueSize)
+    private static ChargerBase CreateFakeChargerWithQueue(int amount)
     {
         var charger = new FakeCharger();
-        for (var i = 0; i < queueSize; i++)
+
+        for (var i = 0; i < amount; i++)
         {
-            charger.Queue.Enqueue(i);
+            charger.Queue.Enqueue((i, default));
         }
 
         return charger;

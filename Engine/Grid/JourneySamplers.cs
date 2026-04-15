@@ -2,6 +2,7 @@ namespace Engine.Grid;
 
 using Core.Shared;
 using Engine.Spawning;
+using Core.GeoMath;
 
 /// <summary>
 /// Defines the interface for sampling journeys, which includes sampling a source and destination position for a journey.
@@ -47,11 +48,18 @@ public class JourneySamplers(
     /// <returns>A tuple containing the source and destination positions.</returns>
     public (Position Source, Position Destination) SampleSourceToDest(Random random)
     {
-        var sourceIndex = _sourceSampler.Sample(random);
-        var source = SampleInCell(random, sourceIndex);
+        var distance = 0.0;
+        var dest = new Position(0, 0);
+        var source = new Position(0, 0);
+        while (distance < 0.5)
+        {
+            var sourceIndex = _sourceSampler.Sample(random);
+            source = SampleInCell(random, sourceIndex);
 
-        var destIndex = _destinationSamplers[sourceIndex].Sample(random);
-        var dest = _cityCenters[destIndex];
+            var destIndex = _destinationSamplers[sourceIndex].Sample(random);
+            dest = _cityCenters[destIndex];
+            distance = GeoMath.EquirectangularDistance(source, dest);
+        }
 
         return (source, dest);
     }

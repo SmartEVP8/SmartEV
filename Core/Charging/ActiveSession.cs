@@ -1,9 +1,7 @@
-namespace Engine.Services.StationServiceHelpers;
+namespace Core.Charging;
 
-using Core.Charging;
 using Core.Charging.ChargingModel;
 using Core.Shared;
-
 public record ActiveSession(
     int EVId,
     ConnectedEV EV,

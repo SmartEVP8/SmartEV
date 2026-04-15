@@ -209,12 +209,12 @@ public class JourneyTests
         journey.UpdateRouteToDestination(timeAtStation: 30000);
         Assert.Equal(waypoints[^1].Latitude, journey.Current.Waypoints.Last().Latitude);
         Assert.Equal(journey.Current.Duration, journey.Current.DurationToNextStop);
-        Assert.Equal(60000U, journey.Current.Departure.Milliseconds);
-        Assert.Equal(30000U, journey.Current.Duration.Milliseconds);
+        Assert.Equal(60U, journey.Current.Departure.TotalSeconds);
+        Assert.Equal(30U, journey.Current.Duration.TotalSeconds);
     }
 
     [Fact]
-    public void UpdateRouteToDestination_ZeroTime_DepartureUnchanged()
+    public void UpdateRouteToDestination_ZeroTime()
     {
         var waypoints = new List<Position> { new(0, 0), new(1, 1), new(2, 2) };
         var journey = new Journey(0, 60000, 1000, waypoints);
@@ -222,7 +222,7 @@ public class JourneyTests
 
         journey.UpdateRouteToDestination(timeAtStation: 0);
 
-        Assert.Equal(0u, journey.Current.Departure.Milliseconds);
+        Assert.Equal(30u, journey.Current.Departure.TotalSeconds);
         Assert.Equal(waypoints[^1], journey.Current.NextStop);
     }
 
@@ -235,7 +235,7 @@ public class JourneyTests
         journey.UpdateRouteToDestination(timeAtStation: 10000);
 
         Assert.Equal(journey.Current.Duration, journey.Current.DurationToNextStop);
-        Assert.Equal(10000u, journey.Current.Departure.Milliseconds);
+        Assert.Equal(110u, journey.Current.Departure.TotalSeconds);
     }
 
     [Fact]
@@ -246,7 +246,7 @@ public class JourneyTests
 
         journey.UpdateRouteToDestination(timeAtStation: 36000);
 
-        Assert.Equal(37000u, journey.Current.Departure.Milliseconds);
+        Assert.Equal(97u, journey.Current.Departure.TotalSeconds);
     }
 
     [Fact]
@@ -256,8 +256,8 @@ public class JourneyTests
         var journey = new Journey(departure: 0, duration: 60000, distanceMeters: 100, waypoints);
         var currentPos = journey.AdvanceTo(30000);
         Assert.Equal(waypoints[1].Latitude, currentPos.Latitude, precision: 3);
-        Assert.Equal(30000u, journey.Current.Departure.Milliseconds);
-        Assert.Equal(30000u, journey.Current.Duration.Milliseconds);
+        Assert.Equal(30u, journey.Current.Departure.TotalSeconds);
+        Assert.Equal(30u, journey.Current.Duration.TotalSeconds);
     }
 
     [Fact]
@@ -269,7 +269,7 @@ public class JourneyTests
         journey.UpdateRoute(newWaypoints, nextStop: newWaypoints[2], departure: 0, duration: 90000, newDistanceKm: 0.1f);
         Assert.NotEqual(waypoints.Last(), journey.Current.Waypoints.Last());
         Assert.Equal(newWaypoints.Last(), journey.Current.Waypoints.Last());
-        Assert.Equal(60000u, journey.Current.DurationToNextStop.Milliseconds, tolerance: 10);
+        Assert.Equal(60u, journey.Current.DurationToNextStop.TotalSeconds, tolerance: 10);
     }
 
     [Fact]
@@ -280,7 +280,7 @@ public class JourneyTests
 
         var result = journey.TimeToDriveDistance(50f);
 
-        Assert.Equal(1800000u, result.Milliseconds);
+        Assert.Equal(1800u, result.TotalSeconds);
     }
 
     [Fact]
@@ -291,7 +291,7 @@ public class JourneyTests
 
         var result = journey.TimeToDriveDistance(0f);
 
-        Assert.Equal(0u, result.Milliseconds);
+        Assert.Equal(0u, result.TotalSeconds);
     }
 
     [Fact]
@@ -302,7 +302,7 @@ public class JourneyTests
 
         var result = journey.TimeToDriveDistance(1.001f);
 
-        Assert.Equal(36036u, result.Milliseconds);
+        Assert.Equal(36u, result.TotalSeconds);
     }
 
     [Fact]
@@ -324,7 +324,7 @@ public class JourneyTests
 
         var result = journey.TimeToDriveDistance(200f);
 
-        Assert.Equal(7200000u, result.Milliseconds);
+        Assert.Equal(7200u, result.TotalSeconds);
     }
 
     [Fact]
@@ -337,7 +337,7 @@ public class JourneyTests
 
         Assert.Equal(0, pos.Latitude);
         Assert.Equal(0, pos.Longitude);
-        Assert.Equal(3600000u, journey.Current.Duration.Milliseconds);
+        Assert.Equal(3600u, journey.Current.Duration.TotalSeconds);
     }
 
     [Fact]

@@ -92,6 +92,8 @@ public class EVFactory(Random random, IJourneySamplerProvider samplersProvider, 
 
         var segments = Polyline6ToPoints.DecodePolyline(queryResult.Polyline);
         var durationMS = (uint)Math.Ceiling(queryResult.Duration);
+        if (durationMS == 0)
+            throw new InvalidOperationException($"Duration of journey cannot be zero (source={source}, destination={destination}, queryResult={queryResult})");
         return new Journey(departure, durationMS, queryResult.Distance, segments);
     }
 
