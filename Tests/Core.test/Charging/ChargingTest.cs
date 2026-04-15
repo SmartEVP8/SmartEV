@@ -75,7 +75,7 @@ public class ChargingTest
     }
 
     [Fact]
-    public void IntegrateWithLowerTargetThanCurrentSoC()
+    public void IntegrateWithLowerTargetThanCurrentSoCSingle()
     {
         var integrator = new ChargingIntegrator(stepSeconds: 1);
         var ev = new ConnectedEV(
@@ -93,6 +93,38 @@ public class ChargingTest
             ev: ev);
 
         Assert.Equal(0, result.DurationMilliseconds);
+        Assert.NotNull(result.FinishTimeA);
+    }
+
+    [Fact]
+    public void IntegrateWithLowerTargetThanCurrentSoCDual()
+    {
+        var integrator = new ChargingIntegrator(stepSeconds: 1);
+        var ev1 = new ConnectedEV(
+            EVId: 1,
+            CurrentSoC: 0.9,
+            TargetSoC: 0.5,
+            CapacityKWh: 60,
+            MaxChargeRateKW: 100,
+            ArrivalTime: 0);
+        var ev2 = new ConnectedEV(
+            EVId: 1,
+            CurrentSoC: 0.9,
+            TargetSoC: 0.5,
+            CapacityKWh: 60,
+            MaxChargeRateKW: 100,
+            ArrivalTime: 0);
+        var evConfig = CoreTestData.EVConfig();
+        var result = integrator.IntegrateDualToCompletion(
+            simNow: 0,
+            maxKW: 100,
+            charger: Make.DualCharger(evConfig),
+            ev1,
+            ev2);
+
+        Assert.Equal(0, result.DurationMilliseconds);
+        Assert.NotNull(result.FinishTimeA);
+        Assert.NotNull(result.FinishTimeB);
     }
 
     [Fact]
