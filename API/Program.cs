@@ -2,13 +2,13 @@ namespace API;
 
 using Services;
 using Engine.Events;
-using Engine.Services;
 using Engine.Cost;
 using API.EngineManager;
 using Protocol;
 using Google.Protobuf;
 using Microsoft.Extensions.Logging;
 using Core.Charging;
+using Serilog;
 
 /// <summary>
 /// Entry point for the SmartEV API application.
@@ -31,6 +31,13 @@ public static class Program
                       .AllowAnyMethod()
                       .AllowAnyHeader());
         });
+
+        Log.Logger = new LoggerConfiguration()
+        .WriteTo.File(
+        "logs/api.txt",
+        outputTemplate: "{Level:u3}: {Message:lj}{NewLine}{Exception}",
+        rollingInterval: RollingInterval.Day)
+        .CreateLogger();
 
         var app = builder.Build();
 
@@ -119,16 +126,17 @@ public static class Program
             }
             catch (Exception ex)
             {
-                var loggerFactory = context.RequestServices.GetRequiredService<ILoggerFactory>();
-                var logger = loggerFactory.CreateLogger("WebSocket");
-                logger.LogError(ex, "WebSocket error");
+                Log.Error(ex, "WebSocket error");
+                throw;
             }
             finally
             {
                 await simulationRunner.StopAsync();
+                Log.CloseAndFlush();
             }
         });
 
+        Log.Information("API started.");
         app.Run();
     }
 }

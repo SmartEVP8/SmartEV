@@ -11,6 +11,7 @@ using Engine.Spawning;
 using Engine.Services;
 using Engine.Vehicles;
 using Microsoft.Extensions.DependencyInjection;
+using Serilog;
 
 /// <summary>
 /// The entry point for the headless execution of the Engine. Initializes all necessary services and starts the simulation.
@@ -39,6 +40,12 @@ public static class Program
         provider.GetRequiredService<StationService>();
 
         var coordinator = provider.GetRequiredService<Simulation>();
+        Log.Logger = new LoggerConfiguration()
+                .WriteTo.File(
+                    "logs/simulation.txt",
+                    outputTemplate: "{Level:u3}: {Message:lj}{NewLine}{Exception}",
+                    rollingInterval: RollingInterval.Day)
+                .CreateLogger();
         await coordinator.Run();
     }
 }
