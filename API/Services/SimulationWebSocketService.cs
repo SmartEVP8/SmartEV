@@ -118,11 +118,6 @@ public class SimulationWebSocketService(
                         cancelToken);
                     break;
                 }
-
-                if (result.MessageType == WebSocketMessageType.Binary)
-                {
-                    await ProcessMessageAsync(ms, cancelToken);
-                }
             }
         }
         catch (OperationCanceledException)
@@ -132,34 +127,6 @@ public class SimulationWebSocketService(
         catch (Exception ex)
         {
             logger.LogError(ex, "Error in WebSocket connection");
-        }
-    }
-
-    private async Task ProcessMessageAsync(MemoryStream ms, CancellationToken cancelToken)
-    {
-        try
-        {
-            ms.Seek(0, SeekOrigin.Begin);
-            var envelope = Envelope.Parser.ParseFrom(ms.ToArray());
-            await RouteMessageAsync(envelope, cancelToken);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error processing message");
-        }
-    }
-
-    private async Task RouteMessageAsync(Envelope envelope, CancellationToken cancelToken)
-    {
-        switch (envelope.PayloadCase)
-        {
-            case Envelope.PayloadOneofCase.GetStationSnapshot when envelope.GetStationSnapshot != null:
-                var response = snapshotHandler.BuildStationSnapshot(envelope.GetStationSnapshot.StationId);
-                await SendAsync(response, cancelToken);
-                break;
-            default:
-                logger.LogWarning("Unknown message type: {PayloadCase}", envelope.PayloadCase);
-                break;
         }
     }
 

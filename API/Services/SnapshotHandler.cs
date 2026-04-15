@@ -40,11 +40,11 @@ public class SnapshotHandler(
     /// </summary>
     /// <param name="stationId">The ID of the station for which to build the snapshot.</param>
     /// <returns>The envelope containing the station snapshot response.</returns>
-    public Envelope BuildStationSnapshot(uint stationId)
+    public Envelope BuildStationSnapshot(ushort stationId)
     {
         var stationState = new StationState { StationId = stationId };
 
-        var station = stationService.GetStation((ushort)stationId);
+        var station = stationService.GetStation(stationId);
         if (station == null)
         {
             logger.LogWarning("Station with ID {StationId} not found", stationId);
@@ -57,7 +57,7 @@ public class SnapshotHandler(
             stationState.ChargerStates.Add(chargerState);
         }
 
-        stationState.EvsOnRoute.AddRange(GetEVsOnRoute((ushort)stationId));
+        stationState.EvsOnRoute.AddRange(GetEVsOnRoute(station));
 
         return new Envelope { StationStateResponse = stationState };
     }
@@ -90,10 +90,10 @@ public class SnapshotHandler(
         };
 
         if (sessionA is not null)
-            chargerState.EvsInQueue.Add(CreateEVChargerState(sessionA));
+            chargerState.EvsCharging.Add(CreateEVChargerState(sessionA));
 
         if (sessionB is not null)
-            chargerState.EvsInQueue.Add(CreateEVChargerState(sessionB));
+            chargerState.EvsCharging.Add(CreateEVChargerState(sessionB));
 
         foreach (var (evId, ev) in charger.Queue)
         {
@@ -150,9 +150,8 @@ public class SnapshotHandler(
             TargetSoc = (float)session.EV.TargetSoC,
         };
 
-    private EVOnRoute[] GetEVsOnRoute(ushort stationId)
+    private EVOnRoute[] GetEVsOnRoute(Station station)
     {
-        var station = stationService.GetStation(stationId);
         var evsOnRoute = station.Reservations.GetEVsOnRoute;
 
         var result = new List<EVOnRoute>();
