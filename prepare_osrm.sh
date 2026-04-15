@@ -3,7 +3,7 @@ set -e
 DATA_DIR="data/osrm"
 OSM_FILE="output.osm.pbf"
 OSRM_BACKEND="osrm-backend-362b388d7e0582291662105d7bfc004a3a44a393"
-CAR_FILE="../../"$OSRM_BACKEND"/profiles/car.lua"
+CAR_FILE="../car/car.lua"
 
 # Package mappings for different systems
 declare -A PACKAGE_MAPS

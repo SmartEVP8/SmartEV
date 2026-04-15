@@ -54,7 +54,9 @@ public class FindCandidateStationsHandler(
     {
         if (ev.HasReservationAtStationId is ushort reservedStationId)
         {
+            ev.Advance(e.Time);
             var durationToStation = ev.Journey.Current.DurationToNextStop;
+
             eventScheduler.ScheduleEvent(new ArriveAtStation(
                 e.EVId,
                 reservedStationId,
@@ -78,7 +80,7 @@ public class FindCandidateStationsHandler(
         if (HasScheduledArriveAtStation(e, ref ev, bestStation, remaining))
             return true;
 
-        var nextTime = HalfwayToStation(remaining, e.Time);
+        var nextTime = ev.TimeToNextFindCandidateCheck(e.Time);
         eventScheduler.ScheduleEvent(new FindCandidateStations(e.EVId, nextTime));
         return true;
     }
@@ -99,7 +101,7 @@ public class FindCandidateStationsHandler(
         if (HasScheduledArriveAtStation(e, ref ev, bestStation, remainingTravelTime))
             return;
 
-        var nextTime = HalfwayToStation(remainingTravelTime, e.Time);
+        var nextTime = ev.TimeToNextFindCandidateCheck(e.Time);
         eventScheduler.ScheduleEvent(new FindCandidateStations(e.EVId, nextTime));
     }
 
@@ -117,6 +119,4 @@ public class FindCandidateStationsHandler(
 
         return false;
     }
-
-    private static Time HalfwayToStation(Time remaining, Time currentTime) => currentTime + (remaining / 2);
 }
