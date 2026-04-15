@@ -4,6 +4,7 @@ using Core.Charging;
 using Core.Charging.ChargingModel;
 using Core.Shared;
 using Engine.Services.StationServiceHelpers;
+using Xunit;
 
 public class ProjectedWaitTimeTest
 {
@@ -14,9 +15,8 @@ public class ProjectedWaitTimeTest
         var estimator = new ProjectedWaitTimeEstimator(integrator);
 
         var charger = new SingleCharger(1, 100, CreateConnectors());
-        var state = new ChargerState(charger, 1);
 
-        var waitTime = estimator.EstimateChargerWaitTime(state, new Time(10));
+        var waitTime = estimator.EstimateChargerWaitTime(charger, new Time(10));
 
         Assert.Equal(new Time(0), waitTime);
     }
@@ -28,9 +28,8 @@ public class ProjectedWaitTimeTest
         var estimator = new ProjectedWaitTimeEstimator(integrator);
 
         var charger = new DualCharger(3, 200, CreateConnectors(200));
-        var state = new ChargerState(charger, 1);
 
-        var waitTime = estimator.EstimateChargerWaitTime(state, new Time(10));
+        var waitTime = estimator.EstimateChargerWaitTime(charger, new Time(10));
 
         Assert.Equal(new Time(0), waitTime);
     }
@@ -42,9 +41,8 @@ public class ProjectedWaitTimeTest
         var estimator = new ProjectedWaitTimeEstimator(integrator);
 
         var charger = new SingleCharger(1, 100, CreateConnectors());
-        var state = new ChargerState(charger, 1);
 
-        state.Queue.Enqueue((1, CreateEv(
+        charger.Queue.Enqueue((1, CreateEv(
             evId: 1,
             currentSoC: 0.20,
             targetSoC: 0.80,
@@ -52,7 +50,7 @@ public class ProjectedWaitTimeTest
             maxChargeRateKW: 100,
             arrivalTime: new Time(0))));
 
-        var waitTime = estimator.EstimateChargerWaitTime(state, new Time(10));
+        var waitTime = estimator.EstimateChargerWaitTime(charger, new Time(10));
 
         Assert.True(waitTime > new Time(0));
     }
@@ -64,23 +62,22 @@ public class ProjectedWaitTimeTest
         var estimator = new ProjectedWaitTimeEstimator(integrator);
 
         var charger = new DualCharger(3, 200, CreateConnectors(200));
-        var state = new ChargerState(charger, 1);
 
-        state.Queue.Enqueue((1, CreateEv(
+        charger.Queue.Enqueue((1, CreateEv(
             evId: 1,
             currentSoC: 0.20,
             targetSoC: 0.80,
             capacityKWh: 60,
             maxChargeRateKW: 100,
             arrivalTime: new Time(0))));
-        state.Queue.Enqueue((2, CreateEv(
+        charger.Queue.Enqueue((2, CreateEv(
             evId: 2,
             currentSoC: 0.25,
             targetSoC: 0.80,
             capacityKWh: 60,
             maxChargeRateKW: 100,
             arrivalTime: new Time(0))));
-        state.Queue.Enqueue((3, CreateEv(
+        charger.Queue.Enqueue((3, CreateEv(
             evId: 3,
             currentSoC: 0.10,
             targetSoC: 0.80,
@@ -88,7 +85,7 @@ public class ProjectedWaitTimeTest
             maxChargeRateKW: 100,
             arrivalTime: new Time(0))));
 
-        var waitTime = estimator.EstimateChargerWaitTime(state, new Time(10));
+        var waitTime = estimator.EstimateChargerWaitTime(charger, new Time(10));
 
         Assert.True(waitTime > new Time(0));
     }
@@ -100,9 +97,8 @@ public class ProjectedWaitTimeTest
         var estimator = new ProjectedWaitTimeEstimator(integrator);
 
         var charger = new DualCharger(3, 200, CreateConnectors(200));
-        var state = new ChargerState(charger, 1);
 
-        state.Queue.Enqueue((1, CreateEv(
+        charger.Queue.Enqueue((1, CreateEv(
             evId: 1,
             currentSoC: 0.20,
             targetSoC: 0.80,
@@ -110,7 +106,7 @@ public class ProjectedWaitTimeTest
             maxChargeRateKW: 100,
             arrivalTime: new Time(0))));
 
-        var waitTime = estimator.EstimateChargerWaitTime(state, new Time(10));
+        var waitTime = estimator.EstimateChargerWaitTime(charger, new Time(10));
 
         Assert.Equal(new Time(0), waitTime);
     }
@@ -122,7 +118,6 @@ public class ProjectedWaitTimeTest
         var estimator = new ProjectedWaitTimeEstimator(integrator);
 
         var charger = new SingleCharger(1, 400, CreateConnectors());
-        var state = new ChargerState(charger, 1);
 
         var simNow = new Time(10);
 
@@ -150,20 +145,36 @@ public class ProjectedWaitTimeTest
             maxChargeRateKW: 80,
             arrivalTime: new Time(0));
 
-        var result1 = integrator.IntegrateSingleToCompletion(simNow, charger.MaxPowerKW, charger, ev1);
-        var result2 = integrator.IntegrateSingleToCompletion(simNow, charger.MaxPowerKW, charger, ev2);
-        var result3 = integrator.IntegrateSingleToCompletion(simNow, charger.MaxPowerKW, charger, ev3);
+        var availableAt = simNow;
 
-        Time expectedWaitTime =
-            (result1.FinishTimeA!.Value - simNow) +
-            (result2.FinishTimeA!.Value - simNow) +
-            (result3.FinishTimeA!.Value - simNow);
+        var result1 = integrator.IntegrateSingleToCompletion(
+            availableAt,
+            charger.MaxPowerKW,
+            charger,
+            ev1);
+        availableAt = result1.FinishTimeA!.Value;
 
-        state.Queue.Enqueue((1, ev1));
-        state.Queue.Enqueue((2, ev2));
-        state.Queue.Enqueue((3, ev3));
+        var result2 = integrator.IntegrateSingleToCompletion(
+            availableAt,
+            charger.MaxPowerKW,
+            charger,
+            ev2);
+        availableAt = result2.FinishTimeA!.Value;
 
-        var actualWaitTime = estimator.EstimateChargerWaitTime(state, simNow);
+        var result3 = integrator.IntegrateSingleToCompletion(
+            availableAt,
+            charger.MaxPowerKW,
+            charger,
+            ev3);
+        availableAt = result3.FinishTimeA!.Value;
+
+        var expectedWaitTime = new Time(availableAt - simNow);
+
+        charger.Queue.Enqueue((1, ev1));
+        charger.Queue.Enqueue((2, ev2));
+        charger.Queue.Enqueue((3, ev3));
+
+        var actualWaitTime = estimator.EstimateChargerWaitTime(charger, simNow);
 
         Assert.Equal(expectedWaitTime, actualWaitTime);
     }
@@ -175,7 +186,6 @@ public class ProjectedWaitTimeTest
         var estimator = new ProjectedWaitTimeEstimator(integrator);
 
         var charger = new DualCharger(3, 200, CreateConnectors(200));
-        var state = new ChargerState(charger, 1);
 
         var simNow = new Time(10);
 
@@ -206,12 +216,12 @@ public class ProjectedWaitTimeTest
             ? result.FinishTimeA.Value
             : result.FinishTimeB.Value;
 
-        Time expectedWaitTime = firstAvailableTime - simNow;
+        var expectedWaitTime = new Time(firstAvailableTime - simNow);
 
-        state.Queue.Enqueue((1, ev1));
-        state.Queue.Enqueue((2, ev2));
+        charger.Queue.Enqueue((1, ev1));
+        charger.Queue.Enqueue((2, ev2));
 
-        var actualWaitTime = estimator.EstimateChargerWaitTime(state, simNow);
+        var actualWaitTime = estimator.EstimateChargerWaitTime(charger, simNow);
 
         Assert.Equal(expectedWaitTime, actualWaitTime);
     }
@@ -223,7 +233,6 @@ public class ProjectedWaitTimeTest
         var estimator = new ProjectedWaitTimeEstimator(integrator);
 
         var charger = new DualCharger(3, 200, CreateConnectors(200));
-        var state = new ChargerState(charger, 1);
 
         var simNow = new Time(10);
 
@@ -281,11 +290,11 @@ public class ProjectedWaitTimeTest
             expectedWaitTime = nextAvailableTime - simNow;
         }
 
-        state.Queue.Enqueue((1, ev1));
-        state.Queue.Enqueue((2, ev2));
-        state.Queue.Enqueue((3, ev3));
+        charger.Queue.Enqueue((1, ev1));
+        charger.Queue.Enqueue((2, ev2));
+        charger.Queue.Enqueue((3, ev3));
 
-        var actualWaitTime = estimator.EstimateChargerWaitTime(state, simNow);
+        var actualWaitTime = estimator.EstimateChargerWaitTime(charger, simNow);
 
         Assert.Equal(expectedWaitTime, actualWaitTime);
     }

@@ -18,17 +18,17 @@ public class ProjectedWaitTimeEstimator(ChargingIntegrator chargingIntegrator)
     /// <summary>
     /// Estimates the waiting time for an arriving EV at the given charger.
     /// </summary>
-    public Time EstimateChargerWaitTime(ChargerState chargerState, Time simNow)
+    public Time EstimateChargerWaitTime(ChargerBase chargerBase, Time simNow)
     {
-        return chargerState.Charger switch
+        return chargerBase switch
         {
             SingleCharger singleCharger => EstimateSingleChargerWaitTime(
-                chargerState,
+                chargerBase,
                 singleCharger,
                 simNow),
 
             DualCharger dualCharger => EstimateDualChargerWaitTime(
-                chargerState,
+                chargerBase,
                 dualCharger,
                 simNow),
 
@@ -43,13 +43,13 @@ public class ProjectedWaitTimeEstimator(ChargingIntegrator chargingIntegrator)
     /// 2. all queued EVs ahead of the arriving EV.
     /// </summary>
     private Time EstimateSingleChargerWaitTime(
-        ChargerState chargerState,
+        ChargerBase chargerBase,
         SingleCharger singleCharger,
         Time simNow)
     {
-        var availableAt = GetSingleChargerAvailable(chargerState, singleCharger, simNow);
+        var availableAt = GetSingleChargerAvailable(chargerBase, singleCharger, simNow);
 
-        foreach (var (_, queuedEv) in chargerState.Queue)
+        foreach (var (_, queuedEv) in chargerBase.Queue)
         {
             var result = _chargingIntegrator.IntegrateSingleToCompletion(
                 availableAt,
@@ -70,26 +70,26 @@ public class ProjectedWaitTimeEstimator(ChargingIntegrator chargingIntegrator)
     /// current active sessions plus queued EVs ahead of the arriving EV.
     /// </summary>
     private Time EstimateDualChargerWaitTime(
-    ChargerState chargerState,
+    ChargerBase chargerBase,
     DualCharger dualCharger,
     Time simNow)
     {
-        var queue = new Queue<ConnectedEV>(chargerState.Queue.Select(x => x.Item2));
+        var queue = new Queue<ConnectedEV>(chargerBase.Queue.Select(x => x.Item2));
 
         var currentTime = simNow;
 
-        ConnectedEV? evA = chargerState.SessionA is null
+        ConnectedEV? evA = dualCharger.SessionA is null
             ? null
-            : chargerState.SessionA.EV with
+            : dualCharger.SessionA.EV with
             {
-                CurrentSoC = chargerState.SessionA.GetCurrentSoC(simNow)
+                CurrentSoC = dualCharger.SessionA.GetCurrentSoC(simNow)
             };
 
-        ConnectedEV? evB = chargerState.SessionB is null
+        ConnectedEV? evB = dualCharger.SessionB is null
             ? null
-            : chargerState.SessionB.EV with
+            : dualCharger.SessionB.EV with
             {
-                CurrentSoC = chargerState.SessionB.GetCurrentSoC(simNow)
+                CurrentSoC = dualCharger.SessionB.GetCurrentSoC(simNow)
             };
 
         while (true)
@@ -157,14 +157,14 @@ public class ProjectedWaitTimeEstimator(ChargingIntegrator chargingIntegrator)
     /// Computes when a single charger becomes free from its currently active session.
     /// </summary>
     private Time GetSingleChargerAvailable(
-        ChargerState chargerState,
+        ChargerBase chargerBase,
         SingleCharger singleCharger,
         Time simNow)
     {
-        if (chargerState.SessionA is null)
+        if (singleCharger.Session is null)
             return simNow;
 
-        var activeSession = chargerState.SessionA;
+        var activeSession = singleCharger.Session;
 
         var activeEv = activeSession.EV with
         {
