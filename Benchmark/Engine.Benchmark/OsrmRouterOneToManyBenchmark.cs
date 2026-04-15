@@ -35,7 +35,6 @@ public class OsrmRouterOneToManyBenchmark
         {
             stations.Add(new Station(
                 id: i,
-                name: string.Empty,
                 address: string.Empty,
                 position: new Position(9.9217 + (i * 0.001), 57.0488 + (i * 0.001)),
                 chargers: [],

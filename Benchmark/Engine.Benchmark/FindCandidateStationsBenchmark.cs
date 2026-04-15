@@ -58,7 +58,7 @@ public class FindCandidateStationsBenchmark
         {
             var lat = 55.95 + (rand.NextDouble() * 1);
             var lon = 8.36 + (rand.NextDouble() * 1.7);
-            stations.Add((ushort)i, new Station((ushort)i, string.Empty, string.Empty, new Position(lon, lat), [], energyPrices));
+            stations.Add((ushort)i, new Station((ushort)i, string.Empty, new Position(lon, lat), [], energyPrices));
         }
 
         var polygons = PolygonParser.Parse(File.ReadAllText(gridPath));

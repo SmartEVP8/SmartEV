@@ -105,7 +105,6 @@ public class StationFactory
 
         var station = new Station(
             id,
-            location.Name ?? string.Empty,
             location.Address ?? string.Empty,
             position,
             chargers,

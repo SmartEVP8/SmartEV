@@ -2,12 +2,9 @@ namespace Engine.test.Metrics;
 
 using Core.Charging;
 using Core.Shared;
-using Engine.Events;
 using Engine.test.Builders;
 using Core.test.Builders;
-using Engine.Vehicles;
 using Engine.Metrics.Snapshots;
-using Engine.Services.StationServiceHelpers;
 public class StationServiceSnapshotTests
 {
     /*  [Fact]
@@ -66,27 +63,23 @@ public class StationServiceSnapshotTests
         var charger = CoreTestData.SingleCharger(1, maxPowerKW: chargerMaxKw);
         var station = CoreTestData.Station(1, chargers: [charger]);
 
-        var chargerState = new ChargerState(charger, 1)
+        charger.Window = charger.Window with
         {
-            Window = new ChargerWindow
-            {
-                DeliveredKWh = deliveredKwh,
-                HadActivity = deliveredKwh > 0,
-            },
+            DeliveredKWh = deliveredKwh,
+            HadActivity = deliveredKwh > 0,
         };
 
         for (var i = 0; i < expectedQueueSize; i++)
         {
-            chargerState.Queue.Enqueue((i, EngineTestData.ConnectedEV(i, 0.2, 0.8)));
+            charger.Queue.Enqueue((i, EngineTestData.ConnectedEV(i, 0.2, 0.8)));
         }
 
-        var stationChargers = new Dictionary<ushort, List<ChargerState>> { [1] = [chargerState] };
         var stationIndex = new Dictionary<ushort, Station> { [1] = station };
         var windowReservations = new Dictionary<ushort, uint> { [1] = expectedReservations };
         var windowCancellations = new Dictionary<ushort, uint> { [1] = expectedCancellations };
 
         var (chargers, stations) = collector.Collect(
-            new Time(3600), stationChargers, stationIndex, windowReservations, windowCancellations);
+            new Time(3600), stationIndex, windowReservations, windowCancellations);
 
         var cs = chargers.Single();
         var ss = stations.Single();

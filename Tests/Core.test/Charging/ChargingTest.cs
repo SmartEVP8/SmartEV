@@ -75,6 +75,27 @@ public class ChargingTest
     }
 
     [Fact]
+    public void IntegrateWithLowerTargetThanCurrentSoC()
+    {
+        var integrator = new ChargingIntegrator(stepSeconds: 1);
+        var ev = new ConnectedEV(
+            EVId: 1,
+            CurrentSoC: 0.9,
+            TargetSoC: 0.5,
+            CapacityKWh: 60,
+            MaxChargeRateKW: 100,
+            ArrivalTime: 0);
+        var evConfig = CoreTestData.EVConfig();
+        var result = integrator.IntegrateSingleToCompletion(
+            simNow: 0,
+            maxKW: 100,
+            charger: Make.SingleCharger(evConfig),
+            ev: ev);
+
+        Assert.Equal(0, result.DurationMilliseconds);
+    }
+
+    [Fact]
     public void IntegrateSingleToCompletion()
     {
         // Car charges from 5% to 95% through all three AggressiveTaperCurve regions.
