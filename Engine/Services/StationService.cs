@@ -8,6 +8,7 @@ using Engine.Metrics;
 using Engine.Utils;
 using Engine.Vehicles;
 using Engine.Services.StationServiceHelpers;
+using Core.Vehicles;
 
 /// <summary>
 /// Service responsible for managing the state of stations and chargers, handling events related to reservations, arrivals, and charging sessions.
@@ -120,6 +121,7 @@ public class StationService : IStationService
 
         _arrivalTimes[e.EVId] = e.Time;
         target.Queue.Enqueue((e.EVId, connectedEV));
+        _eVStore.Get(e.EVId).EVState = EVState.Queueing;
         target.UpdateWindowStats();
 
         if (target.IsFree)
@@ -131,9 +133,6 @@ public class StationService : IStationService
     /// Uses the internally stored IntegrationResult to update remaining car SoC.
     /// </summary>
     /// <param name="e">The EndCharging event containing the EVId, ChargerId, and Time of the event.</param>
-    /// <summary>
-    /// Called when a charging session ends for a specific EV.
-    /// </summary>
     public void HandleEndCharging(EndCharging e)
     {
         if (!_chargerIndex.TryGetValue(e.ChargerId, out var entry))
@@ -154,6 +153,7 @@ public class StationService : IStationService
 
         _arrivalTimes.Remove(e.EVId);
         var timeAtStation = e.Time - arrivalTime;
+        ev.EVState = EVState.Driving;
 
         if (ev.CanCompleteJourney(timeAtStation, ev.Preferences.MinAcceptableCharge))
             _scheduler.ScheduleEvent(new ArriveAtDestination(e.EVId, e.Time));
@@ -169,8 +169,16 @@ public class StationService : IStationService
 
     private void StartChargingNextCar(ChargerBase charger, Time simNow, ushort stationId)
     {
+        int? nextEvId = charger.Queue.TryPeek(out var top)
+            ? top.EVId
+            : null;
+
         charger.AccumulateEnergy(simNow);
         _chargerIndex[charger.Id].Handler.StartNext(simNow, stationId);
+
+        if (nextEvId.HasValue)
+            _eVStore.Get(nextEvId.Value).EVState = EVState.Charging;
+
         charger.UpdateWindowStats();
     }
 }

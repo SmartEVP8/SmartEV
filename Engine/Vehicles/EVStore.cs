@@ -105,4 +105,16 @@ public class EVStore(int totalCapacity)
     /// Gets the total capacity of the EVStore, which is the maximum number of EV instances it can hold.
     /// </summary>
     public int Count => totalCapacity;
+
+    /// <summary>
+    /// Gets the total number of EVs currently in the simulation.
+    /// </summary>
+    /// <returns>The count of allocated EVs in the store.</returns>
+    public uint GetTotalEVsInSimulation() => (uint)(totalCapacity - _freeIndexes.Count);
+
+    /// <summary>
+    /// Gets the total number of EVs currently charging.
+    /// </summary>
+    /// <returns>The count of EVs actively charging.</returns>
+    public uint GetChargingEVCount() => (uint)_evs.Count(ev => ev.EVState == EVState.Charging);
 }

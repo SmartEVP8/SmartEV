@@ -61,14 +61,16 @@ public class FindCandidateStationsHandler(
             return;
         }
 
-        eventScheduler.ScheduleEvent(new FindCandidateStations(e.EVId, HalfwayToStation(remaining, e.Time)));
+        eventScheduler.ScheduleEvent(new FindCandidateStations(e.EVId, ev.TimeToNextFindCandidateCheck(e.Time)));
     }
 
     private void HandleNoCandidates(FindCandidateStations e, ref EV ev)
     {
         if (stationService.GetReservationStationId(e.EVId) is ushort reservedStationId)
         {
+            ev.Advance(e.Time);
             var durationToStation = ev.Journey.Current.DurationToNextStop;
+
             eventScheduler.ScheduleEvent(new ArriveAtStation(
                 e.EVId,
                 reservedStationId,
@@ -79,6 +81,4 @@ public class FindCandidateStationsHandler(
 
         throw new InvalidOperationException($"No candidate stations available for EV {e.EVId} at {e.Time}.");
     }
-
-    private static Time HalfwayToStation(Time remaining, Time currentTime) => currentTime + (remaining / 2);
 }

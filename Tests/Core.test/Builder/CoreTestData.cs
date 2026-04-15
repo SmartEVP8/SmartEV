@@ -50,7 +50,7 @@ public static class CoreTestData
                 efficiency: efficiency);
     }
 
-    public static Dictionary<ushort, Station> Stations(params (ushort Id, double Lon, double Lat)[] stations)
+    public static Dictionary<ushort, Station> Stations((ushort Id, double Lon, double Lat)[] stations)
         => stations.ToDictionary(s => s.Id, s => Station(s.Id, new Position(s.Lon, s.Lat)));
 
     public static Journey Journey(List<Position>? waypoints, Time departure = default, Time originalDuration = default, float distanceMeter = 100)
@@ -96,15 +96,6 @@ public static class CoreTestData
         public float CalculatePrice() => _fixedPrice;
     }
 
-    private sealed class FakeCharger() : ChargerBase(id: 1, maxPowerKW: 100)
-    {
-        public override void AccumulateEnergy(Time now) => throw new NotImplementedException();
-
-        public override void UpdateWindowStats() => throw new NotImplementedException();
-
-        public override bool IsFree => throw new NotImplementedException();
-    }
-
     public static SingleCharger SingleCharger(int id, ushort maxPowerKW = 150)
     {
         var connectors = new Connectors((new Connector(maxPowerKW), new Connector(maxPowerKW)));
@@ -119,7 +110,7 @@ public static class CoreTestData
 
     private static ChargerBase CreateFakeChargerWithQueue(int amount)
     {
-        var charger = new FakeCharger();
+        var charger = new SingleCharger(1, 300, connectors: new Connectors((new Connector(30), new Connector(30))));
 
         for (var i = 0; i < amount; i++)
         {

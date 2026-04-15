@@ -29,7 +29,7 @@ namespace Engine.Test.Events.Middleware
             float[] durations = [10f, 7200f, 25f, 9000f, 180f];
             float[] distances = [50f, 1900f, 130f, 2200f, 300f];
             var stubRouter = new StubRouter(durations, distances);
-            _service = new FindCandidateStationService(stubRouter, stations, spatialGrid, _evStore);
+            _service = new FindCandidateStationService(stubRouter, stations, spatialGrid, _evStore, EngineTestData.StationService(stations, new EventScheduler(), _evStore));
         }
 
         [Fact]

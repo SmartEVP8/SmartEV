@@ -1,0 +1,7 @@
+version: v1
+plugins:
+  - plugin: buf.build/protocolbuffers/csharp
+    out: API/Generated
+
+  - plugin: buf.build/bufbuild/es:v2.11.0
+    out: API/Generated/es

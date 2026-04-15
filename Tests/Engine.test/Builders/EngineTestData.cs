@@ -140,6 +140,13 @@ public static class EngineTestData
             ? station
             : throw new KeyNotFoundException($"Station {stationId} not found.");
         }
+
+        public IEnumerable<int> GetEVsOnRouteToStation(ushort stationId) => [];
+
+        public void AddEVOnRoute(int evId, ushort stationId)
+        {
+            // No-op for testing
+        }
     }
 
     private static Dictionary<ushort, Station> CreateAllStations()

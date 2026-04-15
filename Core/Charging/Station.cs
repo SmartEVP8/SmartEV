@@ -95,6 +95,12 @@ public class Reservations()
     private uint _totalReservationsInPeriod;
     private uint _totalCancellationsInPeriod;
 
+
+    /// <summary>
+    /// Gets all the ev ids that have a reservation on the station.
+    /// </summary>
+    public IReadOnlyList<int> GetEVsOnRoute => [.. _index.Keys];
+
     /// <summary>
     /// Returns reservation and cancellation counts since the last snapshot, then resets both counters.
     /// </summary>

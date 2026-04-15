@@ -4,6 +4,16 @@ using Core.Routing;
 using Core.Shared;
 
 /// <summary>
+/// Defines the possible states of an EV.
+/// </summary>
+public enum EVState
+{
+    Driving,
+    Queueing,
+    Charging,
+}
+
+/// <summary>
 /// Represents an electric vehicle (EV) with a battery, preferences, a journey, and an efficiency rating.
 /// </summary>
 /// <param name="battery">The battery of the EV.</param>
@@ -31,6 +41,11 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     /// Gets the journey of the EV.
     /// </summary>
     public Journey Journey { get; private set; } = journey;
+
+    /// <summary> 
+    /// Gets or sets the current state of the EV.
+    /// </summary>
+    public EVState EVState { get; set; } = EVState.Driving;
 
     /// <summary>
     /// Advances the journey to <paramref name="currentTime"/>, consumes the corresponding energy,
@@ -105,15 +120,14 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     {
         if (Battery.MaxCapacityKWh == 0)
             throw new InvalidOperationException($"Battery capacity must be greater than zero when calculating desired SoC (arrivalAtStation={arrivalAtStation}, {this})");
-
         var remainingDistanceKm = Journey.RemainingDistanceToDestination(arrivalAtStation);
         var energyToDest = EnergyForDistanceKWh(remainingDistanceKm);
         var percentNeededToDestination = energyToDest / Battery.MaxCapacityKWh;
-        if (!float.IsFinite(percentNeededToDestination) || percentNeededToDestination < 0f || float.IsNaN(percentNeededToDestination))
-            throw new InvalidOperationException($"Calculated percent needed to destination is invalid (percentNeededToDestination={percentNeededToDestination}, arrivalAtStation={arrivalAtStation}, {this})");
         var chargeToPercent = percentNeededToDestination + Preferences.MinAcceptableCharge;
         var desiredSoC = chargeToPercent > 1f ? 0.8f : chargeToPercent;
-        return Math.Clamp(desiredSoC + 0.01f, 0f, 1f);
+        return float.IsFinite(desiredSoC)
+            ? Math.Clamp(desiredSoC + 0.01f, 0f, 1f)
+            : throw new InvalidOperationException($"Calculated desired SoC is not finite (desiredSoC={desiredSoC}, energyToDest={energyToDest}, remainingDistanceKm={remainingDistanceKm}, arrivalAtStation={arrivalAtStation}, {this})");
     }
 
     /// <summary>Estimates the SoC when reaching the next stop.</summary>
@@ -134,6 +148,12 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     }
 
     /// <summary>
+    /// Calculate how far an EV can drive on current charge in km.
+    /// </summary>
+    /// <returns>Distance in km that a EV can drive.</returns>
+    public readonly float DistanceOnCurrentChargeKm() => Battery.CurrentChargeKWh / (ConsumptionWhPerKm / 1000f);
+
+    /// <summary>
     /// Calculates the next time to check for candidate stations, which is the minimum of:
     /// 1) The time it takes to reach halfway to the next stop, and
     /// 2) The time it takes to reach half of the remaining battery.
@@ -148,7 +168,7 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
         {
             if (currentTime < Journey.Current.Departure)
                 throw new InvalidOperationException($"Current time is before the departure of the current journey (currentTime={currentTime}, departure={Journey.Current.Departure}, {this})");
-            return currentTime;
+            return Journey.Current.Departure + 1;
         }
 
         var percent = Math.Max(Preferences.MinAcceptableCharge, Battery.StateOfCharge / 2);

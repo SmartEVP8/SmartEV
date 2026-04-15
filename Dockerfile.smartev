@@ -45,8 +45,14 @@ RUN dotnet restore
 # Copy .so from OSRM wrapper image
 COPY --from=ghcr.io/smartevp8/osrm_wrapper:latest /build/build/libosrm_wrapper.so Core/native/
 
+# Copy buf binary from the official image
+COPY --from=bufbuild/buf:latest /usr/local/bin/buf /usr/local/bin/buf
+
 # Copy everything and build
 COPY . .
+
+RUN buf generate
+
 RUN dotnet build --no-restore
 
 # Run tests

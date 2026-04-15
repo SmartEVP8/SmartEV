@@ -5,18 +5,26 @@ using Core.Shared;
 /// <summary>
 /// The EventScheduler is responsible for managing and scheduling events in the system.
 /// </summary>
-/// <param name="preProcessors">Middleware/Preprocessors that are fired on MiddlewareEvents if attatched.</param>
-public class EventScheduler(Dictionary<Type, Action<IMiddlewareEvent>>? preProcessors = null) : IEventScheduler
+public class EventScheduler() : IEventScheduler
 {
     private readonly PriorityQueue<Event, (Time, uint)> _eventPriorityQueue = new();
 
     /// <summary>
     /// Optional event handlers that can perform actions on scheduleEvent.
     /// </summary>
-    private readonly Dictionary<Type, Action<IMiddlewareEvent>> _preProcessors = preProcessors ?? [];
+    private readonly Dictionary<Type, Action<IMiddlewareEvent>> _preProcessors = [];
     private readonly HashSet<uint> _canceledEvents = [];
     private Time _currentTime = 0;
     private uint _evSequeenceId = 0;
+
+    /// <summary>
+    /// Register middleware to happen on MiddlewareEvents.
+    /// Middleware is executed on ScheduleEvent.
+    /// </summary>
+    /// <typeparam name="T">Must be of type IMiddlewareEvent.</typeparam>
+    /// <param name="handler">The middleware handler to be registered.</param>
+    public void RegisterPreProcessor<T>(Action<IMiddlewareEvent> handler)
+        where T : IMiddlewareEvent => _preProcessors[typeof(T)] = handler;
 
     /// <summary>
     /// Schedules the event <paramref name="e"/> at its Time attribute.

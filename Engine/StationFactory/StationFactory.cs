@@ -127,7 +127,9 @@ public class StationFactory
         var connectors = CreateConnectorSet();
 
         if (ShouldCreateDualChargingPoint())
+        {
             return new DualCharger(chargerId, _options.MaxPowerKW, connectors);
+        }
 
         return new SingleCharger(chargerId, _options.MaxPowerKW, connectors);
     }
@@ -136,8 +138,7 @@ public class StationFactory
         => new((new Connector(_options.MaxPowerKW), new Connector(_options.MaxPowerKW)));
 
     private bool ShouldCreateDualChargingPoint()
-        => _options.UseDualChargingPoints &&
-           _random.NextDouble() < _options.DualChargingPointProbability;
+        => _random.NextDouble() < _options.DualChargingPointProbability;
 
     /// <summary>
     /// Distributes the total number of chargers across the available stations.

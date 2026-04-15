@@ -129,16 +129,16 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
     /// <param name="timeAtStation">The amount of time spent at a station.</param>
     public void UpdateRouteToDestination(Time timeAtStation)
     {
-        var newDeparture = Current.Departure + timeAtStation;
+        var newDeparture = Current.Departure + timeAtStation + Current.DurationToNextStop;
 
         Current = new CurrentJourney(
             Departure: newDeparture,
             Duration: Current.Duration,
             DistanceKm: Current.DistanceKm,
             Waypoints: Current.Waypoints,
-            NextStop: Current.Waypoints.Last(),
+            NextStop: Current.Waypoints[^1],
             PathDeviation: Current.PathDeviation,
-            DurationToNextStop: DurationToNextStop(Current.Duration, Current.Waypoints, Current.Waypoints.Last()));
+            DurationToNextStop: DurationToNextStop(Current.Duration, Current.Waypoints, Current.Waypoints[^1]));
     }
 
     /// <summary>
@@ -148,7 +148,7 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
     /// <returns>Returns how long it takes to drive a distance in seconds.</returns>
     public Time TimeToDriveDistance(float distance)
     {
-        var speedKmh = Original.DistanceKm / (Original.Duration / Time.MillisecondsPerHour);
+        var speedKmh = Original.DistanceKm / (Original.Duration / (float)Time.MillisecondsPerHour);
         var timeHours = distance / speedKmh;
         return (uint)Math.Ceiling(timeHours * Time.MillisecondsPerHour);
     }
@@ -157,7 +157,7 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
     /// Gets the time it takes to reach half the distance to the next stop.
     /// </summary>
     /// <returns>Time to reach halfway to NextStop.</returns>
-    public Time TimeToReachHalfToNextStop() => Current.Departure + Current.DurationToNextStop / 2;
+    public Time TimeToReachHalfToNextStop() => Current.Departure + (Current.DurationToNextStop / 2);
 
     private float PercentageCompleted(Time currentTime)
     {

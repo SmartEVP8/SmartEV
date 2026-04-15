@@ -3,6 +3,7 @@ namespace Engine.Events.Middleware;
 using Core.Charging;
 using Engine.Grid;
 using Engine.Routing;
+using Engine.Services;
 using Engine.Utils;
 using Engine.Vehicles;
 
@@ -15,7 +16,8 @@ public class FindCandidateStationService(
     IOSRMRouter router,
     Dictionary<ushort, Station> stations,
     ISpatialGrid spatialGrid,
-    EVStore evStore) : IFindCandidateStationService
+    EVStore evStore,
+    StationService stationService) : IFindCandidateStationService
 {
     private record StationQuery(Task<Dictionary<ushort, float>> Task);
 
@@ -37,21 +39,23 @@ public class FindCandidateStationService(
         };
     }
 
-    private Dictionary<ushort, float> ComputeCandidates(FindCandidateStations e)
+    private Dictionary<ushort, float> ComputeCandidates(FindCandidateStations e, double PathdeviationMultiplier = 1.0)
     {
         ref var ev = ref evStore.Get(e.EVId);
         var pos = ev.Advance(e.Time);
 
+        var pathDeviationMultiplied = ev.Preferences.MaxPathDeviation * PathdeviationMultiplier;
+
         var filteredStationIds = spatialGrid.GetStationsAlongPolyline(
             ev.Journey.Current.Waypoints,
-            ev.Preferences.MaxPathDeviation);
+            pathDeviationMultiplied);
 
         var reachableStationIds = ReachableStations.FindReachableStations(
             ev.Journey.Current.Waypoints,
             ev,
             stations,
             filteredStationIds,
-            ev.Preferences.MaxPathDeviation).ToArray();
+            pathDeviationMultiplied).ToArray();
 
         var destination = ev.Journey.Current.Waypoints.Last();
         var detourResult = router.QueryStationsWithDest(
@@ -75,6 +79,11 @@ public class FindCandidateStationService(
                 continue;
 
             refinedCandidateDurations[stationId] = detourResult.Durations[i];
+        }
+
+        if (refinedCandidateDurations.Count == 0 && stationService.GetReservationStationId(e.EVId) is ushort && ev.DistanceOnCurrentChargeKm() > pathDeviationMultiplied)
+        {
+            refinedCandidateDurations = ComputeCandidates(e, PathdeviationMultiplier * 1.25);
         }
 
         return refinedCandidateDurations;
