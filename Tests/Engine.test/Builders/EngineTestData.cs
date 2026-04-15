@@ -76,16 +76,6 @@ public static class EngineTestData
         return new MetricsService(config, Guid.NewGuid());
     }
 
-    public static SnapshotEventHandler SnapshotHandler(
-        StationService stationService,
-        MetricsService metrics,
-        EventScheduler scheduler) =>
-        new(
-            rescheduleTime: new Time(1200000),
-            stationService: stationService,
-            metrics: metrics,
-            scheduler: scheduler);
-
     public static SpatialGrid BuildSpatialGrid(Dictionary<ushort, Station>? stations = null)
     {
         var gridPath = AppContext.GetData("GridPath") as string
@@ -126,8 +116,7 @@ public static class EngineTestData
             integrator: actualIntegrator,
             scheduler: scheduler,
             evStore: evStore,
-            metrics: metrics,
-            snapshotInterval: new Time(1200000));
+            metrics: metrics);
     }
 
     internal sealed class StubCostStore(CostWeights weights) : ICostStore
