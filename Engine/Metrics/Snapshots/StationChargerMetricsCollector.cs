@@ -7,26 +7,20 @@ using Engine.Utils;
 /// <summary>
 /// Dedicated service for generating point-in-time metrics snapshots from current station states.
 /// </summary>
-public class StationMetricsCollector(Time snapshotInterval)
+public class StationMetricsCollector(List<Station> stations)
 {
     /// <summary>
     /// Collects charger and station snapshot metrics for the given simulation time and station states.
     /// </summary>
+    /// <param name="snapshotInterval">How often snapshots are collected.</param>
     /// <param name="simNow">The current simulation time.</param>
-    /// <param name="stationIndex">A dictionary mapping station IDs to station details.</param>
-    /// <param name="windowReservations">A dictionary tracking the number of reservations made at each station during the current snapshot window.</param>
-    /// <param name="windowCancellations">A dictionary tracking the number of cancellations made at each station during the current snapshot window.</param>
     /// <returns>A tuple containing the list of charger snapshot metrics and station snapshot metrics.</returns>
-    public (IEnumerable<ChargerSnapshotMetric> Chargers, IEnumerable<StationSnapshotMetric> Stations) Collect(
-    Time simNow,
-    IReadOnlyDictionary<ushort, Station> stationIndex,
-    IDictionary<ushort, uint> windowReservations,
-    IDictionary<ushort, uint> windowCancellations)
+    public (IEnumerable<ChargerSnapshotMetric> Chargers, IEnumerable<StationSnapshotMetric> Stations) Collect(Time snapshotInterval, Time simNow)
     {
         var chargerMetrics = new List<ChargerSnapshotMetric>();
         var stationMetrics = new List<StationSnapshotMetric>();
 
-        foreach (var (stationId, station) in stationIndex)
+        foreach (var station in stations)
         {
             var totalDeliveredKWh = 0f;
             var totalMaxKWh = 0f;
@@ -47,7 +41,7 @@ public class StationMetricsCollector(Time snapshotInterval)
 
                 chargerMetrics.Add(ChargerSnapshotMetric.Collect(
                     charger,
-                    stationId,
+                    station.Id,
                     simNow,
                     queueSizeInWindow,
                     utilizationInWindow,
@@ -63,16 +57,12 @@ public class StationMetricsCollector(Time snapshotInterval)
                 charger.Window = window;
             }
 
-            windowReservations.TryGetValue(stationId, out var reservations);
-            windowCancellations.TryGetValue(stationId, out var cancellations);
-
-            windowReservations[stationId] = 0;
-            windowCancellations[stationId] = 0;
+            var (reservations, cancellations) = station.Reservations.SnapshotAndResetCounters();
 
             stationMetrics.Add(new StationSnapshotMetric
             {
                 SimTime = simNow,
-                StationId = stationId,
+                StationId = station.Id,
                 TotalDeliveredKWh = totalDeliveredKWh,
                 TotalMaxKWh = totalMaxKWh,
                 TotalQueueSize = totalQueueSize,

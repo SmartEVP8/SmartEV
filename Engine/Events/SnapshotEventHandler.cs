@@ -11,8 +11,8 @@ using Core.Shared;
 /// </summary>
 public class SnapshotEventHandler(
     Time rescheduleTime,
-    StationService stationService,
     MetricsService metrics,
+    StationMetricsCollector stationMetricsCollector,
     EventScheduler scheduler)
 {
     /// <summary>
@@ -25,7 +25,7 @@ public class SnapshotEventHandler(
     /// scheduler, and power delivery.</param>
     public void Handle(SnapshotEvent e)
     {
-        var (chargerMetrics, stationMetrics) = stationService.CollectAllSnapshots(e.Time);
+        var (chargerMetrics, stationMetrics) = stationMetricsCollector.Collect(rescheduleTime, e.Time);
 
         foreach (var stationMetric in stationMetrics)
             metrics.RecordStationSnapshot(stationMetric);

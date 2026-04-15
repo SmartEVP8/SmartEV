@@ -15,6 +15,7 @@ using Engine.Services;
 using Engine.Vehicles;
 using Microsoft.Extensions.DependencyInjection;
 using Engine.Events.Middleware;
+using Engine.Metrics.Snapshots;
 
 /// <summary>
 /// Initializes the Engine by setting up all necessary services and configurations.
@@ -43,11 +44,11 @@ public static class Init
         });
 
         services.AddSingleton<IOSRMRouter>(sp =>
-     {
-         var settings = sp.GetRequiredService<EngineSettings>();
-         var stations = sp.GetRequiredService<List<Station>>();
-         return new OSRMRouter(settings.OsrmPath, stations);
-     });
+        {
+            var settings = sp.GetRequiredService<EngineSettings>();
+            var stations = sp.GetRequiredService<List<Station>>();
+            return new OSRMRouter(settings.OsrmPath, stations);
+        });
 
         services.AddSingleton(sp =>
         {
@@ -144,7 +145,7 @@ public static class Init
             var evStore = sp.GetRequiredService<EVStore>();
             var metrics = sp.GetRequiredService<MetricsService>();
             var settings = sp.GetRequiredService<EngineSettings>();
-            return new StationService(stations.Values, integrator, scheduler, evStore, metrics, settings.SnapshotInterval);
+            return new StationService(stations.Values, integrator, scheduler, evStore, metrics);
         });
 
         services.AddSingleton(sp =>
@@ -167,12 +168,13 @@ public static class Init
 
         services.AddSingleton(sp =>
         {
-            var scheduler = sp.GetRequiredService<EventScheduler>();
-            var metrics = sp.GetRequiredService<MetricsService>();
             var settings = sp.GetRequiredService<EngineSettings>();
             var snapshotInterval = settings.SnapshotInterval;
-            var stationService = sp.GetRequiredService<StationService>();
-            return new SnapshotEventHandler(snapshotInterval, stationService, metrics, scheduler);
+            var metrics = sp.GetRequiredService<MetricsService>();
+            var stations = sp.GetRequiredService<List<Station>>();
+            var stationMetricsCollector = new StationMetricsCollector(stations);
+            var scheduler = sp.GetRequiredService<EventScheduler>();
+            return new SnapshotEventHandler(snapshotInterval, metrics, stationMetricsCollector, scheduler);
         });
 
         services.AddSingleton(sp =>

@@ -5,7 +5,6 @@ using Core.Charging.ChargingModel;
 using Core.Shared;
 using Engine.Events;
 using Engine.Metrics;
-using Engine.Metrics.Snapshots;
 using Engine.Utils;
 using Engine.Vehicles;
 using Engine.Services.StationServiceHelpers;
@@ -18,12 +17,9 @@ public class StationService : IStationService
     private readonly Dictionary<int, (ChargerBase State, IChargerHandler Handler)> _chargerIndex = [];
     private readonly Dictionary<ushort, Station> _stationIndex = [];
     private readonly Dictionary<int, uint> _arrivalTimes = [];
-    private readonly Dictionary<ushort, uint> _windowReservations = [];
-    private readonly Dictionary<ushort, uint> _windowCancellations = [];
     private readonly Dictionary<int, ushort> _evReservations = [];
     private readonly EventScheduler _scheduler;
     private readonly EVStore _eVStore;
-    private readonly StationMetricsCollector _metricsCollector;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="StationService"/> class.
@@ -33,24 +29,19 @@ public class StationService : IStationService
     /// <param name="scheduler">The event scheduler to use for scheduling future events.</param>
     /// <param name="evStore">The storage of current EVs.</param>
     /// <param name="metrics">The metrics service to use for recording metrics.</param>
-    /// <param name="snapshotInterval">The interval at which to collect snapshots.</param>
     public StationService(
         ICollection<Station> stations,
         ChargingIntegrator integrator,
         EventScheduler scheduler,
         EVStore evStore,
-        MetricsService metrics,
-        Time snapshotInterval)
+        MetricsService metrics)
     {
         _scheduler = scheduler;
         _eVStore = evStore;
-        _metricsCollector = new StationMetricsCollector(snapshotInterval);
 
         foreach (var station in stations)
         {
             _stationIndex[station.Id] = station;
-            _windowReservations[station.Id] = 0;
-            _windowCancellations[station.Id] = 0;
 
             foreach (var charger in station.Chargers)
             {
@@ -71,30 +62,11 @@ public class StationService : IStationService
             ? station
             : throw new SkillissueException($"Trying to get station {stationId} which does not exist.");
 
-    /// <inheritdoc/>
-    public int GetTotalQueueSize(ushort stationId)
-        => GetStation(stationId).Chargers.Sum(cs => cs.Queue.Count);
-
     /// <summary>Gets the stationId that an EV has a reservation for if any.</summary>
     /// <param name="evId">The id used for checking for a reservation.</param>
     /// <returns>The stationId or null.</returns>
     public ushort? GetReservationStationId(int evId)
         => _evReservations.TryGetValue(evId, out var stationId) ? stationId : null;
-
-    /// <summary>
-    /// Handles a reservation request from an EV to a station.
-    /// If the EV already has an active reservation, the existing arrival event is cancelled before proceeding.
-    /// Calculates the detoured path through the station, updates the EV's journey, and schedules a new
-    /// arrival event.
-    /// </summary>
-    /// <param name="simNow">The current simulation time.</param>
-    /// <returns>A tuple containing the charger and station snapshots.</returns>
-    public (IEnumerable<ChargerSnapshotMetric> Chargers, IEnumerable<StationSnapshotMetric> Stations) CollectAllSnapshots(Time simNow)
-        => _metricsCollector.Collect(
-            simNow,
-            _stationIndex,
-            _windowReservations,
-            _windowCancellations);
 
     /// <summary>
     /// Creates an reservation on the station and cancels previous reservation if it exists.
