@@ -27,8 +27,8 @@ public class ArriveAtDestinationMetricTest
 
         var metric = ArrivalAtDestinationMetric.Collect(ref ev, simNow);
 
-        Assert.Equal((Time)originalDuration, metric.ExpectedArrivalTime);
-        Assert.Equal((Time)deviation, metric.PathDeviation);
+        Assert.Equal(originalDuration, metric.ExpectedArrivalTime);
+        Assert.Equal(deviation, metric.PathDeviation);
     }
 
     /// <summary>
