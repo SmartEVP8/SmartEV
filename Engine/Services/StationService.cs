@@ -182,7 +182,7 @@ public class StationService : IStationService
             return;
         }
 
-        Log.Verbose(nextEvId ?? 0, simNow, $"Starting next charge on charger {charger.Id} at station {stationId} at time {simNow}. Next EV in queue: {nextEvId?.ToString() ?? "None"}");
+        Log.Verbose(top.EVId, simNow, $"Starting next charge on charger {charger.Id} at station {stationId} at time {simNow}. Next EV in queue: {top.EVId}");
         charger.AccumulateEnergy(simNow);
         _chargerIndex[charger.Id].Handler.StartNext(simNow, stationId);
         _eVStore.Get(top.EVId).EVState = EVState.Charging;

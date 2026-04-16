@@ -115,7 +115,7 @@ public class FindCandidateStationService(
     public async Task<Dictionary<ushort, float>> GetCandidateStationFromCache(int evId)
     {
         if (!_evStationPaths.TryGetValue(evId, out var query))
-            throw new SkillissueException($"No pre-computed station query found for EV {evId}. Ensure PreComputeCandidateStation is called first.");
+            throw Log.Error(evId, 0, new SkillissueException($"No pre-computed station query found for EV {evId}. Ensure PreComputeCandidateStation is called first."));
 
         _evStationPaths.Remove(evId);
         return await query.Task;

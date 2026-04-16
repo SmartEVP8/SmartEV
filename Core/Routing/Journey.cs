@@ -55,7 +55,7 @@ public record CurrentJourney(
 public class Journey(Time departure, Time duration, float distanceMeters, List<Position> waypoints)
 {
     /// <summary>Gets the original baseline of the journey.</summary>
-    public OriginalJourney Original { get; } = new(departure, duration > 0 ? duration : throw new ArgumentOutOfRangeException("Duration can't be zero"), distanceMeters / 1000);
+    public OriginalJourney Original { get; } = new(departure, duration > 0 ? duration : throw Log.Error(0, 0, new ArgumentOutOfRangeException("Duration can't be zero")), distanceMeters / 1000);
 
     /// <summary>Gets the live state of the journey.</summary>
     public CurrentJourney Current { get; private set; } = new(
