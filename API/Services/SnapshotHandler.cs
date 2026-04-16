@@ -62,7 +62,7 @@ public class SnapshotHandler(
         return new Envelope { StationStateResponse = stationState };
     }
 
-    private ChargerState CreateChargerState(ChargerBase charger)
+    private static ChargerState CreateChargerState(ChargerBase charger)
     {
         ActiveSession? sessionA;
         ActiveSession? sessionB;
@@ -90,10 +90,10 @@ public class SnapshotHandler(
         };
 
         if (sessionA is not null)
-            chargerState.EvsCharging.Add(CreateEVChargerState(sessionA));
+            chargerState.EvsCharging.Add(CreateEVChargerState(sessionA, sessionA.Plan?.FinishTimeA));
 
         if (sessionB is not null)
-            chargerState.EvsCharging.Add(CreateEVChargerState(sessionB));
+            chargerState.EvsCharging.Add(CreateEVChargerState(sessionB, sessionB.Plan?.FinishTimeB));
 
         foreach (var (evId, ev) in charger.Queue)
         {
@@ -142,12 +142,13 @@ public class SnapshotHandler(
         return (float)(delivered / d.MaxPowerKW);
     }
 
-    private static EVChargerState CreateEVChargerState(ActiveSession session) =>
+    private static EVChargerState CreateEVChargerState(ActiveSession session, uint? finishTime) =>
         new()
         {
             EvId = session.EVId,
             Soc = (float)session.EV.CurrentSoC,
             TargetSoc = (float)session.EV.TargetSoC,
+            FinishTimeMs = finishTime ?? 0,
         };
 
     private EVOnRoute[] GetEVsOnRoute(Station station)

@@ -52,7 +52,7 @@ message EVChargerState {
   int32 ev_id = 1;
   float soc = 2;
   float target_soc = 3;
-  int32 finish_time_ms = 4;
+  uint32 finish_time_ms = 4;
 }
 
 // Represents the state of a single charger.
