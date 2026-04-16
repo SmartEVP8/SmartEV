@@ -16,7 +16,7 @@ public class ArriveAtDestinationMetricTest
     {
         var departure = 100000U;
         var originalDuration = 50000U;
-        var deviation = 12000U;
+        var deviation = 12000;
         var simNow = (Time)(departure + originalDuration + deviation);
 
         var battery = CoreTestData.Battery();

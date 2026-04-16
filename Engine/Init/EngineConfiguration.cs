@@ -40,6 +40,7 @@ public static class EngineConfiguration
                 RecordCarSnapshots = true,
                 RecordArrivals = true,
                 RecordStationSnapshots = true,
+                RecordChargerSnapshots = true,
             },
             StationFactoryOptions = new StationFactoryOptions
             {

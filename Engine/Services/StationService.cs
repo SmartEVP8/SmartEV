@@ -122,7 +122,7 @@ public class StationService : IStationService
             ArrivalTime: e.Time);
 
         _arrivalTimes[e.EVId] = e.Time;
-        target.Queue.Enqueue((e.EVId, connectedEV));
+        target.Queue.Enqueue(connectedEV);
         _eVStore.Get(e.EVId).EVState = EVState.Queueing;
         target.UpdateWindowStats();
 
@@ -177,17 +177,15 @@ public class StationService : IStationService
 
     private void StartChargingNextCar(ChargerBase charger, Time simNow, ushort stationId)
     {
-        int? nextEvId = charger.Queue.TryPeek(out var top)
-            ? top.EVId
-            : null;
+        if (!charger.Queue.TryPeek(out var top))
+        {
+            return;
+        }
 
         Log.Verbose(nextEvId ?? 0, simNow, $"Starting next charge on charger {charger.Id} at station {stationId} at time {simNow}. Next EV in queue: {nextEvId?.ToString() ?? "None"}");
         charger.AccumulateEnergy(simNow);
         _chargerIndex[charger.Id].Handler.StartNext(simNow, stationId);
-
-        if (nextEvId.HasValue)
-            _eVStore.Get(nextEvId.Value).EVState = EVState.Charging;
-
+        _eVStore.Get(top.EVId).EVState = EVState.Charging;
         charger.UpdateWindowStats();
     }
 }

@@ -10,31 +10,22 @@ public sealed class EngineEventSubscriber(
     SnapshotHandler snapshotHandler,
     IEventSender eventSender) : IEngineEventSubscriber
 {
-    /// <inheritdoc/>
-    public async void OnArrivalAtStation(ArriveAtStation @event)
+    private async void SendStationSnapshot(ushort stationId)
     {
         try
         {
-            var envelope = snapshotHandler.BuildStationSnapshot(@event.StationId);
+            var envelope = snapshotHandler.BuildStationSnapshot(stationId);
             await eventSender.SendAsync(envelope);
         }
         catch (Exception ex)
         {
-            Log.Error(0, 0, ex);
+            Log.Error(0, 0, ex, ("StationId", stationId));
         }
     }
 
     /// <inheritdoc/>
-    public async void OnChargingEnd(EndCharging @event)
-    {
-        try
-        {
-            var envelope = snapshotHandler.BuildStationSnapshot(@event.StationId);
-            await eventSender.SendAsync(envelope);
-        }
-        catch (Exception ex)
-        {
-            Log.Error(0, 0, ex);
-        }
-    }
+    public async void OnArrivalAtStation(ArriveAtStation @event) => SendStationSnapshot(@event.StationId);
+
+    /// <inheritdoc/>
+    public async void OnChargingEnd(EndCharging @event) => SendStationSnapshot(@event.StationId);
 }

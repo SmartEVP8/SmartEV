@@ -52,6 +52,7 @@ message EVChargerState {
   int32 ev_id = 1;
   float soc = 2;
   float target_soc = 3;
+  uint32 finish_time_ms = 4;
 }
 
 // Represents the state of a single charger.
@@ -60,7 +61,8 @@ message ChargerState {
   float utilization = 2;
   uint32 charger_id = 3;
   uint32 queue_size = 4;
-  repeated EVChargerState evs_in_queue = 5;
+  repeated EVChargerState evs_charging = 5;
+  repeated EVChargerState evs_in_queue = 6;
 }
 
 // Represents an EV currently on route to a station, including its waypoints
@@ -74,15 +76,6 @@ message StationState {
   uint32 station_id = 1;
   repeated ChargerState charger_states = 2;
   repeated EVOnRoute evs_on_route = 3;
-}
-
-// ============================================================================
-// CLIENT REQUEST TYPES
-// ============================================================================
-
-// Request a snapshot of a specific station's state
-message GetStationSnapshot {
-  uint32 station_id = 1;
 }
 
 // ============================================================================
@@ -105,14 +98,11 @@ message SimulationSnapshot {
 */
 message Envelope {
   oneof payload {
-    // Client Requests (10-19)
-    GetStationSnapshot get_station_snapshot = 10;
-
     // Server Responses (20-29)
-    InitEngineData init_engine_data = 20;
-    StationState station_state_response = 21; // response to GetStationSnapshot
+    InitEngineData init_engine_data = 10;
+    StationState station_state_response = 11; // response to GetStationSnapshot
 
     // Server Events/Pushes (30-39)
-    SimulationSnapshot state_update = 30;
+    SimulationSnapshot state_update = 20;
   }
 }

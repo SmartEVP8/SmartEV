@@ -39,11 +39,11 @@ public class SnapshotHandler(
     /// </summary>
     /// <param name="stationId">The ID of the station for which to build the snapshot.</param>
     /// <returns>The envelope containing the station snapshot response.</returns>
-    public Envelope BuildStationSnapshot(uint stationId)
+    public Envelope BuildStationSnapshot(ushort stationId)
     {
         var stationState = new StationState { StationId = stationId };
 
-        var station = stationService.GetStation((ushort)stationId);
+        var station = stationService.GetStation(stationId);
         if (station == null)
         {
             Log.Warn(0, 0, $"Station with ID {stationId} not found", ("StationId", stationId));
@@ -56,12 +56,12 @@ public class SnapshotHandler(
             stationState.ChargerStates.Add(chargerState);
         }
 
-        stationState.EvsOnRoute.AddRange(GetEVsOnRoute((ushort)stationId));
+        stationState.EvsOnRoute.AddRange(GetEVsOnRoute(station));
 
         return new Envelope { StationStateResponse = stationState };
     }
 
-    private ChargerState CreateChargerState(ChargerBase charger)
+    private static ChargerState CreateChargerState(ChargerBase charger)
     {
         ActiveSession? sessionA;
         ActiveSession? sessionB;
@@ -89,16 +89,16 @@ public class SnapshotHandler(
         };
 
         if (sessionA is not null)
-            chargerState.EvsInQueue.Add(CreateEVChargerState(sessionA));
+            chargerState.EvsCharging.Add(CreateEVChargerState(sessionA, sessionA.Plan?.CarA.FinishTime));
 
-        if (sessionB is not null)
-            chargerState.EvsInQueue.Add(CreateEVChargerState(sessionB));
+        if (sessionB is not null && sessionB.Plan is not null && sessionB.Plan.CarB is not null)
+            chargerState.EvsCharging.Add(CreateEVChargerState(sessionB, sessionB.Plan.CarB.FinishTime));
 
-        foreach (var (evId, ev) in charger.Queue)
+        foreach (var ev in charger.Queue)
         {
             chargerState.EvsInQueue.Add(new EVChargerState
             {
-                EvId = evId,
+                EvId = ev.EVId,
                 Soc = (float)ev.CurrentSoC,
                 TargetSoc = (float)ev.TargetSoC,
             });
@@ -141,17 +141,17 @@ public class SnapshotHandler(
         return (float)(delivered / d.MaxPowerKW);
     }
 
-    private static EVChargerState CreateEVChargerState(ActiveSession session) =>
+    private static EVChargerState CreateEVChargerState(ActiveSession session, uint? finishTime) =>
         new()
         {
             EvId = session.EVId,
             Soc = (float)session.EV.CurrentSoC,
             TargetSoc = (float)session.EV.TargetSoC,
+            FinishTimeMs = finishTime ?? 0,
         };
 
-    private EVOnRoute[] GetEVsOnRoute(ushort stationId)
+    private EVOnRoute[] GetEVsOnRoute(Station station)
     {
-        var station = stationService.GetStation(stationId);
         var evsOnRoute = station.Reservations.GetEVsOnRoute;
 
         var result = new List<EVOnRoute>();

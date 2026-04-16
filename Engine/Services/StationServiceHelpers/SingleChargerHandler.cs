@@ -50,21 +50,21 @@ public class SingleChargerHandler(
 
         charger.Queue.Dequeue();
 
-        metrics.RecordWaitTime(new EVWaitTimeMetric
+        metrics.RecordWaitTime(new WaitTimeInQueueMetric
         {
             EVId = next.EVId,
             StationId = stationId,
-            ArrivalAtStationTime = next.EV.ArrivalTime,
+            ArrivalAtStationTime = next.ArrivalTime,
             StartChargingTime = simNow,
         });
 
-        charger.Session = new ActiveSession(next.EVId, next.EV, simNow, null, null, null);
+        charger.Session = new ActiveSession(next.EVId, next, simNow, null, null, null);
         charger.Window = charger.Window with { LastEnergyUpdateTime = simNow };
 
-        var result = integrator.IntegrateSingleToCompletion(simNow, charger.MaxPowerKW, charger, next.EV);
+        var result = integrator.IntegrateSingleToCompletion(simNow, charger.MaxPowerKW, charger, next);
         charger.Session = charger.Session with { Plan = result };
 
-        if (result.FinishTimeA is { } finishTime)
+        if (result.CarA.FinishTime is { } finishTime)
         {
             Log.Info(charger.Session.EVId, finishTime, $"Scheduling EndCharging event for EV {charger.Session.EVId} on charger {charger.Id} at station {stationId} with finish time {finishTime}.");
             var token = scheduler.ScheduleEvent(new EndCharging(next.EVId, charger.Id, stationId, finishTime));
@@ -85,7 +85,7 @@ public class SingleChargerHandler(
     {
         if (charger.Session?.EVId != evId) return null;
 
-        var finalSoC = charger.Session.Plan?.SocA ?? charger.Session.EV.CurrentSoC;
+        var finalSoC = charger.Session.Plan?.CarA.Soc ?? charger.Session.EV.CurrentSoC;
         charger.Disconnect();
         charger.Session = null;
         return finalSoC;
