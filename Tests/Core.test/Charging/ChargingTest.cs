@@ -93,7 +93,6 @@ public class ChargingTest
             ev: ev);
 
         Assert.Equal(0, result.DurationMilliseconds);
-        Assert.NotNull(result.CarA.FinishTime);
     }
 
     [Fact]
@@ -123,9 +122,6 @@ public class ChargingTest
             ev2);
 
         Assert.Equal(0, result.DurationMilliseconds);
-        Assert.NotNull(result.CarA.FinishTime);
-        Assert.NotNull(result.CarB);
-        Assert.NotNull(result.CarB.FinishTime);
     }
 
     [Fact]

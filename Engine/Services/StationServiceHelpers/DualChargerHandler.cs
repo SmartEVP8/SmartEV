@@ -74,21 +74,25 @@ public class DualChargerHandler(
     {
         if (charger.SessionA?.EVId == evId)
         {
-            var finalSoC = charger.SessionA.Plan?.CarA.Soc ?? charger.SessionA.EV.CurrentSoC;
-            var bSoC = charger.SessionA.Plan?.CarA.PartnerSoCAtFinish;
+            var finalSoC = charger.SessionA.FinalSoC;
+            var partnerSoC = charger.SessionA.PartnerSoCAtFinish;
+
             charger.Disconnect(ChargingSide.Left);
             charger.SessionA = null;
-            charger.SessionB = UpdateRemainingSession(ChargingSide.Right, bSoC, charger.SessionB);
+            charger.SessionB = UpdateRemainingSession(ChargingSide.Right, partnerSoC, charger.SessionB);
+
             return finalSoC;
         }
 
         if (charger.SessionB?.EVId == evId)
         {
-            var finalSoC = charger.SessionB.Plan?.CarB?.Soc ?? charger.SessionB.EV.CurrentSoC;
-            var aSoC = charger.SessionB.Plan?.CarB?.PartnerSoCAtFinish;
+            var finalSoC = charger.SessionB.FinalSoC;
+            var partnerSoC = charger.SessionB.PartnerSoCAtFinish;
+
             charger.Disconnect(ChargingSide.Right);
             charger.SessionB = null;
-            charger.SessionA = UpdateRemainingSession(ChargingSide.Left, aSoC, charger.SessionA);
+            charger.SessionA = UpdateRemainingSession(ChargingSide.Left, partnerSoC, charger.SessionA);
+
             return finalSoC;
         }
 
@@ -133,14 +137,19 @@ public class DualChargerHandler(
     /// <param name="before">Whether side A or B was occupied before the new vehicle connected.</param>
     private void CancelStaleEventsIfPairingChanged((bool hadA, bool hadB) before)
     {
-        var nowHasBoth = charger.SessionA is not null && charger.SessionB is not null;
-        if (before is { hadA: true, hadB: true } || !nowHasBoth) return;
+        if (charger.SessionA is null || charger.SessionB is null) return;
 
-        if (before.hadA && !before.hadB && charger.SessionA?.CancellationToken is { } tA)
-            scheduler.CancelEvent(tA);
+        var tokenToCancel = before switch
+        {
+            (true, false) => charger.SessionA.CancellationToken,
+            (false, true) => charger.SessionB.CancellationToken,
+            _ => null
+        };
 
-        if (before.hadB && !before.hadA && charger.SessionB?.CancellationToken is { } tB)
-            scheduler.CancelEvent(tB);
+        if (tokenToCancel is { } token)
+        {
+            scheduler.CancelEvent(token);
+        }
     }
 
     /// <summary>
@@ -170,16 +179,17 @@ public class DualChargerHandler(
     /// <param name="stationId">The ID of the station.</param>
     private void ScheduleEndEvents(IntegrationResult? result, ushort stationId)
     {
-        if (charger.SessionA is not null && result?.CarA.FinishTime is { } finishA)
-        {
-            var token = scheduler.ScheduleEvent(new EndCharging(charger.SessionA.EVId, charger.Id, stationId, finishA));
-            charger.SessionA = charger.SessionA with { CancellationToken = token };
-        }
+        if (result is null) return;
 
-        if (charger.SessionB is not null && result?.CarB?.FinishTime is { } finishB)
+        charger.SessionA = ScheduleForSession(charger.SessionA, result.CarA);
+        charger.SessionB = ScheduleForSession(charger.SessionB, result.CarB);
+
+        ActiveSession? ScheduleForSession(ActiveSession? session, VehicleIntegrationResult? vehicleResult)
         {
-            var token = scheduler.ScheduleEvent(new EndCharging(charger.SessionB.EVId, charger.Id, stationId, finishB));
-            charger.SessionB = charger.SessionB with { CancellationToken = token };
+            if (session is null || vehicleResult?.FinishTime is not { } finish) return session;
+
+            var token = scheduler.ScheduleEvent(new EndCharging(session.EVId, charger.Id, stationId, finish));
+            return session with { CancellationToken = token };
         }
     }
 

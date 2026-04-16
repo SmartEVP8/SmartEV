@@ -52,6 +52,13 @@ public record IntegrationResult(
     /// Gets the total energy delivered to all connected cars during this run.
     /// </summary>
     public double TotalEnergyKWh => CarA.EnergyDeliveredKWh + (CarB?.EnergyDeliveredKWh ?? 0.0);
+
+    public VehicleIntegrationResult? GetResultFor(ChargingSide? side) => side switch
+    {
+        ChargingSide.Left => CarA,
+        ChargingSide.Right => CarB,
+        _ => null
+    };
 }
 
 /// <summary>

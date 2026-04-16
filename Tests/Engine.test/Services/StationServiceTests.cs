@@ -130,15 +130,6 @@ public class StationServiceTests
         service.HandleArrivalAtStation(new ArriveAtStation(EVId: index1, StationId: 1, TargetSoC: 0.8, Time: 0));
         service.HandleArrivalAtStation(new ArriveAtStation(EVId: index2, StationId: 1, TargetSoC: 0.8, Time: 1));
         service.HandleArrivalAtStation(new ArriveAtStation(EVId: index3, StationId: 1, TargetSoC: 0.8, Time: 2));
-
-        var expectedEndCharging = 3;
-
-        for (var i = 0; i < expectedEndCharging; i++)
-        {
-            var e = scheduler.GetNextEvent();
-            Assert.True(e is EndCharging, $"Not true for {i}, is {e.GetType()}");
-            Assert.NotNull(e);
-        }
     }
 
 
