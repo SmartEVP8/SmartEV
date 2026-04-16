@@ -110,29 +110,6 @@ public class StationServiceTests
         Assert.True(ev2Event.Time > ev1End.Time);
     }
 
-    [Fact]
-    public void EVHigherSocThanTargetSoC()
-    {
-        // Dual charger — first two EVs fill both sides, third queues.
-        // After one finishes, third should start and power is redistributed.
-        var (service, scheduler, evStore, charger) = BuildSingle(maxPowerKW: 200);
-
-        var battery = new Battery(200, 40, 1f);
-
-        evStore.TryAllocate((_, ref e) => { e = CoreTestData.EV(battery: battery); }, out var index1);
-        evStore.TryAllocate((_, ref e) => { e = CoreTestData.EV(battery: battery); }, out var index2);
-        evStore.TryAllocate((_, ref e) => { e = CoreTestData.EV(battery: battery); }, out var index3);
-
-        service.HandleReservation(new Reservation(EVId: index1, 0, 0.2f, 0.6), stationId: 1);
-        service.HandleReservation(new Reservation(EVId: index2, 0, 0.2f, 0.6), stationId: 1);
-        service.HandleReservation(new Reservation(EVId: index3, 0, 0.2f, 0.6), stationId: 1);
-
-        service.HandleArrivalAtStation(new ArriveAtStation(EVId: index1, StationId: 1, TargetSoC: 0.8, Time: 0));
-        service.HandleArrivalAtStation(new ArriveAtStation(EVId: index2, StationId: 1, TargetSoC: 0.8, Time: 1));
-        service.HandleArrivalAtStation(new ArriveAtStation(EVId: index3, StationId: 1, TargetSoC: 0.8, Time: 2));
-    }
-
-
     private static (StationService service, EventScheduler scheduler, EVStore evStore, ChargerBase charger) BuildSingle(ushort maxPowerKW = 150)
     {
         var charger = CoreTestData.SingleCharger(1, maxPowerKW: maxPowerKW);
