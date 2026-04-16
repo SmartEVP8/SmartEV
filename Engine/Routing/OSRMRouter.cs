@@ -95,7 +95,7 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
     {
         _osrm = InitializeOSRM(mapPath.ToString());
         if (_osrm == IntPtr.Zero)
-            throw new Exception("OSRM initialization failed.");
+            throw LogHelper.Error(0, 0, new Exception("OSRM initialization failed."));
         InitStations(stations);
     }
 
@@ -225,7 +225,7 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
         var ok = RegisterStations(_osrm, coords, stations.Count, snappedCoords);
 
         if (!ok)
-            throw new InvalidOperationException("Failed to snap one or more stations to the road network.");
+            throw LogHelper.Error(0, 0, new InvalidOperationException("Failed to snap one or more stations to the road network."));
 
         for (var i = 0; i < stations.Count; i++)
         {

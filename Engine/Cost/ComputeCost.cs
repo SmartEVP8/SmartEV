@@ -1,3 +1,4 @@
+using Serilog;
 namespace Engine.Cost;
 
 using System.Data;
@@ -25,7 +26,7 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
     public Station Compute(ref EV ev, Dictionary<ushort, float> stationDurations, Time time)
     {
         var bestCost = double.MaxValue;
-        var weights = costStore.GetWeights() ?? throw new NoNullAllowedException("Cost weights not found in store.");
+        var weights = costStore.GetWeights() ?? throw LogHelper.Error(0, time, new NoNullAllowedException("Cost weights not found in store."), ("EV", ev));
         Station? bestStation = null;
 
         foreach (var (stationId, duration) in stationDurations)
@@ -41,10 +42,11 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
 
             if (double.IsNaN(cost))
             {
-                throw new InvalidOperationException(
+                throw LogHelper.Error(0, time, new InvalidOperationException(
                     $"Invalid cost calculated for station {stationId}: {cost}. " +
                     $"Queue={effectiveQueueCost}, PathDev={pathDeviationCost}, " +
-                    $"Urgency={urgencyCost}, Price={priceCost}, Wait={effectiveWaitTimeCost}");
+                    $"Urgency={urgencyCost}, Price={priceCost}, Wait={effectiveWaitTimeCost}"),
+                    ("EV", ev), ("StationId", stationId));
             }
 
             if (cost < bestCost)
@@ -56,7 +58,7 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
 
         if (bestStation is null)
         {
-            throw new ArgumentNullException("No suitable station found.");
+            throw LogHelper.Error(0, time, new ArgumentNullException("No suitable station found."), ("EV", ev));
         }
 
         return bestStation;
@@ -66,7 +68,7 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
     private float CalculateEffectiveQueueSizeCost(Station station, CostWeights weights)
     {
         if (station.Chargers.Count == 0)
-            throw new InvalidOperationException($"Station {station.Id} has no chargers.");
+            throw LogHelper.Error(0, 0, new InvalidOperationException($"Station {station.Id} has no chargers."), ("StationId", station.Id));
 
         var totalQueueSize = stationService.GetStation(station.Id)
                                 .Chargers.Sum(cs => cs.Queue.Count);
@@ -87,7 +89,7 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
     {
         var remainingCurrentRoute = ev.Journey.RemainingCurrentRoute(time);
         if (remainingCurrentRoute <= 0)
-            throw new InvalidOperationException($"EV {ev} has no remaining route duration, cannot calculate path deviation cost.");
+            throw LogHelper.Error(0, time, new InvalidOperationException($"EV {ev} has no remaining route duration, cannot calculate path deviation cost."), ("EV", ev));
 
         var extraTimeCostMilliseconds = detourDuration - remainingCurrentRoute;
         if (extraTimeCostMilliseconds <= 0)

@@ -24,21 +24,33 @@ public class Simulation(
     /// <returns>Returns?.</returns>
     public async Task Run(CancellationToken cancelToken = default)
     {
-        Log.Information("Simulation started.");
+        LogHelper.Info(0, 0, "Simulation started.");
         Console.WriteLine("Starting Simulation");
 
         scheduler.ScheduleEvent(new SpawnEVS(0));
         scheduler.ScheduleEvent(new SnapshotEvent(0));
 
-        while (true)
+        try
         {
-            cancelToken.ThrowIfCancellationRequested();
-            var shouldContinue = await HandleNextEvent(cancelToken);
-            if (!shouldContinue)
+            while (true)
             {
-                Log.CloseAndFlush();
-                return;
+                cancelToken.ThrowIfCancellationRequested();
+                var shouldContinue = await HandleNextEvent(cancelToken);
+                if (!shouldContinue)
+                {
+                    LogHelper.Info(0, 0, "Simulation finished.");
+                    return;
+                }
             }
+        }
+        catch (Exception ex)
+        {
+            LogHelper.Warn(0, 0, "Simulation crashed.");
+            Console.WriteLine($"Simulation crashed: {ex}");
+        }
+        finally
+        {
+            await Log.CloseAndFlushAsync();
         }
     }
 

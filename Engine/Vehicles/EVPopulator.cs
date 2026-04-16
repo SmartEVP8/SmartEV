@@ -22,7 +22,7 @@ public class EVPopulator(EVFactory evFactory, EVStore evStore, IEventScheduler e
     public void CreateEVs(int amount, Time distributionWindow)
     {
         if (amount < 0)
-            throw new ArgumentException($"Amount of EVs to create cannot be negative (amount={amount}).");
+            throw LogHelper.Error(0, 0, new ArgumentException($"Amount of EVs to create cannot be negative (amount={amount})."));
         else if (amount == 0)
             return;
 

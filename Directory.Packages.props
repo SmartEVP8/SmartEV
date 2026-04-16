@@ -15,6 +15,7 @@
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageVersion Include="Parquet.Net" Version="5.5.0" />
     <PackageVersion Include="Serilog" Version="4.3.1" />
+    <PackageVersion Include="Serilog.Expressions" Version="5.0.0" />
     <PackageVersion Include="Serilog.Extensions.Logging" Version="10.0.0" />
     <PackageVersion Include="Serilog.Sinks.File" Version="7.0.0" />
     <PackageVersion Include="StyleCop.Analyzers" Version="1.1.118">

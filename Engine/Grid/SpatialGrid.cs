@@ -41,7 +41,7 @@ public class SpatialGrid : ISpatialGrid
             var key = ToRowCol(station.Value.Position.Latitude, station.Value.Position.Longitude);
 
             if (!_cells.TryGetValue(key, out var list))
-                key = FindNearestSpawnableCell(key) ?? throw new Exception($"Station {station.Value.Position.Latitude}, {station.Value.Position.Longitude} has no nearby spawnable cell.");
+                key = FindNearestSpawnableCell(key) ?? throw LogHelper.Error(0, 0, new Exception($"Station {station.Value.Position.Latitude}, {station.Value.Position.Longitude} has no nearby spawnable cell."), ("StationId", station.Key), ("Position", station.Value.Position));
 
             _cells[key].Add(station.Key);
         }

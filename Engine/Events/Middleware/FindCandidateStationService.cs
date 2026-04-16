@@ -89,11 +89,11 @@ public class FindCandidateStationService(
             }
             else if (refinedCandidateDurations.Count == 0)
             {
-                Log.Warning($"No candidate stations found for EV {e.EVId} at time {e.Time}.");
+                LogHelper.Warn(e.EVId, e.Time, $"No candidate stations found for EV {e.EVId} at time {e.Time}.");
             }
             else
             {
-                Log.Verbose($"Computed candidate stations for EV {e.EVId}: amount of stations: {refinedCandidateDurations.Count} at time {e.Time}.");
+                LogHelper.Verbose(e.EVId, e.Time, $"Computed candidate stations for EV {e.EVId}: amount of stations: {refinedCandidateDurations.Count} at time {e.Time}.");
             }
 
             return refinedCandidateDurations;
@@ -104,7 +104,7 @@ public class FindCandidateStationService(
             return ComputeCandidates(e, PathdeviationMultiplier * 1.25);
         }
 
-        Log.Warning($"No candidate stations found for EV {e.EVId}. Could not find any stations along polyline, even after expanding search radius. Returning empty candidate set.  at time {e.Time}");
+        LogHelper.Warn(e.EVId, e.Time, $"No candidate stations found for EV {e.EVId}. Could not find any stations along polyline, even after expanding search radius. Returning empty candidate set.  at time {e.Time}");
         return [];
     }
 

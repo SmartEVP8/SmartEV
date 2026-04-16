@@ -68,7 +68,7 @@ public class EventDispatcher(
                 break;
 
             default:
-                throw new SkillissueException("This should never happen, add a handler");
+                throw LogHelper.Error(0, e.Time, new SkillissueException("This should never happen, add a handler"), ("Event", e));
         }
 
         if (_eventCount % 1000 == 0)

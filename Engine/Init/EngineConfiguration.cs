@@ -1,3 +1,4 @@
+using Serilog;
 namespace Engine.Init;
 
 using Engine.Cost;
@@ -77,6 +78,6 @@ public static class EngineConfiguration
             searchDir = searchDir.Parent;
         }
 
-        throw new DirectoryNotFoundException("Could not find 'data' directory in project hierarchy");
+        throw LogHelper.Error(0, 0, new DirectoryNotFoundException("Could not find 'data' directory in project hierarchy"));
     }
 }

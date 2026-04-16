@@ -41,8 +41,11 @@ public class SingleChargerHandler(
 
         if (!charger.TryConnect())
         {
-            throw new SkillissueException(
-                $"Logic Error: EV {next.EVId} reached Charger {charger.Id} but TryConnect failed.");
+            throw LogHelper.Error(0, simNow, new SkillissueException(
+                $"Logic Error: EV {next.EVId} reached Charger {charger.Id} but TryConnect failed."),
+                ("StationId", stationId),
+                ("Charger", charger),
+                ("NextEV", next));
         }
 
         charger.Queue.Dequeue();
@@ -63,7 +66,7 @@ public class SingleChargerHandler(
 
         if (result.FinishTimeA is { } finishTime)
         {
-            Log.Information($"Scheduling EndCharging event for EV {charger.Session.EVId} on charger {charger.Id} at station {stationId} with finish time {finishTime}.");
+            LogHelper.Info(charger.Session.EVId, finishTime, $"Scheduling EndCharging event for EV {charger.Session.EVId} on charger {charger.Id} at station {stationId} with finish time {finishTime}.");
             var token = scheduler.ScheduleEvent(new EndCharging(next.EVId, charger.Id, stationId, finishTime));
             charger.Session = charger.Session with { CancellationToken = token };
         }

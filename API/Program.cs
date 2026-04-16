@@ -1,4 +1,3 @@
-using Serilog.Events;
 namespace API;
 
 using Services;
@@ -10,6 +9,8 @@ using Google.Protobuf;
 using Microsoft.Extensions.Logging;
 using Core.Charging;
 using Serilog;
+using Serilog.Events;
+using Serilog.Templates;
 
 /// <summary>
 /// Entry point for the SmartEV API application.
@@ -32,23 +33,29 @@ public static class Program
                       .AllowAnyMethod()
                       .AllowAnyHeader());
         });
+        var formatter = new ExpressionTemplate("{ {evId: @p['evId'], Time: @p['Time'], Level: @l, Message: @m, Exception: @x, ..@p} }\n");
 
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Verbose()
             .WriteTo.File(
-                "logs/API-verbose-.txt",
+                formatter,
+                "logs/Headless-verbose-.jsonl",
                 restrictedToMinimumLevel: LogEventLevel.Verbose,
-                outputTemplate: "{Level:u3}: {Message:lj}{NewLine}{Exception}",
                 rollingInterval: RollingInterval.Day)
             .WriteTo.File(
-                "logs/API-information-.txt",
+                formatter,
+                "logs/Headless-information-.jsonl",
                 restrictedToMinimumLevel: LogEventLevel.Information,
-                outputTemplate: "{Level:u3}: {Message:lj}{NewLine}{Exception}",
                 rollingInterval: RollingInterval.Day)
             .WriteTo.File(
-                "logs/API-warning-.txt",
+                formatter,
+                "logs/Headless-warning-.jsonl",
                 restrictedToMinimumLevel: LogEventLevel.Warning,
-                outputTemplate: "{Level:u3}: {Message:lj}{NewLine}{Exception}",
+                rollingInterval: RollingInterval.Day)
+            .WriteTo.File(
+                formatter,
+                "logs/Headless-error-.jsonl",
+                restrictedToMinimumLevel: LogEventLevel.Error,
                 rollingInterval: RollingInterval.Day)
             .CreateLogger();
 
@@ -139,7 +146,7 @@ public static class Program
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "WebSocket error");
+                LogHelper.Error(0, 0, ex);
                 throw;
             }
             finally
@@ -149,7 +156,7 @@ public static class Program
             }
         });
 
-        Log.Information("API started.");
+        LogHelper.Info(0, 0, "API started.");
         app.Run();
     }
 }
