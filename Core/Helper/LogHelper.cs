@@ -1,7 +1,6 @@
-using Serilog;
 using Serilog.Events;
 
-public static class LogHelper
+public static class Log
 {
     public static void Write(
         LogEventLevel level,
@@ -11,7 +10,7 @@ public static class LogHelper
         Exception? ex,
         params (string Key, object Value)[] extra)
     {
-        var log = Log.ForContext("evId", evId)
+        var log = Serilog.Log.ForContext("evId", evId)
                      .ForContext("Time", time);
 
         foreach (var (key, value) in extra)

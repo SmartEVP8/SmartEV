@@ -37,7 +37,7 @@ public class EventScheduler() : IEventScheduler
     {
         var timestamp = e.Time;
         if (timestamp < _currentTime)
-            throw LogHelper.Error(0, e.Time, new ArgumentOutOfRangeException($"Event timestamp {timestamp} is in the past (current time: {_currentTime})"), ("Event", e));
+            throw Log.Error(0, e.Time, new ArgumentOutOfRangeException($"Event timestamp {timestamp} is in the past (current time: {_currentTime})"), ("Event", e));
 
         if (e is IMiddlewareEvent me && _preProcessors.TryGetValue(me.GetType(), out var handler))
             handler.Invoke(me);

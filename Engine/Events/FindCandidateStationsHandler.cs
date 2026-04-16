@@ -40,14 +40,14 @@ public class FindCandidateStationsHandler(
         ref var ev = ref evStore.Get(e.EVId);
         ev.Advance(e.Time);
 
-        LogHelper.Verbose(e.EVId, e.Time, $"Handling FindCandidateStations for EV {e.EVId} at time {e.Time}. Current EV data: {ev}. SoC: {ev.Battery.StateOfCharge}, Next stop in {ev.Journey.Current.DurationToNextStop}ms.)");
+        global::Log.Verbose(e.EVId, e.Time, $"Handling FindCandidateStations for EV {e.EVId} at time {e.Time}. Current EV data: {ev}. SoC: {ev.Battery.StateOfCharge}, Next stop in {ev.Journey.Current.DurationToNextStop}ms.)");
         if (candidateStationDurations.Count == 0)
         {
             HandleNoCandidates(e, ref ev);
             return;
         }
 
-        var bestStation = costFunction.Compute(ref ev, candidateStationDurations, e.Time) ?? throw LogHelper.Error(e.EVId, e.Time, new SkillissueException("Cost function did not return a station, but should never get this far."));
+        var bestStation = costFunction.Compute(ref ev, candidateStationDurations, e.Time) ?? throw global::Log.Error(e.EVId, e.Time, new SkillissueException("Cost function did not return a station, but should never get this far."));
 
         if (stationService.GetReservationStationId(e.EVId) != bestStation.Id)
             evDetourPlanner.Update(ref ev, bestStation, e.Time);
@@ -60,7 +60,7 @@ public class FindCandidateStationsHandler(
 
         if (remaining <= Time.MillisecondsPerMinute * 10)
         {
-            LogHelper.Info(e.EVId, e.Time, $"EV {e.EVId} is close to station {bestStation.Id} with ETA {etaAtStation} and SoC at arrival {socAtArrival} with a current SoC of {ev.Battery.StateOfCharge}. Making arrival at station event immediately.");
+            global::Log.Info(e.EVId, e.Time, $"EV {e.EVId} is close to station {bestStation.Id} with ETA {etaAtStation} and SoC at arrival {socAtArrival} with a current SoC of {ev.Battery.StateOfCharge}. Making arrival at station event immediately.");
             eventScheduler.ScheduleEvent(new ArriveAtStation(e.EVId, bestStation.Id, targetSoC, etaAtStation));
             return;
         }
@@ -83,6 +83,6 @@ public class FindCandidateStationsHandler(
             return;
         }
 
-        throw LogHelper.Error(e.EVId, e.Time, new InvalidOperationException($"No candidate stations available for EV {e.EVId} at {e.Time}."));
+        throw global::Log.Error(e.EVId, e.Time, new InvalidOperationException($"No candidate stations available for EV {e.EVId} at {e.Time}."));
     }
 }

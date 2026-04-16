@@ -26,7 +26,7 @@ public class SnapshotEventHandler(
     /// scheduler, and power delivery.</param>
     public void Handle(SnapshotEvent e)
     {
-        LogHelper.Info(0, e.Time, $"Handling SnapshotEvent at time {e.Time}. Collecting metrics for all stations and chargers.");
+        global::Log.Info(0, e.Time, $"Handling SnapshotEvent at time {e.Time}. Collecting metrics for all stations and chargers.");
         var (chargerMetrics, stationMetrics) = stationMetricsCollector.Collect(rescheduleTime, e.Time);
 
         foreach (var stationMetric in stationMetrics)

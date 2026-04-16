@@ -94,7 +94,7 @@ public class StationMetricsCollector(List<Station> stations)
                     targetEVDemandKWh += (float)Math.Max(0, (c.SessionB.EV.TargetSoC - c.SessionB.GetCurrentSoC(simNow)) * c.SessionB.EV.CapacityKWh);
                 return targetEVDemandKWh;
             default:
-                throw LogHelper.Error(0, simNow, new SkillissueException("Do we have a third type of charger? :O"), ("Charger", charger));
+                throw Log.Error(0, simNow, new SkillissueException("Do we have a third type of charger? :O"), ("Charger", charger));
         }
     }
 }

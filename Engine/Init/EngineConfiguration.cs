@@ -78,6 +78,6 @@ public static class EngineConfiguration
             searchDir = searchDir.Parent;
         }
 
-        throw LogHelper.Error(0, 0, new DirectoryNotFoundException("Could not find 'data' directory in project hierarchy"));
+        throw Log.Error(0, 0, new DirectoryNotFoundException("Could not find 'data' directory in project hierarchy"));
     }
 }

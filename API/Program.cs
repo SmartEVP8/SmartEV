@@ -146,7 +146,7 @@ public static class Program
             }
             catch (Exception ex)
             {
-                LogHelper.Error(0, 0, ex);
+                global::Log.Error(0, 0, ex);
                 throw;
             }
             finally
@@ -156,7 +156,7 @@ public static class Program
             }
         });
 
-        LogHelper.Info(0, 0, "API started.");
+        global::Log.Info(0, 0, "API started.");
         app.Run();
     }
 }

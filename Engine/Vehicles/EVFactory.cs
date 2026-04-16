@@ -54,7 +54,7 @@ public class EVFactory(Random random, IJourneySamplerProvider samplersProvider, 
         var batteryConfig = p.Config.BatteryConfig;
         var battery = new Battery(batteryConfig.MaxCapacityKWh, batteryConfig.ChargeRateKW, p.CurrCharge);
         var preferences = new Preferences(p.PriceSensPref, p.MinAcceptableCharge, p.MaxPathDeviation);
-        var journey = CreateJourney(departure, p.SourceDest) ?? throw LogHelper.Error(0, 0, new InvalidOperationException($"Failed to create journey for EV with source {p.SourceDest.Source} and destination {p.SourceDest.Destination}. This should not happen."), ("SampledData", p));
+        var journey = CreateJourney(departure, p.SourceDest) ?? throw Log.Error(0, 0, new InvalidOperationException($"Failed to create journey for EV with source {p.SourceDest.Source} and destination {p.SourceDest.Destination}. This should not happen."), ("SampledData", p));
         return new EV(battery, preferences, journey, p.Config.Efficiency);
     }
 
@@ -93,7 +93,7 @@ public class EVFactory(Random random, IJourneySamplerProvider samplersProvider, 
         var segments = Polyline6ToPoints.DecodePolyline(queryResult.Polyline);
         var durationMS = (uint)Math.Ceiling(queryResult.Duration);
         if (durationMS == 0)
-            throw LogHelper.Error(0, 0, new InvalidOperationException($"Duration of journey cannot be zero (source={source}, destination={destination}, queryResult={queryResult})"));
+            throw Log.Error(0, 0, new InvalidOperationException($"Duration of journey cannot be zero (source={source}, destination={destination}, queryResult={queryResult})"));
         return new Journey(departure, durationMS, queryResult.Distance, segments);
     }
 

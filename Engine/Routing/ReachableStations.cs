@@ -23,7 +23,7 @@ public class ReachableStations
     {
         var evBattery = ev.Battery;
         if (evBattery.StateOfCharge <= 0)
-            throw LogHelper.Error(0, 0, new InvalidOperationException($"EV {ev} has no charge left, but is trying to find reachable stations. This should not happen."), ("EV", ev));
+            throw Log.Error(0, 0, new InvalidOperationException($"EV {ev} has no charge left, but is trying to find reachable stations. This should not happen."), ("EV", ev));
 
         var reach = evBattery.StateOfCharge * evBattery.MaxCapacityKWh / ((double)ev.ConsumptionWhPerKm / 1000);
         return [.. nearbyStations.Where(id =>

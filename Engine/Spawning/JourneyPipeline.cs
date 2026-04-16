@@ -101,7 +101,7 @@ public class JourneyPipeline
 
         if (!newGrid.Any(row => row.Count > 0))
         {
-            throw LogHelper.Error(0, 0, new InvalidOperationException("No spawnable cells with city info"));
+            throw Log.Error(0, 0, new InvalidOperationException("No spawnable cells with city info"));
         }
 
         var cityCenters = cities.Select(c => c.Position).ToArray();

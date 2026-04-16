@@ -70,7 +70,7 @@ public static class PolygonParser
             {
                 PropertyNameCaseInsensitive = true,
             })
-            ?? throw LogHelper.Error(0, 0, new Exception("Invalid GeoJSON"));
+            ?? throw Log.Error(0, 0, new Exception("Invalid GeoJSON"));
 
         var polygons = new List<List<Position>>();
 
