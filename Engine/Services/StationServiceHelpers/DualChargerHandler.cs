@@ -163,7 +163,7 @@ public class DualChargerHandler(
     private IntegrationResult? IntegrateDual(Time simNow)
     {
         if (charger.SessionA is null && charger.SessionB is null)
-            throw new SkillissueException("Should never call Integrate dual with no sessions");
+            throw new SkillissueException("Should never call IntegrateDual with no sessions");
         var carA = charger.SessionA?.EV
             ?? charger.SessionB!.EV with { CurrentSoC = charger.SessionB.EV.TargetSoC };
         var carB = charger.SessionB?.EV
