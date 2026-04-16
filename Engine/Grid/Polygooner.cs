@@ -15,6 +15,19 @@ public static class Polygooner
     /// <returns>A 2D grid with 1 or 0.</returns>
     public static SpawnGrid GenerateGrid(double size, List<List<Position>> polygons)
     {
+        return GenerateGrid(size, polygons, []);
+    }
+
+    /// <summary>
+    /// Generates a grid of the specified size and marks cells as spawnable when they intersect
+    /// included polygons and do not intersect excluded polygons.
+    /// </summary>
+    /// <param name="size">The size in degrees of each grid cell.</param>
+    /// <param name="polygons">Land polygons where spawning is allowed.</param>
+    /// <param name="wetPolygons">Wet polygons (lakes/sea/etc.) where spawning is disallowed.</param>
+    /// <returns>A 2D grid with 1 or 0.</returns>
+    public static SpawnGrid GenerateGrid(double size, List<List<Position>> polygons, List<List<Position>> wetPolygons)
+    {
         var (min, max) = ComputeBoundingBox(polygons);
         var diffLat = max.Latitude - min.Latitude;
         var diffLon = max.Longitude - min.Longitude;
@@ -29,33 +42,47 @@ public static class Polygooner
         var halfLat = size / 2.0;
         var halfLon = lonSize / 2.0;
 
-        var gridCells = new List<List<GridCell>>(latSteps);
+        // Precompute bounds once — not per cell
+        var spawnBounded = PrecomputeBounds([.. polygons.Select(p => SimplifyPolygon(p, size / 2))]);
+        var wetBounded = PrecomputeBounds([.. wetPolygons.Select(p => SimplifyPolygon(p, size / 2))]);
+
+        var gridCells = new List<GridCell>[latSteps];
 
         for (var i = 0; i < latSteps; i++)
         {
             var row = new List<GridCell>(lonSteps);
-
             for (var j = 0; j < lonSteps; j++)
             {
                 var centerLat = min.Latitude + ((i + 0.5) * size);
                 var centerLon = min.Longitude + ((j + 0.5) * lonSize);
                 var centerPos = new Position(centerLon, centerLat);
 
-                var spawnable = polygons.Any(polygon =>
-                    PointInPolygon(polygon, centerLon, centerLat) ||
-                    PointInPolygon(polygon, centerLon - halfLon, centerLat - halfLat) ||
-                    PointInPolygon(polygon, centerLon + halfLon, centerLat - halfLat) ||
-                    PointInPolygon(polygon, centerLon - halfLon, centerLat + halfLat) ||
-                    PointInPolygon(polygon, centerLon + halfLon, centerLat + halfLat));
+                var inSpawnPolygon = IntersectsAnyPolygon(spawnBounded, centerLon, centerLat, halfLon, halfLat);
+                var inWetPolygon = IntersectsAnyPolygon(wetBounded, centerLon, centerLat, halfLon, halfLat);
+                var spawnable = inSpawnPolygon && !inWetPolygon;
 
                 row.Add(new GridCell(spawnable, centerPos));
             }
-
-            gridCells.Add(row);
+            gridCells[i] = row;
         }
 
-        return new SpawnGrid(gridCells, min, size, lonSize);
+
+        return new SpawnGrid([.. gridCells.Select(r => r.ToList())], min, size, lonSize);
     }
+
+    private static bool IntersectsAnyPolygon(List<PolygonWithBounds> polygons, double centerLon, double centerLat, double halfLon, double halfLat)
+    {
+        return polygons.Any(p =>
+            !(centerLon + halfLon < p.MinLon || centerLon - halfLon > p.MaxLon ||
+              centerLat + halfLat < p.MinLat || centerLat - halfLat > p.MaxLat) &&
+            (PointInPolygon(p.Polygon, centerLon, centerLat) ||
+             PointInPolygon(p.Polygon, centerLon - halfLon, centerLat - halfLat) ||
+             PointInPolygon(p.Polygon, centerLon + halfLon, centerLat - halfLat) ||
+             PointInPolygon(p.Polygon, centerLon - halfLon, centerLat + halfLat) ||
+             PointInPolygon(p.Polygon, centerLon + halfLon, centerLat + halfLat)));
+    }
+
+    // Remove PolygonOverlapsBounds — it's now inlined above using precomputed fields
 
     /// <summary>
     /// Determines if a point (lat, lon) is inside a polygon using the ray casting algorithm.
@@ -112,5 +139,34 @@ public static class Polygooner
         }
 
         return (new Position(minLon, minLat), new Position(maxLon, maxLat));
+    }
+
+    private record PolygonWithBounds(List<Position> Polygon, double MinLat, double MaxLat, double MinLon, double MaxLon);
+
+    private static List<PolygonWithBounds> PrecomputeBounds(List<List<Position>> polygons) =>
+        [.. polygons.Select(p => new PolygonWithBounds(
+            p,
+            p.Min(v => v.Latitude),
+            p.Max(v => v.Latitude),
+            p.Min(v => v.Longitude),
+            p.Max(v => v.Longitude)))];
+
+    private static List<Position> SimplifyPolygon(List<Position> polygon, double toleranceDegrees)
+    {
+        if (polygon.Count <= 4) return polygon;
+
+        var result = new List<Position> { polygon[0] };
+        for (var i = 1; i < polygon.Count - 1; i++)
+        {
+            var prev = result[^1];
+            var curr = polygon[i];
+            var dLat = curr.Latitude - prev.Latitude;
+            var dLon = curr.Longitude - prev.Longitude;
+            if (Math.Sqrt(dLat * dLat + dLon * dLon) >= toleranceDegrees)
+                result.Add(curr);
+        }
+
+        result.Add(polygon[^1]);
+        return result;
     }
 }
