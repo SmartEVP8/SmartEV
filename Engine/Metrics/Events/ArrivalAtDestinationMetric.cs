@@ -21,12 +21,12 @@ public readonly struct ArrivalAtDestinationMetric
     /// <summary>
     /// Gets the path deviation for a journey.
     /// </summary>
-    required public uint PathDeviation { get; init; }
+    required public int PathDeviation { get; init; }
 
     /// <summary>
     /// Gets the difference between actual and expected arrival time.
     /// </summary>
-    public uint DeltaArrivalTime => ActualArrivalTime - ExpectedArrivalTime;
+    public int DeltaArrivalTime => (int)ActualArrivalTime - (int)ExpectedArrivalTime;
 
     /// <summary>
     /// Gets a value indicating whether the expected arrival time was missed.
