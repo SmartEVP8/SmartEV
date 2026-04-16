@@ -47,7 +47,7 @@ public class SnapshotHandler(
         var station = stationService.GetStation((ushort)stationId);
         if (station == null)
         {
-            logger.LogWarning("Station with ID {StationId} not found", stationId);
+            Log.Warn(0, 0, $"Station with ID {stationId} not found", ("StationId", stationId));
             return new Envelope { StationStateResponse = stationState };
         }
 
@@ -78,7 +78,7 @@ public class SnapshotHandler(
                 sessionB = d.SessionB;
                 break;
             default:
-                throw new InvalidOperationException($"Unknown charger type: {charger.GetType()}");
+                throw Log.Error(0, 0, new InvalidOperationException($"Unknown charger type: {charger.GetType()}"), ("ChargerType", charger.GetType()));
         }
 
         var chargerState = new ChargerState
@@ -112,7 +112,7 @@ public class SnapshotHandler(
     {
         return charger switch
         {
-            SingleCharger s when s.Session is not null && s.Session.EV is { } ev =>
+            SingleCharger s when s.Session?.EV is { } ev =>
                 CalculateUtilization(s.GetPowerOutput(s.MaxPowerKW, ev.CurrentSoC), ev.MaxChargeRateKW, s.MaxPowerKW),
             DualCharger d =>
                 CalculateDualUtilization(d),

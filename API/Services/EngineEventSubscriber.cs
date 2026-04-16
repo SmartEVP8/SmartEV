@@ -21,7 +21,7 @@ public sealed class EngineEventSubscriber(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error handling ArrivalAtStation event");
+            Log.Error(0, 0, ex);
         }
     }
 
@@ -35,7 +35,7 @@ public sealed class EngineEventSubscriber(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error handling ChargingEnd event");
+            Log.Error(0, 0, ex);
         }
     }
 }
