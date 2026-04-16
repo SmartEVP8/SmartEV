@@ -109,7 +109,7 @@ public class DualChargerHandler(
 
             charger.Queue.Dequeue();
 
-            metrics.RecordWaitTime(new EVWaitTimeMetric
+            metrics.RecordWaitTime(new WaitTimeInQueueMetric
             {
                 EVId = candidate.EVId,
                 StationId = stationId,

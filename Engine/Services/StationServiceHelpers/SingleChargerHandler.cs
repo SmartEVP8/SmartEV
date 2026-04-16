@@ -46,7 +46,7 @@ public class SingleChargerHandler(
 
         charger.Queue.Dequeue();
 
-        metrics.RecordWaitTime(new EVWaitTimeMetric
+        metrics.RecordWaitTime(new WaitTimeInQueueMetric
         {
             EVId = next.EVId,
             StationId = stationId,

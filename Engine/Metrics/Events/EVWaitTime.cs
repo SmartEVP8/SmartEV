@@ -5,7 +5,7 @@ using Core.Shared;
 /// <summary>
 /// Represents a metric captured when an EV stops waiting in a queue and begins a charging session.
 /// </summary>
-public record EVWaitTimeMetric // Changed to record for better data semantics
+public record WaitTimeInQueueMetric // Changed to record for better data semantics
 {
     /// <summary> Gets the ID of the EV that waited and started charging. </summary>
     required public int EVId { get; init; }
