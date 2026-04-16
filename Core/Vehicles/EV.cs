@@ -2,6 +2,7 @@ namespace Core.Vehicles;
 
 using Core.Routing;
 using Core.Shared;
+using Parquet.Meta;
 
 /// <summary>
 /// Defines the possible states of an EV.
@@ -42,7 +43,7 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     /// </summary>
     public Journey Journey { get; private set; } = journey;
 
-    /// <summary> 
+    /// <summary>
     /// Gets or sets the current state of the EV.
     /// </summary>
     public EVState EVState { get; set; } = EVState.Driving;
@@ -145,6 +146,20 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
         var energyNeededKWh = EnergyForDistanceKWh(journey.DistanceToNextStopKm);
         var socDrop = energyNeededKWh / Battery.MaxCapacityKWh;
         return Math.Clamp(Battery.StateOfCharge - socDrop, 0f, 1f);
+    }
+
+    public readonly float EstimateSoCAfterADuration(Time duration)
+    {
+        if (Battery.MaxCapacityKWh <= 0)
+            throw new InvalidOperationException($"Battery capacity must be greater than zero ({this})");
+
+        var journey = Journey.Original;
+
+        var avgSpeedKmMs = journey.DistanceKm / journey.Duration.Milliseconds;
+        var distanceTraveledKm = avgSpeedKmMs * duration.Milliseconds;
+        var energyNeededKWh = EnergyForDistanceKWh(distanceTraveledKm);
+        var socDrop = energyNeededKWh / Battery.MaxCapacityKWh / 100;
+        return Battery.StateOfCharge - socDrop;
     }
 
     /// <summary>
