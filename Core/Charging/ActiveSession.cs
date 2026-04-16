@@ -18,10 +18,7 @@ public record ActiveSession(
     public double GetCurrentSoC(Time simNow)
     {
         if (Plan is null) return EV.CurrentSoC;
-        var curve = Side is ChargingSide.Right
-            ? Plan.CumulativeEnergyB
-            : Plan.CumulativeEnergyA;
-        var delivered = GetEnergyFromCurve(curve, Plan.StepSeconds, StartTime, StartTime, simNow);
+        var delivered = GetEnergyFromCurve(GetCurve(), Plan.StepSeconds, StartTime, StartTime, simNow);
         return EV.CurrentSoC + (delivered / EV.CapacityKWh);
     }
 
@@ -34,11 +31,12 @@ public record ActiveSession(
     public double GetDeliveredKWh(Time from, Time to)
     {
         if (Plan is null) return 0.0;
-        var curve = Side is ChargingSide.Right
-            ? Plan.CumulativeEnergyB
-            : Plan.CumulativeEnergyA;
-        return GetEnergyFromCurve(curve, Plan.StepSeconds, StartTime, from, to);
+        return GetEnergyFromCurve(GetCurve(), Plan.StepSeconds, StartTime, from, to);
     }
+
+    private List<double> GetCurve() =>
+        (Side is ChargingSide.Right ? Plan?.CarB?.CumulativeEnergy : null)
+        ?? Plan!.CarA.CumulativeEnergy;
 
     /// <summary>
     /// Helper method to calculate energy delivered from a cumulative energy curve between two simulation times.

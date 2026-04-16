@@ -1,4 +1,3 @@
-// DualChargerHandler.cs
 namespace Engine.Services.StationServiceHelpers;
 
 using Core.Charging;
@@ -74,8 +73,8 @@ public class DualChargerHandler(
     {
         if (charger.SessionA?.EVId == evId)
         {
-            var finalSoC = charger.SessionA.Plan?.SocA ?? charger.SessionA.EV.CurrentSoC;
-            var bSoC = charger.SessionA.Plan?.BSoCWhenAFinish;
+            var finalSoC = charger.SessionA.Plan?.CarA.Soc ?? charger.SessionA.EV.CurrentSoC;
+            var bSoC = charger.SessionA.Plan?.CarA.PartnerSoCAtFinish;
             charger.Disconnect(ChargingSide.Left);
             charger.SessionA = null;
             charger.SessionB = UpdateRemainingSession(ChargingSide.Right, bSoC, charger.SessionB);
@@ -84,8 +83,8 @@ public class DualChargerHandler(
 
         if (charger.SessionB?.EVId == evId)
         {
-            var finalSoC = charger.SessionB.Plan?.SocB ?? charger.SessionB.EV.CurrentSoC;
-            var aSoC = charger.SessionB.Plan?.ASoCWhenBFinish;
+            var finalSoC = charger.SessionB.Plan?.CarB?.Soc ?? charger.SessionB.EV.CurrentSoC;
+            var aSoC = charger.SessionB.Plan?.CarB?.PartnerSoCAtFinish;
             charger.Disconnect(ChargingSide.Right);
             charger.SessionB = null;
             charger.SessionA = UpdateRemainingSession(ChargingSide.Left, aSoC, charger.SessionA);
@@ -170,13 +169,13 @@ public class DualChargerHandler(
     /// <param name="stationId">The ID of the station.</param>
     private void ScheduleEndEvents(IntegrationResult? result, ushort stationId)
     {
-        if (charger.SessionA is not null && result?.FinishTimeA is { } finishA)
+        if (charger.SessionA is not null && result?.CarA.FinishTime is { } finishA)
         {
             var token = scheduler.ScheduleEvent(new EndCharging(charger.SessionA.EVId, charger.Id, stationId, finishA));
             charger.SessionA = charger.SessionA with { CancellationToken = token };
         }
 
-        if (charger.SessionB is not null && result?.FinishTimeB is { } finishB)
+        if (charger.SessionB is not null && result?.CarB?.FinishTime is { } finishB)
         {
             var token = scheduler.ScheduleEvent(new EndCharging(charger.SessionB.EVId, charger.Id, stationId, finishB));
             charger.SessionB = charger.SessionB with { CancellationToken = token };

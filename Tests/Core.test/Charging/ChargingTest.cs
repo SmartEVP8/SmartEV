@@ -93,7 +93,7 @@ public class ChargingTest
             ev: ev);
 
         Assert.Equal(0, result.DurationMilliseconds);
-        Assert.NotNull(result.FinishTimeA);
+        Assert.NotNull(result.CarA.FinishTime);
     }
 
     [Fact]
@@ -123,8 +123,9 @@ public class ChargingTest
             ev2);
 
         Assert.Equal(0, result.DurationMilliseconds);
-        Assert.NotNull(result.FinishTimeA);
-        Assert.NotNull(result.FinishTimeB);
+        Assert.NotNull(result.CarA.FinishTime);
+        Assert.NotNull(result.CarB);
+        Assert.NotNull(result.CarB.FinishTime);
     }
 
     [Fact]
@@ -155,8 +156,8 @@ public class ChargingTest
             charger: Make.SingleCharger(evConfig),
             ev: ev);
 
-        Assert.Equal(0.95, result.SocA, precision: 4);
-        Assert.Equal(expectedEnergyKWh, result.EnergyDeliveredKWhA, precision: 1);
+        Assert.Equal(0.95, result.CarA.Soc, precision: 4);
+        Assert.Equal(expectedEnergyKWh, result.CarA.EnergyDeliveredKWh, precision: 1);
         Assert.Equal(expectedDurationSeconds, result.DurationMilliseconds, tolerance: 3.0);
         Assert.Equal(expectedEnergyKWh + result.WastedEnergyKWh, maxKW * (result.DurationMilliseconds / 3600000.0), precision: 1);
         Assert.True(
@@ -196,19 +197,19 @@ public class ChargingTest
             "charging at 50 kW should take longer than at the car's full 85 kW rate");
 
         Assert.Equal(
-            resultLimitedByCarRate.EnergyDeliveredKWhA + resultLimitedByCarRate.WastedEnergyKWh,
+            resultLimitedByCarRate.CarA.EnergyDeliveredKWh + resultLimitedByCarRate.WastedEnergyKWh,
             85.0 * (resultLimitedByCarRate.DurationMilliseconds / 3600000),
             precision: 1);
 
         Assert.Equal(
-            resultLimitedByCharger.EnergyDeliveredKWhA + resultLimitedByCharger.WastedEnergyKWh,
+            resultLimitedByCharger.CarA.EnergyDeliveredKWh + resultLimitedByCharger.WastedEnergyKWh,
             50.0 * (resultLimitedByCharger.DurationMilliseconds / 3600000),
             precision: 1);
 
         Assert.Equal(
-            resultMatchedRate.EnergyDeliveredKWhA,
-            resultLimitedByCarRate.EnergyDeliveredKWhA,
-            resultLimitedByCharger.EnergyDeliveredKWhA);
+            resultMatchedRate.CarA.EnergyDeliveredKWh,
+            resultLimitedByCarRate.CarA.EnergyDeliveredKWh,
+            resultLimitedByCharger.CarA.EnergyDeliveredKWh);
     }
 
     [Fact]
@@ -230,11 +231,12 @@ public class ChargingTest
             evA,
             evB);
 
-        Assert.Equal(0.95, result.SocA, precision: 4);
-        Assert.Equal(0.95, result.SocB, precision: 4);
+        Assert.NotNull(result.CarB);
+        Assert.Equal(0.95, result.CarA.Soc, precision: 4);
+        Assert.Equal(0.95, result.CarB.Soc, precision: 4);
 
         Assert.True(
-            result.FinishTimeA < result.FinishTimeB,
+            result.CarA.FinishTime < result.CarB.FinishTime,
             "Tesla starts in taper with small delta — should finish before ID.3");
 
         var expectedTotal = ((0.95 - 0.70) * tesla.BatteryConfig.MaxCapacityKWh)
@@ -249,11 +251,11 @@ public class ChargingTest
             ev: evB);
 
         Assert.True(
-            result.FinishTimeB < resultId3Alone.FinishTimeA,
+            result.CarB.FinishTime < resultId3Alone.CarA.FinishTime,
             "ID.3 should finish sooner in dual due to absorbing Tesla's taper surplus");
 
         Assert.Equal(
-            result.EnergyDeliveredKWhA + result.EnergyDeliveredKWhB + result.WastedEnergyKWh,
+            result.CarA.EnergyDeliveredKWh + result.CarB.EnergyDeliveredKWh + result.WastedEnergyKWh,
             maxKW * (result.DurationMilliseconds / 3600000),
             precision: 2);
 
@@ -292,11 +294,12 @@ public class ChargingTest
             evA,
             evB);
 
-        Assert.Equal(0.9, result.SocA, precision: 4);
-        Assert.Equal(0.9, result.SocB, precision: 4);
+        Assert.NotNull(result.CarB);
+        Assert.Equal(0.9, result.CarA.Soc, precision: 4);
+        Assert.Equal(0.9, result.CarB.Soc, precision: 4);
 
         Assert.True(
-            result.EnergyDeliveredKWhB > result.EnergyDeliveredKWhA,
+            result.CarB.EnergyDeliveredKWh > result.CarA.EnergyDeliveredKWh,
             "Taycan should receive more energy as Mazda donates its rate-limited surplus");
 
         var resultTaycanAlone = integrator.IntegrateSingleToCompletion(
@@ -306,11 +309,11 @@ public class ChargingTest
             ev: evB);
 
         Assert.True(
-            result.FinishTimeB < resultTaycanAlone.FinishTimeA,
+            result.CarB.FinishTime < resultTaycanAlone.CarA.FinishTime,
             "Taycan should finish sooner in dual due to absorbing Mazda's rate-limited surplus");
 
         Assert.Equal(
-            result.EnergyDeliveredKWhA + result.EnergyDeliveredKWhB + result.WastedEnergyKWh,
+            result.CarA.EnergyDeliveredKWh + result.CarB.EnergyDeliveredKWh + result.WastedEnergyKWh,
             maxKW * (result.DurationMilliseconds / 3600000),
             precision: 2);
     }

@@ -1,6 +1,8 @@
 namespace Core.Charging.ChargingModel;
 
 using Core.Shared;
+using System;
+using System.Collections.Generic;
 
 /// <summary>
 /// An EV currently connected to a connector with everything needed
@@ -15,41 +17,41 @@ public record ConnectedEV(
     Time ArrivalTime);
 
 /// <summary>
+/// Contains the integration results specific to a single vehicle in the session.
+/// </summary>
+/// <param name="Soc">SoC the car reached at the end of the run.</param>
+/// <param name="FinishTime">Simulation timestamp (seconds) when the car hit TargetSoC.</param>
+/// <param name="EnergyDeliveredKWh">Exact energy delivered to the car during this run.</param>
+/// <param name="PartnerSoCAtFinish">SoC of the other connected car at the moment this car finished (or final SoC of the other car if this one never finished first).</param>
+/// <param name="CumulativeEnergy">Cumulative energy delivered to this car at each step of the integration run.</param>
+public record VehicleIntegrationResult(
+    double Soc,
+    Time? FinishTime,
+    double EnergyDeliveredKWh,
+    double PartnerSoCAtFinish,
+    List<double> CumulativeEnergy
+);
+
+/// <summary>
 /// Returned by all integrator methods.
 /// </summary>
-/// <param name="SocA">SoC each car reached at the end of the run.</param>
-/// <param name="SocB">SoC each car reached at the end of the run.</param>
-/// <param name="FinishTimeA">Simulation timestamp (seconds) when that car hit TargetSoC.</param>
-/// <param name="FinishTimeB">Simulation timestamp (seconds) when that car hit TargetSoC.</param>
-/// <param name="EnergyDeliveredKWhA">Exact energy delivered to each car during this run.</param>
-/// <param name="EnergyDeliveredKWhB">Exact energy delivered to each car during this run.</param>
+/// <param name="CarA">Integration result for the first car.</param>
+/// <param name="CarB">Integration result for the second car, or null if only one car is integrated.</param>
 /// <param name="WastedEnergyKWh">Energy the charger could have delivered but no car absorbed.</param>
 /// <param name="DurationMilliseconds">Time duration for this integration run.</param>
-/// <param name="BSoCWhenAFinish">SoC of B at the moment A finished (or final SocB if A never finished first).</param>
-/// <param name="ASoCWhenBFinish">SoC of A at the moment B finished (or final SocA if B never finished first).</param>
 /// <param name="StepSeconds">The time step used for this integration run.</param>
-/// <param name="CumulativeEnergyA">Cummulative energy delivered to A at each step of the integration run.</param>
-/// <param name="CumulativeEnergyB">Cummulative energy delivered to B at each step of the integration run.</param>
 public record IntegrationResult(
-    double SocA,
-    double SocB,
-    Time? FinishTimeA,
-    Time? FinishTimeB,
-    double EnergyDeliveredKWhA,
-    double EnergyDeliveredKWhB,
+    VehicleIntegrationResult CarA,
+    VehicleIntegrationResult? CarB,
     double WastedEnergyKWh,
     double DurationMilliseconds,
-    double ASoCWhenBFinish,
-    double BSoCWhenAFinish,
-    uint StepSeconds,
-    List<double> CumulativeEnergyA,
-    List<double> CumulativeEnergyB
-    )
+    uint StepSeconds
+)
 {
     /// <summary>
-    /// Gets the total energy delivered to both cars during this run.
+    /// Gets the total energy delivered to all connected cars during this run.
     /// </summary>
-    public double TotalEnergyKWh { get; } = EnergyDeliveredKWhA + EnergyDeliveredKWhB;
+    public double TotalEnergyKWh => CarA.EnergyDeliveredKWh + (CarB?.EnergyDeliveredKWh ?? 0.0);
 }
 
 /// <summary>
@@ -103,7 +105,7 @@ public sealed class ChargingIntegrator(uint stepSeconds)
         var targetSoC = ev.TargetSoC;
         Time? finishTime = null;
         var energy = 0.0;
-        var cummulativeA = new List<double> { 0.0 };
+        var cumulativeA = new List<double> { 0.0 };
         var wastedEnergy = 0.0;
         Time t = 0;
 
@@ -142,24 +144,23 @@ public sealed class ChargingIntegrator(uint stepSeconds)
                 }
             }
 
-            cummulativeA.Add(energy);
+            cumulativeA.Add(energy);
             t += step;
         }
 
+        var carAResult = new VehicleIntegrationResult(
+            Soc: soc,
+            FinishTime: finishTime,
+            EnergyDeliveredKWh: energy,
+            PartnerSoCAtFinish: 0.0,
+            CumulativeEnergy: cumulativeA);
+
         return new IntegrationResult(
-            SocA: soc,
-            SocB: 0.0,
-            FinishTimeA: finishTime.HasValue ? finishTime.Value : null,
-            FinishTimeB: null,
-            EnergyDeliveredKWhA: energy,
-            EnergyDeliveredKWhB: 0.0,
+            CarA: carAResult,
+            CarB: null,
             WastedEnergyKWh: wastedEnergy,
             DurationMilliseconds: t,
-            BSoCWhenAFinish: 0.0,
-            ASoCWhenBFinish: 0.0,
-            StepSeconds: _stepSeconds,
-            CumulativeEnergyA: cummulativeA,
-            CumulativeEnergyB: []);
+            StepSeconds: _stepSeconds);
     }
 
     private IntegrationResult IntegrateDual(
@@ -181,8 +182,8 @@ public sealed class ChargingIntegrator(uint stepSeconds)
         Time? finishB = null;
         var energyA = 0.0;
         var energyB = 0.0;
-        var cummulativeA = new List<double> { 0.0 };
-        var cummulativeB = new List<double> { 0.0 };
+        var cumulativeA = new List<double> { 0.0 };
+        var cumulativeB = new List<double> { 0.0 };
         var wastedEnergy = 0.0;
         double? bSoCWhenAFinish = null;
         double? aSoCWhenBFinish = null;
@@ -242,25 +243,31 @@ public sealed class ChargingIntegrator(uint stepSeconds)
             }
 
             wastedEnergy += (maxKW * stepHours) - (deliveredA + deliveredB);
-            cummulativeA.Add(energyA);
-            cummulativeB.Add(energyB);
+            cumulativeA.Add(energyA);
+            cumulativeB.Add(energyB);
             t += step;
         }
 
+        var carAResult = new VehicleIntegrationResult(
+            Soc: socA,
+            FinishTime: finishA,
+            EnergyDeliveredKWh: energyA,
+            PartnerSoCAtFinish: bSoCWhenAFinish ?? socB,
+            CumulativeEnergy: cumulativeA);
+
+        var carBResult = new VehicleIntegrationResult(
+            Soc: socB,
+            FinishTime: finishB,
+            EnergyDeliveredKWh: energyB,
+            PartnerSoCAtFinish: aSoCWhenBFinish ?? socA,
+            CumulativeEnergy: cumulativeB);
+
         return new IntegrationResult(
-            SocA: socA,
-            SocB: socB,
-            FinishTimeA: finishA,
-            FinishTimeB: finishB,
-            EnergyDeliveredKWhA: energyA,
-            EnergyDeliveredKWhB: energyB,
+            CarA: carAResult,
+            CarB: carBResult,
             WastedEnergyKWh: wastedEnergy,
             DurationMilliseconds: t,
-            BSoCWhenAFinish: bSoCWhenAFinish ?? socB,
-            ASoCWhenBFinish: aSoCWhenBFinish ?? socA,
-            StepSeconds: _stepSeconds,
-            CumulativeEnergyA: cummulativeA,
-            CumulativeEnergyB: cummulativeB);
+            StepSeconds: _stepSeconds);
     }
 
     private static void ValidateConnectedEV(ConnectedEV ev)
