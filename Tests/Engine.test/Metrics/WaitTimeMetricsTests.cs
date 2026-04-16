@@ -11,7 +11,7 @@ public class WaitTimeMetricTests
         var arrival = new Time(100);
         var startCharge = new Time(250);
 
-        var metric = new EVWaitTimeMetric
+        var metric = new WaitTimeInQueueMetric
         {
             EVId = 1,
             StationId = 1,

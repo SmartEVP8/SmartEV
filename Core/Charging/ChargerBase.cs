@@ -20,7 +20,7 @@ public abstract class ChargerBase(int id, int maxPowerKW)
     /// <summary>
     /// Gets the queue of EVs waiting to charge at this charger, in order of arrival.
     /// </summary>
-    public Queue<(int EVId, ConnectedEV EV)> Queue { get; } = new();
+    public Queue<ConnectedEV> Queue { get; } = new();
 
     /// <summary>
     /// Gets or sets the per-window metrics for this charger.
