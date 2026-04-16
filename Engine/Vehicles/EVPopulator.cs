@@ -44,6 +44,14 @@ public class EVPopulator(EVFactory evFactory, EVStore evStore, IEventScheduler e
                 {
                     var evId = indexes[i];
                     ref var ev = ref evStore.Get(evId);
+                    // if (evId == 580862)
+                    // {
+                    //     Console.WriteLine($"Debug: Created EV with ID {evId} and departure time {ev.Journey.Original.Departure}");
+                    //     foreach (var waypoint in ev.Journey.Current.Waypoints)
+                    //     {
+                    //         Console.WriteLine($"Debug: Waypoint for EV {evId}: {waypoint}");
+                    //     }
+                    // }
 
                     if (ev.CanCompleteJourney(minAcceptableCharge: ev.Preferences.MinAcceptableCharge))
                     {

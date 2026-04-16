@@ -59,10 +59,11 @@ public static class Init
         {
             var settings = sp.GetRequiredService<EngineSettings>();
             var router = sp.GetRequiredService<IOSRMRouter>();
-            var spawnGrid = InitSpawnGrid(settings.PolygonPath, settings.GridSize);
+            var spawnGrid = InitSpawnGrid(settings.PolygonPath, settings.WetPolygonPath, settings.GridSize);
             var cities = InitCities(settings.CitiesPath);
+            var wetPolygons = PolygonParser.Parse(File.ReadAllText(settings.WetPolygonPath.ToString()));
             var engineSettings = sp.GetRequiredService<EngineSettings>();
-            var journeyPipeline = new JourneyPipeline(spawnGrid, cities, router);
+            var journeyPipeline = new JourneyPipeline(spawnGrid, cities, wetPolygons, router);
             return new JourneySamplerProvider(journeyPipeline, (float)engineSettings.PopulationScaler, (float)engineSettings.DistanceScaler);
         });
 
@@ -101,7 +102,7 @@ public static class Init
         {
             var settings = sp.GetRequiredService<EngineSettings>();
             var stations = sp.GetRequiredService<Dictionary<ushort, Station>>();
-            var spawnGrid = InitSpawnGrid(settings.PolygonPath, settings.GridSize);
+            var spawnGrid = InitSpawnGrid(settings.PolygonPath, settings.WetPolygonPath, settings.GridSize);
             return new SpatialGrid(spawnGrid, stations);
         });
 
@@ -220,10 +221,11 @@ public static class Init
         });
     }
 
-    private static SpawnGrid InitSpawnGrid(FileInfo polygonPath, double size)
+    private static SpawnGrid InitSpawnGrid(FileInfo polygonPath, FileInfo wetPolygonPath, double size)
     {
         var polygons = PolygonParser.Parse(File.ReadAllText(polygonPath.ToString()));
-        return Polygooner.GenerateGrid(size, polygons);
+        var wetPolygons = PolygonParser.Parse(File.ReadAllText(wetPolygonPath.ToString()));
+        return Polygooner.GenerateGrid(size, polygons, wetPolygons);
     }
 
     private static List<City> InitCities(FileInfo citiesPath)

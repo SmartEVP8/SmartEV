@@ -110,4 +110,9 @@ public class EngineSettings
     /// Gets the file path for Polygon data required by the engine.
     /// </summary>
     required public FileInfo PolygonPath { get; init; }
+
+    /// <summary>
+    /// Gets the file path for WetPolygon data required by the engine, which is used for determining where EVs cannot be spawned.
+    /// </summary>
+    required public FileInfo WetPolygonPath { get; init; }
 }

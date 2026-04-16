@@ -1,5 +1,6 @@
 namespace Engine.Spawning;
 
+using Core.Shared;
 using Engine.Grid;
 using Engine.Routing;
 
@@ -12,6 +13,7 @@ using Engine.Routing;
 public class JourneyPipeline
 {
     private readonly GravityGrid _grid;
+    private readonly List<List<Position>> _wetPolygons;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="JourneyPipeline"/> class.
@@ -20,7 +22,23 @@ public class JourneyPipeline
     /// <param name="grid">Controls which cells are spawnable. Non spawnable grid cells get 0% probability.</param>
     /// <param name="cities">Used to compute weights for grid cells.</param>
     /// <param name="router">Computes matrix destination table.</param>
-    public JourneyPipeline(SpawnGrid grid, List<City> cities, IMatrixRouter router) => _grid = BuildGravityGrid(grid, cities, router);
+    public JourneyPipeline(SpawnGrid grid, List<City> cities, IMatrixRouter router)
+        : this(grid, cities, [], router)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="JourneyPipeline"/> class.
+    /// </summary>
+    /// <param name="grid">Controls which cells are spawnable. Non spawnable grid cells get 0% probability.</param>
+    /// <param name="cities">Used to compute weights for grid cells.</param>
+    /// <param name="wetPolygons">Wet polygons used for sampled-point assertions.</param>
+    /// <param name="router">Computes matrix destination table.</param>
+    public JourneyPipeline(SpawnGrid grid, List<City> cities, List<List<Position>> wetPolygons, IMatrixRouter router)
+    {
+        _wetPolygons = wetPolygons;
+        _grid = BuildGravityGrid(grid, cities, router);
+    }
 
     /// <summary>
     /// Computes the sampling distributions for source and destination points based on the gravity model.
@@ -53,7 +71,8 @@ public class JourneyPipeline
             _grid.CellCenters,
             _grid.CityCenters,
             _grid.HalfLat,
-            _grid.HalfLon);
+            _grid.HalfLon,
+            _wetPolygons);
     }
 
     private static float GravityWeight(CityInfo city, float populationScaler, float distanceScaler)

@@ -54,7 +54,18 @@ public class EVFactory(Random random, IJourneySamplerProvider samplersProvider, 
         var batteryConfig = p.Config.BatteryConfig;
         var battery = new Battery(batteryConfig.MaxCapacityKWh, batteryConfig.ChargeRateKW, p.CurrCharge);
         var preferences = new Preferences(p.PriceSensPref, p.MinAcceptableCharge, p.MaxPathDeviation);
-        var journey = CreateJourney(departure, p.SourceDest);
+        Journey journey;
+        try
+        {
+            journey = CreateJourney(departure, p.SourceDest);
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException(
+                $"Failed to create EV journey (departure={departure}, departureMs={departure.Milliseconds}, source={p.SourceDest.Source}, destination={p.SourceDest.Destination}, currCharge={p.CurrCharge:F3}, minAcceptableCharge={p.MinAcceptableCharge:F3}, maxPathDeviation={p.MaxPathDeviation:F3}, modelEfficiencyWhPerKm={p.Config.Efficiency}).",
+                ex);
+        }
+
         return new EV(battery, preferences, journey, p.Config.Efficiency);
     }
 
@@ -93,7 +104,8 @@ public class EVFactory(Random random, IJourneySamplerProvider samplersProvider, 
         var segments = Polyline6ToPoints.DecodePolyline(queryResult.Polyline);
         var durationMS = (uint)Math.Ceiling(queryResult.Duration);
         if (durationMS == 0)
-            throw new InvalidOperationException($"Duration of journey cannot be zero (source={source}, destination={destination}, queryResult={queryResult})");
+            throw new InvalidOperationException(
+                $"Duration of journey cannot be zero (departure={departure}, departureMs={departure.Milliseconds}, source={source}, destination={destination}, rawDurationMs={queryResult.Duration}, roundedDurationMs={durationMS}, distanceMeters={queryResult.Distance}, waypointCount={segments.Count}, firstWaypoint={(segments.Count > 0 ? segments[0].ToString() : "<none>")}, lastWaypoint={(segments.Count > 0 ? segments[^1].ToString() : "<none>")}).");
         return new Journey(departure, durationMS, queryResult.Distance, segments);
     }
 

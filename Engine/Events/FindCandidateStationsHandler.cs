@@ -65,6 +65,12 @@ public class FindCandidateStationsHandler(
             return;
         }
 
+        Console.WriteLine($"No candidate stations available for EV {e.EVId} at {e.Time}. EV state: {ev} EV min acceptable charge: {ev.Preferences.MinAcceptableCharge} EV current journey: {ev.Journey}");
+        foreach (var waypoint in ev.Journey.Current.Waypoints)
+        {
+            Console.WriteLine($"Waypoint: {waypoint}");
+        }
+
         throw new InvalidOperationException(
             $"No candidate stations available for EV {e.EVId} at {e.Time}.");
     }

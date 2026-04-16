@@ -51,7 +51,14 @@ public record CurrentJourney(
 public class Journey(Time departure, Time duration, float distanceMeters, List<Position> waypoints)
 {
     /// <summary>Gets the original baseline of the journey.</summary>
-    public OriginalJourney Original { get; } = new(departure, duration > 0 ? duration : throw new ArgumentOutOfRangeException("Duration can't be zero"), distanceMeters / 1000);
+    public OriginalJourney Original { get; } = new(
+        departure,
+        duration.Milliseconds > 0
+            ? duration
+            : throw new ArgumentOutOfRangeException(
+                paramName: nameof(duration),
+                message: $"Duration must be greater than zero milliseconds (departure={departure}, durationMs={duration.Milliseconds}, distanceMeters={distanceMeters}, waypointCount={waypoints.Count}, firstWaypoint={(waypoints.Count > 0 ? waypoints[0].ToString() : "<none>")}, lastWaypoint={(waypoints.Count > 0 ? waypoints[^1].ToString() : "<none>")})."),
+        distanceMeters / 1000);
 
     /// <summary>Gets the live state of the journey.</summary>
     public CurrentJourney Current { get; private set; } = new(
