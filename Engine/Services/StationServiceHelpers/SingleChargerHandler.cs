@@ -7,6 +7,7 @@ using Engine.Events;
 using Engine.Metrics;
 using Engine.Metrics.Events;
 using Engine.Utils;
+using Serilog;
 
 /// <summary>
 /// Handles the session lifecycle for a <see cref="SingleCharger"/>,
@@ -62,6 +63,7 @@ public class SingleChargerHandler(
 
         if (result.FinishTimeA is { } finishTime)
         {
+            Log.Information($"Scheduling EndCharging event for EV {charger.Session.EVId} on charger {charger.Id} at station {stationId} with finish time {finishTime}.");
             var token = scheduler.ScheduleEvent(new EndCharging(next.EVId, charger.Id, stationId, finishTime));
             charger.Session = charger.Session with { CancellationToken = token };
         }

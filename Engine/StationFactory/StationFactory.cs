@@ -1,3 +1,4 @@
+using Serilog;
 namespace Engine.StationFactory;
 
 using System.Text.Json;
@@ -70,7 +71,7 @@ public class StationFactory
         if (locations.Count == 0)
             throw new InvalidOperationException("Station locations JSON file was empty.");
 
-        var chargerCountsPerStation = DistributeChargersAcrossStations(locations.Count, _options.TotalChargers);
+        var chargerCountsPerStation = DistributeChargersAcrossStations(locations.Count, _options.TotalChargers) ?? throw new InvalidOperationException("Failed to distribute chargers across stations.");
 
         var stations = new List<Station>(locations.Count);
         ushort nextStationId = 0;
@@ -89,6 +90,7 @@ public class StationFactory
             stations.Add(CreateStation(nextStationId++, locations[i], chargers));
         }
 
+        Log.Information($"Created {stations.Count} stations with a total of {chargerId - 1} chargers.");
         return stations;
     }
 

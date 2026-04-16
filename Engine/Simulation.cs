@@ -2,6 +2,7 @@ namespace Engine;
 
 using Core.Shared;
 using Engine.Events;
+using Serilog;
 
 /// <summary>
 /// The Simulation class is responsible for running the simulation by continuously fetching and
@@ -23,7 +24,9 @@ public class Simulation(
     /// <returns>Returns?.</returns>
     public async Task Run(CancellationToken cancelToken = default)
     {
+        Log.Information("Simulation started.");
         Console.WriteLine("Starting Simulation");
+
         scheduler.ScheduleEvent(new SpawnEVS(0));
         scheduler.ScheduleEvent(new SnapshotEvent(0));
 
@@ -32,7 +35,10 @@ public class Simulation(
             cancelToken.ThrowIfCancellationRequested();
             var shouldContinue = await HandleNextEvent(cancelToken);
             if (!shouldContinue)
+            {
+                Log.CloseAndFlush();
                 return;
+            }
         }
     }
 

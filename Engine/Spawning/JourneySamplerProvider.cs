@@ -24,7 +24,7 @@ public class JourneySamplerProvider : IJourneySamplerProvider
         _distanceScalar = distanceScalar;
         Current = _pipeline.Compute(_populationScalar, _distanceScalar);
     }
-    
+
     /// <inheritdoc/>
     public IJourneySampler Current { get; private set; }
 

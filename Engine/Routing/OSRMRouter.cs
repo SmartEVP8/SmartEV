@@ -114,9 +114,11 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
         var distances = new float[indices.Length];
 
         fixed (float* durPtr = durations)
-        fixed (float* distPtr = distances)
         {
-            ComputeTableIndexedWithDest(_osrm, evLon, evLat, destLon, destLat, indices, indices.Length, durPtr, distPtr);
+            fixed (float* distPtr = distances)
+            {
+                ComputeTableIndexedWithDest(_osrm, evLon, evLat, destLon, destLat, indices, indices.Length, durPtr, distPtr);
+            }
         }
 
         for (var i = 0; i < durations.Length; i++)
@@ -132,9 +134,7 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
         double destLon,
         double destLat)
     {
-        IntPtr resultPtr;
-
-        resultPtr = ComputeSrcToDest(
+        var resultPtr = ComputeSrcToDest(
             _osrm,
             evLon,
             evLat,
@@ -156,9 +156,15 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
     /// <inheritdoc/>
     public RouteSegment QueryDestinationWithStop(double evLon, double evLat, double stationLon, double stationLat, double destLon, double destLat, ushort index = ushort.MaxValue)
     {
-        IntPtr resultPtr;
-
-        resultPtr = ComputeSrcToDestWithStop(_osrm, evLon, evLat, stationLon, stationLat, destLon, destLat, index);
+        var resultPtr = ComputeSrcToDestWithStop(
+            _osrm,
+            evLon,
+            evLat,
+            stationLon,
+            stationLat,
+            destLon,
+            destLat,
+            index);
 
         if (resultPtr == IntPtr.Zero)
             return new RouteSegment(-1, -1, string.Empty);
@@ -183,9 +189,11 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
         var distances = new float[numSrcs * numDsts];
 
         fixed (float* durPtr = durations)
-        fixed (float* distPtr = distances)
         {
-            PointsToPoints(_osrm, srcCoords, numSrcs, dstCoords, numDsts, durPtr, distPtr);
+            fixed (float* distPtr = distances)
+            {
+                PointsToPoints(_osrm, srcCoords, numSrcs, dstCoords, numDsts, durPtr, distPtr);
+            }
         }
 
         for (var i = 0; i < durations.Length; i++)

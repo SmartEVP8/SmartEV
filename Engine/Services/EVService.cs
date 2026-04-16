@@ -2,6 +2,7 @@ namespace Engine.Services;
 
 using Core.Shared;
 using Engine.Events;
+using Engine.Utils;
 using Engine.Vehicles;
 
 /// <summary>
@@ -26,6 +27,9 @@ public class EVService(
     public void Handle(SpawnEVS e)
     {
         var amount = _carsInPeriod.GetCarsInPeriod(e.Time);
+        if (amount <= 0)
+            throw new SkillissueException($"EVService was scheduled to spawn EVs at time {e.Time}, but the amount to spawn was {amount}. How did that happen?");
+
         evPopulator.CreateEVs(amount, distributionWindow);
         scheduler.ScheduleEvent(new SpawnEVS(e.Time + distributionWindow));
     }

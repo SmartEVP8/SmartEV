@@ -1,3 +1,4 @@
+using Serilog.Events;
 namespace API;
 
 using Services;
@@ -33,11 +34,23 @@ public static class Program
         });
 
         Log.Logger = new LoggerConfiguration()
-        .WriteTo.File(
-        "logs/api.txt",
-        outputTemplate: "{Level:u3}: {Message:lj}{NewLine}{Exception}",
-        rollingInterval: RollingInterval.Day)
-        .CreateLogger();
+            .MinimumLevel.Verbose()
+            .WriteTo.File(
+                "logs/API-verbose-.txt",
+                restrictedToMinimumLevel: LogEventLevel.Verbose,
+                outputTemplate: "{Level:u3}: {Message:lj}{NewLine}{Exception}",
+                rollingInterval: RollingInterval.Day)
+            .WriteTo.File(
+                "logs/API-information-.txt",
+                restrictedToMinimumLevel: LogEventLevel.Information,
+                outputTemplate: "{Level:u3}: {Message:lj}{NewLine}{Exception}",
+                rollingInterval: RollingInterval.Day)
+            .WriteTo.File(
+                "logs/API-warning-.txt",
+                restrictedToMinimumLevel: LogEventLevel.Warning,
+                outputTemplate: "{Level:u3}: {Message:lj}{NewLine}{Exception}",
+                rollingInterval: RollingInterval.Day)
+            .CreateLogger();
 
         var app = builder.Build();
 

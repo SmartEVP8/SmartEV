@@ -6,6 +6,7 @@ using Engine.Routing;
 using Engine.Services;
 using Engine.Utils;
 using Engine.Vehicles;
+using Serilog;
 
 /// <summary>Service responsible for pre-computing the candidate stations for an EV and caching the results for later retrieval.</summary>
 /// <param name="router">Router used to compute paths from the EV's position to candidate stations and the destination.</param>
@@ -42,51 +43,69 @@ public class FindCandidateStationService(
     private Dictionary<ushort, float> ComputeCandidates(FindCandidateStations e, double PathdeviationMultiplier = 1.0)
     {
         ref var ev = ref evStore.Get(e.EVId);
-        var pos = ev.Advance(e.Time);
+        var pos = ev.Advance(e.Time) ?? throw new SkillissueException($"EV {e.EVId} has no position at time {e.Time} after advancing. This should not happen.");
 
         var pathDeviationMultiplied = ev.Preferences.MaxPathDeviation * PathdeviationMultiplier;
 
         var filteredStationIds = spatialGrid.GetStationsAlongPolyline(
             ev.Journey.Current.Waypoints,
             pathDeviationMultiplied);
-
-        var reachableStationIds = ReachableStations.FindReachableStations(
-            ev.Journey.Current.Waypoints,
-            ev,
-            stations,
-            filteredStationIds,
-            pathDeviationMultiplied).ToArray();
-
-        var destination = ev.Journey.Current.Waypoints.Last();
-        var detourResult = router.QueryStationsWithDest(
-            pos.Longitude,
-            pos.Latitude,
-            destination.Longitude,
-            destination.Latitude,
-            reachableStationIds);
-
-        var refinedCandidateDurations = new Dictionary<ushort, float>(reachableStationIds.Length);
-        var baselineDirectDistanceKm = ev.Journey.Current.DistanceKm;
-
-        for (var i = 0; i < reachableStationIds.Length; i++)
+        if (filteredStationIds.Count > 0)
         {
-            var stationId = reachableStationIds[i];
-            var detourDistanceMeters = detourResult.Distances[i];
-            if (detourDistanceMeters < 0 || float.IsNaN(detourDistanceMeters))
-                continue;
+            var reachableStationIds = ReachableStations.FindReachableStations(
+                ev.Journey.Current.Waypoints,
+                ev,
+                stations,
+                filteredStationIds,
+                pathDeviationMultiplied).ToArray();
 
-            if (!ev.CanReachViaDetour(detourDistanceMeters / 1000f, baselineDirectDistanceKm, ev.Preferences.MinAcceptableCharge))
-                continue;
+            var destination = ev.Journey.Current.Waypoints.Last();
+            var detourResult = router.QueryStationsWithDest(
+                pos.Longitude,
+                pos.Latitude,
+                destination.Longitude,
+                destination.Latitude,
+                reachableStationIds);
 
-            refinedCandidateDurations[stationId] = detourResult.Durations[i];
+            var refinedCandidateDurations = new Dictionary<ushort, float>(reachableStationIds.Length);
+            var baselineDirectDistanceKm = ev.Journey.Current.DistanceKm;
+
+            for (var i = 0; i < reachableStationIds.Length; i++)
+            {
+                var stationId = reachableStationIds[i];
+                var detourDistanceMeters = detourResult.Distances[i];
+                if (detourDistanceMeters < 0 || float.IsNaN(detourDistanceMeters))
+                    continue;
+
+                if (!ev.CanReachViaDetour(detourDistanceMeters / 1000f, baselineDirectDistanceKm, ev.Preferences.MinAcceptableCharge))
+                    continue;
+
+                refinedCandidateDurations[stationId] = detourResult.Durations[i];
+            }
+
+            if (refinedCandidateDurations.Count == 0 && stationService.GetReservationStationId(e.EVId) is ushort && ev.DistanceOnCurrentChargeKm() > pathDeviationMultiplied)
+            {
+                refinedCandidateDurations = ComputeCandidates(e, PathdeviationMultiplier * 1.25);
+            }
+            else if (refinedCandidateDurations.Count == 0)
+            {
+                Log.Warning($"No candidate stations found for EV {e.EVId} at time {e.Time}.");
+            }
+            else
+            {
+                Log.Verbose($"Computed candidate stations for EV {e.EVId}: amount of stations: {refinedCandidateDurations.Count} at time {e.Time}.");
+            }
+
+            return refinedCandidateDurations;
         }
 
-        if (refinedCandidateDurations.Count == 0 && stationService.GetReservationStationId(e.EVId) is ushort && ev.DistanceOnCurrentChargeKm() > pathDeviationMultiplied)
+        if (stationService.GetReservationStationId(e.EVId) is ushort && ev.DistanceOnCurrentChargeKm() > pathDeviationMultiplied)
         {
-            refinedCandidateDurations = ComputeCandidates(e, PathdeviationMultiplier * 1.25);
+            return ComputeCandidates(e, PathdeviationMultiplier * 1.25);
         }
 
-        return refinedCandidateDurations;
+        Log.Warning($"No candidate stations found for EV {e.EVId}. Could not find any stations along polyline, even after expanding search radius. Returning empty candidate set.  at time {e.Time}");
+        return [];
     }
 
     /// <summary>Gets the pre-computed candidate stations. Awaits result if it's not yet ready.</summary>

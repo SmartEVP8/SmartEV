@@ -54,7 +54,7 @@ public class EVFactory(Random random, IJourneySamplerProvider samplersProvider, 
         var batteryConfig = p.Config.BatteryConfig;
         var battery = new Battery(batteryConfig.MaxCapacityKWh, batteryConfig.ChargeRateKW, p.CurrCharge);
         var preferences = new Preferences(p.PriceSensPref, p.MinAcceptableCharge, p.MaxPathDeviation);
-        var journey = CreateJourney(departure, p.SourceDest);
+        var journey = CreateJourney(departure, p.SourceDest) ?? throw new InvalidOperationException($"Failed to create journey for EV with source {p.SourceDest.Source} and destination {p.SourceDest.Destination}. This should not happen.");
         return new EV(battery, preferences, journey, p.Config.Efficiency);
     }
 

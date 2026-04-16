@@ -25,7 +25,7 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
     public Station Compute(ref EV ev, Dictionary<ushort, float> stationDurations, Time time)
     {
         var bestCost = double.MaxValue;
-        var weights = costStore.GetWeights();
+        var weights = costStore.GetWeights() ?? throw new NoNullAllowedException("Cost weights not found in store.");
         Station? bestStation = null;
 
         foreach (var (stationId, duration) in stationDurations)
@@ -65,9 +65,13 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
     // TODO: Think about effective queue size
     private float CalculateEffectiveQueueSizeCost(Station station, CostWeights weights)
     {
+        if (station.Chargers.Count == 0)
+            throw new InvalidOperationException($"Station {station.Id} has no chargers.");
 
         var totalQueueSize = stationService.GetStation(station.Id)
                                 .Chargers.Sum(cs => cs.Queue.Count);
+        if (totalQueueSize == 0)
+            return 0;
 
         var effectiveQueueSize = (float)totalQueueSize / station.Chargers.Count;
         return weights.EffectiveQueueSize * MathF.Pow(effectiveQueueSize, 3);
@@ -82,7 +86,14 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
     private static float CalculatePathDeviationCost(ref EV ev, float detourDuration, CostWeights weights, Time time)
     {
         var remainingCurrentRoute = ev.Journey.RemainingCurrentRoute(time);
-        var extraTimeCostMinutes = (detourDuration - remainingCurrentRoute) / Time.MillisecondsPerMinute;
+        if (remainingCurrentRoute <= 0)
+            throw new InvalidOperationException($"EV {ev} has no remaining route duration, cannot calculate path deviation cost.");
+
+        var extraTimeCostMilliseconds = detourDuration - remainingCurrentRoute;
+        if (extraTimeCostMilliseconds <= 0)
+            return 0;
+
+        var extraTimeCostMinutes = extraTimeCostMilliseconds / Time.MillisecondsPerMinute;
         return weights.PathDeviation * extraTimeCostMinutes;
     }
 

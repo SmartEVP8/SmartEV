@@ -9,6 +9,7 @@ using Engine.Utils;
 using Engine.Vehicles;
 using Engine.Services.StationServiceHelpers;
 using Core.Vehicles;
+using Serilog;
 
 /// <summary>
 /// Service responsible for managing the state of stations and chargers, handling events related to reservations, arrivals, and charging sessions.
@@ -99,12 +100,12 @@ public class StationService : IStationService
     {
         ref var evRef = ref _eVStore.Get(e.EVId);
         evRef.Advance(e.Time);
-
+        Log.Verbose($"Handling ArrivalAtStation for EV {e.EVId} at time {e.Time}. Current EV data: {evRef}. SoC: {evRef.Battery.StateOfCharge}. Wants to charge to {e.TargetSoC}");
         var chargers = GetStation(e.StationId).Chargers;
 
-        // TODO : FIX ASAP
-        // if (evRef.Battery.StateOfCharge >= e.TargetSoC)
-        //     throw new SkillissueException($"EV wants to charge to a SoC: {e.TargetSoC}, which is lower than its current SoC: {evRef.Battery.StateOfCharge}.");
+        if (evRef.Battery.StateOfCharge >= e.TargetSoC)
+            throw new SkillissueException($"EV wants to charge to a SoC: {e.TargetSoC}, which is lower than its current SoC: {evRef.Battery.StateOfCharge}.");
+
         var target = chargers
             .OrderBy(cs => cs.IsFree ? 0 : 1)
             .ThenBy(cs => cs.Queue.Count)
@@ -156,9 +157,15 @@ public class StationService : IStationService
         ev.EVState = EVState.Driving;
 
         if (ev.CanCompleteJourney(timeAtStation, ev.Preferences.MinAcceptableCharge))
+        {
+            Log.Information($"EV {e.EVId} has completed its charging and can continue to its destination with SoC {ev.Battery.StateOfCharge}. Scheduling arrival at destination.");
             _scheduler.ScheduleEvent(new ArriveAtDestination(e.EVId, e.Time));
+        }
         else
+        {
+            Log.Information($"EV {e.EVId} has completed its charging but cannot continue to its destination with SoC {ev.Battery.StateOfCharge}. Scheduling search for candidate stations.");
             _scheduler.ScheduleEvent(new FindCandidateStations(e.EVId, ev.TimeToNextFindCandidateCheck(e.Time)));
+        }
 
         if (!_evReservations.TryGetValue(e.EVId, out var stationId))
             throw new SkillissueException("Should have a reservation at this point");
@@ -173,6 +180,7 @@ public class StationService : IStationService
             ? top.EVId
             : null;
 
+        Log.Verbose($"Starting next charge on charger {charger.Id} at station {stationId} at time {simNow}. Next EV in queue: {nextEvId?.ToString() ?? "None"}");
         charger.AccumulateEnergy(simNow);
         _chargerIndex[charger.Id].Handler.StartNext(simNow, stationId);
 

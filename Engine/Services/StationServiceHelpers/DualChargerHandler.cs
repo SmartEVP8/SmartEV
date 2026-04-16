@@ -1,4 +1,5 @@
 // DualChargerHandler.cs
+using Serilog;
 namespace Engine.Services.StationServiceHelpers;
 
 using Core.Charging;
@@ -172,12 +173,14 @@ public class DualChargerHandler(
     {
         if (charger.SessionA is not null && result?.FinishTimeA is { } finishA)
         {
+            Log.Information($"Scheduling EndCharging event for EV {charger.SessionA.EVId} on side A of charger {charger.Id} at station {stationId} with finish time {finishA}.");
             var token = scheduler.ScheduleEvent(new EndCharging(charger.SessionA.EVId, charger.Id, stationId, finishA));
             charger.SessionA = charger.SessionA with { CancellationToken = token };
         }
 
         if (charger.SessionB is not null && result?.FinishTimeB is { } finishB)
         {
+            Log.Information($"Scheduling EndCharging event for EV {charger.SessionB.EVId} on side B of charger {charger.Id} at station {stationId} with finish time {finishB}.");
             var token = scheduler.ScheduleEvent(new EndCharging(charger.SessionB.EVId, charger.Id, stationId, finishB));
             charger.SessionB = charger.SessionB with { CancellationToken = token };
         }

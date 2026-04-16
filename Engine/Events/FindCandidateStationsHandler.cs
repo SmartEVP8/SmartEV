@@ -6,7 +6,9 @@ using Core.Vehicles;
 using Engine.Cost;
 using Engine.Routing;
 using Engine.Services;
+using Engine.Utils;
 using Engine.Vehicles;
+using Serilog;
 
 /// <summary>
 /// Event handler for finding candidate stations for an EV.
@@ -38,13 +40,14 @@ public class FindCandidateStationsHandler(
         ref var ev = ref evStore.Get(e.EVId);
         ev.Advance(e.Time);
 
+        Log.Verbose($"Handling FindCandidateStations for EV {e.EVId} at time {e.Time}. Current EV data: {ev}. SoC: {ev.Battery.StateOfCharge}, Next stop in {ev.Journey.Current.DurationToNextStop}ms.)");
         if (candidateStationDurations.Count == 0)
         {
             HandleNoCandidates(e, ref ev);
             return;
         }
 
-        var bestStation = costFunction.Compute(ref ev, candidateStationDurations, e.Time);
+        var bestStation = costFunction.Compute(ref ev, candidateStationDurations, e.Time) ?? throw new SkillissueException("Cost function did not return a station, but should never get this far.");
 
         if (stationService.GetReservationStationId(e.EVId) != bestStation.Id)
             evDetourPlanner.Update(ref ev, bestStation, e.Time);
@@ -57,6 +60,7 @@ public class FindCandidateStationsHandler(
 
         if (remaining <= Time.MillisecondsPerMinute * 10)
         {
+            Log.Information($"EV {e.EVId} is close to station {bestStation.Id} with ETA {etaAtStation} and SoC at arrival {socAtArrival} with a current SoC of {ev.Battery.StateOfCharge}. Making arrival at station event immediately.");
             eventScheduler.ScheduleEvent(new ArriveAtStation(e.EVId, bestStation.Id, targetSoC, etaAtStation));
             return;
         }

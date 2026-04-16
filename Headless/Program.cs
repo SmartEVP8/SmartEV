@@ -1,3 +1,4 @@
+using Serilog.Events;
 namespace Headless;
 
 using Engine;
@@ -41,11 +42,23 @@ public static class Program
 
         var coordinator = provider.GetRequiredService<Simulation>();
         Log.Logger = new LoggerConfiguration()
-                .WriteTo.File(
-                    "logs/simulation.txt",
-                    outputTemplate: "{Level:u3}: {Message:lj}{NewLine}{Exception}",
-                    rollingInterval: RollingInterval.Day)
-                .CreateLogger();
+            .MinimumLevel.Verbose()
+            .WriteTo.File(
+                "logs/Headless-verbose-.txt",
+                restrictedToMinimumLevel: LogEventLevel.Verbose,
+                outputTemplate: "{Level:u3}: {Message:lj}{NewLine}{Exception}",
+                rollingInterval: RollingInterval.Day)
+            .WriteTo.File(
+                "logs/Headless-information-.txt",
+                restrictedToMinimumLevel: LogEventLevel.Information,
+                outputTemplate: "{Level:u3}: {Message:lj}{NewLine}{Exception}",
+                rollingInterval: RollingInterval.Day)
+            .WriteTo.File(
+                "logs/Headless-warning-.txt",
+                restrictedToMinimumLevel: LogEventLevel.Warning,
+                outputTemplate: "{Level:u3}: {Message:lj}{NewLine}{Exception}",
+                rollingInterval: RollingInterval.Day)
+            .CreateLogger();
         await coordinator.Run();
     }
 }
