@@ -109,8 +109,6 @@ public static class Init
             return new EVFactory(random, journeySamplerProvider, router);
         });
 
-
-
         services.AddSingleton(sp =>
         {
             var settings = sp.GetRequiredService<EngineSettings>();
@@ -139,8 +137,6 @@ public static class Init
             var stationService = sp.GetRequiredService<StationService>();
             return new FindCandidateStationService(router, stations, grid, evStore, stationService);
         });
-
-
 
         services.AddSingleton(sp =>
         {
