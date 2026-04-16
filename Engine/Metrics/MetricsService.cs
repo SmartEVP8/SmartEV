@@ -23,7 +23,7 @@ public sealed class MetricsService : IAsyncDisposable
     private readonly IMetricWriter<ArrivalAtDestinationMetric>? _arrivals;
     private readonly IMetricWriter<StationSnapshotMetric>? _stations;
     private readonly IMetricWriter<ChargerSnapshotMetric>? _chargers;
-    private readonly IMetricWriter<EVWaitTimeMetric>? _waitTime;
+    private readonly IMetricWriter<WaitTimeInQueueMetric>? _waitTime;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MetricsService"/> class.
@@ -44,7 +44,7 @@ public sealed class MetricsService : IAsyncDisposable
         if (config.RecordChargerSnapshots)
             _chargers = new MetricWriter<ChargerSnapshotMetric>(config.BufferSize, files.GetMetricPath<ChargerSnapshotMetric>());
         if (config.RecordEVWaitTime)
-            _waitTime = new MetricWriter<EVWaitTimeMetric>(config.BufferSize, files.GetMetricPath<EVWaitTimeMetric>());
+            _waitTime = new MetricWriter<WaitTimeInQueueMetric>(config.BufferSize, files.GetMetricPath<WaitTimeInQueueMetric>());
     }
 
     /// <summary>Records a car snapshot. No-op if car snapshots are disabled in config.</summary>
@@ -65,7 +65,7 @@ public sealed class MetricsService : IAsyncDisposable
 
     /// <summary> Records an EV wait time metric. No-op if EV wait time metrics are disabled in config. </summary>
     /// <param name="metric">The EV wait time metric to record.</param>
-    public void RecordWaitTime(EVWaitTimeMetric metric) => _waitTime?.Record(metric);
+    public void RecordWaitTime(WaitTimeInQueueMetric metric) => _waitTime?.Record(metric);
 
     /// <summary>
     /// Signals all writers to stop, drains their channels, and flushes remaining
