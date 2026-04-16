@@ -1,47 +1,133 @@
-using OpenApiUi;
+namespace API;
 
-var builder = WebApplication.CreateBuilder(args);
+using Services;
+using Engine.Events;
+using Engine.Cost;
+using API.EngineManager;
+using Protocol;
+using Google.Protobuf;
+using Microsoft.Extensions.Logging;
+using Core.Charging;
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
-
-var app = builder.Build();
-
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+/// <summary>
+/// Entry point for the SmartEV API application.
+/// </summary>
+public static class Program
 {
-    app.MapOpenApi();
-    app.UseOpenApiUi(config =>
+    /// <summary>
+    /// The main entry point for the SmartEV API application.
+    /// </summary>
+    /// <param name="args">The command-line arguments.</param>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation that initializes the application.</returns>
+    public static async Task Main(string[] args)
     {
-        config.OpenApiSpecPath = "/openapi/v1.json";
-    });
-}
+        var builder = WebApplication.CreateBuilder(args);
+        builder.Services.AddSingleton<EngineManager.EngineManager>();
+        builder.Services.AddCors(options =>
+        {
+            options.AddPolicy("AllowFrontend", policy =>
+                policy.WithOrigins("http://localhost:5173")
+                      .AllowAnyMethod()
+                      .AllowAnyHeader());
+        });
 
-app.UseHttpsRedirection();
+        var app = builder.Build();
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+        if (app.Environment.IsDevelopment())
+            app.UseDeveloperExceptionPage();
 
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
+        app.UseWebSockets();
+        app.UseCors("AllowFrontend");
 
-app.Run();
+        app.MapGet("/weights", async () => Results.Ok(CostWeightMetadata.All));
 
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+        app.MapPost("/init-engine", async (EngineManager.EngineManager engineManager, EngineInitConfigDTO config) =>
+        {
+            var result = await engineManager.InitializeAsync(config, services =>
+            {
+                services.AddSingleton(provider => app.Services.GetRequiredService<ILoggerFactory>());
+                services.AddLogging();
+                services.AddSingleton<IEngineEventSubscriber, EngineEventSubscriber>();
+                services.AddSingleton<SnapshotHandler>();
+                services.AddSingleton<SimulationWebSocketService>();
+                services.AddSingleton<IEventSender>(sp => sp.GetRequiredService<SimulationWebSocketService>());
+                services.AddSingleton<SimulationRunner>();
+            });
+
+            if (!result)
+            {
+                return Results.BadRequest("Initialization failed");
+            }
+
+            var stations = engineManager.GetEngineService<List<Station>>();
+            var initData = InitEngineDataBuilder.BuildInitEngineData(stations);
+
+            var envelope = new Envelope { InitEngineData = initData };
+            var data = envelope.ToByteArray();
+
+            return Results.File(data, "application/octet-stream");
+        });
+
+        app.MapPatch("/update-weights/{costId}", (
+            EngineManager.EngineManager engineManager,
+            int costId,
+            CostWeightDTO weight) =>
+        {
+            if (!engineManager.IsInitialized)
+            {
+                return Results.BadRequest("Engine not initialized");
+            }
+
+            if (weight.CostId != costId)
+            {
+                return Results.BadRequest("Route costId does not match body costId.");
+            }
+
+            var settings = engineManager.GetEngineService<Engine.Init.EngineSettings>();
+
+            return Results.Ok();
+        });
+
+        app.Map("/ws/simulation", async context =>
+        {
+            if (!context.WebSockets.IsWebSocketRequest)
+            {
+                context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                return;
+            }
+
+            var engineManager = context.RequestServices.GetRequiredService<EngineManager.EngineManager>();
+
+            if (!engineManager.IsInitialized)
+            {
+                context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
+                await context.Response.WriteAsync("Engine not initialized. Call /init-engine first.");
+                return;
+            }
+
+            var webSocketService = engineManager.GetEngineService<SimulationWebSocketService>();
+            var simulationRunner = engineManager.GetEngineService<SimulationRunner>();
+
+            using var webSocket = await context.WebSockets.AcceptWebSocketAsync();
+
+            await simulationRunner.StartAsync(context.RequestAborted);
+
+            try
+            {
+                await webSocketService.HandleConnectionAsync(webSocket, context.RequestAborted);
+            }
+            catch (Exception ex)
+            {
+                var loggerFactory = context.RequestServices.GetRequiredService<ILoggerFactory>();
+                var logger = loggerFactory.CreateLogger("WebSocket");
+                logger.LogError(ex, "WebSocket error");
+            }
+            finally
+            {
+                await simulationRunner.StopAsync();
+            }
+        });
+
+        app.Run();
+    }
 }

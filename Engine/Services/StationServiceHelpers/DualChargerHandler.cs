@@ -30,6 +30,7 @@ public class DualChargerHandler(
     /// Does nothing if both sides are occupied and the queue is empty.
     /// </summary>
     /// <param name="simNow">The current simulation time.</param>
+    /// <param name="stationId">The ID of the station.</param>
     /// <exception cref="InvalidOperationException">
     /// Thrown if the charger has no active sessions after attempting to connect queued vehicles,
     /// indicating a logic error in connection tracking.
@@ -56,7 +57,7 @@ public class DualChargerHandler(
         if (charger.SessionB is not null)
             charger.SessionB = charger.SessionB with { Plan = result };
 
-        ScheduleEndEvents(result);
+        ScheduleEndEvents(result, stationId);
     }
 
     /// <summary>
@@ -99,6 +100,7 @@ public class DualChargerHandler(
     /// or the queue is empty.
     /// </summary>
     /// <param name="simNow">The current simulation time.</param>
+    /// <param name="stationId">The ID of the station.</param>
     private void ConnectQueuedVehicles(Time simNow, ushort stationId)
     {
         while (charger.Queue.TryPeek(out var candidate))
@@ -165,17 +167,18 @@ public class DualChargerHandler(
     /// Schedules end charging events for any active sessions that have a known finish time in the integration result.
     /// </summary>
     /// <param name="result">The integration result containing finish times for each side.</param>
-    private void ScheduleEndEvents(IntegrationResult? result)
+    /// <param name="stationId">The ID of the station.</param>
+    private void ScheduleEndEvents(IntegrationResult? result, ushort stationId)
     {
         if (charger.SessionA is not null && result?.FinishTimeA is { } finishA)
         {
-            var token = scheduler.ScheduleEvent(new EndCharging(charger.SessionA.EVId, charger.Id, finishA));
+            var token = scheduler.ScheduleEvent(new EndCharging(charger.SessionA.EVId, charger.Id, stationId, finishA));
             charger.SessionA = charger.SessionA with { CancellationToken = token };
         }
 
         if (charger.SessionB is not null && result?.FinishTimeB is { } finishB)
         {
-            var token = scheduler.ScheduleEvent(new EndCharging(charger.SessionB.EVId, charger.Id, finishB));
+            var token = scheduler.ScheduleEvent(new EndCharging(charger.SessionB.EVId, charger.Id, stationId, finishB));
             charger.SessionB = charger.SessionB with { CancellationToken = token };
         }
     }

@@ -62,7 +62,7 @@ public class SingleChargerHandler(
 
         if (result.FinishTimeA is { } finishTime)
         {
-            var token = scheduler.ScheduleEvent(new EndCharging(next.EVId, charger.Id, finishTime));
+            var token = scheduler.ScheduleEvent(new EndCharging(next.EVId, charger.Id, stationId, finishTime));
             charger.Session = charger.Session with { CancellationToken = token };
         }
     }

@@ -7,6 +7,8 @@ using Engine.Routing;
 using Engine.test.Builders;
 using Core.test.Builders;
 using Engine.Vehicles;
+using Engine.Services;
+using Core.Charging;
 
 public class FindCandidateStationsHandlerTest
 {
@@ -14,6 +16,7 @@ public class FindCandidateStationsHandlerTest
     private readonly EventScheduler _eventScheduler;
     private readonly EVStore _evStore;
     private readonly IFindCandidateStationService _findCandidateStationService;
+    private readonly StationService _stationService;
 
     public FindCandidateStationsHandlerTest()
     {
@@ -28,6 +31,7 @@ public class FindCandidateStationsHandlerTest
             EngineTestData.StationService(stations, _eventScheduler, _evStore),
             CoreTestData.EnergyPrices);
         var evDetourPlanner = new EVDetourPlanner(router);
+        _stationService = EngineTestData.StationService(stations, _eventScheduler, _evStore);
 
         _findCandidateStationService = new StubFindCandidateStationService();
 
@@ -36,7 +40,8 @@ public class FindCandidateStationsHandlerTest
             costFunction,
             _eventScheduler,
             _evStore,
-            evDetourPlanner);
+            evDetourPlanner,
+            _stationService);
     }
 
     [Fact]
@@ -69,7 +74,8 @@ public class FindCandidateStationsHandlerTest
         Assert.True(nextEvent is FindCandidateStations);
 
         var changedEv = _evStore.Get(index1);
-        Assert.Equal(stationId, changedEv.HasReservationAtStationId);
+        var reservedStationId = _stationService.GetReservationStationId(index1);
+        Assert.Equal(stationId, reservedStationId);
     }
 
     [Fact]
@@ -78,8 +84,9 @@ public class FindCandidateStationsHandlerTest
         var waypoints = new List<Position> { new(58, 9), new(58.5, 9.5) };
         var ev = CoreTestData.EV(waypoints);
         var stationId = EngineTestData.AllStations.Keys.First();
-        ev.HasReservationAtStationId = stationId;
         _evStore.TryAllocate((_, ref e) => { e = ev; }, out var index1);
+        _stationService.HandleReservation(new Reservation(index1, 0, 0.2, 0.8), stationId);
+
         var e = new FindCandidateStations(index1, 0);
 
         await _handler.Handle(e);
@@ -98,8 +105,9 @@ public class FindCandidateStationsHandlerTest
         var waypoints = new List<Position> { new(58, 9), new(58.5, 9.5) };
         var stationId = EngineTestData.AllStations.Keys.First();
         var ev = CoreTestData.EV(waypoints, originalDuration: 10000000, departureTime: 0);
-        ev.HasReservationAtStationId = stationId;
         _evStore.TryAllocate((_, ref e) => { e = ev; }, out var index1);
+        _stationService.HandleReservation(new Reservation(index1, 0, 0.2, 0.8), stationId);
+
         var e = new FindCandidateStations(index1, 0);
 
         var stubService = (StubFindCandidateStationService)_findCandidateStationService;
@@ -112,7 +120,8 @@ public class FindCandidateStationsHandlerTest
         Assert.True(nextEvent is FindCandidateStations);
 
         var changedEv = _evStore.Get(index1);
-        Assert.Equal(stationId, changedEv.HasReservationAtStationId);
+        var reservedStationId = _stationService.GetReservationStationId(index1);
+        Assert.Equal(stationId, reservedStationId);
     }
 
     [Fact]
@@ -121,8 +130,9 @@ public class FindCandidateStationsHandlerTest
         var waypoints = new List<Position> { new(58, 9), new(58.5, 9.5) };
         var ev = CoreTestData.EV(waypoints);
         var existingStationId = EngineTestData.AllStations.Keys.First();
-        ev.HasReservationAtStationId = existingStationId;
         _evStore.TryAllocate((_, ref e) => { e = ev; }, out var index1);
+        _stationService.HandleReservation(new Reservation(index1, 0, 0.2, 0.8), existingStationId);
+
         var e = new FindCandidateStations(index1, 0);
 
         var stubService = (StubFindCandidateStationService)_findCandidateStationService;
@@ -130,17 +140,13 @@ public class FindCandidateStationsHandlerTest
         stubService.SetCandidates(index1, new Dictionary<ushort, float> { { betterStationId, 50f } });
 
         await _handler.Handle(e);
-
-        var nextEvent = _eventScheduler.GetNextEvent();
-        Assert.NotNull(nextEvent);
-
-        Assert.True(nextEvent is CancelRequest);
-
         var eventAfterCancel = _eventScheduler.GetNextEvent();
         Assert.NotNull(eventAfterCancel);
         Assert.True(eventAfterCancel is FindCandidateStations);
+
         var changedEv = _evStore.Get(index1);
-        Assert.Equal(betterStationId, changedEv.HasReservationAtStationId);
+        var reservedStationId = _stationService.GetReservationStationId(index1);
+        Assert.Equal(betterStationId, reservedStationId);
     }
 
     [Fact]
@@ -149,9 +155,11 @@ public class FindCandidateStationsHandlerTest
         var waypoints = new List<Position> { new(58, 9), new(58.5, 9.5) };
         var stationId = EngineTestData.AllStations.Keys.First();
         var ev = CoreTestData.EV(waypoints, originalDuration: 500000, departureTime: 0);
+
         _evStore.TryAllocate((_, ref e) => { e = ev; }, out var index1);
+        _stationService.HandleReservation(new Reservation(index1, 0, 0.2, 0.8), stationId);
+
         ref var storedEv = ref _evStore.Get(index1);
-        storedEv.HasReservationAtStationId = stationId;
         storedEv.Advance(1);
         var e = new FindCandidateStations(index1, 1);
 

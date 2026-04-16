@@ -18,8 +18,8 @@ public class StationServiceTests
         // Both should start charging and have EndCharging events scheduled.
         var (service, scheduler, evStore, _) = BuildDual();
 
-        evStore.TryAllocate((_, ref e) => { e = CoreTestData.EV(); e.HasReservationAtStationId = stationId; }, out var index1);
-        evStore.TryAllocate((_, ref e) => { e = CoreTestData.EV(); e.HasReservationAtStationId = stationId; }, out var index2);
+        evStore.TryAllocate((_, ref e) => { e = CoreTestData.EV(); }, out var index1);
+        evStore.TryAllocate((_, ref e) => { e = CoreTestData.EV(); }, out var index2);
 
         service.HandleArrivalAtStation(new ArriveAtStation(EVId: index1, StationId: stationId, TargetSoC: 0.8, Time: 0));
         service.HandleArrivalAtStation(new ArriveAtStation(EVId: index2, StationId: stationId, TargetSoC: 0.8, Time: 0));
@@ -43,9 +43,13 @@ public class StationServiceTests
         // After first finishes, second should start.
         var (service, scheduler, evStore, charger) = BuildSingle();
 
-        evStore.TryAllocate((_, ref e) => { e = CoreTestData.EV(); e.HasReservationAtStationId = stationId; }, out var index1);
-        evStore.TryAllocate((_, ref e) => { e = CoreTestData.EV(); e.HasReservationAtStationId = stationId; }, out var index2);
-        evStore.TryAllocate((_, ref e) => { e = CoreTestData.EV(); e.HasReservationAtStationId = stationId; }, out var index3);
+        evStore.TryAllocate((_, ref e) => { e = CoreTestData.EV(); }, out var index1);
+        evStore.TryAllocate((_, ref e) => { e = CoreTestData.EV(); }, out var index2);
+        evStore.TryAllocate((_, ref e) => { e = CoreTestData.EV(); }, out var index3);
+
+        service.HandleReservation(new Reservation(EVId: index1, 0, 0.2f, 0.6), stationId: 1);
+        service.HandleReservation(new Reservation(EVId: index2, 0, 0.2f, 0.6), stationId: 1);
+        service.HandleReservation(new Reservation(EVId: index3, 0, 0.2f, 0.6), stationId: 1);
 
         service.HandleArrivalAtStation(new ArriveAtStation(EVId: index1, StationId: 1, TargetSoC: 0.6, Time: 0));
         service.HandleArrivalAtStation(new ArriveAtStation(EVId: index2, StationId: 1, TargetSoC: 0.8, Time: 1));
@@ -72,9 +76,13 @@ public class StationServiceTests
         // After one finishes, third should start and power is redistributed.
         var (service, scheduler, evStore, charger) = BuildDual(maxPowerKW: 200);
 
-        evStore.TryAllocate((_, ref e) => { e = CoreTestData.EV(); e.HasReservationAtStationId = 1; }, out var index1);
-        evStore.TryAllocate((_, ref e) => { e = CoreTestData.EV(); e.HasReservationAtStationId = 1; }, out var index2);
-        evStore.TryAllocate((_, ref e) => { e = CoreTestData.EV(); e.HasReservationAtStationId = 1; }, out var index3);
+        evStore.TryAllocate((_, ref e) => { e = CoreTestData.EV(); }, out var index1);
+        evStore.TryAllocate((_, ref e) => { e = CoreTestData.EV(); }, out var index2);
+        evStore.TryAllocate((_, ref e) => { e = CoreTestData.EV(); }, out var index3);
+
+        service.HandleReservation(new Reservation(EVId: index1, 0, 0.2f, 0.6), stationId: 1);
+        service.HandleReservation(new Reservation(EVId: index2, 0, 0.2f, 0.6), stationId: 1);
+        service.HandleReservation(new Reservation(EVId: index3, 0, 0.2f, 0.6), stationId: 1);
 
         service.HandleArrivalAtStation(new ArriveAtStation(EVId: index1, StationId: 1, TargetSoC: 0.8, Time: 0));
         service.HandleArrivalAtStation(new ArriveAtStation(EVId: index2, StationId: 1, TargetSoC: 0.8, Time: 1));

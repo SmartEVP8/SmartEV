@@ -5,7 +5,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi"/>
-    <PackageReference Include="OpenApiUi"/>
+    <PackageReference Include="Google.Protobuf" />
+    <ProjectReference Include="..\Engine\Engine.csproj" />
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 </Project>

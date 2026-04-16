@@ -3,6 +3,7 @@ namespace Engine.Events.Middleware;
 using Core.Charging;
 using Engine.Grid;
 using Engine.Routing;
+using Engine.Services;
 using Engine.Utils;
 using Engine.Vehicles;
 
@@ -15,7 +16,8 @@ public class FindCandidateStationService(
     IOSRMRouter router,
     Dictionary<ushort, Station> stations,
     ISpatialGrid spatialGrid,
-    EVStore evStore) : IFindCandidateStationService
+    EVStore evStore,
+    StationService stationService) : IFindCandidateStationService
 {
     private record StationQuery(Task<Dictionary<ushort, float>> Task);
 
@@ -79,7 +81,7 @@ public class FindCandidateStationService(
             refinedCandidateDurations[stationId] = detourResult.Durations[i];
         }
 
-        if (refinedCandidateDurations.Count == 0 && ev.HasReservationAtStationId == null && ev.DistanceOnCurrentChargeKm() > pathDeviationMultiplied)
+        if (refinedCandidateDurations.Count == 0 && stationService.GetReservationStationId(e.EVId) is ushort && ev.DistanceOnCurrentChargeKm() > pathDeviationMultiplied)
         {
             refinedCandidateDurations = ComputeCandidates(e, PathdeviationMultiplier * 1.25);
         }

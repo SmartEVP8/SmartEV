@@ -33,3 +33,6 @@ Core/native/
 
 BenchmarkDotNet.Artifacts/
 
+# Generated code from buf generate (local development only)
+API/Generated/
+*.lscache
