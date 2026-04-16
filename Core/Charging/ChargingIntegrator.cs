@@ -1,8 +1,6 @@
 namespace Core.Charging.ChargingModel;
 
 using Core.Shared;
-using System;
-using System.Collections.Generic;
 
 /// <summary>
 /// An EV currently connected to a connector with everything needed

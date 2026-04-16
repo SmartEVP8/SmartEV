@@ -31,7 +31,7 @@ public record CurrentJourney(
     float DistanceKm,
     List<Position> Waypoints,
     Position NextStop,
-    Time PathDeviation,
+    int PathDeviation,
     Time DurationToNextStop)
 {
     /// <summary>Gets the current estimated time of arrival.</summary>
@@ -120,7 +120,7 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
         CheckTime(departure, checkBeforeDeparture: true, checkAfterCompletion: false, checkAfterEtaToNextStop: false);
         var deviation = Current.PathDeviation + (departure + duration) - Current.Eta;
         var durationToNextStop = DurationToNextStop(duration, waypoints, nextStop);
-        Current = new CurrentJourney(departure, duration, newDistanceKm, waypoints, nextStop, deviation, durationToNextStop);
+        Current = new CurrentJourney(departure, duration, newDistanceKm, waypoints, nextStop, (int)deviation, durationToNextStop);
     }
 
     /// <summary>
