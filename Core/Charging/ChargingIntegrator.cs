@@ -1,5 +1,6 @@
 namespace Core.Charging.ChargingModel;
 
+using Core.Helper;
 using Core.Shared;
 
 /// <summary>
@@ -146,17 +147,18 @@ public sealed class ChargingIntegrator(uint stepSeconds)
             t += step;
         }
 
+        Log.Verbose(ev.EVId, simNow, $"IntegrateSingle: simNow={simNow}, maxKW={maxKW}, evId={ev.EVId}, stepSeconds={_stepSeconds}, duration={t}, energyDelivered={energy}, wastedEnergy={wastedEnergy}, finalSoc={soc}", ("EV", ev));
         return new IntegrationResult(
             SocA: soc,
             SocB: 0.0,
-            FinishTimeA: finishTime.HasValue ? finishTime.Value : null,
+            FinishTimeA: finishTime ?? null,
             FinishTimeB: null,
             EnergyDeliveredKWhA: energy,
             EnergyDeliveredKWhB: 0.0,
             WastedEnergyKWh: wastedEnergy,
             DurationMilliseconds: t,
-            BSoCWhenAFinish: 0.0,
             ASoCWhenBFinish: 0.0,
+            BSoCWhenAFinish: 0.0,
             StepSeconds: _stepSeconds,
             CumulativeEnergyA: cummulativeA,
             CumulativeEnergyB: []);
@@ -247,6 +249,8 @@ public sealed class ChargingIntegrator(uint stepSeconds)
             t += step;
         }
 
+        Log.Verbose(evA.EVId, simNow, $"IntegrateDual: simNow={simNow}, maxKW={maxKW}, evAId={evA.EVId}, stepSeconds={_stepSeconds}, duration={t}, energyDeliveredA={energyA}, wastedEnergy={wastedEnergy}, finalSocA={socA}", ("EV_A", evA));
+        Log.Verbose(evB.EVId, simNow, $"IntegrateDual: simNow={simNow}, maxKW={maxKW}, evBId={evB.EVId}, stepSeconds={_stepSeconds}, duration={t}, energyDeliveredB={energyB}, wastedEnergy={wastedEnergy}, finalSocB={socB}", ("EV_B", evB));
         return new IntegrationResult(
             SocA: socA,
             SocB: socB,
@@ -256,8 +260,8 @@ public sealed class ChargingIntegrator(uint stepSeconds)
             EnergyDeliveredKWhB: energyB,
             WastedEnergyKWh: wastedEnergy,
             DurationMilliseconds: t,
-            BSoCWhenAFinish: bSoCWhenAFinish ?? socB,
             ASoCWhenBFinish: aSoCWhenBFinish ?? socA,
+            BSoCWhenAFinish: bSoCWhenAFinish ?? socB,
             StepSeconds: _stepSeconds,
             CumulativeEnergyA: cummulativeA,
             CumulativeEnergyB: cummulativeB);
@@ -266,9 +270,9 @@ public sealed class ChargingIntegrator(uint stepSeconds)
     private static void ValidateConnectedEV(ConnectedEV ev)
     {
         if (!double.IsFinite(ev.CurrentSoC) || ev.CurrentSoC is < 0 or > 1)
-            throw new ArgumentOutOfRangeException(nameof(ev), $"EV {ev.EVId} has invalid CurrentSoC={ev.CurrentSoC}. Expected finite value in [0,1].");
+            throw Log.Error(ev.EVId, 0, new ArgumentOutOfRangeException(nameof(ev), $"EV {ev.EVId} has invalid CurrentSoC={ev.CurrentSoC}. Expected finite value in [0,1]."), ("EV", ev));
 
         if (!double.IsFinite(ev.TargetSoC) || ev.TargetSoC is < 0 or > 1)
-            throw new ArgumentOutOfRangeException(nameof(ev), $"EV {ev.EVId} has invalid TargetSoC={ev.TargetSoC}. Expected finite value in [0,1].");
+            throw Log.Error(ev.EVId, 0, new ArgumentOutOfRangeException(nameof(ev), $"EV {ev.EVId} has invalid TargetSoC={ev.TargetSoC}. Expected finite value in [0,1]."), ("EV", ev));
     }
 }

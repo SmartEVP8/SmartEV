@@ -4,7 +4,7 @@ using Engine.Metrics;
 using Engine.Metrics.Snapshots;
 using Engine.Services;
 using Core.Shared;
-using Serilog;
+using Core.Helper;
 
 /// <summary>
 /// Handles the <see cref="SnapshotEvent"/> by collecting metrics for all stations and chargers via the <see cref="StationService"/>,
@@ -26,7 +26,7 @@ public class SnapshotEventHandler(
     /// scheduler, and power delivery.</param>
     public void Handle(SnapshotEvent e)
     {
-        global::Log.Info(0, e.Time, $"Handling SnapshotEvent at time {e.Time}. Collecting metrics for all stations and chargers.");
+        Log.Info(0, e.Time, $"Handling SnapshotEvent at time {e.Time}. Collecting metrics for all stations and chargers.");
         var (chargerMetrics, stationMetrics) = stationMetricsCollector.Collect(rescheduleTime, e.Time);
 
         foreach (var stationMetric in stationMetrics)

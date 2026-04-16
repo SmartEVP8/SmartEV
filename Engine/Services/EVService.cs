@@ -4,6 +4,7 @@ using Core.Shared;
 using Engine.Events;
 using Engine.Utils;
 using Engine.Vehicles;
+using Core.Helper;
 
 /// <summary>
 /// Service responsible for spawning EV's at each timestamp over a week.

@@ -1,4 +1,3 @@
-using Serilog;
 namespace Engine.Cost;
 
 using System.Data;
@@ -6,6 +5,7 @@ using Core.Charging;
 using Core.Shared;
 using Core.Vehicles;
 using Engine.Services;
+using Core.Helper;
 
 /// <summary>
 /// Computes the cost of detouring to each station and selects the station with the lowest cost.

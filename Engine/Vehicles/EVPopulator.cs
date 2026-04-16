@@ -3,6 +3,7 @@ namespace Engine.Vehicles;
 using Core.Shared;
 using Engine.Events;
 using System.Buffers;
+using Core.Helper;
 
 /// <summary>
 /// The EVPopulator class is responsible for creating and scheduling the spawning of EVs.

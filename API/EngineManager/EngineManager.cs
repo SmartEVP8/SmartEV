@@ -1,6 +1,7 @@
 namespace API.EngineManager;
 
 using Engine.Init;
+using Core.Helper;
 
 /// <summary>
 /// Manages the lifecycle and configuration of the simulation engine.

@@ -2,6 +2,7 @@ namespace Engine;
 
 using Core.Shared;
 using Engine.Events;
+using Core.Helper;
 
 /// <summary>
 /// The Simulation class is responsible for running the simulation by continuously fetching and

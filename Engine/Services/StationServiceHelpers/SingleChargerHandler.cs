@@ -7,7 +7,7 @@ using Engine.Events;
 using Engine.Metrics;
 using Engine.Metrics.Events;
 using Engine.Utils;
-using Serilog;
+using Core.Helper;
 
 /// <summary>
 /// Handles the session lifecycle for a <see cref="SingleCharger"/>,
@@ -41,7 +41,7 @@ public class SingleChargerHandler(
 
         if (!charger.TryConnect())
         {
-            throw global::Log.Error(0, simNow, new SkillissueException(
+            throw Log.Error(0, simNow, new SkillissueException(
                 $"Logic Error: EV {next.EVId} reached Charger {charger.Id} but TryConnect failed."),
                 ((string Key, object Value))("StationId", stationId),
                 ((string Key, object Value))("Charger", charger),
@@ -66,7 +66,7 @@ public class SingleChargerHandler(
 
         if (result.FinishTimeA is { } finishTime)
         {
-            global::Log.Info(charger.Session.EVId, finishTime, $"Scheduling EndCharging event for EV {charger.Session.EVId} on charger {charger.Id} at station {stationId} with finish time {finishTime}.");
+            Log.Info(charger.Session.EVId, finishTime, $"Scheduling EndCharging event for EV {charger.Session.EVId} on charger {charger.Id} at station {stationId} with finish time {finishTime}.");
             var token = scheduler.ScheduleEvent(new EndCharging(next.EVId, charger.Id, stationId, finishTime));
             charger.Session = charger.Session with { CancellationToken = token };
         }

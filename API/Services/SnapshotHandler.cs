@@ -5,6 +5,7 @@ using Engine.Events;
 using Engine.Services;
 using Engine.Vehicles;
 using Protocol;
+using Core.Helper;
 
 /// <summary>
 /// Handles snapshot requests from the client by querying the engine.
@@ -12,12 +13,10 @@ using Protocol;
 /// <param name="evStore">The store for managing electric vehicles.</param>
 /// <param name="stationService">The service for managing charging stations.</param>
 /// <param name="eventScheduler">The event scheduler for getting the current simulation time.</param>
-/// <param name="logger">The logger for recording events and errors.</param>
 public class SnapshotHandler(
     EVStore evStore,
     StationService stationService,
-    EventScheduler eventScheduler,
-    ILogger<SnapshotHandler> logger)
+    EventScheduler eventScheduler)
 {
     /// <summary>
     /// Builds a simulation snapshot response by querying the engine for the current state of the simulation.

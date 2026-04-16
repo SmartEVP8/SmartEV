@@ -11,6 +11,7 @@ using Core.Charging;
 using Serilog;
 using Serilog.Events;
 using Serilog.Templates;
+using Core.Helper;
 
 /// <summary>
 /// Entry point for the SmartEV API application.
@@ -35,7 +36,7 @@ public static class Program
         });
         var formatter = new ExpressionTemplate("{ {evId: @p['evId'], Time: @p['Time'], Level: @l, Message: @m, Exception: @x, ..@p} }\n");
 
-        Log.Logger = new LoggerConfiguration()
+        Serilog.Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Verbose()
             .WriteTo.File(
                 formatter,
@@ -73,7 +74,7 @@ public static class Program
         {
             var result = await engineManager.InitializeAsync(config, services =>
             {
-                services.AddSingleton(provider => app.Services.GetRequiredService<ILoggerFactory>());
+                services.AddSingleton(_ => app.Services.GetRequiredService<ILoggerFactory>());
                 services.AddLogging();
                 services.AddSingleton<IEngineEventSubscriber, EngineEventSubscriber>();
                 services.AddSingleton<SnapshotHandler>();
@@ -146,17 +147,17 @@ public static class Program
             }
             catch (Exception ex)
             {
-                global::Log.Error(0, 0, ex);
+                Core.Helper.Log.Error(0, 0, ex);
                 throw;
             }
             finally
             {
                 await simulationRunner.StopAsync();
-                Log.CloseAndFlush();
+                Serilog.Log.CloseAndFlush();
             }
         });
 
-        global::Log.Info(0, 0, "API started.");
+        Core.Helper.Log.Info(0, 0, "API started.");
         app.Run();
     }
 }

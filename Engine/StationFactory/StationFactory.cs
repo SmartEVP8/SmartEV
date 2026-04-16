@@ -3,6 +3,7 @@ namespace Engine.StationFactory;
 using System.Text.Json;
 using Core.Charging;
 using Core.Shared;
+using Core.Helper;
 
 /// <summary>
 /// Factory for creating stations from a JSON file containing charging location data.

@@ -6,7 +6,7 @@ using Core.Shared;
 using Engine.Events;
 using Engine.Metrics;
 using Engine.Metrics.Events;
-using Serilog;
+using Core.Helper;
 
 /// <summary>
 /// Handles the session lifecycle for a <see cref="DualCharger"/>,
@@ -44,7 +44,7 @@ public class DualChargerHandler(
 
         if (charger.SessionA is null && charger.SessionB is null && charger.Queue.Count > 0)
         {
-            throw global::Log.Error(0, simNow, new InvalidOperationException(
+            throw Log.Error(0, simNow, new InvalidOperationException(
                 $"Logic Error: DualCharger {charger.Id} is empty but failed to connect EV {charger.Queue.Peek().EVId}."),
                 ((string Key, object Value))("StationId", stationId),
                 ((string Key, object Value))("Charger", charger));
@@ -174,14 +174,14 @@ public class DualChargerHandler(
     {
         if (charger.SessionA is not null && result?.FinishTimeA is { } finishA)
         {
-            global::Log.Info(charger.SessionA.EVId, finishA, $"Scheduling EndCharging event for EV {charger.SessionA.EVId} on side A of charger {charger.Id} at station {stationId} with finish time {finishA}.");
+            Log.Info(charger.SessionA.EVId, finishA, $"Scheduling EndCharging event for EV {charger.SessionA.EVId} on side A of charger {charger.Id} at station {stationId} with finish time {finishA}.");
             var token = scheduler.ScheduleEvent(new EndCharging(charger.SessionA.EVId, charger.Id, stationId, finishA));
             charger.SessionA = charger.SessionA with { CancellationToken = token };
         }
 
         if (charger.SessionB is not null && result?.FinishTimeB is { } finishB)
         {
-            global::Log.Info(charger.SessionB.EVId, finishB, $"Scheduling EndCharging event for EV {charger.SessionB.EVId} on side B of charger {charger.Id} at station {stationId} with finish time {finishB}.");
+            Log.Info(charger.SessionB.EVId, finishB, $"Scheduling EndCharging event for EV {charger.SessionB.EVId} on side B of charger {charger.Id} at station {stationId} with finish time {finishB}.");
             var token = scheduler.ScheduleEvent(new EndCharging(charger.SessionB.EVId, charger.Id, stationId, finishB));
             charger.SessionB = charger.SessionB with { CancellationToken = token };
         }

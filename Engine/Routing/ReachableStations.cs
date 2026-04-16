@@ -4,6 +4,7 @@ using Core.Shared;
 using Core.Vehicles;
 using Core.Charging;
 using Core.GeoMath;
+using Core.Helper;
 
 /// <summary>
 /// Provides functionality to find reachable stations for an EV based on its current charge and the distance to nearby stations along a given path.

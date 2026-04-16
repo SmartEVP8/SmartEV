@@ -1,15 +1,14 @@
 namespace API.Services;
 
 using Engine.Events;
-using Protocol;
+using Core.Helper;
 
 /// <summary>
 /// Bridges engine events to protocol events and sends them to the connected client.
 /// </summary>
 public sealed class EngineEventSubscriber(
     SnapshotHandler snapshotHandler,
-    IEventSender eventSender,
-    ILogger<EngineEventSubscriber> logger) : IEngineEventSubscriber
+    IEventSender eventSender) : IEngineEventSubscriber
 {
     /// <inheritdoc/>
     public async void OnArrivalAtStation(ArriveAtStation @event)

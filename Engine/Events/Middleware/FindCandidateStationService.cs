@@ -6,7 +6,7 @@ using Engine.Routing;
 using Engine.Services;
 using Engine.Utils;
 using Engine.Vehicles;
-using Serilog;
+using Core.Helper;
 
 /// <summary>Service responsible for pre-computing the candidate stations for an EV and caching the results for later retrieval.</summary>
 /// <param name="router">Router used to compute paths from the EV's position to candidate stations and the destination.</param>
@@ -34,7 +34,7 @@ public class FindCandidateStationService(
         return fcse =>
         {
             if (fcse is not FindCandidateStations e)
-                throw new SkillissueException("Not the correct event type");
+                throw Log.Error(0, 0, new SkillissueException("Not the correct event type"), ("Event", fcse));
 
             _evStationPaths[e.EVId] = new StationQuery(Task.Run(() => ComputeCandidates(e)));
         };
@@ -43,7 +43,7 @@ public class FindCandidateStationService(
     private Dictionary<ushort, float> ComputeCandidates(FindCandidateStations e, double PathdeviationMultiplier = 1.0)
     {
         ref var ev = ref evStore.Get(e.EVId);
-        var pos = ev.Advance(e.Time) ?? throw new SkillissueException($"EV {e.EVId} has no position at time {e.Time} after advancing. This should not happen.");
+        var pos = ev.Advance(e.Time) ?? throw Log.Error(e.EVId, e.Time, new SkillissueException($"EV {e.EVId} has no position at time {e.Time} after advancing. This should not happen."));
 
         var pathDeviationMultiplied = ev.Preferences.MaxPathDeviation * PathdeviationMultiplier;
 
@@ -89,11 +89,11 @@ public class FindCandidateStationService(
             }
             else if (refinedCandidateDurations.Count == 0)
             {
-                global::Log.Warn(e.EVId, e.Time, $"No candidate stations found for EV {e.EVId} at time {e.Time}.");
+                Log.Warn(e.EVId, e.Time, $"No candidate stations found for EV {e.EVId} at time {e.Time}.");
             }
             else
             {
-                global::Log.Verbose(e.EVId, e.Time, $"Computed candidate stations for EV {e.EVId}: amount of stations: {refinedCandidateDurations.Count} at time {e.Time}.");
+                Log.Verbose(e.EVId, e.Time, $"Computed candidate stations for EV {e.EVId}: amount of stations: {refinedCandidateDurations.Count} at time {e.Time}.");
             }
 
             return refinedCandidateDurations;
@@ -104,7 +104,7 @@ public class FindCandidateStationService(
             return ComputeCandidates(e, PathdeviationMultiplier * 1.25);
         }
 
-        global::Log.Warn(e.EVId, e.Time, $"No candidate stations found for EV {e.EVId}. Could not find any stations along polyline, even after expanding search radius. Returning empty candidate set.  at time {e.Time}");
+        Log.Warn(e.EVId, e.Time, $"No candidate stations found for EV {e.EVId}. Could not find any stations along polyline, even after expanding search radius. Returning empty candidate set.  at time {e.Time}");
         return [];
     }
 

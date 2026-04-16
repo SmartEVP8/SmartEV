@@ -3,14 +3,14 @@ namespace API.Services;
 using System.Net.WebSockets;
 using Google.Protobuf;
 using Protocol;
+using Core.Helper;
 
 /// <summary>
 /// Manages WebSocket connections and message processing for the simulation protocol.
 /// Also periodically broadcasts simulation snapshots to connected clients.
 /// </summary>
 public class SimulationWebSocketService(
-    SnapshotHandler snapshotHandler,
-    ILogger<SimulationWebSocketService> logger) : IEventSender
+    SnapshotHandler snapshotHandler) : IEventSender
 {
     private const int _bufferSize = 4096;
     private const int _snapshotIntervalMs = 1000;

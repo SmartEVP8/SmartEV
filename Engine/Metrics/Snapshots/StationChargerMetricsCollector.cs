@@ -3,6 +3,7 @@ namespace Engine.Metrics.Snapshots;
 using Core.Charging;
 using Core.Shared;
 using Engine.Utils;
+using Core.Helper;
 
 /// <summary>
 /// Dedicated service for generating point-in-time metrics snapshots from current station states.

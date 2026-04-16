@@ -1,6 +1,7 @@
 namespace Engine.Events;
 
 using Core.Shared;
+using Core.Helper;
 
 /// <summary>
 /// The EventScheduler is responsible for managing and scheduling events in the system.

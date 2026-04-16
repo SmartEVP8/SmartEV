@@ -7,6 +7,7 @@ using Core.Vehicles.Configs;
 using Engine.Routing;
 using Engine.Spawning;
 using Engine.Utils;
+using Core.Helper;
 
 /// <summary>
 /// Factory for creating EVs, supporting single or batch creation.
