@@ -95,11 +95,11 @@ public class SnapshotHandler(
         if (sessionB is not null && sessionB.Plan is not null && sessionB.Plan.CarB is not null)
             chargerState.EvsCharging.Add(CreateEVChargerState(sessionB, sessionB.Plan.CarB.FinishTime));
 
-        foreach (var (evId, ev) in charger.Queue)
+        foreach (var ev in charger.Queue)
         {
             chargerState.EvsInQueue.Add(new EVChargerState
             {
-                EvId = evId,
+                EvId = ev.EVId,
                 Soc = (float)ev.CurrentSoC,
                 TargetSoc = (float)ev.TargetSoC,
             });

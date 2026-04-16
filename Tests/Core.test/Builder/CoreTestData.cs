@@ -114,7 +114,7 @@ public static class CoreTestData
 
         for (var i = 0; i < amount; i++)
         {
-            charger.Queue.Enqueue((i, default));
+            charger.Queue.Enqueue(default);
         }
 
         return charger;

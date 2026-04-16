@@ -6,6 +6,7 @@ using Core.Shared;
 using Engine.Events;
 using Engine.Metrics;
 using Engine.Metrics.Events;
+using Engine.Utils;
 
 /// <summary>
 /// Handles the session lifecycle for a <see cref="DualCharger"/>,
@@ -41,10 +42,10 @@ public class DualChargerHandler(
 
         ConnectQueuedVehicles(simNow, stationId);
 
-        if (charger.SessionA is null && charger.SessionB is null && charger.Queue.Count > 0)
+        if (charger.SessionA is null && charger.SessionB is null)
         {
             throw new InvalidOperationException(
-                $"Logic Error: DualCharger {charger.Id} is empty but failed to connect EV {charger.Queue.Peek().EVId}.");
+                $"Logic Error: DualCharger {charger.Id} is empty but failed to connect EV.");
         }
 
         CancelStaleEventsIfPairingChanged((wasAloneA, wasAloneB));
@@ -113,11 +114,11 @@ public class DualChargerHandler(
             {
                 EVId = candidate.EVId,
                 StationId = stationId,
-                ArrivalAtStationTime = candidate.EV.ArrivalTime,
+                ArrivalAtStationTime = candidate.ArrivalTime,
                 StartChargingTime = simNow,
             });
 
-            var session = new ActiveSession(candidate.EVId, candidate.EV, simNow, side, null, null);
+            var session = new ActiveSession(candidate.EVId, candidate, simNow, side, null, null);
             charger.Window = charger.Window with { LastEnergyUpdateTime = simNow };
 
             if (side == ChargingSide.Left) charger.SessionA = session;
@@ -152,8 +153,8 @@ public class DualChargerHandler(
     /// </returns>
     private IntegrationResult? IntegrateDual(Time simNow)
     {
-        if (charger.SessionA is null && charger.SessionB is null) return null;
-
+        if (charger.SessionA is null && charger.SessionB is null)
+            throw new SkillissueException("Should never call Integrate dual with no sessions");
         var carA = charger.SessionA?.EV
             ?? charger.SessionB!.EV with { CurrentSoC = charger.SessionB.EV.TargetSoC };
         var carB = charger.SessionB?.EV

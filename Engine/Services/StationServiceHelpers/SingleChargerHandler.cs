@@ -50,14 +50,14 @@ public class SingleChargerHandler(
         {
             EVId = next.EVId,
             StationId = stationId,
-            ArrivalAtStationTime = next.EV.ArrivalTime,
+            ArrivalAtStationTime = next.ArrivalTime,
             StartChargingTime = simNow,
         });
 
-        charger.Session = new ActiveSession(next.EVId, next.EV, simNow, null, null, null);
+        charger.Session = new ActiveSession(next.EVId, next, simNow, null, null, null);
         charger.Window = charger.Window with { LastEnergyUpdateTime = simNow };
 
-        var result = integrator.IntegrateSingleToCompletion(simNow, charger.MaxPowerKW, charger, next.EV);
+        var result = integrator.IntegrateSingleToCompletion(simNow, charger.MaxPowerKW, charger, next);
         charger.Session = charger.Session with { Plan = result };
 
         if (result.CarA.FinishTime is { } finishTime)
