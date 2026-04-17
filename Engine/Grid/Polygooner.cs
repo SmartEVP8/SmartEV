@@ -8,17 +8,6 @@ using Core.Shared;
 public static class Polygooner
 {
     /// <summary>
-    /// Generates a grid of the specified size (in degrees) and marks cells that are inside any of the provided polygons.
-    /// </summary>
-    /// <param name="size">The size in degrees of each grid cell.</param>
-    /// <param name="polygons">The polygons to check intersections against.</param>
-    /// <returns>A 2D grid with 1 or 0.</returns>
-    public static SpawnGrid GenerateGrid(double size, List<List<Position>> polygons)
-    {
-        return GenerateGrid(size, polygons, []);
-    }
-
-    /// <summary>
     /// Generates a grid of the specified size and marks cells as spawnable when they intersect
     /// included polygons and do not intersect excluded polygons.
     /// </summary>
@@ -45,8 +34,7 @@ public static class Polygooner
         var spawnBounded = PrecomputeBounds(polygons);
         var wetBounded = PrecomputeBounds(wetPolygons);
 
-        var gridCells = new List<GridCell>[latSteps];
-
+        var gridCells = new List<List<GridCell>>(latSteps);
         for (var i = 0; i < latSteps; i++)
         {
             var row = new List<GridCell>(lonSteps);
@@ -63,10 +51,10 @@ public static class Polygooner
                 row.Add(new GridCell(spawnable, centerPos));
             }
 
-            gridCells[i] = row;
+            gridCells.Add(row);
         }
 
-        return new SpawnGrid([.. gridCells.Select(r => r.ToList())], min, size, lonSize);
+        return new SpawnGrid(gridCells, min, size, lonSize);
     }
 
     private static bool IntersectsAnyPolygon(List<PolygonWithBounds> polygons, double centerLon, double centerLat, double halfLon, double halfLat)

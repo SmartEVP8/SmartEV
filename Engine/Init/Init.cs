@@ -97,8 +97,8 @@ public static class Init
             var spawnGrid = InitSpawnGrid(settings.PolygonPath, settings.WetPolygonPath, settings.GridSize);
             var cities = InitCities(settings.CitiesPath);
             var wetPolygons = PolygonParser.Parse(File.ReadAllText(settings.WetPolygonPath.ToString()));
-            var journeyPipeline = new JourneyPipeline(spawnGrid, cities, wetPolygons, router);
-            return new JourneySamplerProvider(journeyPipeline, (float)settings.PopulationScaler, (float)settings.DistanceScaler);
+            var journeyPipeline = new JourneyPipeline(spawnGrid, cities, router);
+            return new JourneySamplerProvider(journeyPipeline, (float)settings.PopulationScaler, (float)settings.DistanceScaler, wetPolygons);
         });
 
         services.AddSingleton(sp =>

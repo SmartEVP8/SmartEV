@@ -37,7 +37,7 @@ public static class EngineTestData
 
     public static JourneySamplerProvider JourneySamplerProvider(
     float populationScalar = 1.0f,
-    float distanceScalar = 1.0f) => new(JourneySamplers, populationScalar, distanceScalar);
+    float distanceScalar = 1.0f) => new(JourneySamplers, populationScalar, distanceScalar, []);
 
     public static readonly JourneyPipeline JourneySamplers = BuildJourneyPipeline();
 
@@ -47,7 +47,7 @@ public static class EngineTestData
                     ?? throw new InvalidOperationException("GridPath not set in project.");
 
         var polygons = PolygonParser.Parse(File.ReadAllText(polygonPath));
-        var spawnGrid = Polygooner.GenerateGrid(size: 0.1, polygons);
+        var spawnGrid = Polygooner.GenerateGrid(size: 0.1, polygons, []);
 
         var cityPath = AppContext.GetData("CityDataPath") as string
                             ?? throw new InvalidOperationException("GridPath not set in project.");
@@ -81,7 +81,7 @@ public static class EngineTestData
         var gridPath = AppContext.GetData("GridPath") as string
             ?? throw new InvalidOperationException("GridPath not set.");
         var polygons = PolygonParser.Parse(File.ReadAllText(gridPath));
-        var grid = Polygooner.GenerateGrid(0.1, polygons);
+        var grid = Polygooner.GenerateGrid(0.1, polygons, []);
         return new SpatialGrid(grid, stations ?? []);
     }
 

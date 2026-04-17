@@ -72,6 +72,8 @@ public class JourneySamplers(
                 source.Longitude >= p.MinLon && source.Longitude <= p.MaxLon &&
                 source.Latitude >= p.MinLat && source.Latitude <= p.MaxLat &&
                 PointInPolygon(p.Polygon, source.Longitude, source.Latitude)))
+
+                // TODO: Add logger here when Bech things are ready to check how many times this happens and whether it's a problem.
                 continue;
 
             var destIndex = _destinationSamplers[sourceIndex].Sample(random);
@@ -85,8 +87,8 @@ public class JourneySamplers(
     private Position SampleInCell(Random random, int cellIndex)
     {
         var center = _cellCenters[cellIndex];
-        var lat = center.Latitude + (((random.NextDouble() * 2) - 1) * (_halfLat / 3));
-        var lon = center.Longitude + (((random.NextDouble() * 2) - 1) * (_halfLon / 3));
+        var lat = center.Latitude + (((random.NextDouble() * 2) - 1) * (_halfLat / 2));
+        var lon = center.Longitude + (((random.NextDouble() * 2) - 1) * (_halfLon / 2));
         return new Position(lon, lat);
     }
 
