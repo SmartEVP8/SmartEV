@@ -1,7 +1,8 @@
 namespace Engine.test.Metrics;
 
+using Core.Shared;
 using Engine.Metrics;
-using Engine.Metrics.Snapshots;
+using Engine.Metrics.Events;
 using Parquet.Serialization;
 
 public class MetricsServiceIntegrationTests
@@ -16,17 +17,25 @@ public class MetricsServiceIntegrationTests
         {
             BufferSize = 3,
             OutputDirectory = _dir,
-            RecordCarSnapshots = true,
+            RecordEVWaitTimeInQueue = true,
         };
 
         await using (var service = new MetricsService(config, runId))
         {
             for (var i = 0; i < 5; i++)
-                service.RecordCar(new EVSnapshotMetric());
+            {
+                service.RecordWaitTime(new WaitTimeInQueueMetric
+                {
+                    EVId = i,
+                    StationId = 1,
+                    ArrivalAtStationTime = new Time(0),
+                    StartChargingTime = new Time(1),
+                });
+            }
         }
 
         var files = new MetricsFileManager(_dir, runId);
-        var results = await ParquetSerializer.DeserializeAsync<EVSnapshotMetric>(files.GetMetricPath<EVSnapshotMetric>().FullName);
+        var results = await ParquetSerializer.DeserializeAsync<WaitTimeRow>(files.GetMetricPath<WaitTimeInQueueMetric>().FullName);
         Assert.Equal(5, results.Count);
     }
 
@@ -38,15 +47,32 @@ public class MetricsServiceIntegrationTests
         {
             BufferSize = 3,
             OutputDirectory = _dir,
-            RecordCarSnapshots = false,
+            RecordEVWaitTimeInQueue = false,
         };
 
         await using (var service = new MetricsService(config, runId))
         {
-            service.RecordCar(new EVSnapshotMetric());
+            service.RecordWaitTime(new WaitTimeInQueueMetric
+            {
+                EVId = 1,
+                StationId = 1,
+                ArrivalAtStationTime = new Time(0),
+                StartChargingTime = new Time(1),
+            });
         }
 
         var files = new MetricsFileManager(_dir, runId);
-        Assert.False(files.GetMetricPath<EVSnapshotMetric>().Exists);
+        Assert.False(files.GetMetricPath<WaitTimeInQueueMetric>().Exists);
+    }
+
+    private sealed class WaitTimeRow
+    {
+        public int EVId { get; set; }
+
+        public ushort StationId { get; set; }
+
+        public Time ArrivalAtStationTime { get; set; }
+
+        public Time StartChargingTime { get; set; }
     }
 }

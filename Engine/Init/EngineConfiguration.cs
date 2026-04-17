@@ -34,10 +34,10 @@ public static class EngineConfiguration
             RunId = Guid.NewGuid(),
             MetricsConfig = new MetricsConfig
             {
-                BufferSize = 5000,
+                BufferSize = 3000,
                 OutputDirectory = outputPath,
-                RecordCarSnapshots = true,
                 RecordArrivals = true,
+                RecordEVWaitTimeInQueue = true,
                 RecordStationSnapshots = true,
                 RecordChargerSnapshots = true,
             },
