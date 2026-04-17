@@ -14,7 +14,7 @@ public interface IMultiStationRouter
     /// <param name="destLat">The latitude coordinate of the destination.</param>
     /// <param name="indices">An array of station indices to query.</param>
     /// <returns>A tuple containing arrays of durations and distances to each station.</returns>
-    RoutingResult QueryStationsWithDest(
+    RoutingResultLegs QueryStationsWithDest(
         double evLon,
         double evLat,
         double destLon,

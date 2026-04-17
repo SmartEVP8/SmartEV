@@ -4,7 +4,17 @@ using System.Runtime.InteropServices;
 using Core.Charging;
 using Core.Shared;
 
-public record RoutingResult(float[] Durations, float[] Distances);
+public record RoutingResult(float[] Durations, float[] Distances)
+{
+    /// <summary>Gets the number of routes.</summary>
+    public int Length => Durations.Length;
+}
+
+public record RoutingResultLegs((float Duration, float Distance)[] SrcToStation, (float Duration, float Distance)[] StationToDest)
+{
+    /// <summary>Gets the number of routes.</summary>
+    public int Length => SrcToStation.Length;
+};
 
 public record RouteSegment(float Duration, float Distance, string Polyline);
 
@@ -43,8 +53,7 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
             double destLat,
             [In] ushort[] indices,
             int numIndices,
-            float* outDurations,
-            float* outDistances
+            [Out] TableResult[] outResults
         );
 
     [LibraryImport(_lib)]
@@ -85,6 +94,20 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
         public IntPtr Polyline;
     }
 
+    [StructLayout(LayoutKind.Sequential)]
+    private struct TableLeg
+    {
+        public float Duration;
+        public float Distance;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct TableResult
+    {
+        public TableLeg SrcToStation;
+        public TableLeg StationToDest;
+    }
+
     /// <summary>
     /// Initializes a new instance of the <see cref="OSRMRouter"/> class.
     /// </summary>
@@ -100,7 +123,7 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
     }
 
     /// <inheritdoc/>
-    public RoutingResult QueryStationsWithDest(
+    public RoutingResultLegs QueryStationsWithDest(
         double evLon,
         double evLat,
         double destLon,
@@ -108,21 +131,32 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
         ushort[] indices)
     {
         if (indices.Length == 0)
-            return new RoutingResult([], []);
+            return new RoutingResultLegs([], []);
 
-        var durations = new float[indices.Length];
-        var distances = new float[indices.Length];
+        var outResult = new TableResult[indices.Length];
 
-        fixed (float* durPtr = durations)
-        fixed (float* distPtr = distances)
+        fixed (TableResult* outResultPtr = outResult)
         {
-            ComputeTableIndexedWithDest(_osrm, evLon, evLat, destLon, destLat, indices, indices.Length, durPtr, distPtr);
+            ComputeTableIndexedWithDest(_osrm, evLon, evLat, destLon, destLat, indices, indices.Length, outResult);
         }
 
-        for (var i = 0; i < durations.Length; i++)
-            durations[i] *= Time.MillisecondsPerSecond;
+        var srcToStation = new (float Duration, float Distance)[indices.Length];
+        var stationToDest = new (float Duration, float Distance)[indices.Length];
 
-        return new RoutingResult(durations, distances);
+        for (var i = 0; i < indices.Length; i++)
+        {
+            srcToStation[i] = (
+                outResult[i].SrcToStation.Duration * Time.MillisecondsPerSecond,
+                outResult[i].SrcToStation.Distance
+            );
+
+            stationToDest[i] = (
+                outResult[i].StationToDest.Duration * Time.MillisecondsPerSecond,
+                outResult[i].StationToDest.Distance
+            );
+        }
+
+        return new RoutingResultLegs(srcToStation, stationToDest);
     }
 
     /// <inheritdoc/>

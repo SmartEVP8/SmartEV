@@ -196,6 +196,6 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     }
 
     /// <summary>Calculates the energy required to travel <paramref name="distanceKm"/>.</summary>
-    private readonly float EnergyForDistanceKWh(float distanceKm) =>
+    public readonly float EnergyForDistanceKWh(float distanceKm) =>
         distanceKm * ConsumptionWhPerKm / 1000f;
 }

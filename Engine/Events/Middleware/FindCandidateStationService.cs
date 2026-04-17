@@ -1,6 +1,7 @@
 namespace Engine.Events.Middleware;
 
 using Core.Charging;
+using Core.Vehicles;
 using Engine.Grid;
 using Engine.Routing;
 using Engine.Services;
@@ -12,6 +13,7 @@ using Engine.Vehicles;
 /// <param name="stations">Stations to choose from.</param>
 /// <param name="spatialGrid">Used for pruning of <paramref name="stations"/>.</param>
 /// <param name="evStore">Gives access to EV's.</param>
+/// <param name="stationService">Gives access to station information.</param>
 public class FindCandidateStationService(
     IOSRMRouter router,
     Dictionary<ushort, Station> stations,
@@ -65,20 +67,21 @@ public class FindCandidateStationService(
             destination.Latitude,
             reachableStationIds);
 
-        var refinedCandidateDurations = new Dictionary<ushort, float>(reachableStationIds.Length);
+        var refinedCandidateStations = FilterBySoC(ref ev, detourResult, reachableStationIds, e);
+        var refinedCandidateDurations = new Dictionary<ushort, float>(refinedCandidateStations.Item1.Length);
         var baselineDirectDistanceKm = ev.Journey.Current.DistanceKm;
 
-        for (var i = 0; i < reachableStationIds.Length; i++)
+        for (var i = 0; i < refinedCandidateStations.Item1.Length; i++)
         {
             var stationId = reachableStationIds[i];
-            var detourDistanceMeters = detourResult.Distances[i];
+            var detourDistanceMeters = refinedCandidateStations.Item2.Distances[i];
             if (detourDistanceMeters < 0 || float.IsNaN(detourDistanceMeters))
                 continue;
 
             if (!ev.CanReachViaDetour(detourDistanceMeters / 1000f, baselineDirectDistanceKm, ev.Preferences.MinAcceptableCharge))
                 continue;
 
-            refinedCandidateDurations[stationId] = detourResult.Durations[i];
+            refinedCandidateDurations[stationId] = refinedCandidateStations.Item2.Durations[i];
         }
 
         if (refinedCandidateDurations.Count == 0 && stationService.GetReservationStationId(e.EVId) is ushort && ev.DistanceOnCurrentChargeKm() > pathDeviationMultiplied)
@@ -87,6 +90,38 @@ public class FindCandidateStationService(
         }
 
         return refinedCandidateDurations;
+    }
+
+    private static (ushort[], RoutingResult) FilterBySoC(ref EV ev, RoutingResultLegs detours, ushort[] reachableStationIds, FindCandidateStations e)
+    {
+        // TODO: Make charge buffer configurable
+        var chargeBufferPercent = 0.9f; // Example value, replace with configurable setting
+        var ids = new List<ushort>();
+        var durations = new List<float>();
+        var distances = new List<float>();
+
+        for (var i = 0; i < detours.Length; i++)
+        {
+            var stationId = reachableStationIds[i];
+            var energyForDetourKWh = ev.EnergyForDistanceKWh(detours.SrcToStation[i].Duration);
+
+            var chargeAtStationKWh = ev.Battery.CurrentChargeKWh - energyForDetourKWh;
+            var etaAtStation = e.Time + (uint)(detours.SrcToStation[i].Duration * 1000);
+            var targetSoC = ev.CalcDesiredSoC(etaAtStation);
+
+            var allowedChargeAtArrivalKWh = targetSoC * chargeBufferPercent;
+            if (chargeAtStationKWh >= ev.Preferences.MinAcceptableCharge &&
+                chargeAtStationKWh < allowedChargeAtArrivalKWh)
+            {
+                ids.Add(stationId);
+                durations.Add(detours.SrcToStation[i].Duration + detours.StationToDest[i].Duration);
+                distances.Add(detours.SrcToStation[i].Distance + detours.StationToDest[i].Distance);
+            }
+        }
+
+        return ([.. ids], new RoutingResult(
+            Durations: [.. durations],
+            Distances: [.. distances]));
     }
 
     /// <summary>Gets the pre-computed candidate stations. Awaits result if it's not yet ready.</summary>

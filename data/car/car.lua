@@ -445,7 +445,7 @@ function process_way(profile, way, result, relations)
     WayHandlers.destinations,
 
     -- check whether we're using a special transport mode
-    --WayHandlers.ferries,
+    WayHandlers.ferries,
     WayHandlers.movables,
 
     -- handle service road restrictions
