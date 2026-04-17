@@ -3,14 +3,14 @@ namespace API.Services;
 using System.Net.WebSockets;
 using Google.Protobuf;
 using Protocol;
+using Core.Helper;
 
 /// <summary>
 /// Manages WebSocket connections and message processing for the simulation protocol.
 /// Also periodically broadcasts simulation snapshots to connected clients.
 /// </summary>
 public class SimulationWebSocketService(
-    SnapshotHandler snapshotHandler,
-    ILogger<SimulationWebSocketService> logger) : IEventSender
+    SnapshotHandler snapshotHandler) : IEventSender
 {
     private const int _bufferSize = 4096;
     private const int _snapshotIntervalMs = 1000;
@@ -51,7 +51,7 @@ public class SimulationWebSocketService(
                 }
                 catch (Exception ex)
                 {
-                    logger.LogError(ex, "Error stopping snapshot loop");
+                    Log.Error(0, 0, ex);
                 }
             }
 
@@ -71,7 +71,7 @@ public class SimulationWebSocketService(
     {
         if (_client?.State != WebSocketState.Open)
         {
-            logger.LogWarning("No open WebSocket client to send message");
+            Log.Warn(0, 0, "No open WebSocket client to send message");
             return;
         }
 
@@ -84,11 +84,11 @@ public class SimulationWebSocketService(
                 true,
                 cancelToken);
 
-            logger.LogDebug("Sent envelope: {PayloadCase}", envelope.PayloadCase);
+            Log.Verbose(0, 0, $"Sent envelope: {envelope.PayloadCase}");
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error sending envelope to client");
+            Log.Error(0, 0, ex);
         }
     }
 
@@ -101,7 +101,7 @@ public class SimulationWebSocketService(
             while (webSocket.State == WebSocketState.Open && !cancelToken.IsCancellationRequested)
             {
                 WebSocketReceiveResult result;
-                using var ms = new MemoryStream();
+                await using var ms = new MemoryStream();
 
                 do
                 {
@@ -122,11 +122,11 @@ public class SimulationWebSocketService(
         }
         catch (OperationCanceledException)
         {
-            logger.LogInformation("WebSocket connection cancelled");
+            Log.Info(0, 0, "WebSocket connection cancelled");
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error in WebSocket connection");
+            Log.Error(0, 0, ex);
         }
     }
 
@@ -139,7 +139,7 @@ public class SimulationWebSocketService(
             {
                 var envelope = snapshotHandler.BuildSimulationSnapshot();
                 await SendAsync(envelope, cancelToken);
-                logger.LogDebug("Broadcast simulation snapshot");
+                Log.Verbose(0, 0, "Broadcast simulation snapshot");
             }
         }
         catch (OperationCanceledException)
@@ -148,7 +148,7 @@ public class SimulationWebSocketService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Snapshot broadcast loop crashed");
+            Log.Error(0, 0, ex);
         }
     }
 }

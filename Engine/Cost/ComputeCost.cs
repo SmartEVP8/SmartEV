@@ -5,6 +5,7 @@ using Core.Charging;
 using Core.Shared;
 using Core.Vehicles;
 using Engine.Services;
+using Core.Helper;
 
 /// <summary>
 /// Computes the cost of detouring to each station and selects the station with the lowest cost.
@@ -25,7 +26,7 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
     public Station Compute(ref EV ev, Dictionary<ushort, float> stationDurations, Time time)
     {
         var bestCost = double.MaxValue;
-        var weights = costStore.GetWeights();
+        var weights = costStore.GetWeights() ?? throw Log.Error(0, time, new NoNullAllowedException("Cost weights not found in store."), ("EV", ev));
         Station? bestStation = null;
 
         foreach (var (stationId, duration) in stationDurations)
@@ -41,10 +42,11 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
 
             if (double.IsNaN(cost))
             {
-                throw new InvalidOperationException(
+                throw Log.Error(0, time, new InvalidOperationException(
                     $"Invalid cost calculated for station {stationId}: {cost}. " +
                     $"Queue={effectiveQueueCost}, PathDev={pathDeviationCost}, " +
-                    $"Urgency={urgencyCost}, Price={priceCost}, Wait={effectiveWaitTimeCost}");
+                    $"Urgency={urgencyCost}, Price={priceCost}, Wait={effectiveWaitTimeCost}"),
+                    ("EV", ev), ("StationId", stationId));
             }
 
             if (cost < bestCost)
@@ -56,7 +58,7 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
 
         if (bestStation is null)
         {
-            throw new ArgumentNullException("No suitable station found.");
+            throw Log.Error(0, time, new ArgumentNullException("No suitable station found."), ("EV", ev));
         }
 
         return bestStation;
@@ -65,8 +67,13 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
     // TODO: Think about effective queue size
     private float CalculateEffectiveQueueSizeCost(Station station, CostWeights weights)
     {
+        if (station.Chargers.Count == 0)
+            throw Log.Error(0, 0, new InvalidOperationException($"Station {station.Id} has no chargers."), ("StationId", station.Id));
+
         var totalQueueSize = stationService.GetStation(station.Id)
                                 .Chargers.Sum(cs => cs.Queue.Count);
+        if (totalQueueSize == 0)
+            return 0;
 
         var effectiveQueueSize = (float)totalQueueSize / station.Chargers.Count;
         return weights.EffectiveQueueSize * MathF.Pow(effectiveQueueSize, 3);
@@ -81,7 +88,14 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
     private static float CalculatePathDeviationCost(ref EV ev, float detourDuration, CostWeights weights, Time time)
     {
         var remainingCurrentRoute = ev.Journey.RemainingCurrentRoute(time);
-        var extraTimeCostMinutes = (detourDuration - remainingCurrentRoute) / Time.MillisecondsPerMinute;
+        if (remainingCurrentRoute <= 0)
+            throw Log.Error(0, time, new InvalidOperationException($"EV {ev} has no remaining route duration, cannot calculate path deviation cost."), ("EV", ev));
+
+        var extraTimeCostMilliseconds = detourDuration - remainingCurrentRoute;
+        if (extraTimeCostMilliseconds <= 0)
+            return 0;
+
+        var extraTimeCostMinutes = extraTimeCostMilliseconds / Time.MillisecondsPerMinute;
         return weights.PathDeviation * extraTimeCostMinutes;
     }
 

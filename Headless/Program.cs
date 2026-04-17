@@ -11,6 +11,9 @@ using Engine.Spawning;
 using Engine.Services;
 using Engine.Vehicles;
 using Microsoft.Extensions.DependencyInjection;
+using Serilog;
+using Serilog.Events;
+using Serilog.Templates;
 
 /// <summary>
 /// The entry point for the headless execution of the Engine. Initializes all necessary services and starts the simulation.
@@ -24,11 +27,11 @@ public static class Program
     public static async Task Main()
     {
         var services = new ServiceCollection();
-        var settings = EngineConfiguration.CreateDefaultSettings();
+        var settings = EngineConfiguration.CreateDefaultSettings() ?? throw new InvalidOperationException("Failed to create default engine settings. This should not happen.");
 
         services.AddSingleton(settings);
         Init.InitEngine(services);
-        var provider = services.BuildServiceProvider();
+        var provider = services.BuildServiceProvider() ?? throw new InvalidOperationException("Failed to build service provider. This should not happen.");
         provider.GetRequiredService<EventScheduler>();
         provider.GetRequiredService<IOSRMRouter>();
         provider.GetRequiredService<ICostStore>();
@@ -38,7 +41,32 @@ public static class Program
         provider.GetRequiredService<IJourneySamplerProvider>();
         provider.GetRequiredService<StationService>();
 
-        var coordinator = provider.GetRequiredService<Simulation>();
+        var coordinator = provider.GetRequiredService<Simulation>() ?? throw new InvalidOperationException("Failed to resolve Simulation from service provider. This should not happen.");
+        var formatter = new ExpressionTemplate("{ {evId: @p['evId'], Time: @p['Time'], Level: @l, Message: @m, Exception: @x, ..@p} }\n");
+
+        Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Verbose()
+            .WriteTo.File(
+                formatter,
+                "logs/Headless-verbose-.jsonl",
+                restrictedToMinimumLevel: LogEventLevel.Verbose,
+                rollingInterval: RollingInterval.Day)
+            .WriteTo.File(
+                formatter,
+                "logs/Headless-information-.jsonl",
+                restrictedToMinimumLevel: LogEventLevel.Information,
+                rollingInterval: RollingInterval.Day)
+            .WriteTo.File(
+                formatter,
+                "logs/Headless-warning-.jsonl",
+                restrictedToMinimumLevel: LogEventLevel.Warning,
+                rollingInterval: RollingInterval.Day)
+            .WriteTo.File(
+                formatter,
+                "logs/Headless-error-.jsonl",
+                restrictedToMinimumLevel: LogEventLevel.Error,
+                rollingInterval: RollingInterval.Day)
+            .CreateLogger();
         await coordinator.Run();
     }
 }
