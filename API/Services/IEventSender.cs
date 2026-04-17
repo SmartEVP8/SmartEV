@@ -1,6 +1,6 @@
 namespace API.Services;
 
-using Protocol;
+using API.Protocol;
 
 /// <summary>
 /// Defines a contract for sending protocol events to connected clients.

@@ -1,7 +1,6 @@
-version: v1
+version: v2
 plugins:
-  - plugin: buf.build/protocolbuffers/csharp
+  - remote: buf.build/protocolbuffers/csharp:v34.1
     out: API/Generated
-
-  - plugin: buf.build/bufbuild/es:v2.11.0
-    out: API/Generated/es
+    opt:
+      - base_namespace=API.Protocol

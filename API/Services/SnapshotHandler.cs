@@ -4,7 +4,7 @@ using Core.Charging;
 using Engine.Events;
 using Engine.Services;
 using Engine.Vehicles;
-using Protocol;
+using API.Protocol;
 
 /// <summary>
 /// Handles snapshot requests from the client by querying the engine.

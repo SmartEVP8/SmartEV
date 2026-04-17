@@ -2,7 +2,7 @@ namespace API.Services;
 
 using System.Net.WebSockets;
 using Google.Protobuf;
-using Protocol;
+using API.Protocol;
 
 /// <summary>
 /// Manages WebSocket connections and message processing for the simulation protocol.
