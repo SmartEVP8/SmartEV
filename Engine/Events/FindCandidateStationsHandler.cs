@@ -53,6 +53,21 @@ public class FindCandidateStationsHandler(
         var etaAtStation = e.Time + remaining;
         var targetSoC = ev.CalcDesiredSoC(etaAtStation);
         var socAtArrival = ev.EstimateSoCAtNextStop();
+
+        if (ev.Battery.StateOfCharge >= targetSoC)
+        {
+            throw new InvalidOperationException(
+                $"EV {e.EVId} is attempting charger planning despite already being above target SoC. " +
+                $"CurrentSoC={ev.Battery.StateOfCharge}, TargetSoC={targetSoC}, Time={e.Time}.");
+        }
+
+        if (socAtArrival >= targetSoC)
+        {
+            throw new InvalidOperationException(
+                $"EV {e.EVId} is attempting charger planning despite being projected to arrive above target SoC. " +
+                $"CurrentSoC={ev.Battery.StateOfCharge}, SoCAtArrival={socAtArrival}, TargetSoC={targetSoC}, Time={e.Time}.");
+        }
+
         stationService.HandleReservation(new Reservation(e.EVId, etaAtStation, socAtArrival, targetSoC), bestStation.Id);
 
         if (remaining <= Time.MillisecondsPerMinute * 10)
