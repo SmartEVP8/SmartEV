@@ -30,7 +30,7 @@ public class StationServiceSnapshotTests
 
         for (var i = 0; i < expectedQueueSize; i++)
         {
-            charger.Queue.Enqueue((i, EngineTestData.ConnectedEV(i, 0.2, 0.8)));
+            charger.Queue.Enqueue(EngineTestData.ConnectedEV(i, 0.2, 0.8));
         }
 
         var (chargers, stations) = collector.Collect(snapshotInterval, new Time(3600));

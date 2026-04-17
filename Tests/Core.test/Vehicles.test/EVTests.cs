@@ -29,6 +29,58 @@ public class EVTests
     }
 
     [Fact]
+    public void Advance_MultipleTimesForSameTimestampIsSafe()
+    {
+        var battery = new Battery(100, 100, 1f);
+        var preferences = new Preferences(1f, 0.1f, 10.0f);
+        var waypoints = new List<Position>
+        {
+            new(0, 0),
+            new(10, 0),
+        };
+        var journey = new Journey(departure: 0, duration: 100000, distanceMeters: 10_000, waypoints);
+        var ev = new EV(battery, preferences, journey, 100);
+
+        ev.Advance(50000);
+
+        var firstSoc = ev.Battery.StateOfCharge;
+
+        Assert.Equal(50000u, ev.Journey.Current.Departure.Milliseconds);
+
+        ev.Advance(50000);
+        var secondSoc = ev.Battery.StateOfCharge;
+
+        Assert.Equal(50000u, ev.Journey.Current.Departure.Milliseconds);
+        Assert.Equal(firstSoc, secondSoc);
+    }
+
+    [Fact]
+    public void EstimateSoCAtNextStop_MatchesActualSoCAfterAdvance()
+    {
+        var battery1 = new Battery(100, 100, 1f);
+        var battery2 = new Battery(100, 100, 1f);
+        var preferences = new Preferences(1f, 0.1f, 10.0f);
+        var waypoints = new List<Position>
+    {
+        new(0, 0),
+        new(10, 0),
+    };
+        var journey1 = new Journey(departure: 0, duration: 100000, distanceMeters: 10_000, waypoints);
+        var journey2 = new Journey(departure: 0, duration: 100000, distanceMeters: 10_000, waypoints);
+        var ev1 = new EV(battery1, preferences, journey1, 100);
+        var ev2 = new EV(battery2, preferences, journey2, 100);
+
+        // Estimate SoC at next stop for ev1 (without advancing)
+        var estimatedSoC = ev1.EstimateSoCAtNextStop();
+
+        // Actually advance ev2 to the next stop
+        ev2.Advance(ev2.Journey.Current.Departure.Milliseconds + ev2.Journey.Current.Duration);
+        var actualSoC = ev2.Battery.StateOfCharge;
+
+        Assert.InRange(estimatedSoC, actualSoC - 0.0001f, actualSoC + 0.0001f);
+    }
+
+    [Fact]
     public void CalcDesiredSoC_ReturnsCorrectValue()
     {
         var battery = new Battery(100, 100, 0.5f);
@@ -93,6 +145,24 @@ public class EVTests
         var desiredSoC = ev.CalcDesiredSoC(100000);
 
         Assert.Equal(0.16f, desiredSoC, precision: 2);
+    }
+
+    [Fact]
+    public void Advance_ConsumesExpectedEnergy_ForGivenDistance()
+    {
+        var battery = new Battery(100, 100, 1.0f); // 100 kWh, 100 kW, 100% SoC
+        var preferences = new Preferences(1f, 0.1f, 10.0f);
+        var waypoints = new List<Position> { new(0, 0), new(10, 0) };
+        var journey = new Journey(departure: 0, duration: 100000, distanceMeters: 10_000, waypoints);
+        ushort efficiency = 200; // 200 Wh/km
+
+        var ev = new EV(battery, preferences, journey, efficiency);
+
+        ev.Advance(100000);
+
+        var expectedSoC = 1.0f - (2.0f / 100.0f); // 2 kWh used from 100 kWh
+
+        Assert.InRange(ev.Battery.StateOfCharge, expectedSoC - 0.0001f, expectedSoC + 0.0001f);
     }
 
     [Fact]
