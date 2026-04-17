@@ -110,4 +110,10 @@ public record EngineSettings
     /// Gets the file path for Polygon data required by the engine.
     /// </summary>
     required public FileInfo PolygonPath { get; init; }
+
+    /// <summary>
+    /// Gets the fraction of the desired SoC used as a buffer when deciding whether
+    /// to include a station as a candidate (e.g. 0.9 means 90% of target SoC).
+    /// </summary>
+    required public float ChargeBufferPercent { get; init; }
 }

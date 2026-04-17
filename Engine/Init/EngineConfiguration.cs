@@ -51,6 +51,7 @@ public static class EngineConfiguration
             ChargingStepSeconds = 60 * 1000,
             SimulationEndTime = 10000 * 60 * 1000,
             SnapshotInterval = 1000 * 20 * 60,
+            ChargeBufferPercent = 0.9f,
             EVDistributionWindowsSize = 1 * 60 * 1000,
             EVSpawnFraction = 0.10f,
             PopulationScaler = 0.7f,

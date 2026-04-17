@@ -88,7 +88,14 @@ public class FindCandidateStationsBenchmark
         _evStore = new EVStore(_count);
         _stationService = new StationService(stations.Values, new ChargingIntegrator(10), _eventScheduler, _evStore, new MetricsService(config, guid));
 
-        var findCandidateStationService = new FindCandidateStationService(router, stations, spatialGrid, _evStore, _stationService);
+        var settings = Init.EngineConfiguration.CreateDefaultSettings() with
+        {
+            RunId = guid,
+            Seed = new Random(1),
+            CurrentAmountOfEVsInDenmark = _count
+        };
+
+        var findCandidateStationService = new FindCandidateStationService(router, stations, spatialGrid, _evStore, _stationService, settings);
         _findCandidateStationsHandler = new FindCandidateStationsHandler(findCandidateStationService, computeCost, _eventScheduler, _evStore, applyNewPath, _stationService);
 
         var random = new Random(1);
