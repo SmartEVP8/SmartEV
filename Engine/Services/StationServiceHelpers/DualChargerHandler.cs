@@ -221,4 +221,61 @@ public class DualChargerHandler(
 
         return session;
     }
+
+    /// <inheritdoc/>
+    public Time EstimateWaitTime(Time simNow, IReadOnlyList<ConnectedEV>? evsOverride = null)
+    {
+        var evs = evsOverride ?? charger.CreateConnectedEVs(simNow);
+        var queue = new Queue<ConnectedEV>(evs);
+        var currentTime = simNow;
+
+        ConnectedEV? evA = null;
+        ConnectedEV? evB = null;
+
+        while (true)
+        {
+            if (evA is null && queue.Count > 0)
+                evA = queue.Dequeue();
+
+            if (evB is null && queue.Count > 0)
+                evB = queue.Dequeue();
+
+            if (queue.Count == 0 && (evA is null || evB is null))
+                return currentTime > simNow ? currentTime - simNow : new Time(0);
+
+            if (evA is null && evB is null)
+                return new Time(0);
+
+            if (evA is not null && evB is not null)
+            {
+                var result = integrator.IntegrateDualToCompletion(
+                    currentTime,
+                    charger.MaxPowerKW,
+                    charger,
+                    evA,
+                    evB);
+
+                var finishA = result.CarA.FinishTime
+                    ?? throw new InvalidOperationException(
+                        $"EV {evA.EVId} on side A did not produce a finish time.");
+
+                var finishB = result.CarB!.FinishTime
+                    ?? throw new InvalidOperationException(
+                        $"EV {evB.EVId} on side B did not produce a finish time.");
+
+                if (finishA <= finishB)
+                {
+                    currentTime = finishA;
+                    evB = evB with { CurrentSoC = result.CarA.PartnerSoCAtFinish };
+                    evA = null;
+                }
+                else
+                {
+                    currentTime = finishB;
+                    evA = evA with { CurrentSoC = result.CarB.PartnerSoCAtFinish };
+                    evB = null;
+                }
+            }
+        }
+    }
 }

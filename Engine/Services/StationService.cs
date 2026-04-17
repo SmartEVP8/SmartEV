@@ -78,8 +78,7 @@ public class StationService : IStationService
     {
         CancelReservation(reservation.EVId);
         _evReservations[reservation.EVId] = stationId;
-        GetStation(stationId).Reservations.Reserve(
-                new Reservation(reservation.EVId, reservation.TimeOfArrival, reservation.SoCAtArrival, reservation.TargetSoC));
+        GetStation(stationId).Reservations.Reserve(reservation);
     }
 
     private void CancelReservation(int evId)
@@ -178,5 +177,39 @@ public class StationService : IStationService
         _chargerIndex[charger.Id].Handler.StartNext(simNow, stationId);
         _eVStore.Get(top.EVId).EVState = EVState.Charging;
         charger.UpdateWindowStats();
+    }
+
+    public Time ExpectedWaitTime(ushort stationId, Time simNow, Time arrival)
+    {
+        var station = GetStation(stationId);
+        var waitTimes = new PriorityQueue<int, Time>();
+
+        foreach (var charger in station.Chargers)
+        {
+            var handler = _chargerIndex[charger.Id].Handler;
+            var estimatedWait = handler.EstimateWaitTime(simNow) + simNow;
+            waitTimes.Enqueue(charger.Id, estimatedWait);
+        }
+
+        var reservationsBefore = station.Reservations.ReservationsBefore(arrival);
+
+        foreach (var reservation in reservationsBefore)
+        {
+            waitTimes.TryDequeue(out var chargerId, out var chargerAvailableAt);
+            var handler = _chargerIndex[chargerId].Handler;
+            var battery = _eVStore.Get(reservation.EVId).Battery;
+            var connectedEV = new ConnectedEV(
+                EVId: reservation.EVId,
+                CurrentSoC: reservation.SoCAtArrival,
+                TargetSoC: reservation.TargetSoC,
+                CapacityKWh: battery.MaxCapacityKWh,
+                MaxChargeRateKW: battery.MaxChargeRateKW,
+                ArrivalTime: chargerAvailableAt);
+
+            var newAvailableAt = handler.EstimateWaitTime(chargerAvailableAt, [connectedEV]);
+            waitTimes.Enqueue(chargerId, newAvailableAt + simNow);
+        }
+
+        return waitTimes.TryDequeue(out var _, out var minWait) ? minWait : simNow;
     }
 }
