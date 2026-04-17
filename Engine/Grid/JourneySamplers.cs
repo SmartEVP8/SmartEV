@@ -34,15 +34,23 @@ public class JourneySamplers(
     Position[] cityCenters,
     double halfLat,
     double halfLon,
-    List<List<Position>>? wetPolygons = null) : IJourneySampler
+    List<List<Position>> wetPolygons) : IJourneySampler
 {
+    private record PolygonWithBounds(List<Position> Polygon, double MinLat, double MaxLat, double MinLon, double MaxLon);
+
     private readonly AliasSampler _sourceSampler = source;
     private readonly AliasSampler[] _destinationSamplers = destinations;
     private readonly Position[] _cityCenters = cityCenters;
     private readonly Position[] _cellCenters = cellCenters;
     private readonly double _halfLat = halfLat;
     private readonly double _halfLon = halfLon;
-    private readonly List<List<Position>> _wetPolygons = wetPolygons ?? [];
+    private readonly List<PolygonWithBounds> _wetPolygons = [.. wetPolygons
+        .Select(p => new PolygonWithBounds(
+            p,
+            p.Min(v => v.Latitude),
+            p.Max(v => v.Latitude),
+            p.Min(v => v.Longitude),
+            p.Max(v => v.Longitude)))];
 
     /// <summary>
     /// Samples a source and destination position for a journey.
@@ -59,8 +67,11 @@ public class JourneySamplers(
             var sourceIndex = _sourceSampler.Sample(random);
             source = SampleInCell(random, sourceIndex);
 
-            // Skip if jitter landed in water
-            if (_wetPolygons.Any(polygon => PointInPolygon(polygon, source.Longitude, source.Latitude)))
+            // Skip if wet — bounds check first, ray cast only if bounds overlap
+            if (_wetPolygons.Any(p =>
+                source.Longitude >= p.MinLon && source.Longitude <= p.MaxLon &&
+                source.Latitude >= p.MinLat && source.Latitude <= p.MaxLat &&
+                PointInPolygon(p.Polygon, source.Longitude, source.Latitude)))
                 continue;
 
             var destIndex = _destinationSamplers[sourceIndex].Sample(random);
@@ -74,15 +85,9 @@ public class JourneySamplers(
     private Position SampleInCell(Random random, int cellIndex)
     {
         var center = _cellCenters[cellIndex];
-        var lat = center.Latitude + (((random.NextDouble() * 2) - 1) * _halfLat);
-        var lon = center.Longitude + (((random.NextDouble() * 2) - 1) * _halfLon);
+        var lat = center.Latitude + (((random.NextDouble() * 2) - 1) * (_halfLat / 3));
+        var lon = center.Longitude + (((random.NextDouble() * 2) - 1) * (_halfLon / 3));
         return new Position(lon, lat);
-    }
-
-    private void AssertNotWet(Position position, string role)
-    {
-        if (_wetPolygons.Any(polygon => PointInPolygon(polygon, position.Longitude, position.Latitude)))
-            throw new InvalidOperationException($"Sampled {role} lies inside a wet polygon: {position}");
     }
 
     private static bool PointInPolygon(List<Position> polygon, double lon, double lat)

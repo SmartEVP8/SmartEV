@@ -55,7 +55,7 @@ public static class EngineConfiguration
             EVSpawnFraction = 0.10f,
             PopulationScaler = 0.7f,
             DistanceScaler = 1.7f,
-            GridSize = 0.02,
+            GridSize = 0.025f,
             EnergyPricesPath = new FileInfo(Path.Combine(dataPath.FullName, "energy_prices.csv")),
             OsrmPath = new FileInfo(Path.Combine(dataPath.FullName, "osrm/output.osrm")),
             CitiesPath = new FileInfo(Path.Combine(dataPath.FullName, "CityInfo.csv")),
