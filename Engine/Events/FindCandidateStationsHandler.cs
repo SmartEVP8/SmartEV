@@ -54,13 +54,6 @@ public class FindCandidateStationsHandler(
         var targetSoC = ev.CalcDesiredSoC(etaAtStation);
         var socAtArrival = ev.EstimateSoCAtNextStop();
 
-        if (ev.Battery.StateOfCharge >= targetSoC)
-        {
-            throw new InvalidOperationException(
-                $"EV {e.EVId} is attempting charger planning despite already being above target SoC. " +
-                $"CurrentSoC={ev.Battery.StateOfCharge}, TargetSoC={targetSoC}, Time={e.Time}.");
-        }
-
         if (socAtArrival >= targetSoC)
         {
             throw new InvalidOperationException(
