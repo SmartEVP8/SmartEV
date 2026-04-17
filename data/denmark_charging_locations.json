@@ -4280,14 +4280,6 @@
     "longitude": 9.485785
   },
   {
-    "name": "Skive kommune - Fur Museum - P Plads, Nederby",
-    "address": "Nederby 32",
-    "town": "FUR",
-    "postcode": "7884",
-    "latitude": 56.816597,
-    "longitude": 9.020618
-  },
-  {
     "name": "SKALFORM, Vestvej",
     "address": "Vestvej 1",
     "town": "AARS",
@@ -4486,14 +4478,6 @@
     "postcode": "9610",
     "latitude": 56.702347,
     "longitude": 9.644723
-  },
-  {
-    "name": "ACE0107473",
-    "address": "Havnegade 54",
-    "town": "THYBOR\u00d8N",
-    "postcode": "7680",
-    "latitude": 56.702269,
-    "longitude": 8.216941
   },
   {
     "name": "ACE0107499",
@@ -5646,14 +5630,6 @@
     "postcode": "8800",
     "latitude": 56.376849,
     "longitude": 9.395859
-  },
-  {
-    "name": "Thorsminde - RAH",
-    "address": "Vesterhavsgade 1D",
-    "town": "ULFBORG",
-    "postcode": "6990",
-    "latitude": 56.373218,
-    "longitude": 8.119435
   },
   {
     "name": "Humleg\u00e5rden 2",
@@ -8806,14 +8782,6 @@
     "postcode": "2830",
     "latitude": 55.788609,
     "longitude": 12.481606
-  },
-  {
-    "name": "St\u00e6nget 6",
-    "address": "St\u00e6nget 6",
-    "town": "OR\u00d8",
-    "postcode": "4305",
-    "latitude": 55.784401,
-    "longitude": 11.790136
   },
   {
     "name": "Afd. 1712 Virumgaard - Solsikkemarken 28",
@@ -12238,14 +12206,6 @@
     "postcode": "5560",
     "latitude": 55.422152,
     "longitude": 10.032452
-  },
-  {
-    "name": "Stoppestedet #1",
-    "address": "Kirkevejen 75",
-    "town": "FAN\u00d8",
-    "postcode": "6720",
-    "latitude": 55.420906,
-    "longitude": 8.377901
   },
   {
     "name": "Bo- og Besk\u00e6ftigelsescenter N\u00f8rrevang",

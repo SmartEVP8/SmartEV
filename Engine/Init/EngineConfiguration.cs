@@ -56,13 +56,14 @@ public static class EngineConfiguration
             EVSpawnFraction = 0.10f,
             PopulationScaler = 0.7f,
             DistanceScaler = 1.7f,
-            GridSize = 0.1,
+            GridSize = 0.025f,
             EnergyPricesPath = new FileInfo(Path.Combine(dataPath.FullName, "energy_prices.csv")),
             OsrmPath = new FileInfo(Path.Combine(dataPath.FullName, "osrm/output.osrm")),
             CitiesPath = new FileInfo(Path.Combine(dataPath.FullName, "CityInfo.csv")),
             GridPath = new FileInfo(Path.Combine(dataPath.FullName, "denmark_charging_locations.json")),
             StationsPath = new FileInfo(Path.Combine(dataPath.FullName, "denmark_charging_locations.json")),
-            PolygonPath = new FileInfo(Path.Combine(dataPath.FullName, "denmark.polygon.json")),
+            PolygonPath = new FileInfo(Path.Combine(dataPath.FullName, "denmark_polygon.json")),
+            WetPolygonPath = new FileInfo(Path.Combine(dataPath.FullName, "denmark_wet_polygon.json")),
         };
     }
 

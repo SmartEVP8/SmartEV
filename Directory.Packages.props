@@ -3,7 +3,7 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <AllowMissingPrunePackageData>true</AllowMissingPrunePackageData>
     <OsrmDataPath>$(MSBuildThisFileDirectory)\data\osrm\output.osrm</OsrmDataPath>
-    <GridPath>$(MSBuildThisFileDirectory)\data\denmark.polygon.json</GridPath>
+    <GridPath>$(MSBuildThisFileDirectory)\data\denmark_polygon.json</GridPath>
     <CityDataPath>$(MSBuildThisFileDirectory)\data\CityInfo.csv</CityDataPath>
     <EnergyPricesPath>$(MSBuildThisFileDirectory)\data\energy_prices.csv</EnergyPricesPath>
     <ChargersPath>$(MSBuildThisFileDirectory)\data\denmark_charging_locations.json</ChargersPath>
