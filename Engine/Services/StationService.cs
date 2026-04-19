@@ -63,6 +63,11 @@ public class StationService : IStationService
             ? station
             : throw new SkillissueException($"Trying to get station {stationId} which does not exist.");
 
+    public IChargerHandler GetChargerHandler(int chargerId)
+        => _chargerIndex.TryGetValue(chargerId, out var pair)
+            ? pair.Handler
+            : throw new SkillissueException($"Trying to get charger handler {chargerId} which does not exist.");
+
     /// <summary>Gets the stationId that an EV has a reservation for if any.</summary>
     /// <param name="evId">The id used for checking for a reservation.</param>
     /// <returns>The stationId or null.</returns>
@@ -179,35 +184,54 @@ public class StationService : IStationService
         charger.UpdateWindowStats();
     }
 
+    /// <summary>
+    /// Calculates the estimated availability time for an EV arriving at a station, accounting for active sessions, physical queues, and future reservations.
+    /// </summary>
+    /// <param name="stationId">The unique identifier of the target station.</param>
+    /// <param name="simNow">The current simulation time, used as the baseline for evaluating active and physically queued sessions.</param>
+    /// <param name="arrival">The projected arrival time of the EV used to filter relevant prior reservations.</param>
+    /// <returns>The expected absolute time a charger will become available for the arriving EV. Returns simNow if a charger is immediately available.</returns>
     public Time ExpectedWaitTime(ushort stationId, Time simNow, Time arrival)
     {
         var station = GetStation(stationId);
         var waitTimes = new PriorityQueue<int, Time>();
+        var reservationQueues = new Dictionary<int, List<ConnectedEV>>();
+        var initialAvailability = new Dictionary<int, Time>();
 
         foreach (var charger in station.Chargers)
         {
             var handler = _chargerIndex[charger.Id].Handler;
             var estimatedWait = handler.EstimateWaitTime(simNow) + simNow;
+
             waitTimes.Enqueue(charger.Id, estimatedWait);
+            reservationQueues[charger.Id] = [];
+            initialAvailability[charger.Id] = estimatedWait;
         }
 
         var reservationsBefore = station.Reservations.ReservationsBefore(arrival);
 
         foreach (var reservation in reservationsBefore)
         {
-            waitTimes.TryDequeue(out var chargerId, out var chargerAvailableAt);
-            var handler = _chargerIndex[chargerId].Handler;
+            waitTimes.TryDequeue(out var chargerId, out var currentAvailableAt);
+
             var battery = _eVStore.Get(reservation.EVId).Battery;
+
             var connectedEV = new ConnectedEV(
                 EVId: reservation.EVId,
                 CurrentSoC: reservation.SoCAtArrival,
                 TargetSoC: reservation.TargetSoC,
                 CapacityKWh: battery.MaxCapacityKWh,
                 MaxChargeRateKW: battery.MaxChargeRateKW,
-                ArrivalTime: chargerAvailableAt);
+                ArrivalTime: currentAvailableAt);
 
-            var newAvailableAt = handler.EstimateWaitTime(chargerAvailableAt, [connectedEV]);
-            waitTimes.Enqueue(chargerId, newAvailableAt + simNow);
+            var queue = reservationQueues[chargerId];
+            queue.Add(connectedEV);
+
+            var handler = _chargerIndex[chargerId].Handler;
+            var baseTime = initialAvailability[chargerId];
+
+            var newAvailableAt = handler.EstimateWaitTime(baseTime, queue) + baseTime;
+            waitTimes.Enqueue(chargerId, newAvailableAt);
         }
 
         return waitTimes.TryDequeue(out var _, out var minWait) ? minWait : simNow;
