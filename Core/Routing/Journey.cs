@@ -23,6 +23,7 @@ public record OriginalJourney(Time Departure, Time Duration, float DistanceKm)
 /// <param name="DistanceKm">The distance of the current journey in kilometers.</param>
 /// <param name="Waypoints">The current waypoints of the journey.</param>
 /// <param name="NextStop">The next stop of the journey.</param>
+/// <param name="NextStopId">The ID of the next stop if it is a station.</param>
 /// <param name="PathDeviation">The accumulated time added by rerouting.</param>
 /// <param name="DurationToNextStop">The duration from departure to the configured next stop.</param>
 public record CurrentJourney(
@@ -31,6 +32,7 @@ public record CurrentJourney(
     float DistanceKm,
     List<Position> Waypoints,
     Position NextStop,
+    ushort? NextStopId,
     int PathDeviation,
     Time DurationToNextStop)
 {
@@ -59,7 +61,7 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
     /// <summary>Gets the live state of the journey.</summary>
     public CurrentJourney Current { get; private set; } = new(
         departure, duration, distanceMeters / 1000,
-        waypoints, waypoints[^1], PathDeviation: 0, DurationToNextStop: duration);
+        waypoints, waypoints[^1], NextStopId: null, PathDeviation: 0, DurationToNextStop: duration);
 
     /// <summary>
     /// Calculates the remaining time on the current route,
@@ -115,12 +117,13 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
     /// <param name="departure">The time the journey update takes effect.</param>
     /// <param name="duration">The duration of the new journey.</param>
     /// <param name="newDistanceKm">The distance of the new journey in kilometers.</param>
-    public void UpdateRoute(List<Position> waypoints, Position nextStop, Time departure, Time duration, float newDistanceKm)
+    /// <param name="nextStopId">The ID of the next stop.</param>
+    public void UpdateRoute(List<Position> waypoints, Position nextStop, Time departure, Time duration, float newDistanceKm, ushort? nextStopId = null)
     {
         CheckTime(departure, checkBeforeDeparture: true, checkAfterCompletion: false, checkAfterEtaToNextStop: false);
         var deviation = Current.PathDeviation + (departure + duration) - Current.Eta;
         var durationToNextStop = DurationToNextStop(duration, waypoints, nextStop);
-        Current = new CurrentJourney(departure, duration, newDistanceKm, waypoints, nextStop, (int)deviation, durationToNextStop);
+        Current = new CurrentJourney(departure, duration, newDistanceKm, waypoints, nextStop, nextStopId, (int)deviation, durationToNextStop);
     }
 
     /// <summary>
@@ -137,6 +140,7 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
             DistanceKm: Current.DistanceKm,
             Waypoints: Current.Waypoints,
             NextStop: Current.Waypoints[^1],
+            NextStopId: null,
             PathDeviation: Current.PathDeviation,
             DurationToNextStop: DurationToNextStop(Current.Duration, Current.Waypoints, Current.Waypoints[^1]));
     }
@@ -183,7 +187,7 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
         var waypoints = DeriveNewWaypoints(currentTime);
         var durationToNextStop = DurationToNextStop(duration, waypoints, Current.NextStop);
 
-        var currentJourney = new CurrentJourney(currentTime, duration, newDistanceKm, waypoints, Current.NextStop, Current.PathDeviation, durationToNextStop);
+        var currentJourney = new CurrentJourney(currentTime, duration, newDistanceKm, waypoints, Current.NextStop, Current.NextStopId, Current.PathDeviation, durationToNextStop);
         return (currentJourney, waypoints[0]);
     }
 
@@ -320,9 +324,9 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
             throw new ArgumentException($"Current time: {time} is before the current journey has started: {Current.Departure}.");
 
         if (checkAfterEtaToNextStop && time > Current.EtaToNextStop)
-            throw new ArgumentException($"Current time: {time} is after ETA to next stop: {Current.EtaToNextStop}. Overshoot: {time - Current.EtaToNextStop}s.");
+            throw new ArgumentException($"Current time: {time} is after ETA to next stop: {Current.EtaToNextStop}. Overshoot: {time - Current.EtaToNextStop}ms.");
 
         if (checkAfterCompletion && time > completedTime)
-            throw new ArgumentException($"Current time: {time} is after the journey has completed: {completedTime}. Overshoot: {time - completedTime}s.");
+            throw new ArgumentException($"Current time: {time} is after the journey has completed: {completedTime}. Overshoot: {time - completedTime}ms.");
     }
 }

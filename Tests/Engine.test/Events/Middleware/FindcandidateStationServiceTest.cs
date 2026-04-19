@@ -29,7 +29,8 @@ namespace Engine.Test.Events.Middleware
             float[] durations = [10f, 7200f, 25f, 9000f, 180f];
             float[] distances = [50f, 1900f, 130f, 2200f, 300f];
             var stubRouter = new StubRouter(durations, distances);
-            _service = new FindCandidateStationService(stubRouter, stations, spatialGrid, _evStore, EngineTestData.StationService(stations, new EventScheduler(), _evStore));
+            var settings = Init.EngineConfiguration.CreateDefaultSettings();
+            _service = new FindCandidateStationService(stubRouter, stations, spatialGrid, _evStore, EngineTestData.StationService(stations, new EventScheduler(), _evStore), settings);
         }
 
         [Fact]
@@ -48,7 +49,7 @@ namespace Engine.Test.Events.Middleware
             action(e);
             var candidates = await _service.GetCandidateStationFromCache(evId);
 
-            var expected = new Dictionary<ushort, float> { { 0, 10.0f }, { 2, 25 }, { 4, 180 } };
+            var expected = new Dictionary<ushort, float>();
             Assert.Equal(expected, candidates);
         }
 
@@ -57,17 +58,17 @@ namespace Engine.Test.Events.Middleware
             private readonly float[] _durations = durations;
             private readonly float[] _distances = distances;
 
-            public RoutingResult QueryStationsWithDest(double lon, double lat, double destLon, double destLat, ushort[] stationIds)
+            public RoutingResultLegs QueryStationsWithDest(double lon, double lat, double destLon, double destLat, ushort[] stationIds)
             {
-                var durations = new float[stationIds.Length];
-                var distances = new float[stationIds.Length];
+                var srcToStation = new (float Duration, float Distance)[stationIds.Length];
+                var stationToDest = new (float Duration, float Distance)[stationIds.Length];
                 for (int i = 0; i < stationIds.Length; i++)
                 {
-                    durations[i] = _durations[stationIds[i]];
-                    distances[i] = _distances[stationIds[i]];
+                    srcToStation[i] = (_durations[stationIds[i]], _distances[stationIds[i]]);
+                    stationToDest[i] = (0f, 0f);
                 }
 
-                return new RoutingResult(durations, distances);
+                return new RoutingResultLegs(srcToStation, stationToDest);
             }
 
             public void Dispose() => throw new NotImplementedException();

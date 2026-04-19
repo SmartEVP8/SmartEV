@@ -82,8 +82,12 @@ public class FindCandidateStationService(
 
     private Dictionary<ushort, float> FilterCandidates(ref EV ev, RoutingResultLegs detourLegs, ushort[] reachableStationIds, Time currentTime)
     {
-        var chargeBufferPercent = settings.ChargeBufferPercent;
+        var usableRangeKm = (ev.Battery.CurrentChargeKWh - (ev.Battery.MaxCapacityKWh * ev.Preferences.MinAcceptableCharge)) / (ev.ConsumptionWhPerKm / 1000f);
+        if (usableRangeKm >= ev.Journey.Current.DistanceKm)
+            return [];
+
         var result = new Dictionary<ushort, float>();
+        var journeyEnd = ev.Journey.Current.Departure + ev.Journey.Current.Duration;
 
         for (var i = 0; i < reachableStationIds.Length; i++)
         {
@@ -93,17 +97,21 @@ public class FindCandidateStationService(
             var totalDistance = toStation.Distance + toDest.Distance;
             if (totalDistance < 0 || float.IsNaN(totalDistance))
                 continue;
-            if (!ev.CanReachViaDetour(detourDistanceKm: totalDistance / 1000f, directDistanceKm: ev.Journey.Current.DistanceKm, ev.Preferences.MinAcceptableCharge))
+
+            if (!ev.CanReachViaDetour(totalDistance / 1000f, ev.Journey.Current.DistanceKm, ev.Preferences.MinAcceptableCharge))
                 continue;
 
-            var energyToStationKWh = ev.EnergyForDistanceKWh(toStation.Distance / 1000f);
-            var chargeAtStationKWh = ev.Battery.CurrentChargeKWh - energyToStationKWh;
-            var socAtStation = chargeAtStationKWh / ev.Battery.MaxCapacityKWh;
+            var isEnRoute = ev.Journey.Current.NextStopId == reachableStationIds[i];
+
+            var socAtStation = isEnRoute
+                ? ev.EstimateSoCAtNextStop()
+                : (ev.Battery.CurrentChargeKWh - ev.EnergyForDistanceKWh(toStation.Distance / 1000f)) / ev.Battery.MaxCapacityKWh;
 
             var etaToStation = currentTime + (uint)toStation.Duration;
-            var chargingThreshold = ev.CalcDesiredSoC(etaToStation) * chargeBufferPercent;
+            var lateArrival = etaToStation > ev.Journey.Current.EtaToNextStop || etaToStation > journeyEnd;
+            var desiredSoC = lateArrival ? ev.Preferences.MinAcceptableCharge : ev.CalcDesiredSoC(etaToStation);
 
-            if (socAtStation >= chargingThreshold)
+            if (socAtStation >= desiredSoC * settings.ChargeBufferPercent)
                 continue;
 
             result[reachableStationIds[i]] = toStation.Duration + toDest.Duration;

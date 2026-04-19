@@ -42,7 +42,7 @@ public class OSRMRouterTests
             _evPosition[1],
             _evPosition[0],
             _evPosition[1],
-            [0]);
+            [0]).ToTotals();
 
         Assert.True(durations[0] < 1f, $"Expected ~0s, got {durations[0]:F1}s");
         Assert.True(distances[0] < 1f, $"Expected ~0m, got {distances[0]:F1}m");
@@ -58,7 +58,7 @@ public class OSRMRouterTests
             _evPosition[1],
             _destPosition[0],
             _destPosition[1],
-            [0, 1]);
+            [0, 1]).ToTotals();
 
         Assert.True(
             durations[0] < durations[1],
@@ -90,7 +90,7 @@ public class OSRMRouterTests
             _evPosition[1],
             _destPosition[0],
             _destPosition[1],
-            [0]); // index 0 = _stationNearPosition
+            [0]).ToTotals(); // index 0 = _stationNearPosition
 
         var routeSum = evToStationRes.Duration + stationToDestRes.Duration;
         Assert.True(
@@ -156,7 +156,7 @@ public class OSRMRouterTests
     public void QueryStationsWithDest_EmptyIndices_ReturnsEmptyResult()
     {
         using var router = CreateRouter(_stationNearPosition);
-        var result = router.QueryStationsWithDest(_evPosition[0], _evPosition[1], _destPosition[0], _destPosition[1], []);
+        var result = router.QueryStationsWithDest(_evPosition[0], _evPosition[1], _destPosition[0], _destPosition[1], []).ToTotals();
 
         Assert.Empty(result.Durations);
         Assert.Empty(result.Distances);
@@ -168,13 +168,13 @@ public class OSRMRouterTests
         using var router = CreateRouter(_stationNearPosition, _stationFarPosition);
 
         var (durationsForward, _) = router.QueryStationsWithDest(
-            _evPosition[0], _evPosition[1], _destPosition[0], _destPosition[1], [0, 1]);
+            _evPosition[0], _evPosition[1], _destPosition[0], _destPosition[1], [0, 1]).ToTotals();
 
-        var (durationsReversed, _) = router.QueryStationsWithDest(
-            _evPosition[0], _evPosition[1], _destPosition[0], _destPosition[1], [1, 0]);
+        var reversed = router.QueryStationsWithDest(
+            _evPosition[0], _evPosition[1], _destPosition[0], _destPosition[1], [1, 0]).ToTotals();
 
-        Assert.Equal(durationsForward[0], durationsReversed[1], 0.1f);
-        Assert.Equal(durationsForward[1], durationsReversed[0], 0.1f);
+        Assert.Equal(durationsForward[0], reversed.Durations[1], 0.1f);
+        Assert.Equal(durationsForward[1], reversed.Durations[0], 0.1f);
     }
 
     [Fact]
@@ -223,7 +223,7 @@ public class OSRMRouterTests
         {
             var offset = i * 0.001;
             var (durations, _) = router.QueryStationsWithDest(
-                _evPosition[0] + offset, _evPosition[1] + offset, _destPosition[0], _destPosition[1], [0, 1]);
+                _evPosition[0] + offset, _evPosition[1] + offset, _destPosition[0], _destPosition[1], [0, 1]).ToTotals();
             queries[i] = (_evPosition[0] + offset, _evPosition[1] + offset, durations[0]);
         }
 
@@ -232,7 +232,7 @@ public class OSRMRouterTests
         {
             var (evLon, evLat, _) = queries[i];
             var (durations, _) = router.QueryStationsWithDest(
-                evLon, evLat, _destPosition[0], _destPosition[1], [0, 1]);
+                evLon, evLat, _destPosition[0], _destPosition[1], [0, 1]).ToTotals();
             parallelResults[i] = durations[0];
         })));
 

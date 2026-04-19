@@ -4,17 +4,31 @@ using System.Runtime.InteropServices;
 using Core.Charging;
 using Core.Shared;
 
-public record RoutingResult(float[] Durations, float[] Distances)
-{
-    /// <summary>Gets the number of routes.</summary>
-    public int Length => Durations.Length;
-}
+public record RoutingResult(float[] Durations, float[] Distances);
 
 public record RoutingResultLegs((float Duration, float Distance)[] SrcToStation, (float Duration, float Distance)[] StationToDest)
 {
-    /// <summary>Gets the number of routes.</summary>
-    public int Length => SrcToStation.Length;
-};
+    /// <summary>
+    /// Convert legs into a totals <see cref="RoutingResult"/> with per-station total duration and distance.
+    /// </summary>
+    /// <returns>A <see cref="RoutingResult"/> with the total durations and distances for each station.</returns>
+    public RoutingResult ToTotals()
+    {
+        if (SrcToStation is null || StationToDest is null)
+            return new RoutingResult([], []);
+
+        var n = SrcToStation.Length;
+        var durations = new float[n];
+        var distances = new float[n];
+        for (var i = 0; i < n; i++)
+        {
+            durations[i] = SrcToStation[i].Duration + StationToDest[i].Duration;
+            distances[i] = SrcToStation[i].Distance + StationToDest[i].Distance;
+        }
+
+        return new RoutingResult(durations, distances);
+    }
+}
 
 public record RouteSegment(float Duration, float Distance, string Polyline);
 
@@ -97,8 +111,8 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
     [StructLayout(LayoutKind.Sequential)]
     private struct TableLeg
     {
-        public float Duration;
-        public float Distance;
+        public float Durations;
+        public float Distances;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -134,11 +148,7 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
             return new RoutingResultLegs([], []);
 
         var outResult = new TableResult[indices.Length];
-
-        fixed (TableResult* outResultPtr = outResult)
-        {
-            ComputeTableIndexedWithDest(_osrm, evLon, evLat, destLon, destLat, indices, indices.Length, outResult);
-        }
+        ComputeTableIndexedWithDest(_osrm, evLon, evLat, destLon, destLat, indices, indices.Length, outResult);
 
         var srcToStation = new (float Duration, float Distance)[indices.Length];
         var stationToDest = new (float Duration, float Distance)[indices.Length];
@@ -146,13 +156,13 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
         for (var i = 0; i < indices.Length; i++)
         {
             srcToStation[i] = (
-                outResult[i].SrcToStation.Duration * Time.MillisecondsPerSecond,
-                outResult[i].SrcToStation.Distance
+                outResult[i].SrcToStation.Durations * Time.MillisecondsPerSecond,
+                outResult[i].SrcToStation.Distances
             );
 
             stationToDest[i] = (
-                outResult[i].StationToDest.Duration * Time.MillisecondsPerSecond,
-                outResult[i].StationToDest.Distance
+                outResult[i].StationToDest.Durations * Time.MillisecondsPerSecond,
+                outResult[i].StationToDest.Distances
             );
         }
 
