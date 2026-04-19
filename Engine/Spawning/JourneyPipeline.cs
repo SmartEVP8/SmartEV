@@ -1,5 +1,6 @@
 namespace Engine.Spawning;
 
+using Core.Shared;
 using Engine.Grid;
 using Engine.Routing;
 
@@ -20,7 +21,8 @@ public class JourneyPipeline
     /// <param name="grid">Controls which cells are spawnable. Non spawnable grid cells get 0% probability.</param>
     /// <param name="cities">Used to compute weights for grid cells.</param>
     /// <param name="router">Computes matrix destination table.</param>
-    public JourneyPipeline(SpawnGrid grid, List<City> cities, IMatrixRouter router) => _grid = BuildGravityGrid(grid, cities, router);
+    public JourneyPipeline(SpawnGrid grid, List<City> cities, IMatrixRouter router)
+        => _grid = BuildGravityGrid(grid, cities, router);
 
     /// <summary>
     /// Computes the sampling distributions for source and destination points based on the gravity model.
@@ -31,8 +33,9 @@ public class JourneyPipeline
     /// <param name="distanceScaler">Influence of city distance on the gravity weight.
     /// A higher scaler increases the weight of closer cities, while a lower scaler reduces it.
     /// </param>
+    /// <param name="wetPolygons">List of wet polygons used to ensure that sampled positions do not fall within wet areas.</param>
     /// <returns>Simulation samplers for source and destinations. If no cells are spawnable returns null.</returns>
-    public JourneySamplers Compute(float populationScaler, float distanceScaler)
+    public JourneySamplers Compute(float populationScaler, float distanceScaler, List<List<Position>> wetPolygons)
     {
         var cells = _grid.Cells
             .SelectMany(g => g)
@@ -53,7 +56,8 @@ public class JourneyPipeline
             _grid.CellCenters,
             _grid.CityCenters,
             _grid.HalfLat,
-            _grid.HalfLon);
+            _grid.HalfLon,
+            wetPolygons);
     }
 
     private static float GravityWeight(CityInfo city, float populationScaler, float distanceScaler)
@@ -100,9 +104,7 @@ public class JourneyPipeline
         }
 
         if (!newGrid.Any(row => row.Count > 0))
-        {
             throw new InvalidOperationException("No spawnable cells with city info");
-        }
 
         var cityCenters = cities.Select(c => c.Position).ToArray();
 

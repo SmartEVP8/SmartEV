@@ -19,11 +19,10 @@ using Engine.Metrics.Snapshots;
 /// </summary>
 public sealed class MetricsService : IAsyncDisposable
 {
-    private readonly IMetricWriter<EVSnapshotMetric>? _cars;
     private readonly IMetricWriter<ArrivalAtDestinationMetric>? _arrivals;
     private readonly IMetricWriter<StationSnapshotMetric>? _stations;
     private readonly IMetricWriter<ChargerSnapshotMetric>? _chargers;
-    private readonly IMetricWriter<WaitTimeInQueueMetric>? _waitTime;
+    private readonly IMetricWriter<WaitTimeInQueueMetric>? _waitTimeInQueue;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MetricsService"/> class.
@@ -35,21 +34,15 @@ public sealed class MetricsService : IAsyncDisposable
     {
         var files = new MetricsFileManager(config.OutputDirectory, runId);
 
-        if (config.RecordCarSnapshots)
-            _cars = new MetricWriter<EVSnapshotMetric>(config.BufferSize, files.GetMetricPath<EVSnapshotMetric>());
         if (config.RecordArrivals)
             _arrivals = new MetricWriter<ArrivalAtDestinationMetric>(config.BufferSize, files.GetMetricPath<ArrivalAtDestinationMetric>());
         if (config.RecordStationSnapshots)
             _stations = new MetricWriter<StationSnapshotMetric>(config.BufferSize, files.GetMetricPath<StationSnapshotMetric>());
         if (config.RecordChargerSnapshots)
             _chargers = new MetricWriter<ChargerSnapshotMetric>(config.BufferSize, files.GetMetricPath<ChargerSnapshotMetric>());
-        if (config.RecordEVWaitTime)
-            _waitTime = new MetricWriter<WaitTimeInQueueMetric>(config.BufferSize, files.GetMetricPath<WaitTimeInQueueMetric>());
+        if (config.RecordEVWaitTimeInQueue)
+            _waitTimeInQueue = new MetricWriter<WaitTimeInQueueMetric>(config.BufferSize, files.GetMetricPath<WaitTimeInQueueMetric>());
     }
-
-    /// <summary>Records a car snapshot. No-op if car snapshots are disabled in config.</summary>
-    /// <param name="metric">The car snapshot metric to record.</param>
-    public void RecordCar(EVSnapshotMetric metric) => _cars?.Record(metric);
 
     /// <summary>Records an arrival metric. No-op if arrivals are disabled in config.</summary>
     /// <param name="metric">The arrival metric to record.</param>
@@ -65,7 +58,7 @@ public sealed class MetricsService : IAsyncDisposable
 
     /// <summary> Records an EV wait time metric. No-op if EV wait time metrics are disabled in config. </summary>
     /// <param name="metric">The EV wait time metric to record.</param>
-    public void RecordWaitTime(WaitTimeInQueueMetric metric) => _waitTime?.Record(metric);
+    public void RecordWaitTime(WaitTimeInQueueMetric metric) => _waitTimeInQueue?.Record(metric);
 
     /// <summary>
     /// Signals all writers to stop, drains their channels, and flushes remaining
@@ -75,11 +68,10 @@ public sealed class MetricsService : IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         var tasks = new List<Task>();
-        if (_cars is not null) tasks.Add(_cars.DisposeAsync().AsTask());
         if (_stations is not null) tasks.Add(_stations.DisposeAsync().AsTask());
         if (_chargers is not null) tasks.Add(_chargers.DisposeAsync().AsTask());
         if (_arrivals is not null) tasks.Add(_arrivals.DisposeAsync().AsTask());
-        if (_waitTime is not null) tasks.Add(_waitTime.DisposeAsync().AsTask());
+        if (_waitTimeInQueue is not null) tasks.Add(_waitTimeInQueue.DisposeAsync().AsTask());
         await Task.WhenAll(tasks);
     }
 }
