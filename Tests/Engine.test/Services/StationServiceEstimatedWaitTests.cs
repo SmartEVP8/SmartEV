@@ -56,7 +56,7 @@ public class ExpectedWaitTimeTests
         stationService.HandleArrivalAtStation(new ArriveAtStation(ev1, _stationId, 0.8, simNow));
         stationService.HandleArrivalAtStation(new ArriveAtStation(ev2, _stationId, 0.9, simNow));
 
-        var expected = handler.EstimateWaitTime(simNow) + simNow;
+        var expected = handler.EstimateWaitTime(simNow).AvailableAt + simNow;
         var result = stationService.ExpectedWaitTime(_stationId, simNow, arrival);
 
         Assert.Equal(expected, result);
@@ -77,7 +77,7 @@ public class ExpectedWaitTimeTests
         stationService.HandleArrivalAtStation(new ArriveAtStation(ev2, _stationId, 0.8, simNow));
         stationService.HandleArrivalAtStation(new ArriveAtStation(ev3, _stationId, 0.9, simNow));
 
-        var expected = handler.EstimateWaitTime(simNow) + simNow;
+        var expected = handler.EstimateWaitTime(simNow).AvailableAt + simNow;
         var result = stationService.ExpectedWaitTime(_stationId, simNow, arrival);
 
         Assert.Equal(expected, result);
@@ -97,9 +97,9 @@ public class ExpectedWaitTimeTests
         stationService.HandleArrivalAtStation(new ArriveAtStation(activeEv, _stationId, 0.8, simNow));
         stationService.HandleReservation(new Reservation(resEv, Time.From(day: 0, hour: 9), 0.2, 0.8), _stationId);
 
-        var chargerFreeAfterActive = handler.EstimateWaitTime(simNow) + simNow;
+        var chargerFreeAfterActive = handler.EstimateWaitTime(simNow).AvailableAt + simNow;
         var reservedEV = new ConnectedEV(resEv, 0.2, 0.8, battery.MaxCapacityKWh, battery.MaxChargeRateKW, chargerFreeAfterActive);
-        var expected = handler.EstimateWaitTime(chargerFreeAfterActive, [reservedEV]) + chargerFreeAfterActive;
+        var expected = handler.EstimateWaitTime(chargerFreeAfterActive, [reservedEV]).AvailableAt + chargerFreeAfterActive;
 
         var result = stationService.ExpectedWaitTime(_stationId, simNow, arrival);
 
@@ -122,9 +122,9 @@ public class ExpectedWaitTimeTests
         stationService.HandleArrivalAtStation(new ArriveAtStation(activeEv2, _stationId, 0.8, simNow));
         stationService.HandleReservation(new Reservation(resEv, Time.From(day: 0, hour: 9), 0.2, 0.8), _stationId);
 
-        var chargerFreeAfterActive = handler.EstimateWaitTime(simNow) + simNow;
+        var chargerFreeAfterActive = handler.EstimateWaitTime(simNow).AvailableAt + simNow;
         var reservedEV = new ConnectedEV(resEv, 0.2, 0.8, battery.MaxCapacityKWh, battery.MaxChargeRateKW, chargerFreeAfterActive);
-        var expected = handler.EstimateWaitTime(chargerFreeAfterActive, [reservedEV]) + chargerFreeAfterActive;
+        var expected = handler.EstimateWaitTime(chargerFreeAfterActive, [reservedEV]).AvailableAt + chargerFreeAfterActive;
 
         var result = stationService.ExpectedWaitTime(_stationId, simNow, arrival);
 
@@ -141,12 +141,11 @@ public class ExpectedWaitTimeTests
         evStore.TryAllocate((index, ref ev) => ev = CoreTestData.EV(battery: CoreTestData.Battery(stateOfCharge: 0.2f)), out var resEv);
         var battery = evStore.Get(resEv).Battery;
 
-        // Reservation time == arrival: boundary must be inclusive.
         stationService.HandleReservation(new Reservation(resEv, arrival, 0.2, 0.8), _stationId);
 
-        var chargerFreeInitially = handler.EstimateWaitTime(simNow) + simNow;
+        var chargerFreeInitially = handler.EstimateWaitTime(simNow).AvailableAt + simNow;
         var reservedEV = new ConnectedEV(resEv, 0.2, 0.8, battery.MaxCapacityKWh, battery.MaxChargeRateKW, chargerFreeInitially);
-        var expected = handler.EstimateWaitTime(chargerFreeInitially, [reservedEV]) + chargerFreeInitially;
+        var expected = handler.EstimateWaitTime(chargerFreeInitially, [reservedEV]).AvailableAt + chargerFreeInitially;
 
         var result = stationService.ExpectedWaitTime(_stationId, simNow, arrival);
 
@@ -188,7 +187,7 @@ public class ExpectedWaitTimeTests
             ToConnectedEV(resEv2, 0.2),
         };
 
-        var expected = handler.EstimateWaitTime(simNow, expectedQueue) + simNow;
+        var expected = handler.EstimateWaitTime(simNow, expectedQueue).AvailableAt + simNow;
         var result = stationService.ExpectedWaitTime(_stationId, simNow, arrival);
 
         Assert.Equal(expected, result);
@@ -222,7 +221,7 @@ public class ExpectedWaitTimeTests
             ToConnectedEV(resEv3, 0.4),
         };
 
-        var expected = handler.EstimateWaitTime(simNow, expectedQueue) + simNow;
+        var expected = handler.EstimateWaitTime(simNow, expectedQueue).AvailableAt + simNow;
         var result = stationService.ExpectedWaitTime(_stationId, simNow, arrival);
 
         Assert.Equal(expected, result);
@@ -276,7 +275,7 @@ public class ExpectedWaitTimeTests
         stationService.HandleArrivalAtStation(new ArriveAtStation(ev2, _stationId, 0.8, simNow));
 
         var fastHandler = stationService.GetChargerHandler(fastCharger.Id);
-        var expectedFromFastCharger = fastHandler.EstimateWaitTime(simNow) + simNow;
+        var expectedFromFastCharger = fastHandler.EstimateWaitTime(simNow).AvailableAt + simNow;
 
         var result = stationService.ExpectedWaitTime(_stationId, simNow, arrival);
 

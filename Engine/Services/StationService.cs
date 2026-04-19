@@ -201,7 +201,8 @@ public class StationService : IStationService
         foreach (var charger in station.Chargers)
         {
             var handler = _chargerIndex[charger.Id].Handler;
-            var estimatedWait = handler.EstimateWaitTime(simNow) + simNow;
+            var (availableAt, _) = handler.EstimateWaitTime(simNow);
+            var estimatedWait = availableAt + simNow;
 
             waitTimes.Enqueue(charger.Id, estimatedWait);
             reservationQueues[charger.Id] = [];
@@ -230,8 +231,8 @@ public class StationService : IStationService
             var handler = _chargerIndex[chargerId].Handler;
             var baseTime = initialAvailability[chargerId];
 
-            var newAvailableAt = handler.EstimateWaitTime(baseTime, queue) + baseTime;
-            waitTimes.Enqueue(chargerId, newAvailableAt);
+            var (availableAt, _) = handler.EstimateWaitTime(baseTime, queue);
+            waitTimes.Enqueue(chargerId, availableAt + baseTime);
         }
 
         return waitTimes.TryDequeue(out var _, out var minWait) ? minWait : simNow;

@@ -223,16 +223,18 @@ public class DualChargerHandler(
     }
 
     /// <inheritdoc/>
-    public Time EstimateWaitTime(Time simNow, IReadOnlyList<ConnectedEV>? evsOverride = null)
+    public (Time AvailableAt, IReadOnlyList<(int EVId, Time FinishTime)> Schedule) EstimateWaitTime(Time simNow, IReadOnlyList<ConnectedEV>? evsOverride = null)
     {
         var evs = evsOverride ?? charger.CreateConnectedEVs(simNow);
         var queue = new Queue<ConnectedEV>(evs);
         var currentTime = simNow;
+        var schedule = new List<(int EVId, Time FinishTime)>();
+        Time? firstAvailableTime = null;
 
         ConnectedEV? evA = null;
         ConnectedEV? evB = null;
 
-        while (true)
+        while (queue.Count > 0 || evA is not null || evB is not null)
         {
             if (evA is null && queue.Count > 0)
                 evA = queue.Dequeue();
@@ -240,42 +242,61 @@ public class DualChargerHandler(
             if (evB is null && queue.Count > 0)
                 evB = queue.Dequeue();
 
-            if (queue.Count == 0 && (evA is null || evB is null))
-                return currentTime > simNow ? currentTime - simNow : new Time(0);
+            if (queue.Count == 0 && (evA is null || evB is null) && firstAvailableTime is null)
+            {
+                firstAvailableTime = currentTime;
+            }
 
             if (evA is null && evB is null)
-                return new Time(0);
+                break;
 
-            if (evA is not null && evB is not null)
+            if (evA is not null && evA.CurrentSoC >= evA.TargetSoC)
             {
-                var result = integrator.IntegrateDualToCompletion(
-                    currentTime,
-                    charger.MaxPowerKW,
-                    charger,
-                    evA,
-                    evB);
+                schedule.Add((evA.EVId, currentTime));
+                evA = null;
+                continue;
+            }
 
-                var finishA = result.CarA.FinishTime
-                    ?? throw new InvalidOperationException(
-                        $"EV {evA.EVId} on side A did not produce a finish time.");
+            if (evB is not null && evB.CurrentSoC >= evB.TargetSoC)
+            {
+                schedule.Add((evB.EVId, currentTime));
+                evB = null;
+                continue;
+            }
 
-                var finishB = result.CarB!.FinishTime
-                    ?? throw new InvalidOperationException(
-                        $"EV {evB.EVId} on side B did not produce a finish time.");
+            var carA = evA ?? evB! with { CurrentSoC = evB!.TargetSoC };
+            var carB = evB ?? evA! with { CurrentSoC = evA!.TargetSoC };
 
-                if (finishA <= finishB)
-                {
-                    currentTime = finishA;
+            var result = integrator.IntegrateDualToCompletion(currentTime, charger.MaxPowerKW, charger, carA, carB);
+
+            var finishA = result.CarA.FinishTime ?? currentTime;
+            var finishB = result.CarB!.FinishTime ?? currentTime;
+
+            if (evA is not null && (evB is null || finishA <= finishB))
+            {
+                schedule.Add((evA.EVId, finishA));
+                currentTime = finishA;
+
+                if (evB is not null)
                     evB = evB with { CurrentSoC = result.CarA.PartnerSoCAtFinish };
-                    evA = null;
-                }
-                else
-                {
-                    currentTime = finishB;
-                    evA = evA with { CurrentSoC = result.CarB.PartnerSoCAtFinish };
-                    evB = null;
-                }
+
+                evA = null;
+            }
+            else if (evB is not null)
+            {
+                schedule.Add((evB.EVId, finishB));
+                currentTime = finishB;
+
+                if (evA is not null)
+                    evA = evA with { CurrentSoC = result.CarB!.PartnerSoCAtFinish };
+
+                evB = null;
             }
         }
+
+        firstAvailableTime ??= currentTime;
+        var availableAtTimestamp = firstAvailableTime > simNow ? firstAvailableTime.Value - simNow : new Time(0);
+
+        return (availableAtTimestamp, schedule);
     }
 }
