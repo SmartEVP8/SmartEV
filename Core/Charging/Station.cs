@@ -95,7 +95,6 @@ public class Reservations()
     private uint _totalReservationsInPeriod;
     private uint _totalCancellationsInPeriod;
 
-
     /// <summary>
     /// Gets all the ev ids that have a reservation on the station.
     /// </summary>

@@ -1,5 +1,6 @@
 namespace Core.Charging.ChargingModel;
 
+using Core.Helper;
 using Core.Shared;
 
 /// <summary>
@@ -153,6 +154,7 @@ public sealed class ChargingIntegrator(uint stepSeconds)
             t += step;
         }
 
+        Log.Verbose(ev.EVId, simNow, $"IntegrateSingle: simNow={simNow}, maxKW={maxKW}, evId={ev.EVId}, stepSeconds={_stepSeconds}, duration={t}, energyDelivered={energy}, wastedEnergy={wastedEnergy}, finalSoc={soc}", ("EV", ev));
         var carAResult = new VehicleIntegrationResult(
             Soc: soc,
             FinishTime: finishTime,
@@ -253,6 +255,8 @@ public sealed class ChargingIntegrator(uint stepSeconds)
             t += step;
         }
 
+        Log.Verbose(evA.EVId, simNow, $"IntegrateDual: simNow={simNow}, maxKW={maxKW}, evAId={evA.EVId}, stepSeconds={_stepSeconds}, duration={t}, energyDeliveredA={energyA}, wastedEnergy={wastedEnergy}, finalSocA={socA}", ("EV_A", evA));
+        Log.Verbose(evB.EVId, simNow, $"IntegrateDual: simNow={simNow}, maxKW={maxKW}, evBId={evB.EVId}, stepSeconds={_stepSeconds}, duration={t}, energyDeliveredB={energyB}, wastedEnergy={wastedEnergy}, finalSocB={socB}", ("EV_B", evB));
         var carAResult = new VehicleIntegrationResult(
             Soc: socA,
             FinishTime: finishA,
@@ -278,9 +282,9 @@ public sealed class ChargingIntegrator(uint stepSeconds)
     private static void ValidateConnectedEV(ConnectedEV ev)
     {
         if (!double.IsFinite(ev.CurrentSoC) || ev.CurrentSoC is < 0 or > 1)
-            throw new ArgumentOutOfRangeException(nameof(ev), $"EV {ev.EVId} has invalid CurrentSoC={ev.CurrentSoC}. Expected finite value in [0,1].");
+            throw Log.Error(ev.EVId, 0, new ArgumentOutOfRangeException(nameof(ev), $"EV {ev.EVId} has invalid CurrentSoC={ev.CurrentSoC}. Expected finite value in [0,1]."), ("EV", ev));
 
         if (!double.IsFinite(ev.TargetSoC) || ev.TargetSoC is < 0 or > 1)
-            throw new ArgumentOutOfRangeException(nameof(ev), $"EV {ev.EVId} has invalid TargetSoC={ev.TargetSoC}. Expected finite value in [0,1].");
+            throw Log.Error(ev.EVId, 0, new ArgumentOutOfRangeException(nameof(ev), $"EV {ev.EVId} has invalid TargetSoC={ev.TargetSoC}. Expected finite value in [0,1]."), ("EV", ev));
     }
 }

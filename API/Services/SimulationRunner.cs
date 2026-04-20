@@ -1,24 +1,24 @@
 namespace API.Services;
 
+using Core.Helper;
+
 using Engine;
 
 /// <summary>
 /// Manages the execution of the simulation in a background task, allowing it to run concurrently with the API server.
-/// </summary> 
+/// </summary>
 /// <param name="simulation">The simulation instance to run.</param>
-/// <param name="logger">The logger for recording events and errors.</param>
 public sealed class SimulationRunner(
-    Simulation simulation,
-    ILogger<SimulationRunner> logger)
+    Simulation simulation)
 {
     private Task? _simulationTask;
     private CancellationTokenSource? _cts;
 
     /// <summary>
     /// Gets a value indicating whether the simulation is currently running.
-    /// </summary> 
+    /// </summary>
     /// <returns>True if the simulation is running; otherwise, false.</returns>
-    public bool IsRunning => _simulationTask != null && !_simulationTask.IsCompleted;
+    public bool IsRunning => _simulationTask?.IsCompleted is false;
 
     /// <summary>
     /// Starts the simulation in a background task. If the simulation is already running, this method does nothing.
@@ -61,11 +61,11 @@ public sealed class SimulationRunner(
         }
         catch (OperationCanceledException)
         {
-            logger.LogInformation("SimulationRunner stopped");
+            Log.Info(0, 0, "SimulationRunner stopped");
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error in SimulationRunner");
+            Log.Error(0, 0, ex);
         }
     }
 }

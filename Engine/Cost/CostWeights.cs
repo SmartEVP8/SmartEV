@@ -1,3 +1,5 @@
+using Core.Helper;
+
 namespace Engine.Cost;
 
 /// <summary>
@@ -30,7 +32,7 @@ public static class CostWeightFieldExtensions
         CostWeightField.EffectiveQueueSize => "Effective Queue Size",
         CostWeightField.Urgency => "Urgency",
         CostWeightField.ExpectedWaitTime => "Expected Wait Time",
-        _ => throw new ArgumentOutOfRangeException(nameof(field))
+        _ => throw Log.Error(0, 0, new ArgumentOutOfRangeException(nameof(field)))
     };
 }
 
