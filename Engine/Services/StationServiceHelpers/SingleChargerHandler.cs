@@ -23,6 +23,13 @@ public class SingleChargerHandler(
     MetricsService metrics)
     : IChargerHandler
 {
+    /// <inheritdoc/>
+    public ChargerBase Charger => charger;
+
+    /// <inheritdoc/>
+    public (ActiveSession? A, ActiveSession? B) GetSessions()
+        => (charger.Session, null);
+
     /// <summary>
     /// Dequeues the next EV and starts a charging session if the charger is free.
     /// Does nothing if a session is already active or the queue is empty.

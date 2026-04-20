@@ -24,6 +24,14 @@ public class DualChargerHandler(
     MetricsService metrics)
     : IChargerHandler
 {
+    /// <inheritdoc/>
+    public ChargerBase Charger => charger;
+
+
+    /// <inheritdoc/>
+    public (ActiveSession? A, ActiveSession? B) GetSessions()
+       => (charger.SessionA, charger.SessionB);
+
     /// <summary>
     /// Connects any queued EVs to free sides, cancels stale scheduled events if pairing changed,
     /// re-integrates both sessions with updated power distribution, and schedules new end events.

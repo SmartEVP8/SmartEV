@@ -1,5 +1,6 @@
 namespace Engine.Services.StationServiceHelpers;
 
+using Core.Charging;
 using Core.Charging.ChargingModel;
 using Core.Shared;
 
@@ -31,4 +32,15 @@ public interface IChargerHandler
     /// <param name="evsOverride">Overrides the estimate for a custom list of connected evs.</param>
     /// <returns>A tuple containing the next time the charger is available and the chronological schedule.</returns>
     (Time AvailableAt, IReadOnlyList<(int EVId, Time FinishTime)> Schedule) EstimateWaitTime(Time simNow, IReadOnlyList<ConnectedEV>? evsOverride = null);
+
+    /// <summary>
+    /// Gets the charger that the handler manages.
+    /// </summary>
+    ChargerBase Charger { get; }
+
+    /// <summary>
+    /// Gets the sessions of the charger.
+    /// </summary>
+    /// <returns>The sessions.</returns>
+    (ActiveSession? A, ActiveSession? B) GetSessions();
 }
