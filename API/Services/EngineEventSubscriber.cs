@@ -1,14 +1,14 @@
 namespace API.Services;
 
 using Engine.Events;
+using Core.Helper;
 
 /// <summary>
 /// Bridges engine events to protocol events and sends them to the connected client.
 /// </summary>
 public sealed class EngineEventSubscriber(
     SnapshotHandler snapshotHandler,
-    IEventSender eventSender,
-    ILogger<EngineEventSubscriber> logger) : IEngineEventSubscriber
+    IEventSender eventSender) : IEngineEventSubscriber
 {
     private async void SendStationSnapshot(ushort stationId)
     {
@@ -19,7 +19,7 @@ public sealed class EngineEventSubscriber(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error sending station snapshot for station ID {StationId}", stationId);
+            Log.Error(0, 0, ex, ("StationId", stationId));
         }
     }
 

@@ -28,10 +28,7 @@ public static class Init
     /// <param name="services">The service collection to initialize.</param>
     public static void InitEngine(IServiceCollection services)
     {
-        services.AddSingleton(sp =>
-        {
-            return new EventScheduler();
-        });
+        services.AddSingleton(_ => new EventScheduler());
 
         services.AddSingleton(sp =>
         {
@@ -60,10 +57,7 @@ public static class Init
             return new EVStore(settings.CurrentAmountOfEVsInDenmark);
         });
 
-        services.AddSingleton(sp =>
-        {
-            return new Dictionary<ushort, Station>(sp.GetRequiredService<List<Station>>().ToDictionary(s => s.Id));
-        });
+        services.AddSingleton(sp => new Dictionary<ushort, Station>(sp.GetRequiredService<List<Station>>().ToDictionary(s => s.Id)));
 
         services.AddSingleton(sp =>
         {

@@ -2,6 +2,7 @@ namespace Core.Vehicles;
 
 using Core.Routing;
 using Core.Shared;
+using Core.Helper;
 
 /// <summary>
 /// Defines the possible states of an EV.
@@ -40,9 +41,9 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     /// <summary>
     /// Gets the journey of the EV.
     /// </summary>
-    public Journey Journey { get; private set; } = journey;
+    public Journey Journey { get; } = journey;
 
-    /// <summary> 
+    /// <summary>
     /// Gets or sets the current state of the EV.
     /// </summary>
     public EVState EVState { get; set; } = EVState.Driving;
@@ -56,7 +57,7 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     public readonly Position Advance(Time currentTime)
     {
         if (currentTime < Journey.Current.Departure)
-            throw new InvalidOperationException($"Cannot advance EV to a time before the current journey's departure (currentTime={currentTime}, departure={Journey.Current.Departure}, {this})");
+            throw Log.Error(0, currentTime, new InvalidOperationException($"Cannot advance EV to a time before the current journey's departure (currentTime={currentTime}, departure={Journey.Current.Departure}, {this})"));
         var previousJourney = Journey.Current;
         var currentPosition = Journey.AdvanceTo(currentTime);
         ConsumeEnergy(previousJourney, currentTime);
@@ -119,7 +120,7 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     public readonly float CalcDesiredSoC(Time arrivalAtStation)
     {
         if (Battery.MaxCapacityKWh == 0)
-            throw new InvalidOperationException($"Battery capacity must be greater than zero when calculating desired SoC (arrivalAtStation={arrivalAtStation}, {this})");
+            throw Log.Error(0, arrivalAtStation, new InvalidOperationException($"Battery capacity must be greater than zero when calculating desired SoC (arrivalAtStation={arrivalAtStation}, {this})"));
         var remainingDistanceKm = Journey.RemainingDistanceToDestination(arrivalAtStation);
         var energyToDest = EnergyForDistanceKWh(remainingDistanceKm);
         var percentNeededToDestination = energyToDest / Battery.MaxCapacityKWh;
@@ -127,7 +128,7 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
         var desiredSoC = chargeToPercent > 1f ? 0.8f : chargeToPercent;
         return float.IsFinite(desiredSoC)
             ? Math.Clamp(desiredSoC + 0.01f, 0f, 1f)
-            : throw new InvalidOperationException($"Calculated desired SoC is not finite (desiredSoC={desiredSoC}, energyToDest={energyToDest}, remainingDistanceKm={remainingDistanceKm}, arrivalAtStation={arrivalAtStation}, {this})");
+            : throw Log.Error(0, arrivalAtStation, new InvalidOperationException($"Calculated desired SoC is not finite (desiredSoC={desiredSoC}, energyToDest={energyToDest}, remainingDistanceKm={remainingDistanceKm}, arrivalAtStation={arrivalAtStation}, {this})"));
     }
 
     /// <summary>Estimates the SoC when reaching the next stop.</summary>
@@ -135,7 +136,7 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     public readonly float EstimateSoCAtNextStop()
     {
         if (Battery.MaxCapacityKWh <= 0)
-            throw new InvalidOperationException($"Battery capacity must be greater than zero ({this})");
+            throw Log.Error(0, 0, new InvalidOperationException($"Battery capacity must be greater than zero ({this})"));
 
         var journey = Journey.Current;
 
@@ -167,7 +168,7 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
         if (Preferences.MinAcceptableCharge >= Battery.StateOfCharge)
         {
             if (currentTime < Journey.Current.Departure)
-                throw new InvalidOperationException($"Current time is before the departure of the current journey (currentTime={currentTime}, departure={Journey.Current.Departure}, {this})");
+                throw Log.Error(0, 0, new InvalidOperationException($"Current time is before the departure of the current journey (currentTime={currentTime}, departure={Journey.Current.Departure}, {this})"));
             return Journey.Current.Departure + 1;
         }
 

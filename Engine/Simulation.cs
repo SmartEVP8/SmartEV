@@ -2,6 +2,7 @@ namespace Engine;
 
 using Core.Shared;
 using Engine.Events;
+using Core.Helper;
 
 /// <summary>
 /// The Simulation class is responsible for running the simulation by continuously fetching and
@@ -27,20 +28,37 @@ public class Simulation(
         CancellationToken cancelToken = default,
         Func<Task>? waitWhilePausedAsync = null)
     {
+        Log.Info(0, 0, "Simulation started.");
         Console.WriteLine("Starting Simulation");
+
         scheduler.ScheduleEvent(new SpawnEVS(0));
         scheduler.ScheduleEvent(new SnapshotEvent(0));
 
-        while (true)
+        try
         {
-            cancelToken.ThrowIfCancellationRequested();
-
-            if (waitWhilePausedAsync != null)
+            while (true)
+            {
+                cancelToken.ThrowIfCancellationRequested();
+              
+                if (waitWhilePausedAsync != null)
                 await waitWhilePausedAsync();
-
-            var shouldContinue = await HandleNextEvent(cancelToken);
-            if (!shouldContinue)
-                return;
+              
+                var shouldContinue = await HandleNextEvent(cancelToken);
+                if (!shouldContinue)
+                {
+                    Log.Info(0, 0, "Simulation finished.");
+                    return;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Warn(0, 0, "Simulation crashed.");
+            Console.WriteLine($"Simulation crashed: {ex}");
+        }
+        finally
+        {
+            await Serilog.Log.CloseAndFlushAsync();
         }
     }
 

@@ -2,6 +2,7 @@ namespace Engine.Parsers;
 
 using System.Text.Json;
 using Core.Shared;
+using Core.Helper;
 
 /// <summary>
 /// GeoJSON parser for extracting polygon coordinates and converting them to lists of Position objects.
@@ -70,7 +71,7 @@ public static class PolygonParser
             {
                 PropertyNameCaseInsensitive = true,
             })
-            ?? throw new Exception("Invalid GeoJSON");
+            ?? throw Log.Error(0, 0, new Exception("Invalid GeoJSON"));
 
         var polygons = new List<List<Position>>();
 
