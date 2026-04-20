@@ -115,6 +115,8 @@ public static class GeoMath
             position, waypoints[matchIndex]);
     }
 
+    public static bool IsOnSegment(Position point, Position wp1, Position wp2) => IsInRadius(point, wp1, wp2, 0.01);
+
     /// <summary>
     /// Calculates the distance between two positions using the equirectangular approximation,
     /// which is faster than the Haversine formula and sufficiently accurate for small distances.

@@ -67,6 +67,7 @@ public static class Program
                 restrictedToMinimumLevel: LogEventLevel.Error,
                 rollingInterval: RollingInterval.Day)
             .CreateLogger();
-        await coordinator.Run();
+        provider.GetRequiredService<NodeNetwork>().CreateNodeNetwork(); // Force eager initialization of NodeNetwork to avoid it being initialized in the middle of the simulation when the first routing request comes in, which would cause a long stall and potentially timeouts.
+        //await coordinator.Run();
     }
 }

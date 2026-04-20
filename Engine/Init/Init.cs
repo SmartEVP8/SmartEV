@@ -227,6 +227,21 @@ public static class Init
                 scheduler,
                 sp.GetRequiredService<EngineSettings>().SimulationEndTime);
         });
+
+        services.AddSingleton(sp =>
+        {
+            var settings = sp.GetRequiredService<EngineSettings>();
+            var stationFile = settings.StationsPath;
+            var cities = InitCities(settings.CitiesPath);
+            var router = sp.GetRequiredService<IOSRMRouter>();
+            return new NodeFactory(stationFile, cities, router);
+        });
+
+        services.AddSingleton(sp =>
+        {
+            var nodeFactory = sp.GetRequiredService<NodeFactory>();
+            return new NodeNetwork(nodeFactory);
+        });
     }
 
     private static SpawnGrid InitSpawnGrid(FileInfo polygonPath, FileInfo wetPolygonPath, double size)
