@@ -25,42 +25,43 @@ public class Simulation(
     /// <param name="waitWhilePausedAsync">A callback that blocks progress while the simulation is paused.</param>
     /// <returns>A task representing the asynchronous simulation run.</returns>
     public async Task Run(
-        CancellationToken cancelToken = default,
-        Func<Task>? waitWhilePausedAsync = null)
-    {
-        Log.Info(0, 0, "Simulation started.");
-        Console.WriteLine("Starting Simulation");
-
-        scheduler.ScheduleEvent(new SpawnEVS(0));
-        scheduler.ScheduleEvent(new SnapshotEvent(0));
-
-        try
+    CancellationToken cancelToken = default,
+    Func<Task>? waitWhilePausedAsync = null)
         {
-            while (true)
+            Log.Info(0, 0, "Simulation started.");
+            Console.WriteLine("Starting Simulation");
+
+            scheduler.ScheduleEvent(new SpawnEVS(0));
+            scheduler.ScheduleEvent(new SnapshotEvent(0));
+
+            try
             {
-                cancelToken.ThrowIfCancellationRequested();
-              
-                if (waitWhilePausedAsync != null)
-                await waitWhilePausedAsync();
-              
-                var shouldContinue = await HandleNextEvent(cancelToken);
-                if (!shouldContinue)
+                while (true)
                 {
-                    Log.Info(0, 0, "Simulation finished.");
-                    return;
+                    cancelToken.ThrowIfCancellationRequested();
+
+                    if (waitWhilePausedAsync != null)
+                        await waitWhilePausedAsync();
+
+                    var shouldContinue = await HandleNextEvent(cancelToken);
+                    if (!shouldContinue)
+                    {
+                        Log.Info(0, 0, "Simulation finished.");
+                        return;
+                    }
                 }
             }
+            catch (OperationCanceledException)
+            {
+                Log.Info(0, 0, "Simulation stopped.");
+                Console.WriteLine("Simulation stopped.");
+            }
+            catch (Exception ex)
+            {
+                Log.Error(0, 0, ex);
+                Console.WriteLine($"Simulation crashed: {ex}");
+            }
         }
-        catch (Exception ex)
-        {
-            Log.Warn(0, 0, "Simulation crashed.");
-            Console.WriteLine($"Simulation crashed: {ex}");
-        }
-        finally
-        {
-            await Serilog.Log.CloseAndFlushAsync();
-        }
-    }
 
     /// <summary>
     /// Handles the next event in the scheduler.

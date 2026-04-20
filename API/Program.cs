@@ -124,7 +124,7 @@ public static class Program
 
             var simulationRunner = engineManager.GetEngineService<SimulationRunner>();
 
-            if (!simulationRunner.IsRunning)
+            if (simulationRunner.State == SimulationState.Stopped)
                 return Results.BadRequest("Simulation is not running");
 
             await simulationRunner.StopAsync();
@@ -139,10 +139,10 @@ public static class Program
 
             var simulationRunner = engineManager.GetEngineService<SimulationRunner>();
 
-            if (!simulationRunner.IsRunning)
+            if (simulationRunner.State == SimulationState.Stopped)
                 return Results.BadRequest("Simulation is not running");
 
-            if (simulationRunner.IsPaused)
+            if (simulationRunner.State == SimulationState.Paused)
                 return Results.BadRequest("Simulation is already paused");
 
             await simulationRunner.PauseAsync();
@@ -157,10 +157,10 @@ public static class Program
 
             var simulationRunner = engineManager.GetEngineService<SimulationRunner>();
 
-            if (!simulationRunner.IsRunning)
+            if (simulationRunner.State == SimulationState.Stopped)
                 return Results.BadRequest("Simulation is not running");
 
-            if (!simulationRunner.IsPaused)
+            if (simulationRunner.State != SimulationState.Paused)
                 return Results.BadRequest("Simulation is not paused");
 
             await simulationRunner.ResumeAsync();
