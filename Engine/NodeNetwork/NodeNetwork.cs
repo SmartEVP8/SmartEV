@@ -23,7 +23,8 @@ public class NodeNetwork
         Nodes = _nodeFactory.RemoveDuplicateTransitions(Nodes);
         Nodes = _nodeFactory.AddWaypoints(Nodes);
 
-        var fileToWrite = new FileInfo("nodes.json");
+        string projectRoot = AppDomain.CurrentDomain.BaseDirectory;
+        var fileToWrite = new FileInfo(Path.Combine(projectRoot, "nodes.json"));
         var json = JsonSerializer.Serialize(Nodes, new JsonSerializerOptions
         {
             WriteIndented = true,
