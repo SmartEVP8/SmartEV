@@ -8,7 +8,7 @@ public interface IFindCandidateStationService
     /// <summary>Gets the pre-computed candidate stations. Awaits result if it's not yet ready.</summary>
     /// <param name="evId">The EV's id.</param>
     /// <returns>The pre-computed candidate stations.</returns>
-    Task<Dictionary<ushort, float>> GetCandidateStationFromCache(int evId);
+    Task<Dictionary<ushort, (float durToDest, float durTostation)>> GetCandidateStationFromCache(int evId);
 
     /// <summary>
     /// Computes the calculation of the path calculations from an EV's position to its relevant stations.

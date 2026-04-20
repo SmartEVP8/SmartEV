@@ -102,9 +102,8 @@ public class StationService : IStationService
 
         var chargers = GetStation(e.StationId).Chargers;
 
-        // TODO : FIX ASAP
-        // if (evRef.Battery.StateOfCharge >= e.TargetSoC)
-        //     throw new SkillissueException($"EV wants to charge to a SoC: {e.TargetSoC}, which is lower than its current SoC: {evRef.Battery.StateOfCharge}.");
+        if (evRef.Battery.StateOfCharge >= e.TargetSoC)
+            throw new SkillissueException($"EV wants to charge to a SoC: {e.TargetSoC}, which is lower than its current SoC: {evRef.Battery.StateOfCharge}. EVid: {e.EVId}, stationID: {e.StationId}");
         var target = chargers
             .OrderBy(cs => cs.IsFree ? 0 : 1)
             .ThenBy(cs => cs.Queue.Count)

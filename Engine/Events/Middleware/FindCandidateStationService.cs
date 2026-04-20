@@ -24,7 +24,7 @@ public class FindCandidateStationService(
     StationService stationService,
     Engine.Init.EngineSettings settings) : IFindCandidateStationService
 {
-    private record StationQuery(Task<Dictionary<ushort, float>> Task);
+    private record StationQuery(Task<Dictionary<ushort, (float durToDest, float durTostation)>> Task);
 
     private readonly Dictionary<int, StationQuery> _evStationPaths = [];
 
@@ -44,7 +44,7 @@ public class FindCandidateStationService(
         };
     }
 
-    private Dictionary<ushort, float> ComputeCandidates(FindCandidateStations e, double PathdeviationMultiplier = 1.0)
+    private Dictionary<ushort, (float durToDest, float durTostation)> ComputeCandidates(FindCandidateStations e, double PathdeviationMultiplier = 1.0)
     {
         ref var ev = ref evStore.Get(e.EVId);
         var pos = ev.Advance(e.Time);
@@ -80,13 +80,13 @@ public class FindCandidateStationService(
         return candidates;
     }
 
-    private Dictionary<ushort, float> FilterCandidates(ref EV ev, RoutingResultLegs detourLegs, ushort[] reachableStationIds, Time currentTime)
+    private Dictionary<ushort, (float durToDest, float durTostation)> FilterCandidates(ref EV ev, RoutingResultLegs detourLegs, ushort[] reachableStationIds, Time currentTime)
     {
         var usableRangeKm = (ev.Battery.CurrentChargeKWh - (ev.Battery.MaxCapacityKWh * ev.Preferences.MinAcceptableCharge)) / (ev.ConsumptionWhPerKm / 1000f);
         if (usableRangeKm >= ev.Journey.Current.DistanceKm)
             return [];
 
-        var result = new Dictionary<ushort, float>();
+        var result = new Dictionary<ushort, (float durToDest, float durTostation)>();
         var journeyEnd = ev.Journey.Current.Departure + ev.Journey.Current.Duration;
 
         for (var i = 0; i < reachableStationIds.Length; i++)
@@ -114,7 +114,7 @@ public class FindCandidateStationService(
             if (socAtStation >= desiredSoC * settings.ChargeBufferPercent)
                 continue;
 
-            result[reachableStationIds[i]] = toStation.Duration + toDest.Duration;
+            result[reachableStationIds[i]] = (toStation.Duration + toDest.Duration, toStation.Duration);
         }
 
         return result;
@@ -124,7 +124,7 @@ public class FindCandidateStationService(
     /// <param name="evId">The EV's id.</param>
     /// <returns>The pre-computed candidate stations.</returns>
     /// <exception cref="SkillissueException">If you try and get a cached candidate which was never precomputed.</exception>
-    public async Task<Dictionary<ushort, float>> GetCandidateStationFromCache(int evId)
+    public async Task<Dictionary<ushort, (float durToDest, float durTostation)>> GetCandidateStationFromCache(int evId)
     {
         if (!_evStationPaths.TryGetValue(evId, out var query))
             throw new SkillissueException($"No pre-computed station query found for EV {evId}. Ensure PreComputeCandidateStation is called first.");
