@@ -5,7 +5,7 @@ namespace Engine.Utils;
 /// </summary>
 public class SkillissueException : Exception
 {
-    private static readonly string _skillIssue = ". Skill issue?";
+    private const string _skillIssue = ". Skill issue?";
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SkillissueException"/> class with a default message.

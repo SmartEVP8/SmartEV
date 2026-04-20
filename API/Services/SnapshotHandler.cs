@@ -6,6 +6,7 @@ using Engine.Services;
 using Engine.Services.StationServiceHelpers;
 using Engine.Vehicles;
 using Protocol;
+using Core.Helper;
 
 /// <summary>
 /// Handles snapshot requests from the client by querying the engine.
@@ -13,12 +14,10 @@ using Protocol;
 /// <param name="evStore">The store for managing electric vehicles.</param>
 /// <param name="stationService">The service for managing charging stations.</param>
 /// <param name="eventScheduler">The event scheduler for getting the current simulation time.</param>
-/// <param name="logger">The logger for recording events and errors.</param>
 public class SnapshotHandler(
     EVStore evStore,
     StationService stationService,
-    EventScheduler eventScheduler,
-    ILogger<SnapshotHandler> logger)
+    EventScheduler eventScheduler)
 {
     /// <summary>
     /// Builds a simulation snapshot response by querying the engine for the current state of the simulation.
@@ -48,7 +47,7 @@ public class SnapshotHandler(
         var station = stationService.GetStation(stationId);
         if (station == null)
         {
-            logger.LogWarning("Station with ID {StationId} not found", stationId);
+            Log.Warn(0, 0, $"Station with ID {stationId} not found", ("StationId", stationId));
             return new Envelope { StationStateResponse = stationState };
         }
 
@@ -69,6 +68,7 @@ public class SnapshotHandler(
         var (sessionA, sessionB) = chargerHandler.GetSessions();
         var charger = chargerHandler.Charger;
         var schedule = chargerHandler.EstimateWaitTime(eventScheduler.CurrentTime).Schedule;
+
 
         var chargerState = new ChargerState
         {
@@ -102,7 +102,7 @@ public class SnapshotHandler(
     {
         return charger switch
         {
-            SingleCharger s when s.Session is not null && s.Session.EV is { } ev =>
+            SingleCharger s when s.Session?.EV is { } ev =>
                 CalculateUtilization(s.GetPowerOutput(s.MaxPowerKW, ev.CurrentSoC), ev.MaxChargeRateKW, s.MaxPowerKW),
             DualCharger d =>
                 CalculateDualUtilization(d),

@@ -8,6 +8,10 @@ using Protocol;
 using Google.Protobuf;
 using Microsoft.Extensions.Logging;
 using Core.Charging;
+using Serilog;
+using Serilog.Events;
+using Serilog.Templates;
+using Core.Helper;
 
 /// <summary>
 /// Entry point for the SmartEV API application.
@@ -30,6 +34,31 @@ public static class Program
                       .AllowAnyMethod()
                       .AllowAnyHeader());
         });
+        var formatter = new ExpressionTemplate("{ {evId: @p['evId'], Time: @p['Time'], Level: @l, Message: @m, Exception: @x, ..@p} }\n");
+
+        Serilog.Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Verbose()
+            .WriteTo.File(
+                formatter,
+                "logs/Headless-verbose-.jsonl",
+                restrictedToMinimumLevel: LogEventLevel.Verbose,
+                rollingInterval: RollingInterval.Day)
+            .WriteTo.File(
+                formatter,
+                "logs/Headless-information-.jsonl",
+                restrictedToMinimumLevel: LogEventLevel.Information,
+                rollingInterval: RollingInterval.Day)
+            .WriteTo.File(
+                formatter,
+                "logs/Headless-warning-.jsonl",
+                restrictedToMinimumLevel: LogEventLevel.Warning,
+                rollingInterval: RollingInterval.Day)
+            .WriteTo.File(
+                formatter,
+                "logs/Headless-error-.jsonl",
+                restrictedToMinimumLevel: LogEventLevel.Error,
+                rollingInterval: RollingInterval.Day)
+            .CreateLogger();
 
         var app = builder.Build();
 
@@ -45,7 +74,7 @@ public static class Program
         {
             var result = await engineManager.InitializeAsync(config, services =>
             {
-                services.AddSingleton(provider => app.Services.GetRequiredService<ILoggerFactory>());
+                services.AddSingleton(_ => app.Services.GetRequiredService<ILoggerFactory>());
                 services.AddLogging();
                 services.AddSingleton<IEngineEventSubscriber, EngineEventSubscriber>();
                 services.AddSingleton<SnapshotHandler>();
@@ -118,16 +147,17 @@ public static class Program
             }
             catch (Exception ex)
             {
-                var loggerFactory = context.RequestServices.GetRequiredService<ILoggerFactory>();
-                var logger = loggerFactory.CreateLogger("WebSocket");
-                logger.LogError(ex, "WebSocket error");
+                Core.Helper.Log.Error(0, 0, ex);
+                throw;
             }
             finally
             {
                 await simulationRunner.StopAsync();
+                Serilog.Log.CloseAndFlush();
             }
         });
 
+        Core.Helper.Log.Info(0, 0, "API started.");
         app.Run();
     }
 }

@@ -3,6 +3,7 @@ namespace Engine.Vehicles;
 using Core.Shared;
 using Engine.Events;
 using System.Buffers;
+using Core.Helper;
 
 /// <summary>
 /// The EVPopulator class is responsible for creating and scheduling the spawning of EVs.
@@ -22,7 +23,7 @@ public class EVPopulator(EVFactory evFactory, EVStore evStore, IEventScheduler e
     public void CreateEVs(int amount, Time distributionWindow)
     {
         if (amount < 0)
-            throw new ArgumentException($"Amount of EVs to create cannot be negative (amount={amount}).");
+            throw Log.Error(0, 0, new ArgumentException($"Amount of EVs to create cannot be negative (amount={amount})."));
         else if (amount == 0)
             return;
 

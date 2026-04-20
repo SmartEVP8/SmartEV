@@ -3,6 +3,7 @@ namespace Engine.Spawning;
 using Core.Shared;
 using Engine.Grid;
 using Engine.Routing;
+using Core.Helper;
 
 /// <summary>
 /// JourneyPipeline computes the sampling distributions for source and destination points
@@ -104,7 +105,9 @@ public class JourneyPipeline
         }
 
         if (!newGrid.Any(row => row.Count > 0))
-            throw new InvalidOperationException("No spawnable cells with city info");
+        {
+            throw Log.Error(0, 0, new InvalidOperationException("No spawnable cells with city info"));
+        }
 
         var cityCenters = cities.Select(c => c.Position).ToArray();
 

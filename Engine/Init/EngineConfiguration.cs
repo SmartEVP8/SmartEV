@@ -4,6 +4,7 @@ using Engine.Cost;
 using Engine.Metrics;
 using Engine.StationFactory;
 using System.Reflection;
+using Core.Helper;
 
 /// <summary>
 /// Factory for creating EngineSettings with default configuration.
@@ -79,6 +80,6 @@ public static class EngineConfiguration
             searchDir = searchDir.Parent;
         }
 
-        throw new DirectoryNotFoundException("Could not find 'data' directory in project hierarchy");
+        throw Log.Error(0, 0, new DirectoryNotFoundException("Could not find 'data' directory in project hierarchy"));
     }
 }
