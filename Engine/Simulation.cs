@@ -12,7 +12,8 @@ using Engine.Events;
 /// <param name="runUntilStop">A Time that indicates when the simulation should stop.</param>
 public class Simulation(
     EventDispatcher dispatcher,
-    EventScheduler scheduler, Time runUntilStop)
+    EventScheduler scheduler,
+    Time runUntilStop)
 {
     /// <summary>
     /// Runs the simulation by scheduling initial events
@@ -20,8 +21,11 @@ public class Simulation(
     /// the specified end time is reached.
     /// </summary>
     /// <param name="cancelToken">A CancellationToken to allow graceful shutdown of the simulation.</param>
-    /// <returns>Returns?.</returns>
-    public async Task Run(CancellationToken cancelToken = default)
+    /// <param name="waitWhilePausedAsync">A callback that blocks progress while the simulation is paused.</param>
+    /// <returns>A task representing the asynchronous simulation run.</returns>
+    public async Task Run(
+        CancellationToken cancelToken = default,
+        Func<Task>? waitWhilePausedAsync = null)
     {
         Console.WriteLine("Starting Simulation");
         scheduler.ScheduleEvent(new SpawnEVS(0));
@@ -30,6 +34,10 @@ public class Simulation(
         while (true)
         {
             cancelToken.ThrowIfCancellationRequested();
+
+            if (waitWhilePausedAsync != null)
+                await waitWhilePausedAsync();
+
             var shouldContinue = await HandleNextEvent(cancelToken);
             if (!shouldContinue)
                 return;
