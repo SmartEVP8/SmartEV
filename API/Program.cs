@@ -150,7 +150,7 @@ public static class Program
             return Results.Ok(new { message = "Simulation paused successfully" });
         });
 
-        app.MapPost("/simulation/unpause", async (EngineManager.EngineManager engineManager) =>
+        app.MapPost("/simulation/resume", async (EngineManager.EngineManager engineManager) =>
         {
             if (!engineManager.IsInitialized)
                 return Results.BadRequest("Engine not initialized");

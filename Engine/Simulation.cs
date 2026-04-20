@@ -61,6 +61,10 @@ public class Simulation(
                 Log.Error(0, 0, ex);
                 Console.WriteLine($"Simulation crashed: {ex}");
             }
+            finally
+            {
+                await Serilog.Log.CloseAndFlushAsync();
+            }
         }
 
     /// <summary>
