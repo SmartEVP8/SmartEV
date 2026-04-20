@@ -55,7 +55,7 @@ public class NodeFactory
     public Node[] AddAllTransitions(Node[] nodes)
     {
         var newNodes = new Node[nodes.Length];
-        for (var i = 0; i < nodes.Length; i++)
+        Parallel.For(0, nodes.Length, i =>
         {
             var transitions = new Transition[nodes.Length - 1];
             var transitionIndex = 0;
@@ -78,14 +78,14 @@ public class NodeFactory
             // Resize the transitions array to the actual number of valid transitions
             Array.Resize(ref transitions, transitionIndex);
             newNodes[i] = new Node(nodes[i].Position, transitions);
-        }
+        });
         return newNodes;
     }
 
     public Node[] RemoveDuplicateTransitions(Node[] nodes)
     {
         var newNodes = new Node[nodes.Length];
-        for (var i = 0; i < nodes.Length; i++)
+        Parallel.For(0, nodes.Length, i =>
         {
             //If edges overlap remove the one that isnt neccesary if the node can reach another node through a thrid node
             foreach (var transition in nodes[i].Transitions)
@@ -106,14 +106,14 @@ public class NodeFactory
                     }
                 }
             }
-        }
+        });
         return newNodes;
     }
 
     public Node[] AddWaypoints(Node[] nodes)
     {
         var newNodes = new List<Node>(nodes);
-        foreach (var node in nodes)
+        Parallel.ForEach(nodes, node =>
         {
             foreach (var transition in node.Transitions)
             {
@@ -131,7 +131,7 @@ public class NodeFactory
                         newNodes.Add(waypointNode);
                 }
             }
-        }
+        });
         return RemoveDuplicateTransitions(AddAllTransitions([.. newNodes]));
     }
 }
