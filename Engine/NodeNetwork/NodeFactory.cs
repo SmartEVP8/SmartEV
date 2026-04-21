@@ -158,9 +158,11 @@ public class NodeFactory
             foreach (var transition in node.Transitions)
             {
                 var toNodeId = transition.nodeId;
+                var toNode = nodes.Select(n => n).FirstOrDefault(n => n.Id == toNodeId);
+                if (toNode == null) throw new Exception($"Could not find destination node with ID {toNodeId} for transition from node at {node.Position}.");
                 var result = _router.QuerySingleDestination(
                     node.Position.Longitude, node.Position.Latitude,
-                    nodes[toNodeId].Position.Longitude, nodes[toNodeId].Position.Latitude
+                    toNode.Position.Longitude, toNode.Position.Latitude
                 );
                 if (result == null)
                     throw new Exception($"Router single destination query returned null for node at {node.Position} to {nodes[toNodeId].Position}.");
