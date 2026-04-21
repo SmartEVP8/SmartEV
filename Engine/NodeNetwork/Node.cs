@@ -4,6 +4,7 @@ public class Node
 {
     public Position Position { get; }
     public Transition[] Transitions { get; set; }
+    public uint Id { get; set; }
 
     public Node(Position position, Transition[] transitions)
     {
@@ -14,12 +15,12 @@ public class Node
 
 public struct Transition
 {
-    public Node To { get; }
+    public uint nodeId { get; }
     public Edge Edge { get; }
 
-    public Transition(Node to, Edge edge)
+    public Transition(uint nodeId, Edge edge)
     {
-        To = to;
+        this.nodeId = nodeId;
         Edge = edge;
     }
 }

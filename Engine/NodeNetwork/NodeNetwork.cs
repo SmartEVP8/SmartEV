@@ -36,6 +36,6 @@ public class NodeNetwork
             WriteIndented = true,
         });
         File.WriteAllText(fileToWrite.FullName, json);
-        throw new Exception($"Node network creation completed and nodes.json written to {fileToWrite.FullName}.");
+
     }
 }

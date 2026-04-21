@@ -55,6 +55,9 @@ public class NodeFactory
     public Node[] AddAllTransitions(Node[] nodes)
     {
         var newNodes = new Node[nodes.Length];
+        var amountofNodes = nodes.Length;
+        var counter = 0;
+        Console.WriteLine($"Starting to add transitions for {amountofNodes} nodes...");
         Parallel.For(0, nodes.Length, i =>
         {
             var transitions = new Transition[nodes.Length - 1];
@@ -77,13 +80,28 @@ public class NodeFactory
                 if (result.Durations[j] < 0 || result.Distances[j] < 0)
                     continue;
 
-                var toNode = nodes[j >= i ? j + 1 : j];
-                transitions[transitionIndex++] = new Transition(toNode, new Edge((uint)result.Durations[j], result.Distances[j]));
+                uint toNodeId = (uint)(j >= i ? j + 1 : j);
+                transitions[transitionIndex++] = new Transition(toNodeId, new Edge((uint)result.Durations[j], result.Distances[j]));
             }
 
             // Resize the transitions array to the actual number of valid transitions
             Array.Resize(ref transitions, transitionIndex);
-            newNodes[i] = new Node(nodes[i].Position, transitions);
+            newNodes[i] = new Node(nodes[i].Position, transitions) { Id = (uint)i };
+            counter++;
+            if (counter % 100 == 0 || counter == amountofNodes)
+            {
+                var progress = "";
+                var tempCounter = counter;
+                while (tempCounter >= 1000)
+                {
+                    progress = "=" + progress;
+                    tempCounter -= amountofNodes / 10;
+                }
+
+                progress += $">{counter / (float)amountofNodes * 100}%";
+
+                Console.WriteLine($"{progress}");
+            }
         });
         return newNodes;
     }
@@ -93,48 +111,65 @@ public class NodeFactory
         var newNodes = new Node[nodes.Length];
         Parallel.For(0, nodes.Length, i =>
         {
-            //If edges overlap remove the one that isnt neccesary if the node can reach another node through a thrid node
-            foreach (var transition in nodes[i].Transitions)
+            var originalTransitions = nodes[i].Transitions;
+            var filteredTransitions = new List<Transition>(originalTransitions);
+
+            foreach (var transition in originalTransitions)
             {
-                var toNode = transition.To;
+                var toNodeId = transition.nodeId;
                 var edge = transition.Edge;
 
-                foreach (var otherTransition in nodes[i].Transitions)
+                foreach (var otherTransition in originalTransitions)
                 {
-                    if (GeoMath.IsOnSegment(toNode.Position, otherTransition.To.Position, nodes[i].Position))
+                    if (GeoMath.IsOnSegment(nodes[toNodeId].Position, nodes[otherTransition.nodeId].Position, nodes[i].Position))
                     {
                         // If the edge to the other node is shorter than the edge to the current node, remove the current edge
                         if (otherTransition.Edge.Distance < edge.Distance)
                         {
-                            // Remove the current edge
-                            newNodes[i] = new Node(nodes[i].Position, [.. nodes[i].Transitions.Where(t => t.To != toNode)]);
+                            // Remove the current edge if it's still in the list
+                            filteredTransitions.RemoveAll(t => t.nodeId == toNodeId);
                         }
                     }
                 }
             }
+            newNodes[i] = new Node(nodes[i].Position, filteredTransitions.ToArray()) { Id = (uint)i };
         });
         return newNodes;
     }
 
     public Node[] AddWaypoints(Node[] nodes)
     {
+        // Guard: Check for null Transitions
+        foreach (var n in nodes)
+        {
+            if (n.Transitions == null)
+                throw new NullReferenceException($"Node at position {n.Position} has null Transitions array.");
+        }
+
         var newNodes = new List<Node>(nodes);
+        var amountofNodes = nodes.Sum(n => n.Transitions.Length);
+        var counter = 0;
+        Console.WriteLine($"Starting to add waypoints for {amountofNodes} nodes...");
+        Console.WriteLine($"Sum of transitions across all nodes before adding waypoints: {nodes.Sum(n => n.Transitions.Length)}");
         Parallel.ForEach(nodes, node =>
         {
+            if (node.Transitions == null)
+                throw new NullReferenceException($"Node at position {node.Position} has null Transitions array (inside parallel loop).");
             foreach (var transition in node.Transitions)
             {
+                var toNodeId = transition.nodeId;
                 var result = _router.QuerySingleDestination(
                     node.Position.Longitude, node.Position.Latitude,
-                    transition.To.Position.Longitude, transition.To.Position.Latitude
+                    nodes[toNodeId].Position.Longitude, nodes[toNodeId].Position.Latitude
                 );
                 if (result == null)
-                    throw new Exception($"Router single destination query returned null for node at {node.Position} to {transition.To.Position}.");
+                    throw new Exception($"Router single destination query returned null for node at {node.Position} to {nodes[toNodeId].Position}.");
                 if (string.IsNullOrEmpty(result.Polyline))
-                    throw new Exception($"Router single destination query returned null or empty polyline for node at {node.Position} to {transition.To.Position}.");
+                    throw new Exception($"Router single destination query returned null or empty polyline for node at {node.Position} to {nodes[toNodeId].Position}.");
 
                 var decodedPolyline = Polyline6ToPoints.DecodePolyline(result.Polyline);
                 if (decodedPolyline == null)
-                    throw new Exception($"Polyline decoding returned null for node at {node.Position} to {transition.To.Position}.");
+                    throw new Exception($"Polyline decoding returned null for node at {node.Position} to {nodes[toNodeId].Position}.");
                 foreach (var waypoint in decodedPolyline)
                 {
                     var position = new Position(waypoint.Longitude, waypoint.Latitude);
@@ -142,9 +177,27 @@ public class NodeFactory
                     if (!newNodes.Any(n => n.Position.Equals(position)))
                         newNodes.Add(waypointNode);
                 }
+                counter++;
+                if (counter % 100 == 0 || counter == amountofNodes)
+                {
+                    var progress = "";
+                    var tempCounter = counter;
+                    while (tempCounter >= 1000)
+                    {
+                        progress = "=" + progress;
+                        tempCounter -= amountofNodes / 10;
+                    }
+                    progress += $">{counter / (float)amountofNodes * 100}%";
+
+                    Console.WriteLine($"{progress}");
+                }
             }
+
         });
-        var resultNodes = RemoveDuplicateTransitions(AddAllTransitions([.. newNodes]));
-        return resultNodes;
+        Console.WriteLine($"Finished adding waypoints. Total nodes before removing duplicates and adding transitions: {newNodes.Count}");
+        var resultWithTransitions = AddAllTransitions([.. newNodes]);
+        Console.WriteLine($"Finished adding transitions to waypoints. Total nodes before removing duplicate transitions: {resultWithTransitions.Length}");
+        var resultPruned = RemoveDuplicateTransitions(resultWithTransitions);
+        return resultPruned;
     }
 }
