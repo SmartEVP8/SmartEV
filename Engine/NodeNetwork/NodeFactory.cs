@@ -77,7 +77,7 @@ public class NodeFactory
 
             for (var j = 0; j < result.Durations.Length; j++)
             {
-                if (result.Durations[j] < 0 || result.Distances[j] < 0)
+                if (result.Durations[j] <= 0 || result.Distances[j] <= 0)
                     continue;
 
                 uint toNodeId = (uint)(j >= i ? j + 1 : j);
@@ -158,20 +158,34 @@ public class NodeFactory
             foreach (var transition in node.Transitions)
             {
                 var toNodeId = transition.nodeId;
-                var toNode = nodes.Select(n => n).FirstOrDefault(n => n.Id == toNodeId);
-                if (toNode == null) throw new Exception($"Could not find destination node with ID {toNodeId} for transition from node at {node.Position}.");
+                // Find toNode by Id
+                var toNode = nodes.FirstOrDefault(n => n.Id == toNodeId);
+                if (toNode == null)
+                {
+                    Console.WriteLine($"[Warning] Could not find destination node with ID {toNodeId} for transition from node at {node.Position}. Skipping this transition.");
+                    continue;
+                }
                 var result = _router.QuerySingleDestination(
                     node.Position.Longitude, node.Position.Latitude,
                     toNode.Position.Longitude, toNode.Position.Latitude
                 );
                 if (result == null)
-                    throw new Exception($"Router single destination query returned null for node at {node.Position} to {nodes[toNodeId].Position}.");
+                {
+                    Console.WriteLine($"[Warning] Router single destination query returned null for node at {node.Position} to {toNode.Position}. Skipping this transition.");
+                    continue;
+                }
                 if (string.IsNullOrEmpty(result.Polyline))
-                    throw new Exception($"Router single destination query returned null or empty polyline for node at {node.Position} to {nodes[toNodeId].Position}.");
+                {
+                    Console.WriteLine($"[Warning] Router single destination query returned null or empty polyline for node at {node.Position} to {toNode.Position}. Skipping this transition.");
+                    continue;
+                }
 
                 var decodedPolyline = Polyline6ToPoints.DecodePolyline(result.Polyline);
                 if (decodedPolyline == null)
-                    throw new Exception($"Polyline decoding returned null for node at {node.Position} to {nodes[toNodeId].Position}.");
+                {
+                    Console.WriteLine($"[Warning] Polyline decoding returned null for node at {node.Position} to {toNode.Position}. Skipping this transition.");
+                    continue;
+                }
                 foreach (var waypoint in decodedPolyline)
                 {
                     var position = new Position(waypoint.Longitude, waypoint.Latitude);
@@ -194,7 +208,6 @@ public class NodeFactory
                     Console.WriteLine($"{progress}");
                 }
             }
-
         });
         Console.WriteLine($"Finished adding waypoints. Total nodes before removing duplicates and adding transitions: {newNodes.Count}");
         var resultWithTransitions = AddAllTransitions([.. newNodes]);
