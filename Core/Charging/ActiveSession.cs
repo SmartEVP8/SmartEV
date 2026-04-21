@@ -11,6 +11,22 @@ public record ActiveSession(
     IntegrationResult? Plan)
 {
     /// <summary>
+    /// Gets the result for active session.
+    /// </summary>
+    public VehicleIntegrationResult? VehicleResult => Plan?.GetResultFor(Side);
+
+    /// <summary>
+    /// Gets the final SoC.
+    /// </summary>
+    public double FinalSoC => VehicleResult?.Soc ?? EV.CurrentSoC;
+
+
+    /// <summary>
+    /// Gets the SoC of the car that was connected with this car duing the session.
+    /// </summary>
+    public double? PartnerSoCAtFinish => VehicleResult?.PartnerSoCAtFinish;
+
+    /// <summary>
     /// Gets the current SoC of the EV in the session based on the delivered energy in the plan up to the given simulation time.
     /// </summary>
     /// <param name="simNow">The simulation time.</param>
@@ -18,10 +34,7 @@ public record ActiveSession(
     public double GetCurrentSoC(Time simNow)
     {
         if (Plan is null) return EV.CurrentSoC;
-        var curve = Side is ChargingSide.Right
-            ? Plan.CumulativeEnergyB
-            : Plan.CumulativeEnergyA;
-        var delivered = GetEnergyFromCurve(curve, Plan.StepSeconds, StartTime, StartTime, simNow);
+        var delivered = GetEnergyFromCurve(GetCurve(), Plan.StepSeconds, StartTime, StartTime, simNow);
         return EV.CurrentSoC + (delivered / EV.CapacityKWh);
     }
 
@@ -34,11 +47,10 @@ public record ActiveSession(
     public double GetDeliveredKWh(Time from, Time to)
     {
         if (Plan is null) return 0.0;
-        var curve = Side is ChargingSide.Right
-            ? Plan.CumulativeEnergyB
-            : Plan.CumulativeEnergyA;
-        return GetEnergyFromCurve(curve, Plan.StepSeconds, StartTime, from, to);
+        return GetEnergyFromCurve(GetCurve(), Plan.StepSeconds, StartTime, from, to);
     }
+
+    private List<double> GetCurve() => VehicleResult?.CumulativeEnergy ?? [];
 
     /// <summary>
     /// Helper method to calculate energy delivered from a cumulative energy curve between two simulation times.

@@ -2,6 +2,7 @@ namespace Engine;
 
 using Core.Shared;
 using Engine.Events;
+using Core.Helper;
 
 /// <summary>
 /// The Simulation class is responsible for running the simulation by continuously fetching and
@@ -12,7 +13,8 @@ using Engine.Events;
 /// <param name="runUntilStop">A Time that indicates when the simulation should stop.</param>
 public class Simulation(
     EventDispatcher dispatcher,
-    EventScheduler scheduler, Time runUntilStop)
+    EventScheduler scheduler,
+    Time runUntilStop)
 {
     /// <summary>
     /// Runs the simulation by scheduling initial events
@@ -20,21 +22,50 @@ public class Simulation(
     /// the specified end time is reached.
     /// </summary>
     /// <param name="cancelToken">A CancellationToken to allow graceful shutdown of the simulation.</param>
-    /// <returns>Returns?.</returns>
-    public async Task Run(CancellationToken cancelToken = default)
-    {
-        Console.WriteLine("Starting Simulation");
-        scheduler.ScheduleEvent(new SpawnEVS(0));
-        scheduler.ScheduleEvent(new SnapshotEvent(0));
-
-        while (true)
+    /// <param name="waitWhilePausedAsync">A callback that blocks progress while the simulation is paused.</param>
+    /// <returns>A task representing the asynchronous simulation run.</returns>
+    public async Task Run(
+    CancellationToken cancelToken = default,
+    Func<Task>? waitWhilePausedAsync = null)
         {
-            cancelToken.ThrowIfCancellationRequested();
-            var shouldContinue = await HandleNextEvent(cancelToken);
-            if (!shouldContinue)
-                return;
+            Log.Info(0, 0, "Simulation started.");
+            Console.WriteLine("Starting Simulation");
+
+            scheduler.ScheduleEvent(new SpawnEVS(0));
+            scheduler.ScheduleEvent(new SnapshotEvent(0));
+
+            try
+            {
+                while (true)
+                {
+                    cancelToken.ThrowIfCancellationRequested();
+
+                    if (waitWhilePausedAsync != null)
+                        await waitWhilePausedAsync();
+
+                    var shouldContinue = await HandleNextEvent(cancelToken);
+                    if (!shouldContinue)
+                    {
+                        Log.Info(0, 0, "Simulation finished.");
+                        return;
+                    }
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                Log.Info(0, 0, "Simulation stopped.");
+                Console.WriteLine("Simulation stopped.");
+            }
+            catch (Exception ex)
+            {
+                Log.Error(0, 0, ex);
+                Console.WriteLine($"Simulation crashed: {ex}");
+            }
+            finally
+            {
+                await Serilog.Log.CloseAndFlushAsync();
+            }
         }
-    }
 
     /// <summary>
     /// Handles the next event in the scheduler.

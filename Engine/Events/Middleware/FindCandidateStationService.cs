@@ -8,6 +8,7 @@ using Engine.Routing;
 using Engine.Services;
 using Engine.Utils;
 using Engine.Vehicles;
+using Core.Helper;
 
 /// <summary>Service responsible for pre-computing the candidate stations for an EV and caching the results for later retrieval.</summary>
 /// <param name="router">Router used to compute paths from the EV's position to candidate stations and the destination.</param>
@@ -38,7 +39,7 @@ public class FindCandidateStationService(
         return fcse =>
         {
             if (fcse is not FindCandidateStations e)
-                throw new SkillissueException("Not the correct event type");
+                throw Log.Error(0, 0, new SkillissueException("Not the correct event type"), ("Event", fcse));
 
             _evStationPaths[e.EVId] = new StationQuery(Task.Run(() => ComputeCandidates(e)));
         };
@@ -47,37 +48,41 @@ public class FindCandidateStationService(
     private Dictionary<ushort, (float durToDest, float durTostation)> ComputeCandidates(FindCandidateStations e, double PathdeviationMultiplier = 1.0)
     {
         ref var ev = ref evStore.Get(e.EVId);
-        var pos = ev.Advance(e.Time);
+        var pos = ev.Advance(e.Time) ?? throw Log.Error(e.EVId, e.Time, new SkillissueException($"EV {e.EVId} has no position at time {e.Time} after advancing. This should not happen."));
 
         var pathDeviationMultiplied = ev.Preferences.MaxPathDeviation * PathdeviationMultiplier;
 
         var filteredStationIds = spatialGrid.GetStationsAlongPolyline(
             ev.Journey.Current.Waypoints,
             pathDeviationMultiplied);
-
-        var reachableStationIds = ReachableStations.FindReachableStations(
-            ev.Journey.Current.Waypoints,
-            ev,
-            stations,
-            filteredStationIds,
-            pathDeviationMultiplied).ToArray();
-
-        var destination = ev.Journey.Current.Waypoints.Last();
-        var detourLegs = router.QueryStationsWithDest(
-            pos.Longitude,
-            pos.Latitude,
-            destination.Longitude,
-            destination.Latitude,
-            reachableStationIds);
-
-        var candidates = FilterCandidates(ref ev, detourLegs, reachableStationIds, e.Time);
-
-        if (candidates.Count == 0 && stationService.GetReservationStationId(e.EVId) is ushort && ev.DistanceOnCurrentChargeKm() > pathDeviationMultiplied)
+        if (filteredStationIds.Count > 0)
         {
-            candidates = ComputeCandidates(e, PathdeviationMultiplier * 1.25);
+            var reachableStationIds = ReachableStations.FindReachableStations(
+                ev.Journey.Current.Waypoints,
+                ev,
+                stations,
+                filteredStationIds,
+                pathDeviationMultiplied).ToArray();
+
+            var destination = ev.Journey.Current.Waypoints.Last();
+            var detourLegs = router.QueryStationsWithDest(
+                pos.Longitude,
+                pos.Latitude,
+                destination.Longitude,
+                destination.Latitude,
+                reachableStationIds);
+
+            var candidates = FilterCandidates(ref ev, detourLegs, reachableStationIds, e.Time);
+
+            if (candidates.Count == 0 && stationService.GetReservationStationId(e.EVId) is ushort && ev.DistanceOnCurrentChargeKm() > pathDeviationMultiplied)
+            {
+                candidates = ComputeCandidates(e, PathdeviationMultiplier * 1.25);
+            }
+
+            return candidates;
         }
 
-        return candidates;
+        return [];
     }
 
     private Dictionary<ushort, (float durToDest, float durTostation)> FilterCandidates(ref EV ev, RoutingResultLegs detourLegs, ushort[] reachableStationIds, Time currentTime)
@@ -127,7 +132,7 @@ public class FindCandidateStationService(
     public async Task<Dictionary<ushort, (float durToDest, float durTostation)>> GetCandidateStationFromCache(int evId)
     {
         if (!_evStationPaths.TryGetValue(evId, out var query))
-            throw new SkillissueException($"No pre-computed station query found for EV {evId}. Ensure PreComputeCandidateStation is called first.");
+            throw Log.Error(evId, 0, new SkillissueException($"No pre-computed station query found for EV {evId}. Ensure PreComputeCandidateStation is called first."));
 
         _evStationPaths.Remove(evId);
         return await query.Task;

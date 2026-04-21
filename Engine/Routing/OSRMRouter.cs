@@ -3,6 +3,7 @@ namespace Engine.Routing;
 using System.Runtime.InteropServices;
 using Core.Charging;
 using Core.Shared;
+using Core.Helper;
 
 public record RoutingResult(float[] Durations, float[] Distances);
 
@@ -132,7 +133,7 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
     {
         _osrm = InitializeOSRM(mapPath.ToString());
         if (_osrm == IntPtr.Zero)
-            throw new Exception("OSRM initialization failed.");
+            throw Log.Error(0, 0, new Exception("OSRM initialization failed."));
         InitStations(stations);
     }
 
@@ -176,9 +177,7 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
         double destLon,
         double destLat)
     {
-        IntPtr resultPtr;
-
-        resultPtr = ComputeSrcToDest(
+        var resultPtr = ComputeSrcToDest(
             _osrm,
             evLon,
             evLat,
@@ -200,9 +199,15 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
     /// <inheritdoc/>
     public RouteSegment QueryDestinationWithStop(double evLon, double evLat, double stationLon, double stationLat, double destLon, double destLat, ushort index = ushort.MaxValue)
     {
-        IntPtr resultPtr;
-
-        resultPtr = ComputeSrcToDestWithStop(_osrm, evLon, evLat, stationLon, stationLat, destLon, destLat, index);
+        var resultPtr = ComputeSrcToDestWithStop(
+            _osrm,
+            evLon,
+            evLat,
+            stationLon,
+            stationLat,
+            destLon,
+            destLat,
+            index);
 
         if (resultPtr == IntPtr.Zero)
             return new RouteSegment(-1, -1, string.Empty);
@@ -227,9 +232,11 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
         var distances = new float[numSrcs * numDsts];
 
         fixed (float* durPtr = durations)
-        fixed (float* distPtr = distances)
         {
-            PointsToPoints(_osrm, srcCoords, numSrcs, dstCoords, numDsts, durPtr, distPtr);
+            fixed (float* distPtr = distances)
+            {
+                PointsToPoints(_osrm, srcCoords, numSrcs, dstCoords, numDsts, durPtr, distPtr);
+            }
         }
 
         for (var i = 0; i < durations.Length; i++)
@@ -261,7 +268,7 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
         var ok = RegisterStations(_osrm, coords, stations.Count, snappedCoords);
 
         if (!ok)
-            throw new InvalidOperationException("Failed to snap one or more stations to the road network.");
+            throw Log.Error(0, 0, new InvalidOperationException("Failed to snap one or more stations to the road network."));
 
         for (var i = 0; i < stations.Count; i++)
         {

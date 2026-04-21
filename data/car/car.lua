@@ -24,7 +24,7 @@ function setup()
       -- weight_name                     = 'distance',
       process_call_tagless_node      = false,
       u_turn_penalty                 = 20,
-      continue_straight_at_waypoint  = true,
+      continue_straight_at_waypoint  = false,
       use_turn_restrictions          = true,
       left_hand_driving              = false,
     },

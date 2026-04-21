@@ -72,7 +72,7 @@ public class FindCandidateStationsBenchmark
         }
 
         var polygons = PolygonParser.Parse(File.ReadAllText(gridPath));
-        var grid = Polygooner.GenerateGrid(0.1, polygons);
+        var grid = Polygooner.GenerateGrid(0.1, polygons, []);
         var spatialGrid = new SpatialGrid(grid, stations);
 
         var costWeigths = new CostWeights(PathDeviation: 1);

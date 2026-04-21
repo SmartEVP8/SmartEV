@@ -5,6 +5,7 @@ using Engine.Events;
 using Engine.Services;
 using Engine.Vehicles;
 using Protocol;
+using Core.Helper;
 
 /// <summary>
 /// Handles snapshot requests from the client by querying the engine.
@@ -12,12 +13,10 @@ using Protocol;
 /// <param name="evStore">The store for managing electric vehicles.</param>
 /// <param name="stationService">The service for managing charging stations.</param>
 /// <param name="eventScheduler">The event scheduler for getting the current simulation time.</param>
-/// <param name="logger">The logger for recording events and errors.</param>
 public class SnapshotHandler(
     EVStore evStore,
     StationService stationService,
-    EventScheduler eventScheduler,
-    ILogger<SnapshotHandler> logger)
+    EventScheduler eventScheduler)
 {
     /// <summary>
     /// Builds a simulation snapshot response by querying the engine for the current state of the simulation.
@@ -47,7 +46,7 @@ public class SnapshotHandler(
         var station = stationService.GetStation(stationId);
         if (station == null)
         {
-            logger.LogWarning("Station with ID {StationId} not found", stationId);
+            Log.Warn(0, 0, $"Station with ID {stationId} not found", ("StationId", stationId));
             return new Envelope { StationStateResponse = stationState };
         }
 
@@ -78,7 +77,7 @@ public class SnapshotHandler(
                 sessionB = d.SessionB;
                 break;
             default:
-                throw new InvalidOperationException($"Unknown charger type: {charger.GetType()}");
+                throw Log.Error(0, 0, new InvalidOperationException($"Unknown charger type: {charger.GetType()}"), ("ChargerType", charger.GetType()));
         }
 
         var chargerState = new ChargerState
@@ -90,16 +89,16 @@ public class SnapshotHandler(
         };
 
         if (sessionA is not null)
-            chargerState.EvsCharging.Add(CreateEVChargerState(sessionA, sessionA.Plan?.FinishTimeA));
+            chargerState.EvsCharging.Add(CreateEVChargerState(sessionA, sessionA.Plan?.CarA.FinishTime));
 
-        if (sessionB is not null)
-            chargerState.EvsCharging.Add(CreateEVChargerState(sessionB, sessionB.Plan?.FinishTimeB));
+        if (sessionB is not null && sessionB.Plan is not null && sessionB.Plan.CarB is not null)
+            chargerState.EvsCharging.Add(CreateEVChargerState(sessionB, sessionB.Plan.CarB.FinishTime));
 
-        foreach (var (evId, ev) in charger.Queue)
+        foreach (var ev in charger.Queue)
         {
             chargerState.EvsInQueue.Add(new EVChargerState
             {
-                EvId = evId,
+                EvId = ev.EVId,
                 Soc = (float)ev.CurrentSoC,
                 TargetSoc = (float)ev.TargetSoC,
             });
@@ -112,7 +111,7 @@ public class SnapshotHandler(
     {
         return charger switch
         {
-            SingleCharger s when s.Session is not null && s.Session.EV is { } ev =>
+            SingleCharger s when s.Session?.EV is { } ev =>
                 CalculateUtilization(s.GetPowerOutput(s.MaxPowerKW, ev.CurrentSoC), ev.MaxChargeRateKW, s.MaxPowerKW),
             DualCharger d =>
                 CalculateDualUtilization(d),

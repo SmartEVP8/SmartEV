@@ -116,4 +116,9 @@ public record EngineSettings
     /// to include a station as a candidate (e.g. 0.9 means 90% of target SoC).
     /// </summary>
     required public float ChargeBufferPercent { get; init; }
+
+    /// <summary>
+    /// Gets the file path for WetPolygon data required by the engine, which is used for determining where EVs cannot be spawned.
+    /// </summary>
+    required public FileInfo WetPolygonPath { get; init; }
 }

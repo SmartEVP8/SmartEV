@@ -5,6 +5,7 @@ using Core.Charging;
 using Core.Shared;
 using Core.Vehicles;
 using Engine.Services;
+using Core.Helper;
 
 /// <summary>
 /// Computes the cost of detouring to each station and selects the station with the lowest cost.
@@ -25,7 +26,7 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
     public Station Compute(ref EV ev, Dictionary<ushort, (float durToDest, float durToStation)> stationDurations, Time time)
     {
         var bestCost = double.MaxValue;
-        var weights = costStore.GetWeights();
+        var weights = costStore.GetWeights() ?? throw Log.Error(0, time, new NoNullAllowedException("Cost weights not found in store."), ("EV", ev));
         Station? bestStation = null;
 
         foreach (var (stationId, duration) in stationDurations)
@@ -34,17 +35,17 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
 
             var effectiveQueueCost = CalculateEffectiveQueueSizeCost(station, weights);
             var pathDeviationCost = CalculatePathDeviationCost(ref ev, duration.durToDest, weights, time);
-            var urgency = Urgency.CalculateChargeUrgency(ref ev, (uint)Math.Ceiling(duration.durToStation));
+            var urgencyCost = CalculateUrgencyCost(ref ev, weights);
             var priceCost = CalculatePriceCost(ref ev, station, weights, time, energyPrices);
             var effectiveWaitTimeCost = CalculateEffectiveWaitTimeCost(weights);
-            var cost = (effectiveQueueCost + pathDeviationCost + priceCost + effectiveWaitTimeCost) * (1 - urgency);
+            var cost = (effectiveQueueCost + pathDeviationCost + priceCost + effectiveWaitTimeCost) * (1 - urgencyCost);
 
             if (double.IsNaN(cost))
             {
-                throw new InvalidOperationException(
+                throw Log.Error(0, time, new InvalidOperationException(
                     $"Invalid cost calculated for station {stationId}: {cost}. " +
                     $"Queue={effectiveQueueCost}, PathDev={pathDeviationCost}, " +
-                    $"Urgency={urgency}, Price={priceCost}, Wait={effectiveWaitTimeCost}");
+                    $"Urgency={urgencyCost}, Price={priceCost}, Wait={effectiveWaitTimeCost}"));
             }
 
             if (cost < bestCost)
@@ -56,7 +57,7 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
 
         if (bestStation is null)
         {
-            throw new ArgumentNullException("No suitable station found.");
+            throw Log.Error(0, time, new ArgumentNullException("No suitable station found."), ("EV", ev));
         }
 
         return bestStation;
@@ -65,8 +66,13 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
     // TODO: Think about effective queue size
     private float CalculateEffectiveQueueSizeCost(Station station, CostWeights weights)
     {
+        if (station.Chargers.Count == 0)
+            throw Log.Error(0, 0, new InvalidOperationException($"Station {station.Id} has no chargers."), ("StationId", station.Id));
+
         var totalQueueSize = stationService.GetStation(station.Id)
                                 .Chargers.Sum(cs => cs.Queue.Count);
+        if (totalQueueSize == 0)
+            return 0;
 
         var effectiveQueueSize = (float)totalQueueSize / station.Chargers.Count;
         return weights.EffectiveQueueSize * MathF.Pow(effectiveQueueSize, 3);
@@ -82,7 +88,13 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
     {
         var remainingCurrentRoute = ev.Journey.RemainingCurrentRoute(time);
         var extraTimeCostMinutes = (detourDuration - remainingCurrentRoute) / Time.MillisecondsPerMinute;
-        return weights.PathDeviation * Math.Clamp(extraTimeCostMinutes, 0, float.MaxValue);
+        return weights.PathDeviation * extraTimeCostMinutes;
+    }
+
+    private static double CalculateUrgencyCost(ref EV ev, CostWeights weights)
+    {
+        var urgency = Urgency.CalculateChargeUrgency(ev.Battery.StateOfCharge, ev.Preferences.MinAcceptableCharge);
+        return weights.Urgency * urgency;
     }
 
     private static float CalculatePriceCost(ref EV ev, Station station, CostWeights weights, Time time, EnergyPrices energyPrices)

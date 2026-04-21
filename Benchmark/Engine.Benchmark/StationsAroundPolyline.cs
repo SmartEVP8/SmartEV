@@ -59,7 +59,7 @@ public class StationsAroundPolyline
         }
 
         var polygons = PolygonParser.Parse(File.ReadAllText(gridPath));
-        var grid = Polygooner.GenerateGrid(0.1, polygons);
+        var grid = Polygooner.GenerateGrid(0.1, polygons, []);
         _spatialGrid = new SpatialGrid(grid, _stations);
     }
 
