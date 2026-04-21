@@ -62,26 +62,20 @@ public class NodeFactory
         {
             var transitions = new Transition[nodes.Length - 1];
             var transitionIndex = 0;
-
-            var result = _router.QueryPointsToPoints(
-                [nodes[i].Position.Longitude, nodes[i].Position.Latitude],
-                [.. nodes.Where((_, index) => index != i).Select(n => new double[] { n.Position.Longitude, n.Position.Latitude }).SelectMany(a => a)]
-            );
-
-            if (result == null)
-                throw new Exception($"Router query result was null for node index {i}.");
-            if (result.Durations == null || result.Distances == null)
-                throw new Exception($"Router query returned null durations or distances for node index {i}.");
-            if (result.Durations.Length != nodes.Length - 1 || result.Distances.Length != nodes.Length - 1)
-                throw new Exception($"Router query returned unexpected array lengths for node index {i}.");
-
-            for (var j = 0; j < result.Durations.Length; j++)
+            for (var j = 0; j < nodes.Length; j++)
             {
-                if (result.Durations[j] <= 0 || result.Distances[j] <= 0)
+                if (i == j)
                     continue;
+                var result = _router.QuerySingleDestination(
+                               nodes[i].Position.Longitude, nodes[i].Position.Latitude,
+                               nodes[j].Position.Longitude, nodes[j].Position.Latitude
+                           );
+
+                if (result == null)
+                    throw new Exception($"Router query result was null for node index {i}.");
 
                 uint toNodeId = (uint)(j >= i ? j + 1 : j);
-                transitions[transitionIndex++] = new Transition(toNodeId, new Edge((uint)result.Durations[j], result.Distances[j]));
+                transitions[transitionIndex++] = new Transition(toNodeId, new Edge((uint)result.Duration, result.Distance));
             }
 
             // Resize the transitions array to the actual number of valid transitions
@@ -112,27 +106,44 @@ public class NodeFactory
         Parallel.For(0, nodes.Length, i =>
         {
             var originalTransitions = nodes[i].Transitions;
-            var filteredTransitions = new List<Transition>(originalTransitions);
+            var filteredTransitions = new List<Transition>();
 
             foreach (var transition in originalTransitions)
             {
                 var toNodeId = transition.nodeId;
                 var edge = transition.Edge;
 
+                // Lookup destination node by Id
+                var toNode = nodes.FirstOrDefault(n => n.Id == toNodeId);
+                if (toNode == null)
+                {
+                    // Don't add this transition, but keep the node
+                    continue;
+                }
+
+                bool shouldRemove = false;
                 foreach (var otherTransition in originalTransitions)
                 {
-                    if (GeoMath.IsOnSegment(nodes[toNodeId].Position, nodes[otherTransition.nodeId].Position, nodes[i].Position))
+                    var otherToNode = nodes.FirstOrDefault(n => n.Id == otherTransition.nodeId);
+                    if (otherToNode == null)
+                        continue;
+
+                    if (GeoMath.IsOnSegment(toNode.Position, otherToNode.Position, nodes[i].Position))
                     {
-                        // If the edge to the other node is shorter than the edge to the current node, remove the current edge
+                        // If the edge to the other node is shorter than the edge to the current node, mark for removal
                         if (otherTransition.Edge.Distance < edge.Distance)
                         {
-                            // Remove the current edge if it's still in the list
-                            filteredTransitions.RemoveAll(t => t.nodeId == toNodeId);
+                            shouldRemove = true;
+                            break;
                         }
                     }
                 }
+                if (!shouldRemove)
+                {
+                    filteredTransitions.Add(transition);
+                }
             }
-            newNodes[i] = new Node(nodes[i].Position, filteredTransitions.ToArray()) { Id = (uint)i };
+            newNodes[i] = new Node(nodes[i].Position, filteredTransitions.ToArray()) { Id = nodes[i].Id };
         });
         return newNodes;
     }

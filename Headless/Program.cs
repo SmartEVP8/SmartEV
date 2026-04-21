@@ -67,10 +67,18 @@ public static class Program
                 restrictedToMinimumLevel: LogEventLevel.Error,
                 rollingInterval: RollingInterval.Day)
             .CreateLogger();
-
-        var nodeNetwork = provider.GetRequiredService<NodeNetwork>();
-        nodeNetwork.CreateNodeNetwork();
-        nodeNetwork.createNodes(); // Force eager initialization of NodeNetwork to avoid it being initialized in the middle of the simulation when the first routing request comes in, which would cause a long stall and potentially timeouts.
+        try
+        {
+            var nodeNetwork = provider.GetRequiredService<NodeNetwork>();
+            nodeNetwork.CreateNodeNetwork();
+            nodeNetwork.createNodes(); // Force eager initialization of NodeNetwork to avoid it being initialized in the middle of the simulation when the first routing request comes in, which would cause a long stall and potentially timeouts.
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error during NodeNetwork initialization.");
+            Console.WriteLine($"Error during NodeNetwork initialization: {ex}");
+            return;
+        }
         //await coordinator.Run();
     }
 }
