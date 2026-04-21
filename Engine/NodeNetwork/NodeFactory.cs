@@ -65,6 +65,13 @@ public class NodeFactory
                 [.. nodes.Where((_, index) => index != i).Select(n => new double[] { n.Position.Longitude, n.Position.Latitude }).SelectMany(a => a)]
             );
 
+            if (result == null)
+                throw new Exception($"Router query result was null for node index {i}.");
+            if (result.Durations == null || result.Distances == null)
+                throw new Exception($"Router query returned null durations or distances for node index {i}.");
+            if (result.Durations.Length != nodes.Length - 1 || result.Distances.Length != nodes.Length - 1)
+                throw new Exception($"Router query returned unexpected array lengths for node index {i}.");
+
             for (var j = 0; j < result.Durations.Length; j++)
             {
                 if (result.Durations[j] < 0 || result.Distances[j] < 0)
@@ -120,8 +127,14 @@ public class NodeFactory
                     node.Position.Longitude, node.Position.Latitude,
                     transition.To.Position.Longitude, transition.To.Position.Latitude
                 );
+                if (result == null)
+                    throw new Exception($"Router single destination query returned null for node at {node.Position} to {transition.To.Position}.");
+                if (string.IsNullOrEmpty(result.Polyline))
+                    throw new Exception($"Router single destination query returned null or empty polyline for node at {node.Position} to {transition.To.Position}.");
 
                 var decodedPolyline = Polyline6ToPoints.DecodePolyline(result.Polyline);
+                if (decodedPolyline == null)
+                    throw new Exception($"Polyline decoding returned null for node at {node.Position} to {transition.To.Position}.");
                 foreach (var waypoint in decodedPolyline)
                 {
                     var position = new Position(waypoint.Longitude, waypoint.Latitude);
@@ -131,6 +144,7 @@ public class NodeFactory
                 }
             }
         });
-        return RemoveDuplicateTransitions(AddAllTransitions([.. newNodes]));
+        var resultNodes = RemoveDuplicateTransitions(AddAllTransitions([.. newNodes]));
+        return resultNodes;
     }
 }
