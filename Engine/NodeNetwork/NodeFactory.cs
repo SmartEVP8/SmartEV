@@ -59,20 +59,19 @@ public class NodeFactory
         {
             var transitions = new Transition[nodes.Length - 1];
             var transitionIndex = 0;
-            for (var j = 0; j < nodes.Length; j++)
+
+            var result = _router.QueryPointsToPoints(
+                [nodes[i].Position.Longitude, nodes[i].Position.Latitude],
+                [.. nodes.Where((_, index) => index != i).Select(n => new double[] { n.Position.Longitude, n.Position.Latitude }).SelectMany(a => a)]
+            );
+
+            for (var j = 0; j < result.Durations.Length; j++)
             {
-                if (i == j)
+                if (result.Durations[j] < 0 || result.Distances[j] < 0)
                     continue;
 
-                var result = _router.QuerySingleDestination(
-                    nodes[i].Position.Longitude, nodes[i].Position.Latitude,
-                    nodes[j].Position.Longitude, nodes[j].Position.Latitude
-                );
-
-                if (result.Duration < 0 || result.Distance < 0)
-                    continue;
-
-                transitions[transitionIndex++] = new Transition(nodes[j], new Edge((uint)result.Duration, result.Distance));
+                var toNode = nodes[j >= i ? j + 1 : j];
+                transitions[transitionIndex++] = new Transition(toNode, new Edge((uint)result.Durations[j], result.Distances[j]));
             }
 
             // Resize the transitions array to the actual number of valid transitions
