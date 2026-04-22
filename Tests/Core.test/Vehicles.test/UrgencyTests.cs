@@ -1,5 +1,6 @@
 namespace Core.test.Vehicles.test;
 
+using Core.test.Builders;
 using Core.Vehicles;
 
 public class UrgencyTests
@@ -7,11 +8,9 @@ public class UrgencyTests
     [Fact]
     public void CalculateChargeUrgency_ReturnsZero_WhenStateOfChargeIsAtUpperBound()
     {
-        var minCharge = 0.2f;
+        var ev = CoreTestData.EV(battery: new Battery(capacity: 100, maxChargeRate: 150, stateOfCharge: 0.8f), preferences: new Preferences(priceSensitivity: 0, minAcceptableCharge: 0.2f, maxPathDeviationKm: 0));
 
-        var stateOfCharge = 0.8f;
-
-        var urgency = Urgency.CalculateChargeUrgency(stateOfCharge, minCharge);
+        var urgency = Urgency.CalculateChargeUrgency(ref ev, 30);
 
         Assert.Equal(0.0, urgency);
     }
@@ -19,11 +18,9 @@ public class UrgencyTests
     [Fact]
     public void CalculateChargeUrgency_ReturnsOne_WhenStateOfChargeIsAtMinimumAcceptableCharge()
     {
-        var minCharge = 0.2f;
+        var ev = CoreTestData.EV(battery: new Battery(capacity: 100, maxChargeRate: 150, stateOfCharge: 0.2f), preferences: new Preferences(priceSensitivity: 0, minAcceptableCharge: 0.2f, maxPathDeviationKm: 0));
 
-        var stateOfCharge = 0.2f;
-
-        var urgency = Urgency.CalculateChargeUrgency(stateOfCharge, minCharge);
+        var urgency = Urgency.CalculateChargeUrgency(ref ev, 30);
 
         Assert.Equal(1.0, urgency);
     }

@@ -131,6 +131,11 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
             : throw Log.Error(0, arrivalAtStation, new InvalidOperationException($"Calculated desired SoC is not finite (desiredSoC={desiredSoC}, energyToDest={energyToDest}, remainingDistanceKm={remainingDistanceKm}, arrivalAtStation={arrivalAtStation}, {this})"));
     }
 
+    /// <summary>
+    /// Calculates the expected amout a EV needs to charge at a station.
+    /// </summary>
+    /// <param name="distanceToDestination">The distance to the destination from the station.</param>
+    /// <returns>Returns the expected SoC an EV should charge to.</returns>
     public readonly float CalcPreDesiredComputedSoC(float distanceToDestination)
     {
         if (Battery.MaxCapacityKWh <= 0)
@@ -146,6 +151,11 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
             : throw Log.Error(0, 0, new InvalidOperationException($"Calculated desired SoC is not finite (desiredSoC={desiredSoC}"));
     }
 
+    /// <summary>
+    /// Calculates the amount of SoC should have been used within a time interval.
+    /// </summary>
+    /// <param name="duration">The time the EV has to drive in.</param>
+    /// <returns>Returns how much SoC a EV has after a Time interval.</returns>
     public readonly float EstimateSoCAfterADuration(Time duration)
     {
         if (Battery.MaxCapacityKWh <= 0)
@@ -183,6 +193,11 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     /// <returns>Distance in km that a EV can drive.</returns>
     public readonly float DistanceOnCurrentChargeKm() => Battery.CurrentChargeKWh / (ConsumptionWhPerKm / 1000f);
 
+    /// <summary>
+    /// Calculates how far an EV can drive in a given time based on its current route's average speed.
+    /// </summary>
+    /// <param name="time">The amout of time an EV has to drive.</param>
+    /// <returns>Returns the distance an EV can drive in a time period.</returns>
     public readonly float DistanceEVCanDriveInTime(Time time) => journey.Current.DistanceKm / journey.Current.Duration.Milliseconds * time.Milliseconds;
 
     /// <summary>
@@ -228,9 +243,16 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     }
 
     /// <summary>Calculates the energy required to travel <paramref name="distanceKm"/>.</summary>
+    /// <param name="distanceKm">The distance in km for which to calculate energy consumption.</param>
+    /// <returns>The energy in kWh required to travel the specified distance.</returns>
     public readonly float EnergyForDistanceKWh(float distanceKm) =>
         distanceKm * ConsumptionWhPerKm / 1000f;
 
+    /// <summary>
+    /// Calculates how much SoC it take to drive a <paramref name="distanceKm"/>.
+    /// </summary>
+    /// <param name="distanceKm">The distance in km for which to calculate SoC consumptions.</param>
+    /// <returns>The SoC used for driving the specified distance.</returns>
     public readonly float SoCForDistance(float distanceKm) =>
         (Battery.CurrentChargeKWh - EnergyForDistanceKWh(distanceKm)) / Battery.MaxCapacityKWh;
 }

@@ -34,6 +34,14 @@ public class ReachableStations
             })];
     }
 
+    /// <summary>
+    /// Checks if the EV can reach a station without exceeding a certain state of charge threshold at the station, which is based on the distance to the station and the distance to the destination.
+    /// </summary>
+    /// <param name="distToStation">The distance to a station from its current position.</param>
+    /// <param name="distToDestination">The distance to an EV's destination from a station.</param>
+    /// <param name="ev">The EV looking for a Station to charge at.</param>
+    /// <param name="chargeBufferPercent">A buffer to account for noise.</param>
+    /// <returns>Returns a bool representing if a EV would arrive with more SoC than it needs to charge to.</returns>
     public static bool ReachesStationWithTooMuchSoC(float distToStation, float distToDestination, ref EV ev, float chargeBufferPercent)
     {
         var socAtStation = (ev.Battery.CurrentChargeKWh - ev.EnergyForDistanceKWh(distToStation / 1000)) / ev.Battery.MaxCapacityKWh;

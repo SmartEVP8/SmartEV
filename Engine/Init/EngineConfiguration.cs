@@ -30,7 +30,6 @@ public static class EngineConfiguration
                 PathDeviation = 0.8f,
                 PriceSensitivity = 0.4f,
                 ExpectedWaitTime = 1,
-                Urgency = 0.5f,
             },
             RunId = Guid.NewGuid(),
             MetricsConfig = new MetricsConfig
