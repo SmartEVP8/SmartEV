@@ -4,6 +4,7 @@ using Core.Charging;
 using Core.Shared;
 using Engine.Routing;
 using Core.test.Builders;
+using Engine.test.Builders;
 
 // If this test ever fails report it. We should have been fixed but just in case.
 public class OSRMRouterTests
@@ -138,6 +139,118 @@ public class OSRMRouterTests
 
         // WithStops != sum of independent legs. OSRM waypoint routing takes a different path.
         Assert.Equal(550900f, withStopsRes.Duration, 5000f);
+    }
+
+    [Fact]
+    public void QueryStationsWithDest_TableVsRoute_PaddingAnalysis()
+    {
+        (double evLon, double evLat, double stationLon, double stationLat, double destLon, double destLat)[] routes =
+        [
+            (12.567938, 55.675942, 12.347044, 55.650864, 10.383505, 55.403777),
+        (12.491299, 55.782812, 12.567938, 55.675942, 12.347044, 55.650864),
+        (10.383505, 55.403777, 10.463423, 55.369409, 10.037054, 56.044979),
+        (10.204106, 56.162828, 10.037054, 56.044979, 9.9187,    57.048956),
+        (9.9187,    57.048956, 9.850651,  57.119919, 9.535302,  55.711498),
+        (9.535302,  55.711498, 9.472454,  55.490394, 8.452401,  55.476211),
+        (8.452401,  55.476211, 8.790476,  55.569282, 9.535302,  55.711498),
+        (8.790476,  55.569282, 8.452401,  55.476211, 9.472454,  55.490394),
+        (10.204106, 56.162828, 10.463423, 55.369409, 10.383505, 55.403777),
+        (12.567938, 55.675942, 10.204106, 56.162828, 9.9187,    57.048956),
+        (10.383505, 55.403777, 12.347044, 55.650864, 12.567938, 55.675942),
+        (9.472454,  55.490394, 8.790476,  55.569282, 8.452401,  55.476211),
+        (10.037054, 56.044979, 10.204106, 56.162828, 9.9187,    57.048956),
+        (9.850651,  57.119919, 10.037054, 56.044979, 10.204106, 56.162828),
+        (12.347044, 55.650864, 12.491299, 55.782812, 12.567938, 55.675942),
+        (9.504537,  56.29718,  9.064745,  56.391183, 10.204106, 56.162828),
+        (10.55102,  57.728976, 9.850651,  57.119919, 9.9187,    57.048956),
+        (9.763011,  55.506733, 9.472454,  55.490394, 8.452401,  55.476211),
+        (11.547389, 55.405734, 12.080299, 55.641456, 12.567938, 55.675942),
+        (12.080299, 55.641456, 12.347044, 55.650864, 12.567938, 55.675942),
+        (9.756713,  55.904975, 9.064745,  56.391183, 9.504537,  56.29718 ),
+        (8.62467,   55.71023,  8.452401,  55.476211, 9.472454,  55.490394),
+        (10.215853, 56.462081, 9.504537,  56.29718,  9.9187,    57.048956),
+        (9.661421,  55.47525,  9.472454,  55.490394, 9.535302,  55.711498),
+        (9.060023,  55.492617, 8.790476,  55.569282, 8.452401,  55.476211),
+        (11.793087, 55.469985, 11.547389, 55.405734, 12.080299, 55.641456),
+        (10.224423, 56.449652, 10.215853, 56.462081, 9.504537,  56.29718 ),
+        (9.461724,  55.248464, 9.661421,  55.47525,  9.472454,  55.490394),
+        (9.064745,  56.391183, 9.504537,  56.29718,  9.756713,  55.904975),
+        (10.55102,  57.728976, 9.9187,    57.048956, 12.567938, 55.675942),
+    ];
+
+        var stationPositions = routes.Select(r => new Position(r.stationLon, r.stationLat)).ToArray();
+        using var router = CreateRouter(stationPositions);
+
+        for (var i = 0; i < routes.Length; i++)
+        {
+            var (evLon, evLat, stationLon, stationLat, destLon, destLat) = routes[i];
+
+            var tableResult = router.QueryStationsWithDest(evLon, evLat, destLon, destLat, [(ushort)i]);
+            var routeResult = router.QueryDestinationWithStop(evLon, evLat, stationLon, stationLat, destLon, destLat, (ushort)i);
+
+            var tableDuration = tableResult.TotalDuration(0);
+            var tableDist = tableResult.TotalDistance(0);
+            var routeDuration = routeResult.Duration;
+            var routeDist = routeResult.Distance;
+
+            Assert.True(tableDuration > 0 && routeDuration > 0, $"Route {i + 1}: unroutable (tableDur={tableDuration}, routeDur={routeDuration})");
+
+            var durationRatio = tableDuration / routeDuration;
+            var distanceRatio = tableDist / routeDist;
+
+            Assert.True(durationRatio is >= 0.98f and <= 1.02f, $"Route {i + 1}: duration ratio {durationRatio:F4} out of range");
+            Assert.True(distanceRatio is >= 0.98f and <= 1.02f, $"Route {i + 1}: distance ratio {distanceRatio:F4} out of range");
+        }
+    }
+
+    [Fact]
+    public void QueryStationsWithDest_TableVsRoute_RealJourneyPaddingAnalysis()
+    {
+        var random = new Random(42);
+        var stations = EngineTestData.AllStations;
+        var router = EngineTestData.OSRMRouter;
+        var sampler = EngineTestData.JourneySamplerProvider(wetEnabled: true).Current;
+        var stationList = stations.Values.ToArray();
+        const int iterations = 1000;
+        var durationRatios = new List<float>(iterations);
+        var distanceRatios = new List<float>(iterations);
+        int skipped = 0;
+
+        for (var i = 0; i < iterations; i++)
+        {
+            var (source, destination) = sampler.SampleSourceToDest(random);
+            var ev = source;
+            var dest = destination;
+            var station = stationList[random.Next(stationList.Length)];
+            var tableResult = router.QueryStationsWithDest(
+                ev.Longitude, ev.Latitude,
+                dest.Longitude, dest.Latitude,
+                [station.Id]);
+            var routeResult = router.QueryDestinationWithStop(
+                ev.Longitude, ev.Latitude,
+                station.Position.Longitude, station.Position.Latitude,
+                dest.Longitude, dest.Latitude,
+                station.Id);
+            var tableDuration = tableResult.TotalDuration(0);
+            var tableDist = tableResult.TotalDistance(0);
+            var routeDuration = routeResult.Duration;
+            var routeDist = routeResult.Distance;
+            if (tableDuration <= 0 || routeDuration <= 0 || tableDist <= 0 || routeDist <= 0)
+            {
+                skipped++;
+                continue;
+            }
+            durationRatios.Add(tableDuration / routeDuration);
+            distanceRatios.Add(tableDist / routeDist);
+        }
+
+        Assert.True(skipped == 0, $"Too many unroutable samples: {skipped}/{iterations}");
+        Assert.True(durationRatios.Count >= 980, $"Too few valid samples: {durationRatios.Count}/{iterations}");
+
+        Assert.True(durationRatios.Average() is >= 0.99f and <= 1.01f, $"Duration avg ratio {durationRatios.Average():F4} out of range");
+        Assert.True(distanceRatios.Average() is >= 0.99f and <= 1.01f, $"Distance avg ratio {distanceRatios.Average():F4} out of range");
+        Assert.True(durationRatios.Max() <= 1.20f, $"Duration max ratio {durationRatios.Max():F4} exceeds 1.20");
+        Assert.True(distanceRatios.Max() <= 1.20f, $"Distance max ratio {distanceRatios.Max():F4} exceeds 1.20");
     }
 
     [Fact]

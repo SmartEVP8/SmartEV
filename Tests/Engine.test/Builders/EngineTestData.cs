@@ -37,9 +37,15 @@ public static class EngineTestData
 
     public static JourneySamplerProvider JourneySamplerProvider(
     float populationScalar = 1.0f,
-    float distanceScalar = 1.0f) => new(JourneySamplers, populationScalar, distanceScalar, []);
-
-    public static readonly JourneyPipeline JourneySamplers = BuildJourneyPipeline();
+    float distanceScalar = 1.0f,
+    bool wetEnabled = false)
+    {
+        var wetPolygonPath = AppContext.GetData("WetPolygonPath") as string
+            ?? throw new InvalidOperationException("WetPolygonPath not set in project.");
+        var wetPolygons = PolygonParser.Parse(File.ReadAllText(wetPolygonPath));
+        var journeySamplers = BuildJourneyPipeline();
+        return new(journeySamplers, populationScalar, distanceScalar, wetEnabled ? wetPolygons : []);
+    }
 
     private static JourneyPipeline BuildJourneyPipeline()
     {
