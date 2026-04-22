@@ -27,8 +27,8 @@ public static class Urgency
         var distanceToStation = ev.DistanceEVCanDriveInTime(durationToStation);
         var soc = (ev.Battery.CurrentChargeKWh - ev.EnergyForDistanceKWh(distanceToStation)) / ev.Battery.MaxCapacityKWh;
 
-        if (soc == 0)
-            throw new InvalidOperationException("State of charge cannot be zero when calculating urgency.");
+        if (soc <= 0)
+            return -float.MaxValue + 1;
 
         if (soc >= upperChargeLimit)
             return 0.0;
