@@ -28,7 +28,7 @@ public static class Urgency
         var soc = (ev.Battery.CurrentChargeKWh - ev.EnergyForDistanceKWh(distanceToStation)) / ev.Battery.MaxCapacityKWh;
 
         if (soc <= 0)
-            return -float.MaxValue + 1;
+            return 1 - float.MaxValue;
 
         if (soc >= upperChargeLimit)
             return 0.0;
@@ -36,7 +36,7 @@ public static class Urgency
         if (soc <= ev.Preferences.MinAcceptableCharge)
             return 0.9999;
 
-        return 1.5625 * Math.Pow(soc, 2);
+        return 1.56 * Math.Pow(soc, 2);
     }
 
     /// <summary>
