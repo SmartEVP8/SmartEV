@@ -9,6 +9,14 @@ public record RoutingResult(float[] Durations, float[] Distances);
 
 public record RouteSegment(float Duration, float Distance, string Polyline);
 
+public record RoutingLeg(float[] Durations, float[] Distances);
+
+public record RoutingLegsResult(RoutingLeg ToStation, RoutingLeg ToDest)
+{
+    public float TotalDuration(int i) => ToStation.Durations[i] + ToDest.Durations[i];
+    public float TotalDistance(int i) => ToStation.Distances[i] + ToDest.Distances[i];
+}
+
 /// <summary>
 /// Provides routing and station query functionality using the OSRM (Open Source Routing Machine) wrapper library.
 /// </summary>
@@ -35,18 +43,31 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
         [Out] double[] outSnappedCoords
     );
 
+    [StructLayout(LayoutKind.Sequential)]
+    private struct TableLeg
+    {
+        public float Durations;
+        public float Distances;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct TableResult
+    {
+        public TableLeg SrcToStation;
+        public TableLeg StationToDest;
+    }
+
     [LibraryImport(_lib)]
     private static partial void ComputeTableIndexedWithDest(
-            IntPtr osrm,
-            double evLon,
-            double evLat,
-            double destLon,
-            double destLat,
-            [In] ushort[] indices,
-            int numIndices,
-            float* outDurations,
-            float* outDistances
-        );
+        IntPtr osrm,
+        double evLon,
+        double evLat,
+        double destLon,
+        double destLat,
+        [In] ushort[] indices,
+        int numIndices,
+        TableResult* outResults
+    );
 
     [LibraryImport(_lib)]
     private static partial IntPtr ComputeSrcToDest(
@@ -101,31 +122,42 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
     }
 
     /// <inheritdoc/>
-    public RoutingResult QueryStationsWithDest(
-        double evLon,
-        double evLat,
-        double destLon,
-        double destLat,
-        ushort[] indices)
+    public RoutingLegsResult QueryStationsWithDest(
+    double evLon,
+    double evLat,
+    double destLon,
+    double destLat,
+    ushort[] indices)
     {
         if (indices.Length == 0)
-            return new RoutingResult([], []);
+            return new RoutingLegsResult(new RoutingLeg([], []), new RoutingLeg([], []));
 
-        var durations = new float[indices.Length];
-        var distances = new float[indices.Length];
+        var results = new TableResult[indices.Length];
 
-        fixed (float* durPtr = durations)
+        fixed (TableResult* resultsPtr = results)
         {
-            fixed (float* distPtr = distances)
-            {
-                ComputeTableIndexedWithDest(_osrm, evLon, evLat, destLon, destLat, indices, indices.Length, durPtr, distPtr);
-            }
+            ComputeTableIndexedWithDest(
+                _osrm, evLon, evLat, destLon, destLat,
+                indices, indices.Length,
+                resultsPtr);
         }
 
-        for (var i = 0; i < durations.Length; i++)
-            durations[i] *= Time.MillisecondsPerSecond;
+        var toStationDurations = new float[indices.Length];
+        var toStationDistances = new float[indices.Length];
+        var toDestDurations = new float[indices.Length];
+        var toDestDistances = new float[indices.Length];
 
-        return new RoutingResult(durations, distances);
+        for (var i = 0; i < indices.Length; i++)
+        {
+            toStationDurations[i] = results[i].SrcToStation.Durations * Time.MillisecondsPerSecond;
+            toStationDistances[i] = results[i].SrcToStation.Distances;
+            toDestDurations[i] = results[i].StationToDest.Durations * Time.MillisecondsPerSecond;
+            toDestDistances[i] = results[i].StationToDest.Distances;
+        }
+
+        return new RoutingLegsResult(
+            new RoutingLeg(toStationDurations, toStationDistances),
+            new RoutingLeg(toDestDurations, toDestDistances));
     }
 
     /// <inheritdoc/>
