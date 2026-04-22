@@ -40,7 +40,7 @@ public class FindCandidateStationsHandler(
         ref var ev = ref evStore.Get(e.EVId);
         ev.Advance(e.Time);
 
-        Log.Verbose(e.EVId, e.Time, $"Handling FindCandidateStations for EV {e.EVId} at time {e.Time}. Current EV data: {ev}. SoC: {ev.Battery.StateOfCharge}, Next stop in {ev.Journey.Current.DurationToNextStop}ms.)");
+        Log.Verbose(e.EVId, e.Time, $"Handling FindCandidateStations for EV {e.EVId} at time {e.Time}. Current EV data: {ev}. SoC: {ev.Battery.StateOfCharge}, Next stop in {ev.Journey.Current.DurationToNextStop}ms.)", ("Journey", ev.Journey));
         if (candidateStationDurations.Count == 0)
         {
             HandleNoCandidates(e, ref ev);

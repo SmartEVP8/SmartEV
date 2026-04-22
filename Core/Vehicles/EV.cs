@@ -131,6 +131,35 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
             : throw Log.Error(0, arrivalAtStation, new InvalidOperationException($"Calculated desired SoC is not finite (desiredSoC={desiredSoC}, energyToDest={energyToDest}, remainingDistanceKm={remainingDistanceKm}, arrivalAtStation={arrivalAtStation}, {this})"));
     }
 
+    public readonly float CalcPreDesiredComputedSoC(float distanceToDestination)
+    {
+        if (Battery.MaxCapacityKWh <= 0)
+            throw Log.Error(0, 0, new InvalidOperationException($"Battery capacity must be greater than zero ({this})"));
+        var energyToDestinationKWh = EnergyForDistanceKWh(distanceToDestination);
+
+        var energyNeededToDest = (Preferences.MinAcceptableCharge * Battery.MaxCapacityKWh) + energyToDestinationKWh;
+
+        var chargeToPercent = energyNeededToDest / Battery.MaxCapacityKWh;
+        var desiredSoC = chargeToPercent > 1f ? 0.8f : chargeToPercent;
+        return float.IsFinite(desiredSoC)
+            ? Math.Clamp(desiredSoC + 0.01f, 0f, 1f)
+            : throw Log.Error(0, 0, new InvalidOperationException($"Calculated desired SoC is not finite (desiredSoC={desiredSoC}"));
+    }
+
+    public readonly float EstimateSoCAfterADuration(Time duration)
+    {
+        if (Battery.MaxCapacityKWh <= 0)
+            throw new InvalidOperationException($"Battery capacity must be greater than zero ({this})");
+
+        var journey = Journey.Original;
+
+        var avgSpeedKmMs = journey.DistanceKm / journey.Duration.Milliseconds;
+        var distanceTraveledKm = avgSpeedKmMs * duration.Milliseconds;
+        var energyNeededKWh = EnergyForDistanceKWh(distanceTraveledKm);
+        var socDrop = energyNeededKWh / Battery.MaxCapacityKWh / 100;
+        return Battery.StateOfCharge - socDrop;
+    }
+
     /// <summary>Estimates the SoC when reaching the next stop.</summary>
     /// <returns>The projected SoC at arrival to the next stop.</returns>
     public readonly float EstimateSoCAtNextStop()
@@ -197,6 +226,9 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     }
 
     /// <summary>Calculates the energy required to travel <paramref name="distanceKm"/>.</summary>
-    private readonly float EnergyForDistanceKWh(float distanceKm) =>
+    public readonly float EnergyForDistanceKWh(float distanceKm) =>
         distanceKm * ConsumptionWhPerKm / 1000f;
+
+    public readonly float SoCForDistance(float distanceKm) =>
+        (Battery.CurrentChargeKWh - EnergyForDistanceKWh(distanceKm)) / Battery.MaxCapacityKWh;
 }
