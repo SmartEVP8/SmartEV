@@ -2,6 +2,7 @@ namespace Core.Routing;
 
 using Core.Shared;
 using Core.GeoMath;
+using Core.Helper;
 
 /// <summary>
 /// The immutable baseline of the journey as originally planned.
@@ -54,7 +55,7 @@ public record CurrentJourney(
 public class Journey(Time departure, Time duration, float distanceMeters, List<Position> waypoints)
 {
     /// <summary>Gets the original baseline of the journey.</summary>
-    public OriginalJourney Original { get; } = new(departure, duration > 0 ? duration : throw new ArgumentOutOfRangeException("Duration can't be zero"), distanceMeters / 1000);
+    public OriginalJourney Original { get; } = new(departure, duration > 0 ? duration : throw Log.Error(0, 0, new ArgumentOutOfRangeException("Duration can't be zero")), distanceMeters / 1000);
 
     /// <summary>Gets the live state of the journey.</summary>
     public CurrentJourney Current { get; private set; } = new(
@@ -148,6 +149,8 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
     /// <returns>Returns how long it takes to drive a distance in seconds.</returns>
     public Time TimeToDriveDistance(float distance)
     {
+        if (distance < 0)
+            throw Log.Error(0, 0, new ArgumentOutOfRangeException(nameof(distance), $"Distance cannot be negative. Received {distance}."), ("Distance", distance));
         var speedKmh = Original.DistanceKm / (Original.Duration / (float)Time.MillisecondsPerHour);
         var timeHours = distance / speedKmh;
         return (uint)Math.Ceiling(timeHours * Time.MillisecondsPerHour);
@@ -241,7 +244,7 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
             if (interpolationPassedNextStop)
             {
                 if (currentTime != Current.EtaToNextStop)
-                    throw new ArgumentException($"Illegal context: interpolation moved beyond next stop at currentTime={currentTime}. nextStopIndex={nextStopIndex}, segmentIndex={secondIndex}.");
+                    throw Log.Error(0, currentTime, new ArgumentException($"Illegal context: interpolation moved beyond next stop at currentTime={currentTime}. nextStopIndex={nextStopIndex}, segmentIndex={secondIndex}."));
 
                 // Rounding nudged us one segment past the next stop — snap back to it.
                 var nextStopPos = Current.Waypoints[nextStopIndex];
@@ -317,12 +320,12 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
     {
         var completedTime = Current.Departure + Current.Duration;
         if (checkBeforeDeparture && time < Current.Departure)
-            throw new ArgumentException($"Current time: {time} is before the current journey has started: {Current.Departure}.");
+            throw Log.Error(0, time, new ArgumentException($"Current time: {time} is before the current journey has started: {Current.Departure}."));
 
         if (checkAfterEtaToNextStop && time > Current.EtaToNextStop)
-            throw new ArgumentException($"Current time: {time} is after ETA to next stop: {Current.EtaToNextStop}. Overshoot: {time - Current.EtaToNextStop}s.");
+            throw Log.Error(0, time, new ArgumentException($"Current time: {time} is after ETA to next stop: {Current.EtaToNextStop}. Overshoot: {time - Current.EtaToNextStop}s."));
 
         if (checkAfterCompletion && time > completedTime)
-            throw new ArgumentException($"Current time: {time} is after the journey has completed: {completedTime}. Overshoot: {time - completedTime}s.");
+            throw Log.Error(0, time, new ArgumentException($"Current time: {time} is after the journey has completed: {completedTime}. Overshoot: {time - completedTime}s."));
     }
 }

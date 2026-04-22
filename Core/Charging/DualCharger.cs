@@ -2,6 +2,7 @@ namespace Core.Charging;
 
 using Core.Charging.ChargingModel;
 using Core.Shared;
+using Core.Helper;
 
 /// <summary>
 /// Charger that supports one or two vehicles simultaneously, redistributing
@@ -44,6 +45,8 @@ public sealed class DualCharger(int id, int maxPowerKW, Connectors connectors)
         double maxChargeRateKWA,
         double maxChargeRateKWB)
     {
+        if (maxKW <= 0)
+            throw Log.Error(0, 0, new ArgumentOutOfRangeException(nameof(maxKW), $"maxKW must be positive. Received {maxKW}."), ("ChargerId", Id), ("maxKW", maxKW));
         var nominal = maxKW / 2.0;
         var fractionA = ChargingCurve.PowerFraction(socA);
         var fractionB = ChargingCurve.PowerFraction(socB);
