@@ -82,7 +82,7 @@ public class FindCandidateStationService(
 
                 var toStation = (detourResult.ToStation.Durations[i], detourResult.ToStation.Distances[i]);
                 var toDestination = (detourResult.ToDest.Durations[i], detourResult.ToDest.Distances[i]);
-                if (ev.SoCForDistance(toStation.Item2) <= 0)
+                if (ev.SoCForDistance(toStation.Item2 / 1000) <= 0)
                     continue;
 
                 if (ReachableStations.ReachesStationWithTooMuchSoC(toStation.Item2, toDestination.Item2, ref ev, 0.9f))

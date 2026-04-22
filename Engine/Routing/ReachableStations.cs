@@ -36,9 +36,8 @@ public class ReachableStations
 
     public static bool ReachesStationWithTooMuchSoC(float distToStation, float distToDestination, ref EV ev, float chargeBufferPercent)
     {
-        var socAtStation = (ev.Battery.CurrentChargeKWh - ev.EnergyForDistanceKWh(distToStation)) / ev.Battery.MaxCapacityKWh;
-        var expectChargeTarget = ev.CalcPreDesiredComputedSoC(distToDestination) * chargeBufferPercent;
-        Console.WriteLine($"EV has SoC {socAtStation:P} at station, expected target SoC is {expectChargeTarget:P} with buffer {chargeBufferPercent:P}. Dist to station: {distToStation} km, dist to dest: {distToDestination} km.");
+        var socAtStation = (ev.Battery.CurrentChargeKWh - ev.EnergyForDistanceKWh(distToStation / 1000)) / ev.Battery.MaxCapacityKWh;
+        var expectChargeTarget = ev.CalcPreDesiredComputedSoC(distToDestination / 1000) * chargeBufferPercent;
         return socAtStation > expectChargeTarget;
     }
 }
