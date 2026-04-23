@@ -153,6 +153,8 @@ public static class EngineTestData
         {
             // No-op for testing
         }
+
+        public Time ExpectedWaitTime(ushort stationId, Time simNow, Time arrival) => -0;
     }
 
     private static Dictionary<ushort, Station> CreateAllStations()

@@ -45,6 +45,8 @@ public class FindCandidateStationsBenchmark
         {
             // No-op for benchmarking
         }
+
+        public Time ExpectedWaitTime(ushort stationId, Time simNow, Time arrival) => throw new NotImplementedException();
     }
 
     /// <summary>

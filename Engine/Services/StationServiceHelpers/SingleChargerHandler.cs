@@ -90,4 +90,27 @@ public class SingleChargerHandler(
         charger.Session = null;
         return finalSoC;
     }
+
+    /// <inheritdoc/>
+    public (Time AvailableAt, IReadOnlyList<(int EVId, Time FinishTime)> Schedule) EstimateWaitTime(Time simNow, IReadOnlyList<ConnectedEV>? evsOverride = null)
+    {
+        var availableAt = simNow;
+        var evs = evsOverride ?? charger.CreateConnectedEVs(simNow);
+        var schedule = new List<(int, Time)>();
+
+        foreach (var ev in evs)
+        {
+            var result = integrator.IntegrateSingleToCompletion(
+                availableAt,
+                charger.MaxPowerKW,
+                charger,
+                ev);
+
+            availableAt = result.CarA.FinishTime ?? throw new InvalidOperationException($"EV {ev.EVId} did not produce a finish time.");
+            schedule.Add((ev.EVId, availableAt));
+        }
+
+        var availableAtTimestamp = availableAt > simNow ? availableAt - simNow : new Time(0);
+        return (availableAtTimestamp, schedule);
+    }
 }

@@ -18,6 +18,9 @@ public readonly record struct Time(uint Milliseconds) : IComparable<Time>
     // Implicitly convert Time → uint
     public static implicit operator uint(Time t) => t.Milliseconds;
 
+    public static Time operator +(Time left, Time right) => new(left.Milliseconds + right.Milliseconds);
+    public static Time operator -(Time left, Time right) => new(left.Milliseconds - right.Milliseconds);
+
     /// <summary>
     /// Milliseconds in a second.
     /// </summary>

@@ -121,4 +121,17 @@ public sealed class DualCharger(int id, int maxPowerKW, Connectors connectors)
             QueueSize = Queue.Count,
         };
     }
+
+    public IReadOnlyList<ConnectedEV> CreateConnectedEVs(Time currentTime)
+    {
+        var active = new List<ConnectedEV>();
+
+        if (SessionA is not null)
+            active.Add(SessionA.EV with { CurrentSoC = SessionA.GetCurrentSoC(currentTime) });
+
+        if (SessionB is not null)
+            active.Add(SessionB.EV with { CurrentSoC = SessionB.GetCurrentSoC(currentTime) });
+
+        return [.. active, .. Queue];
+    }
 }

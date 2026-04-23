@@ -95,6 +95,8 @@ public class Reservations()
     private uint _totalReservationsInPeriod;
     private uint _totalCancellationsInPeriod;
 
+    public IEnumerable<Reservation> ReservationsBefore(Time before) => _reservations.Where(x => x.TimeOfArrival <= before);
+
     /// <summary>
     /// Gets all the ev ids that have a reservation on the station.
     /// </summary>

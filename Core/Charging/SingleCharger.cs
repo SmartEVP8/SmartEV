@@ -73,4 +73,19 @@ public sealed class SingleCharger(int id, int maxPowerKW, Connectors connectors)
             QueueSize = Queue.Count,
         };
     }
+
+    public IReadOnlyList<ConnectedEV> CreateConnectedEVs(Time currentTime)
+    {
+        if (Session is null)
+            return [.. Queue];
+
+        var activeSession = Session;
+
+        var activeEv = activeSession.EV with
+        {
+            CurrentSoC = activeSession.GetCurrentSoC(currentTime)
+        };
+
+        return [activeEv, .. Queue];
+    }
 }

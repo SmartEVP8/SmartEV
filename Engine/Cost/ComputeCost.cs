@@ -38,7 +38,7 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
             var pathDeviationCost = CalculatePathDeviationCost(ref ev, durations.DurToDest + durations.DurToStation, weights, time);
             var urgencyCost = Urgency.CalculateChargeUrgency(ref ev, (uint)durations.DurToStation);
             var priceCost = CalculatePriceCost(ref ev, station, weights, time, energyPrices);
-            var effectiveWaitTimeCost = CalculateEffectiveWaitTimeCost(weights);
+            var effectiveWaitTimeCost = CalculateEffectiveWaitTimeCost(weights, time, durations.DurToStation, stationId);
             var cost = (1 - urgencyCost) * (effectiveQueueCost + pathDeviationCost + priceCost + effectiveWaitTimeCost);
 
             if (double.IsNaN(cost))
@@ -106,6 +106,12 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
         return weights.PriceSensitivity * ev.Preferences.PriceSensitivity * (currentPrice - lowestPrice) * 100; // Scale factor to convert price difference to a comparable cost value
     }
 
-    // TODO: Implement
-    private static float CalculateEffectiveWaitTimeCost(CostWeights weights) => weights.ExpectedWaitTime * 0;
+    private float CalculateEffectiveWaitTimeCost(CostWeights weights, Time time, float duration, ushort stationId)
+    {
+        var expectedArrival = (Time)(uint)Math.Ceiling(time + duration);
+        var availableAt = stationService.ExpectedWaitTime(stationId, time, expectedArrival);
+        var wait = availableAt - expectedArrival;
+        var waitMinutes = Math.Max(0, wait.Minutes);
+        return weights.ExpectedWaitTime * waitMinutes;
+    }
 }
