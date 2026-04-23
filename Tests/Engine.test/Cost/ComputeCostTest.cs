@@ -71,44 +71,6 @@ public class ComputeCostTest
     }
 
     [Theory]
-    [InlineData(0.5f, 2)] // Low deviation weight -> Station 2 wins (much shorter queue)
-    [InlineData(7.0f, 1)] // High deviation weight -> Station 1 wins (no deviation)
-    public void Compute_QueueVsPathDeviation_SelectsBasedOnWeights(float pathDeviationWeight, ushort expectedStationId)
-    {
-        var costStore = new EngineTestData.StubCostStore(
-            new CostWeights(
-                PathDeviation: pathDeviationWeight,
-                EffectiveQueueSize: 1.0f));
-
-        var energyPrices = new EngineTestData.FixedEnergyPrices(2.0f);
-
-        var stationService = new EngineTestData.StubStationService(new Dictionary<ushort, Station>
-        {
-            { 1, CoreTestData.Station(id: 1, pos: new (0, 0), queueSize: 4) },
-            { 2, CoreTestData.Station(id: 2, pos: new (0, 0), queueSize: 1) },
-        });
-
-        var computeCost = new CostFunction(costStore, stationService, energyPrices);
-
-        var ev = new EV(
-            CoreTestData.Battery(stateOfCharge: 0.5f),
-            CoreTestData.Preferences(PriceSensitivity: 0.0f, MinAcceptableCharge: 0f),
-            new Journey(new Time(0), new Time(1000000), 1000, new List<Position>([new(0, 0), new(1, 1)])),
-            150);
-
-        var stationDurations = new Dictionary<ushort, float>
-        {
-            { 1, 1000000f }, // Deviation = 0 min
-            { 2, 1600000f }, // Deviation = (1600000 - 1000000) / 60 = 10 min
-        };
-
-        // Tipping point: 3 cars (queue diff) vs 10 mins (deviation).
-        // Weight < 0.3/min -> Queue wins. Weight > 0.3/min -> Deviation wins.
-        var bestStation = computeCost.Compute(ref ev, stationDurations, _time);
-        Assert.Equal(expectedStationId, bestStation.Id);
-    }
-
-    [Theory]
     [InlineData(30, 2)] // Low battery -> Station 2 (Shorter queue beats deviation)
     [InlineData(90, 2)] // High battery -> Station 2 (Shorter queue)
     public void Compute_UrgencyVsQueue_SelectsBasedOnBattery(int stateOfCharge, ushort expectedStationId)

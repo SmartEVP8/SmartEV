@@ -13,7 +13,7 @@ using Core.Helper;
 /// <param name="costStore">The cost store.</param>
 /// <param name="stationService">The station service.</param>
 /// <param name="energyPrices">The energy prices.</param>
-public class CostFunction(ICostStore costStore, StationService stationService, EnergyPrices energyPrices)
+public class CostFunction(ICostStore costStore, IStationService stationService, EnergyPrices energyPrices)
 {
     /// <summary>
     /// Computes the cost of detouring to each station and selects the station with the lowest cost.
@@ -38,7 +38,7 @@ public class CostFunction(ICostStore costStore, StationService stationService, E
             var urgencyCost = CalculateUrgencyCost(ref ev, weights);
             var priceCost = CalculatePriceCost(ref ev, station, weights, time, energyPrices);
             var effectiveWaitTimeCost = CalculateEffectiveWaitTimeCost(weights, time, duration, stationId);
-            var cost = effectiveQueueCost + pathDeviationCost + urgencyCost + priceCost + effectiveWaitTimeCost;
+            var cost = effectiveQueueCost + pathDeviationCost + urgencyCost + priceCost + effectiveQueueCost;
 
             if (double.IsNaN(cost))
             {
