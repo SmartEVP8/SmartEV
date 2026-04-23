@@ -5,9 +5,6 @@ namespace Engine.StationFactory;
 /// </summary>
 public class StationLocationDTO
 {
-    /// <summary> Gets or sets the name of the station location. </summary>
-    public string Name { get; set; } = string.Empty;
-
     /// <summary> Gets or sets the address of the station location. </summary>
     public string Address { get; set; } = string.Empty;
 

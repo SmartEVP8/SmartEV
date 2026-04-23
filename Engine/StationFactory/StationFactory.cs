@@ -36,8 +36,7 @@ public class StationFactory
         {
             throw Log.Error(0, 0, new ArgumentOutOfRangeException(
                 nameof(options.TotalChargers),
-                "TotalChargers must be greater than zero."),
-                ("TotalChargers", options.TotalChargers));
+                "TotalChargers must be greater than zero."));
         }
 
         if (options.DualChargingPointProbability < 0 || options.DualChargingPointProbability > 1)
@@ -45,6 +44,35 @@ public class StationFactory
             throw Log.Error(0, 0, new ArgumentOutOfRangeException(
                 nameof(options.DualChargingPointProbability),
                 "DualChargingPointProbability must be between 0 and 1."));
+        }
+
+        if (options.PowerOutputProbabilitiesKW is null || options.PowerOutputProbabilitiesKW.Count == 0)
+        {
+            throw Log.Error(0, 0, new ArgumentException(
+                "PowerOutputProbabilitiesKW must contain at least one value.",
+                nameof(options.PowerOutputProbabilitiesKW)));
+        }
+
+        if (options.PowerOutputProbabilitiesKW.Any(x => x.Key == 0))
+        {
+            throw Log.Error(0, 0, new ArgumentException(
+                "PowerOutputProbabilitiesKW must only contain power outputs greater than zero.",
+                nameof(options.PowerOutputProbabilitiesKW)));
+        }
+
+        if (options.PowerOutputProbabilitiesKW.Any(x => x.Value < 0))
+        {
+            throw Log.Error(0, 0, new ArgumentException(
+                "PowerOutputProbabilitiesKW must only contain non-negative probabilities.",
+                nameof(options.PowerOutputProbabilitiesKW)));
+        }
+
+        var totalProbability = options.PowerOutputProbabilitiesKW.Values.Sum();
+        if (Math.Abs(totalProbability - 1.0) > 0.0001)
+        {
+            throw Log.Error(0, 0, new ArgumentException(
+                $"PowerOutputProbabilitiesKW must sum to 1. Current sum: {totalProbability}.",
+                nameof(options.PowerOutputProbabilitiesKW)));
         }
 
         _options = options;
@@ -72,7 +100,8 @@ public class StationFactory
         if (locations.Count == 0)
             throw Log.Error(0, 0, new InvalidOperationException("Station locations JSON file was empty."));
 
-        var chargerCountsPerStation = DistributeChargersAcrossStations(locations.Count, _options.TotalChargers) ?? throw Log.Error(0, 0, new InvalidOperationException("Failed to distribute chargers across stations."));
+        var chargerCountsPerStation = DistributeChargersAcrossStations(locations.Count, _options.TotalChargers)
+            ?? throw Log.Error(0, 0, new InvalidOperationException("Failed to distribute chargers across stations."));
 
         var stations = new List<Station>(locations.Count);
         ushort nextStationId = 0;
@@ -85,13 +114,15 @@ public class StationFactory
 
             for (var j = 0; j < chargerCount; j++)
             {
-                chargers.Add(CreateCharger(chargerId++));
+                var charger = CreateCharger(chargerId++);
+                chargers.Add(charger);
             }
 
             stations.Add(CreateStation(nextStationId++, locations[i], chargers));
         }
 
         Log.Info(0, 0, $"Created {stations.Count} stations with a total of {chargerId - 1} chargers.");
+
         return stations;
     }
 
@@ -127,21 +158,41 @@ public class StationFactory
     /// </returns>
     private ChargerBase CreateCharger(int chargerId)
     {
-        var connectors = CreateConnectorSet();
+        var powerOutputKW = GetRandomPowerOutputKW();
+        var connectors = CreateConnectorSet(powerOutputKW);
 
         if (ShouldCreateDualChargingPoint())
         {
-            return new DualCharger(chargerId, _options.MaxPowerKW, connectors);
+            return new DualCharger(chargerId, powerOutputKW, connectors);
         }
 
-        return new SingleCharger(chargerId, _options.MaxPowerKW, connectors);
+        return new SingleCharger(chargerId, powerOutputKW, connectors);
     }
 
-    private Connectors CreateConnectorSet()
-        => new((new Connector(_options.MaxPowerKW), new Connector(_options.MaxPowerKW)));
+    private Connectors CreateConnectorSet(ushort powerOutputKW)
+        => new((new Connector(powerOutputKW), new Connector(powerOutputKW)));
 
     private bool ShouldCreateDualChargingPoint()
         => _random.NextDouble() < _options.DualChargingPointProbability;
+
+    private ushort GetRandomPowerOutputKW()
+    {
+        var randomValue = _random.NextDouble();
+        var cumulativeProbability = 0.0;
+
+        foreach (var (powerOutputKW, probability) in _options.PowerOutputProbabilitiesKW)
+        {
+            cumulativeProbability += probability;
+
+            if (randomValue < cumulativeProbability)
+            {
+                return powerOutputKW;
+            }
+        }
+
+        // Fallback for floating-point edge cases.
+        return _options.PowerOutputProbabilitiesKW.Last().Key;
+    }
 
     /// <summary>
     /// Distributes the total number of chargers across the available stations.
