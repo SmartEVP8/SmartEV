@@ -117,6 +117,57 @@ public static class Program
             return Results.Ok();
         });
 
+        app.MapPost("/simulation/stop", async (EngineManager.EngineManager engineManager) =>
+        {
+            if (!engineManager.IsInitialized)
+                return Results.BadRequest("Engine not initialized");
+
+            var simulationRunner = engineManager.GetEngineService<SimulationRunner>();
+
+            if (simulationRunner.State == SimulationState.Stopped)
+                return Results.BadRequest("Simulation is not running");
+
+            await simulationRunner.StopAsync();
+
+            return Results.Ok(new { message = "Simulation stopped successfully" });
+        });
+
+        app.MapPost("/simulation/pause", async (EngineManager.EngineManager engineManager) =>
+        {
+            if (!engineManager.IsInitialized)
+                return Results.BadRequest("Engine not initialized");
+
+            var simulationRunner = engineManager.GetEngineService<SimulationRunner>();
+
+            if (simulationRunner.State == SimulationState.Stopped)
+                return Results.BadRequest("Simulation is not running");
+
+            if (simulationRunner.State == SimulationState.Paused)
+                return Results.BadRequest("Simulation is already paused");
+
+            await simulationRunner.PauseAsync();
+
+            return Results.Ok(new { message = "Simulation paused successfully" });
+        });
+
+        app.MapPost("/simulation/resume", async (EngineManager.EngineManager engineManager) =>
+        {
+            if (!engineManager.IsInitialized)
+                return Results.BadRequest("Engine not initialized");
+
+            var simulationRunner = engineManager.GetEngineService<SimulationRunner>();
+
+            if (simulationRunner.State == SimulationState.Stopped)
+                return Results.BadRequest("Simulation is not running");
+
+            if (simulationRunner.State != SimulationState.Paused)
+                return Results.BadRequest("Simulation is not paused");
+
+            await simulationRunner.ResumeAsync();
+
+            return Results.Ok(new { message = "Simulation resumed successfully" });
+        });
+
         app.Map("/ws/simulation", async context =>
         {
             if (!context.WebSockets.IsWebSocketRequest)

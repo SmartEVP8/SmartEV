@@ -8,6 +8,20 @@ using Engine.Utils;
 using Engine.Vehicles;
 using Core.Helper;
 
+/// <summary>
+/// Represents travel durations from an EV position to a candidate station and then to the destination.
+/// </summary>
+/// <param name="DurToStation">Duration from the EV position to the candidate station.</param>
+/// <param name="DurToDest">Duration from the candidate station to the destination.</param>
+public struct DurToStationAndDest(float DurToStation, float DurToDest)
+{
+    /// <summary>Duration from the EV position to the candidate station.</summary>
+    public float DurToStation = DurToStation;
+
+    /// <summary>Duration from the candidate station to the destination.</summary>
+    public float DurToDest = DurToDest;
+}
+
 /// <summary>Service responsible for pre-computing the candidate stations for an EV and caching the results for later retrieval.</summary>
 /// <param name="router">Router used to compute paths from the EV's position to candidate stations and the destination.</param>
 /// <param name="stations">Stations to choose from.</param>
@@ -18,9 +32,10 @@ public class FindCandidateStationService(
     Dictionary<ushort, Station> stations,
     ISpatialGrid spatialGrid,
     EVStore evStore,
-    StationService stationService) : IFindCandidateStationService
+    StationService stationService,
+    Init.EngineSettings settings) : IFindCandidateStationService
 {
-    private record StationQuery(Task<Dictionary<ushort, float>> Task);
+    private record StationQuery(Task<Dictionary<ushort, DurToStationAndDest>> Task);
 
     private readonly Dictionary<int, StationQuery> _evStationPaths = [];
 
@@ -40,7 +55,7 @@ public class FindCandidateStationService(
         };
     }
 
-    private Dictionary<ushort, float> ComputeCandidates(FindCandidateStations e, double PathdeviationMultiplier = 1.0)
+    private Dictionary<ushort, DurToStationAndDest> ComputeCandidates(FindCandidateStations e, double PathdeviationMultiplier = 1.0)
     {
         ref var ev = ref evStore.Get(e.EVId);
         var pos = ev.Advance(e.Time) ?? throw Log.Error(e.EVId, e.Time, new SkillissueException($"EV {e.EVId} has no position at time {e.Time} after advancing. This should not happen."));
@@ -67,20 +82,28 @@ public class FindCandidateStationService(
                 destination.Latitude,
                 reachableStationIds);
 
-            var refinedCandidateDurations = new Dictionary<ushort, float>(reachableStationIds.Length);
+            var refinedCandidateDurations = new Dictionary<ushort, DurToStationAndDest>(reachableStationIds.Length);
             var baselineDirectDistanceKm = ev.Journey.Current.DistanceKm;
 
             for (var i = 0; i < reachableStationIds.Length; i++)
             {
                 var stationId = reachableStationIds[i];
-                var detourDistanceMeters = detourResult.Distances[i];
+                var detourDistanceMeters = detourResult.TotalDistance(i);
                 if (detourDistanceMeters < 0 || float.IsNaN(detourDistanceMeters))
                     continue;
 
                 if (!ev.CanReachViaDetour(detourDistanceMeters / 1000f, baselineDirectDistanceKm, ev.Preferences.MinAcceptableCharge))
                     continue;
 
-                refinedCandidateDurations[stationId] = detourResult.Durations[i];
+                var toStation = (detourResult.ToStation.Durations[i], detourResult.ToStation.Distances[i]);
+                var toDestination = (detourResult.ToDest.Durations[i], detourResult.ToDest.Distances[i]);
+                if (ev.SoCUsedAfterADistance(toStation.Item2 / 1000) <= 0)
+                    continue;
+
+                if (ev.CheckIfTargetSoCIsLowerThanCurrentSoC(toStation.Item2, toDestination.Item2, settings.ChargeBufferPercent))
+                    continue;
+
+                refinedCandidateDurations[stationId] = new DurToStationAndDest(toStation.Item1, toDestination.Item1);
             }
 
             if (refinedCandidateDurations.Count == 0 && stationService.GetReservationStationId(e.EVId) is ushort && ev.DistanceOnCurrentChargeKm() > pathDeviationMultiplied)
@@ -112,7 +135,7 @@ public class FindCandidateStationService(
     /// <param name="evId">The EV's id.</param>
     /// <returns>The pre-computed candidate stations.</returns>
     /// <exception cref="SkillissueException">If you try and get a cached candidate which was never precomputed.</exception>
-    public async Task<Dictionary<ushort, float>> GetCandidateStationFromCache(int evId)
+    public async Task<Dictionary<ushort, DurToStationAndDest>> GetCandidateStationFromCache(int evId)
     {
         if (!_evStationPaths.TryGetValue(evId, out var query))
             throw Log.Error(evId, 0, new SkillissueException($"No pre-computed station query found for EV {evId}. Ensure PreComputeCandidateStation is called first."));

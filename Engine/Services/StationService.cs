@@ -107,9 +107,8 @@ public class StationService : IStationService
         Log.Verbose(e.EVId, e.Time, $"Handling ArrivalAtStation for EV {e.EVId} at time {e.Time}. Current EV data: {evRef}. SoC: {evRef.Battery.StateOfCharge}. Wants to charge to {e.TargetSoC}");
         var chargers = GetStation(e.StationId).Chargers;
 
-        // TODO: FIX THIS
-        //if (evRef.Battery.StateOfCharge >= e.TargetSoC)
-        //   throw Log.Error(e.EVId, e.Time, new SkillissueException($"EV wants to charge to a SoC: {e.TargetSoC}, which is lower than its current SoC: {evRef.Battery.StateOfCharge}."), ((string Key, object Value))("EV", evRef), ((string Key, object Value))("TargetSoC", e.TargetSoC));
+        if (evRef.Battery.StateOfCharge >= e.TargetSoC)
+            throw Log.Error(e.EVId, e.Time, new SkillissueException($"EV wants to charge to a SoC: {e.TargetSoC}, which is lower than its current SoC: {evRef.Battery.StateOfCharge}."), ((string Key, object Value))("EV", evRef), ((string Key, object Value))("TargetSoC", e.TargetSoC));
 
         var target = chargers
             .OrderBy(cs => cs.IsFree ? 0 : 1)
@@ -193,13 +192,7 @@ public class StationService : IStationService
         charger.UpdateWindowStats();
     }
 
-    /// <summary>
-    /// Calculates the estimated availability time for an EV arriving at a station, accounting for active sessions, physical queues, and future reservations.
-    /// </summary>
-    /// <param name="stationId">The unique identifier of the target station.</param>
-    /// <param name="simNow">The current simulation time, used as the baseline for evaluating active and physically queued sessions.</param>
-    /// <param name="arrival">The projected arrival time of the EV used to filter relevant prior reservations.</param>
-    /// <returns>The expected absolute time a charger will become available for the arriving EV. Returns simNow if a charger is immediately available.</returns>
+    /// <inheritdoc/>
     public Time ExpectedWaitTime(ushort stationId, Time simNow, Time arrival)
     {
         var station = GetStation(stationId);

@@ -1,6 +1,6 @@
 # Force rebuild to sync with new C++ logic (edit this line)
 
-FROM mcr.microsoft.com/dotnet/sdk:10.0-noble AS osrm-build
+FROM ubuntu:24.04 AS osrm-build
 
 RUN apt-get update && apt-get install -y \
     build-essential cmake pkg-config curl \
@@ -22,7 +22,9 @@ WORKDIR /data
 
 COPY output.osm.pbf .
 
-RUN osrm-extract -p /usr/local/share/osrm/profiles/car.lua output.osm.pbf \
+COPY data/car/ /data/car/
+
+RUN osrm-extract -p /data/car/car.lua output.osm.pbf \
     && osrm-contract output.osm.pbf \
     && rm output.osm.pbf
 
