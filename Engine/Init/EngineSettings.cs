@@ -64,7 +64,13 @@ public record EngineSettings
     /// Gets the simulation end time, which determines
     /// when the simulation should stop running.
     /// </summary>
-    required public Time SimulationEndTime { get; init; }
+    required public Time SimulationEndTime { get; init; } = Time.MillisecondsPerDay * 7;
+
+    /// <summary>
+    /// Gets the simulation start time,
+    /// which determines when the simulation starts.
+    /// </summary>
+    required public Time SimulationStartTime { get; init; } = Time.MillisecondsPerDay;
 
     /// <summary>
     /// Gets the size of the windows in which EVs are spawned, which affects the distribution of EV arrivals over time.

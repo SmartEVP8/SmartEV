@@ -6,6 +6,7 @@ using Engine.StationFactory;
 using System.Globalization;
 using System.Reflection;
 using Core.Helper;
+using Core.Shared;
 
 /// <summary>
 /// Factory for creating EngineSettings with default configuration.
@@ -16,7 +17,6 @@ public static class EngineConfiguration
     private const string _priceSensitivityEnvVar = "COST_WEIGHT_PRICE_SENSITIVITY";
     private const string _pathDeviationEnvVar = "COST_WEIGHT_PATH_DEVIATION";
     private const string _effectiveQueueSizeEnvVar = "COST_WEIGHT_EFFECTIVE_QUEUE_SIZE";
-    private const string _urgencyEnvVar = "COST_WEIGHT_URGENCY";
     private const string _expectedWaitTimeEnvVar = "COST_WEIGHT_EXPECTED_WAIT_TIME";
 
     /// <summary>
@@ -56,7 +56,8 @@ public static class EngineConfiguration
             },
             CurrentAmountOfEVsInDenmark = 583320, // Based on the number of registered EVs in Denmark as of 2026-03-22 https://mobility.dk/nyheder/nu-koerer-hver-femte-personbil-i-danmark-paa-el/
             ChargingStepSeconds = 60 * 1000,
-            SimulationEndTime = 10000 * 60 * 1000,
+            SimulationStartTime = Time.MillisecondsPerDay,
+            SimulationEndTime = Time.MillisecondsPerDay * 7,
             SnapshotInterval = 1000 * 20 * 60,
             EVDistributionWindowsSize = 1 * 60 * 1000,
             EVSpawnFraction = 0.10f,

@@ -211,8 +211,9 @@ public static class Init
             var scheduler = sp.GetRequiredService<EventScheduler>();
             var dispatcher = sp.GetRequiredService<EventDispatcher>();
             var settings = sp.GetRequiredService<EngineSettings>();
-            var simulationEndTime = settings.SimulationEndTime;
-            return new Simulation(dispatcher, scheduler, simulationEndTime);
+            var startTime = settings.SimulationStartTime;
+            var endTime = settings.SimulationEndTime;
+            return new Simulation(dispatcher, scheduler, startTime, endTime);
         });
 
         services.AddSingleton(sp =>
