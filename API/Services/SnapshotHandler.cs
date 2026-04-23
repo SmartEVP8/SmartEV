@@ -3,6 +3,7 @@ namespace API.Services;
 using Core.Charging;
 using Engine.Events;
 using Engine.Services;
+using Engine.Services.StationServiceHelpers;
 using Engine.Vehicles;
 using Protocol;
 using Core.Helper;
@@ -52,7 +53,8 @@ public class SnapshotHandler(
 
         foreach (var charger in station.Chargers)
         {
-            var chargerState = CreateChargerState(charger);
+            var chargerHandlers = stationService.GetChargerHandler(charger.Id);
+            var chargerState = CreateChargerState(chargerHandlers);
             stationState.ChargerStates.Add(chargerState);
         }
 
@@ -61,24 +63,12 @@ public class SnapshotHandler(
         return new Envelope { StationStateResponse = stationState };
     }
 
-    private static ChargerState CreateChargerState(ChargerBase charger)
+    private ChargerState CreateChargerState(IChargerHandler chargerHandler)
     {
-        ActiveSession? sessionA;
-        ActiveSession? sessionB;
-        switch (charger)
-        {
-            case SingleCharger s:
-                sessionA = s.Session;
-                sessionB = null;
-                break;
+        var (sessionA, sessionB) = chargerHandler.GetSessions();
+        var charger = chargerHandler.Charger;
+        var schedule = chargerHandler.EstimateWaitTime(eventScheduler.CurrentTime).Schedule;
 
-            case DualCharger d:
-                sessionA = d.SessionA;
-                sessionB = d.SessionB;
-                break;
-            default:
-                throw Log.Error(0, 0, new InvalidOperationException($"Unknown charger type: {charger.GetType()}"), ("ChargerType", charger.GetType()));
-        }
 
         var chargerState = new ChargerState
         {
@@ -94,13 +84,14 @@ public class SnapshotHandler(
         if (sessionB is not null && sessionB.Plan is not null && sessionB.Plan.CarB is not null)
             chargerState.EvsCharging.Add(CreateEVChargerState(sessionB, sessionB.Plan.CarB.FinishTime));
 
-        foreach (var ev in charger.Queue)
+        foreach (var pair in charger.Queue.Zip(schedule, (ev, time) => new { ev, time }))
         {
             chargerState.EvsInQueue.Add(new EVChargerState
             {
-                EvId = ev.EVId,
-                Soc = (float)ev.CurrentSoC,
-                TargetSoc = (float)ev.TargetSoC,
+                EvId = pair.ev.EVId,
+                Soc = (float)pair.ev.CurrentSoC,
+                TargetSoc = (float)pair.ev.TargetSoC,
+                FinishTimeMs = pair.time.FinishTime,
             });
         }
 
