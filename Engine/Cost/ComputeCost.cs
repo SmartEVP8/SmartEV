@@ -13,7 +13,7 @@ using Core.Helper;
 /// <param name="costStore">The cost store.</param>
 /// <param name="stationService">The station service.</param>
 /// <param name="energyPrices">The energy prices.</param>
-public class CostFunction(ICostStore costStore, IStationService stationService, EnergyPrices energyPrices)
+public class CostFunction(ICostStore costStore, StationService stationService, EnergyPrices energyPrices)
 {
     /// <summary>
     /// Computes the cost of detouring to each station and selects the station with the lowest cost.
@@ -37,7 +37,7 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
             var pathDeviationCost = CalculatePathDeviationCost(ref ev, duration, weights, time);
             var urgencyCost = CalculateUrgencyCost(ref ev, weights);
             var priceCost = CalculatePriceCost(ref ev, station, weights, time, energyPrices);
-            var effectiveWaitTimeCost = CalculateEffectiveWaitTimeCost(weights);
+            var effectiveWaitTimeCost = CalculateEffectiveWaitTimeCost(weights, time, duration, stationId);
             var cost = effectiveQueueCost + pathDeviationCost + urgencyCost + priceCost + effectiveWaitTimeCost;
 
             if (double.IsNaN(cost))
@@ -112,6 +112,12 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
         return weights.PriceSensitivity * ev.Preferences.PriceSensitivity * (currentPrice - averagePrice) * 100; // Scale factor to convert price difference to a comparable cost value
     }
 
-    // TODO: Implement
-    private static float CalculateEffectiveWaitTimeCost(CostWeights weights) => weights.ExpectedWaitTime * 0;
+    private float CalculateEffectiveWaitTimeCost(CostWeights weights, Time time, float duration, ushort stationId)
+    {
+        var expectedArrival = (Time)(uint)Math.Ceiling(time + duration);
+        var availableAt = stationService.ExpectedWaitTime(stationId, time, expectedArrival);
+        var wait = availableAt - expectedArrival;
+        var waitMinutes = Math.Max(0, wait.Minutes);
+        return weights.ExpectedWaitTime * waitMinutes;
+    }
 }
