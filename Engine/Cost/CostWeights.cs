@@ -9,8 +9,6 @@ public enum CostWeightField
 {
     PriceSensitivity,
     PathDeviation,
-    EffectiveQueueSize,
-    Urgency,
     ExpectedWaitTime,
 }
 
@@ -29,7 +27,6 @@ public static class CostWeightFieldExtensions
     {
         CostWeightField.PriceSensitivity => "Price Sensitivity",
         CostWeightField.PathDeviation => "Path Deviation",
-        CostWeightField.EffectiveQueueSize => "Effective Queue Size",
         CostWeightField.ExpectedWaitTime => "Expected Wait Time",
         _ => throw Log.Error(0, 0, new ArgumentOutOfRangeException(nameof(field)))
     };
@@ -38,7 +35,6 @@ public static class CostWeightFieldExtensions
 public record CostWeights(
     float PriceSensitivity = 0.4f,
     float PathDeviation = 0.8f,
-    float EffectiveQueueSize = 1.0f,
     float ExpectedWaitTime = 1
 );
 
@@ -56,9 +52,8 @@ public static class CostWeightMetadata
     public static readonly IReadOnlyDictionary<CostWeightField, WeightMetadata> All =
         new Dictionary<CostWeightField, WeightMetadata>
         {
-            [CostWeightField.PriceSensitivity] = new(0, 0f, 1f, CostWeightField.PriceSensitivity.ToDisplayName()),
+            [CostWeightField.PriceSensitivity] = new(0, 0f, 10f, CostWeightField.PriceSensitivity.ToDisplayName()),
             [CostWeightField.PathDeviation] = new(1, 0f, 100f, CostWeightField.PathDeviation.ToDisplayName()),
-            [CostWeightField.EffectiveQueueSize] = new(2, 0f, 100f, CostWeightField.EffectiveQueueSize.ToDisplayName()),
-            [CostWeightField.ExpectedWaitTime] = new(4, 0f, 100f, CostWeightField.ExpectedWaitTime.ToDisplayName()),
+            [CostWeightField.ExpectedWaitTime] = new(2, 0f, 100f, CostWeightField.ExpectedWaitTime.ToDisplayName()),
         };
 }

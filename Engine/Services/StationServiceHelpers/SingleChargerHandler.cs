@@ -113,7 +113,7 @@ public class SingleChargerHandler(
                 charger,
                 ev);
 
-            availableAt = result.CarA.FinishTime ?? throw new InvalidOperationException($"EV {ev.EVId} did not produce a finish time.");
+            availableAt = result.CarA.FinishTime ?? throw Log.Error(ev.EVId, simNow, new InvalidOperationException($"EV {ev.EVId} did not produce a finish time."), ("EV", ev), ("Result", result));
             schedule.Add((ev.EVId, availableAt));
         }
 

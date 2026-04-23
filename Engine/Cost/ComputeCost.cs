@@ -34,18 +34,17 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
         {
             var station = stationService.GetStation(stationId);
 
-            var effectiveQueueCost = CalculateEffectiveQueueSizeCost(station, weights);
             var pathDeviationCost = CalculatePathDeviationCost(ref ev, durations.DurToDest + durations.DurToStation, weights, time);
             var urgencyCost = Urgency.CalculateChargeUrgency(ref ev, (uint)durations.DurToStation);
             var priceCost = CalculatePriceCost(ref ev, station, weights, time, energyPrices);
             var effectiveWaitTimeCost = CalculateEffectiveWaitTimeCost(weights, time, durations.DurToStation, stationId);
-            var cost = (1 - urgencyCost) * (effectiveQueueCost + pathDeviationCost + priceCost + effectiveWaitTimeCost);
+            var cost = (1 - urgencyCost) * (pathDeviationCost + priceCost + effectiveWaitTimeCost);
 
             if (double.IsNaN(cost))
             {
                 throw Log.Error(0, time, new InvalidOperationException(
                     $"Invalid cost calculated for station {stationId}: {cost}. " +
-                    $"Queue={effectiveQueueCost}, PathDev={pathDeviationCost}, " +
+                    $"PathDev={pathDeviationCost}, " +
                     $"Urgency={urgencyCost}, Price={priceCost}, Wait={effectiveWaitTimeCost}"));
             }
 
@@ -62,21 +61,6 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
         }
 
         return bestStation;
-    }
-
-    // TODO: Think about effective queue size
-    private float CalculateEffectiveQueueSizeCost(Station station, CostWeights weights)
-    {
-        if (station.Chargers.Count == 0)
-            throw Log.Error(0, 0, new InvalidOperationException($"Station {station.Id} has no chargers."), ("StationId", station.Id));
-
-        var totalQueueSize = stationService.GetStation(station.Id)
-                                .Chargers.Sum(cs => cs.Queue.Count);
-        if (totalQueueSize == 0)
-            return 0;
-
-        var effectiveQueueSize = (float)totalQueueSize / station.Chargers.Count;
-        return weights.EffectiveQueueSize * MathF.Pow(effectiveQueueSize, 3);
     }
 
     /// <summary>
@@ -103,7 +87,7 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
     {
         var currentPrice = station.GetPrice(time);
         var lowestPrice = energyPrices.GetLowestPrice();
-        return weights.PriceSensitivity * ev.Preferences.PriceSensitivity * (currentPrice - lowestPrice) * 100; // Scale factor to convert price difference to a comparable cost value
+        return weights.PriceSensitivity * ev.Preferences.PriceSensitivity * (currentPrice - lowestPrice);
     }
 
     private float CalculateEffectiveWaitTimeCost(CostWeights weights, Time time, float duration, ushort stationId)
