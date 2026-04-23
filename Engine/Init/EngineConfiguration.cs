@@ -3,6 +3,7 @@ namespace Engine.Init;
 using Engine.Cost;
 using Engine.Metrics;
 using Engine.StationFactory;
+using System.Globalization;
 using System.Reflection;
 using Core.Helper;
 
@@ -12,6 +13,12 @@ using Core.Helper;
 /// </summary>
 public static class EngineConfiguration
 {
+    private const string _priceSensitivityEnvVar = "COST_WEIGHT_PRICE_SENSITIVITY";
+    private const string _pathDeviationEnvVar = "COST_WEIGHT_PATH_DEVIATION";
+    private const string _effectiveQueueSizeEnvVar = "COST_WEIGHT_EFFECTIVE_QUEUE_SIZE";
+    private const string _urgencyEnvVar = "COST_WEIGHT_URGENCY";
+    private const string _expectedWaitTimeEnvVar = "COST_WEIGHT_EXPECTED_WAIT_TIME";
+
     /// <summary>
     /// Creates default EngineSettings with the standard workspace configuration.
     /// </summary>
@@ -26,11 +33,11 @@ public static class EngineConfiguration
             Seed = new Random(42),
             CostConfig = new CostWeights
             {
-                EffectiveQueueSize = 1,
-                PathDeviation = 0.8f,
-                PriceSensitivity = 0.4f,
-                ExpectedWaitTime = 1,
-                Urgency = 0.5f,
+                EffectiveQueueSize = ReadWeightFromEnvironment(_effectiveQueueSizeEnvVar, 1f, 0f, 1f),
+                PathDeviation = ReadWeightFromEnvironment(_pathDeviationEnvVar, 0.8f, 0f, 1f),
+                PriceSensitivity = ReadWeightFromEnvironment(_priceSensitivityEnvVar, 0.4f, 0f, 1f),
+                ExpectedWaitTime = ReadWeightFromEnvironment(_expectedWaitTimeEnvVar, 1f, 0f, 1f),
+                Urgency = ReadWeightFromEnvironment(_urgencyEnvVar, 0.5f, 0f, 1f),
             },
             RunId = Guid.NewGuid(),
             MetricsConfig = new MetricsConfig
@@ -65,6 +72,18 @@ public static class EngineConfiguration
             PolygonPath = new FileInfo(Path.Combine(dataPath.FullName, "denmark_polygon.json")),
             WetPolygonPath = new FileInfo(Path.Combine(dataPath.FullName, "denmark_wet_polygon.json")),
         };
+    }
+
+    private static float ReadWeightFromEnvironment(string envVar, float defaultValue, float min, float max)
+    {
+        var value = Environment.GetEnvironmentVariable(envVar);
+        if (string.IsNullOrWhiteSpace(value))
+            return defaultValue;
+
+        if (!float.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed))
+            return defaultValue;
+
+        return Math.Clamp(parsed, min, max);
     }
 
     private static DirectoryInfo FindDataDirectory()
