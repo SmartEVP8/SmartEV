@@ -73,14 +73,14 @@ public class FindCandidateStationService(
             for (var i = 0; i < reachableStationIds.Length; i++)
             {
                 var stationId = reachableStationIds[i];
-                var detourDistanceMeters = detourResult.Distances[i];
+                var detourDistanceMeters = detourResult.TotalDistance(i);
                 if (detourDistanceMeters < 0 || float.IsNaN(detourDistanceMeters))
                     continue;
 
                 if (!ev.CanReachViaDetour(detourDistanceMeters / 1000f, baselineDirectDistanceKm, ev.Preferences.MinAcceptableCharge))
                     continue;
 
-                refinedCandidateDurations[stationId] = detourResult.Durations[i];
+                refinedCandidateDurations[stationId] = detourResult.TotalDuration(i);
             }
 
             if (refinedCandidateDurations.Count == 0 && stationService.GetReservationStationId(e.EVId) is ushort && ev.DistanceOnCurrentChargeKm() > pathDeviationMultiplied)

@@ -57,17 +57,20 @@ namespace Engine.Test.Events.Middleware
             private readonly float[] _durations = durations;
             private readonly float[] _distances = distances;
 
-            public RoutingResult QueryStationsWithDest(double lon, double lat, double destLon, double destLat, ushort[] stationIds)
+            public RoutingLegsResult QueryStationsWithDest(double lon, double lat, double destLon, double destLat, ushort[] stationIds)
             {
-                var durations = new float[stationIds.Length];
-                var distances = new float[stationIds.Length];
-                for (int i = 0; i < stationIds.Length; i++)
+                var toStationDurations = new float[stationIds.Length];
+                var toStationDistances = new float[stationIds.Length];
+
+                for (var i = 0; i < stationIds.Length; i++)
                 {
-                    durations[i] = _durations[stationIds[i]];
-                    distances[i] = _distances[stationIds[i]];
+                    toStationDurations[i] = _durations[stationIds[i]];
+                    toStationDistances[i] = _distances[stationIds[i]];
                 }
 
-                return new RoutingResult(durations, distances);
+                return new RoutingLegsResult(
+                    new RoutingLeg(toStationDurations, toStationDistances),
+                    new RoutingLeg(new float[stationIds.Length], new float[stationIds.Length]));
             }
 
             public void Dispose() => throw new NotImplementedException();

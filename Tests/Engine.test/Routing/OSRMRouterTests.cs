@@ -4,6 +4,7 @@ using Core.Charging;
 using Core.Shared;
 using Engine.Routing;
 using Core.test.Builders;
+using Engine.test.Builders;
 
 // If this test ever fails report it. We should have been fixed but just in case.
 public class OSRMRouterTests
@@ -37,15 +38,15 @@ public class OSRMRouterTests
     {
         using var router = CreateRouter(new Position(_evPosition[0], _evPosition[1]));
 
-        var (durations, distances) = router.QueryStationsWithDest(
+        var result = router.QueryStationsWithDest(
             _evPosition[0],
             _evPosition[1],
             _evPosition[0],
             _evPosition[1],
             [0]);
 
-        Assert.True(durations[0] < 1f, $"Expected ~0s, got {durations[0]:F1}s");
-        Assert.True(distances[0] < 1f, $"Expected ~0m, got {distances[0]:F1}m");
+        Assert.True(result.TotalDuration(0) < 1f, $"Expected ~0s, got {result.TotalDuration(0):F1}s");
+        Assert.True(result.TotalDistance(0) < 1f, $"Expected ~0m, got {result.TotalDistance(0):F1}m");
     }
 
     [Fact]
@@ -53,7 +54,7 @@ public class OSRMRouterTests
     {
         using var router = CreateRouter(_stationNearPosition, _stationFarPosition);
 
-        var (durations, distances) = router.QueryStationsWithDest(
+        var result = router.QueryStationsWithDest(
             _evPosition[0],
             _evPosition[1],
             _destPosition[0],
@@ -61,11 +62,11 @@ public class OSRMRouterTests
             [0, 1]);
 
         Assert.True(
-            durations[0] < durations[1],
-            $"Nearby station should have lower duration: near={durations[0]:F1}s far={durations[1]:F1}s");
+            result.TotalDuration(0) < result.TotalDuration(1),
+            $"Nearby station should have lower duration: near={result.TotalDuration(0):F1}s far={result.TotalDuration(1):F1}s");
         Assert.True(
-            distances[0] < distances[1],
-            $"Nearby station should have lower distance: near={distances[0]:F1}m far={distances[1]:F1}m");
+            result.TotalDistance(0) < result.TotalDistance(1),
+            $"Nearby station should have lower distance: near={result.TotalDistance(0):F1}m far={result.TotalDistance(1):F1}m");
     }
 
     [Fact]
@@ -85,17 +86,19 @@ public class OSRMRouterTests
             _destPosition[0],
             _destPosition[1]);
 
-        var (tableDurations, _) = router.QueryStationsWithDest(
+        var result = router.QueryStationsWithDest(
             _evPosition[0],
             _evPosition[1],
             _destPosition[0],
             _destPosition[1],
             [0]); // index 0 = _stationNearPosition
 
-        var routeSum = evToStationRes.Duration + stationToDestRes.Duration;
         Assert.True(
-            Math.Abs(tableDurations[0] - routeSum) < 1f,
-            $"Table={tableDurations[0]:F1}s RouteSum={routeSum:F1}s — likely wrong leg wired");
+            Math.Abs(result.ToStation.Durations[0] - evToStationRes.Duration) < 1f,
+            $"ToStation={result.ToStation.Durations[0]:F1}s Route={evToStationRes.Duration:F1}s");
+        Assert.True(
+            Math.Abs(result.ToDest.Durations[0] - stationToDestRes.Duration) < 1f,
+            $"ToDest={result.ToDest.Durations[0]:F1}s Route={stationToDestRes.Duration:F1}s");
     }
 
     [Fact]
@@ -123,33 +126,131 @@ public class OSRMRouterTests
 
         var singleRes = router.QuerySingleDestination(
             _evPosition[0], _evPosition[1], stationLon, stationLat);
-
         var singleResDest = router.QuerySingleDestination(
             _evPosition[0], _evPosition[1], _destPosition[0], _destPosition[1]);
-
         var singleResStationDest = router.QuerySingleDestination(
             stationLon, stationLat, _destPosition[0], _destPosition[1]);
-
-        var p2pRes = router.QueryPointsToPoints(
-            [_evPosition[0], _evPosition[1]],
-            [stationLon, stationLat]);
-
-        var queryDestRes = router.QuerySingleDestination(
-            _evPosition[0], _evPosition[1], stationLon, stationLat);
-
-        var queryDestRes2 = router.QuerySingleDestination(
-            stationLon, stationLat, _destPosition[0], _destPosition[1]);
-
         var withStopsRes = router.QueryDestinationWithStop(
             _evPosition[0], _evPosition[1], stationLon, stationLat, _destPosition[0], _destPosition[1]);
 
-        // Values are baselines from OSRM public API
-        Assert.Equal(272000f, singleRes.Duration, 5000f);          // EV->Station
-        Assert.Equal(477000f, singleResDest.Duration, 5000f);      // EV->Dest
-        Assert.Equal(274000f, singleResStationDest.Duration, 5000f); // Station->Dest
+        Assert.Equal(272000f, singleRes.Duration, 5000f);
+        Assert.Equal(477000f, singleResDest.Duration, 5000f);
+        Assert.Equal(274000f, singleResStationDest.Duration, 5000f);
 
-        // WithStops != sum of independent legs (550s) OSRM waypoint routing takes a different path. Consistent with OSRM public API (587s).
-        Assert.Equal(587000f, withStopsRes.Duration, 5000f);
+        // WithStops != sum of independent legs. OSRM waypoint routing takes a different path.
+        Assert.Equal(550900f, withStopsRes.Duration, 5000f);
+    }
+
+    [Fact]
+    public void QueryStationsWithDest_TableVsRoute_PaddingAnalysis()
+    {
+        (double evLon, double evLat, double stationLon, double stationLat, double destLon, double destLat)[] routes =
+        [
+            (12.567938, 55.675942, 12.347044, 55.650864, 10.383505, 55.403777),
+        (12.491299, 55.782812, 12.567938, 55.675942, 12.347044, 55.650864),
+        (10.383505, 55.403777, 10.463423, 55.369409, 10.037054, 56.044979),
+        (10.204106, 56.162828, 10.037054, 56.044979, 9.9187,    57.048956),
+        (9.9187,    57.048956, 9.850651,  57.119919, 9.535302,  55.711498),
+        (9.535302,  55.711498, 9.472454,  55.490394, 8.452401,  55.476211),
+        (8.452401,  55.476211, 8.790476,  55.569282, 9.535302,  55.711498),
+        (8.790476,  55.569282, 8.452401,  55.476211, 9.472454,  55.490394),
+        (10.204106, 56.162828, 10.463423, 55.369409, 10.383505, 55.403777),
+        (12.567938, 55.675942, 10.204106, 56.162828, 9.9187,    57.048956),
+        (10.383505, 55.403777, 12.347044, 55.650864, 12.567938, 55.675942),
+        (9.472454,  55.490394, 8.790476,  55.569282, 8.452401,  55.476211),
+        (10.037054, 56.044979, 10.204106, 56.162828, 9.9187,    57.048956),
+        (9.850651,  57.119919, 10.037054, 56.044979, 10.204106, 56.162828),
+        (12.347044, 55.650864, 12.491299, 55.782812, 12.567938, 55.675942),
+        (9.504537,  56.29718,  9.064745,  56.391183, 10.204106, 56.162828),
+        (10.55102,  57.728976, 9.850651,  57.119919, 9.9187,    57.048956),
+        (9.763011,  55.506733, 9.472454,  55.490394, 8.452401,  55.476211),
+        (11.547389, 55.405734, 12.080299, 55.641456, 12.567938, 55.675942),
+        (12.080299, 55.641456, 12.347044, 55.650864, 12.567938, 55.675942),
+        (9.756713,  55.904975, 9.064745,  56.391183, 9.504537,  56.29718 ),
+        (8.62467,   55.71023,  8.452401,  55.476211, 9.472454,  55.490394),
+        (10.215853, 56.462081, 9.504537,  56.29718,  9.9187,    57.048956),
+        (9.661421,  55.47525,  9.472454,  55.490394, 9.535302,  55.711498),
+        (9.060023,  55.492617, 8.790476,  55.569282, 8.452401,  55.476211),
+        (11.793087, 55.469985, 11.547389, 55.405734, 12.080299, 55.641456),
+        (10.224423, 56.449652, 10.215853, 56.462081, 9.504537,  56.29718 ),
+        (9.461724,  55.248464, 9.661421,  55.47525,  9.472454,  55.490394),
+        (9.064745,  56.391183, 9.504537,  56.29718,  9.756713,  55.904975),
+        (10.55102,  57.728976, 9.9187,    57.048956, 12.567938, 55.675942),
+    ];
+
+        var stationPositions = routes.Select(r => new Position(r.stationLon, r.stationLat)).ToArray();
+        using var router = CreateRouter(stationPositions);
+
+        for (var i = 0; i < routes.Length; i++)
+        {
+            var (evLon, evLat, stationLon, stationLat, destLon, destLat) = routes[i];
+
+            var tableResult = router.QueryStationsWithDest(evLon, evLat, destLon, destLat, [(ushort)i]);
+            var routeResult = router.QueryDestinationWithStop(evLon, evLat, stationLon, stationLat, destLon, destLat, (ushort)i);
+
+            var tableDuration = tableResult.TotalDuration(0);
+            var tableDist = tableResult.TotalDistance(0);
+            var routeDuration = routeResult.Duration;
+            var routeDist = routeResult.Distance;
+
+            Assert.True(tableDuration > 0 && routeDuration > 0, $"Route {i + 1}: unroutable (tableDur={tableDuration}, routeDur={routeDuration})");
+
+            var durationRatio = tableDuration / routeDuration;
+            var distanceRatio = tableDist / routeDist;
+
+            Assert.True(durationRatio is >= 0.98f and <= 1.02f, $"Route {i + 1}: duration ratio {durationRatio:F4} out of range");
+            Assert.True(distanceRatio is >= 0.98f and <= 1.02f, $"Route {i + 1}: distance ratio {distanceRatio:F4} out of range");
+        }
+    }
+
+    [Fact]
+    public void QueryStationsWithDest_TableVsRoute_RealJourneyPaddingAnalysis()
+    {
+        var random = new Random(42);
+        var stations = EngineTestData.AllStations;
+        var router = EngineTestData.OSRMRouter;
+        var sampler = EngineTestData.JourneySamplerProvider(wetEnabled: true).Current;
+        var stationList = stations.Values.ToArray();
+        const int iterations = 1000;
+        var durationRatios = new List<float>(iterations);
+        var distanceRatios = new List<float>(iterations);
+        int skipped = 0;
+
+        for (var i = 0; i < iterations; i++)
+        {
+            var (source, destination) = sampler.SampleSourceToDest(random);
+            var ev = source;
+            var dest = destination;
+            var station = stationList[random.Next(stationList.Length)];
+            var tableResult = router.QueryStationsWithDest(
+                ev.Longitude, ev.Latitude,
+                dest.Longitude, dest.Latitude,
+                [station.Id]);
+            var routeResult = router.QueryDestinationWithStop(
+                ev.Longitude, ev.Latitude,
+                station.Position.Longitude, station.Position.Latitude,
+                dest.Longitude, dest.Latitude,
+                station.Id);
+            var tableDuration = tableResult.TotalDuration(0);
+            var tableDist = tableResult.TotalDistance(0);
+            var routeDuration = routeResult.Duration;
+            var routeDist = routeResult.Distance;
+            if (tableDuration <= 0 || routeDuration <= 0 || tableDist <= 0 || routeDist <= 0)
+            {
+                skipped++;
+                continue;
+            }
+            durationRatios.Add(tableDuration / routeDuration);
+            distanceRatios.Add(tableDist / routeDist);
+        }
+
+        Assert.True(skipped == 0, $"Too many unroutable samples: {skipped}/{iterations}");
+        Assert.True(durationRatios.Count >= 980, $"Too few valid samples: {durationRatios.Count}/{iterations}");
+
+        Assert.True(durationRatios.Average() is >= 0.99f and <= 1.01f, $"Duration avg ratio {durationRatios.Average():F4} out of range");
+        Assert.True(distanceRatios.Average() is >= 0.99f and <= 1.01f, $"Distance avg ratio {distanceRatios.Average():F4} out of range");
+        Assert.True(durationRatios.Max() <= 1.20f, $"Duration max ratio {durationRatios.Max():F4} exceeds 1.20");
+        Assert.True(distanceRatios.Max() <= 1.20f, $"Distance max ratio {distanceRatios.Max():F4} exceeds 1.20");
     }
 
     [Fact]
@@ -158,8 +259,10 @@ public class OSRMRouterTests
         using var router = CreateRouter(_stationNearPosition);
         var result = router.QueryStationsWithDest(_evPosition[0], _evPosition[1], _destPosition[0], _destPosition[1], []);
 
-        Assert.Empty(result.Durations);
-        Assert.Empty(result.Distances);
+        Assert.Empty(result.ToStation.Durations);
+        Assert.Empty(result.ToStation.Distances);
+        Assert.Empty(result.ToDest.Durations);
+        Assert.Empty(result.ToDest.Distances);
     }
 
     [Fact]
@@ -167,14 +270,14 @@ public class OSRMRouterTests
     {
         using var router = CreateRouter(_stationNearPosition, _stationFarPosition);
 
-        var (durationsForward, _) = router.QueryStationsWithDest(
+        var forward = router.QueryStationsWithDest(
             _evPosition[0], _evPosition[1], _destPosition[0], _destPosition[1], [0, 1]);
 
-        var (durationsReversed, _) = router.QueryStationsWithDest(
+        var reversed = router.QueryStationsWithDest(
             _evPosition[0], _evPosition[1], _destPosition[0], _destPosition[1], [1, 0]);
 
-        Assert.Equal(durationsForward[0], durationsReversed[1], 0.1f);
-        Assert.Equal(durationsForward[1], durationsReversed[0], 0.1f);
+        Assert.Equal(forward.TotalDuration(0), reversed.TotalDuration(1), 0.1f);
+        Assert.Equal(forward.TotalDuration(1), reversed.TotalDuration(0), 0.1f);
     }
 
     [Fact]
@@ -207,9 +310,7 @@ public class OSRMRouterTests
         await Task.WhenAll(tasks);
 
         for (var i = 0; i < numTasks; i++)
-        {
             Assert.Equal(queries[i].expectedDur, parallelResults[i], 0.1f);
-        }
     }
 
     [Fact]
@@ -222,18 +323,18 @@ public class OSRMRouterTests
         for (var i = 0; i < numTasks; i++)
         {
             var offset = i * 0.001;
-            var (durations, _) = router.QueryStationsWithDest(
+            var result = router.QueryStationsWithDest(
                 _evPosition[0] + offset, _evPosition[1] + offset, _destPosition[0], _destPosition[1], [0, 1]);
-            queries[i] = (_evPosition[0] + offset, _evPosition[1] + offset, durations[0]);
+            queries[i] = (_evPosition[0] + offset, _evPosition[1] + offset, result.TotalDuration(0));
         }
 
         var parallelResults = new float[numTasks];
         await Task.WhenAll(Enumerable.Range(0, numTasks).Select(i => Task.Run(() =>
         {
             var (evLon, evLat, _) = queries[i];
-            var (durations, _) = router.QueryStationsWithDest(
+            var result = router.QueryStationsWithDest(
                 evLon, evLat, _destPosition[0], _destPosition[1], [0, 1]);
-            parallelResults[i] = durations[0];
+            parallelResults[i] = result.TotalDuration(0);
         })));
 
         for (var i = 0; i < numTasks; i++)

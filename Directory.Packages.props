@@ -7,6 +7,8 @@
     <CityDataPath>$(MSBuildThisFileDirectory)\data\CityInfo.csv</CityDataPath>
     <EnergyPricesPath>$(MSBuildThisFileDirectory)\data\energy_prices.csv</EnergyPricesPath>
     <ChargersPath>$(MSBuildThisFileDirectory)\data\denmark_charging_locations.json</ChargersPath>
+    <WetPolygonPath>$(MSBuildThisFileDirectory)\data\denmark_wet_polygon.json</WetPolygonPath>
+
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="BenchmarkDotNet" Version="0.15.8" />
@@ -32,5 +34,6 @@
     <RuntimeHostConfigurationOption Include="CityDataPath" Value="$(CityDataPath)" Trim="false" />
     <RuntimeHostConfigurationOption Include="EnergyPricesPath" Value="$(EnergyPricesPath)" Trim="false" />
     <RuntimeHostConfigurationOption Include="ChargersPath" Value="$(ChargersPath)" Trim="false" />
+    <RuntimeHostConfigurationOption Include="WetPolygonPath" Value="$(WetPolygonPath)" Trim="false" />
   </ItemGroup>
 </Project>
