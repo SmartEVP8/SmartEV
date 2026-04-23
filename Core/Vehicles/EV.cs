@@ -136,7 +136,7 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     /// </summary>
     /// <param name="distanceToDestination">The distance to the destination from the station.</param>
     /// <returns>Returns the expected SoC an EV should charge to.</returns>
-    public readonly float CalcPreDesiredComputedSoC(float distanceToDestination)
+    public readonly float PreCalculatedTargetSoC(float distanceToDestination)
     {
         if (Battery.MaxCapacityKWh <= 0)
             throw Log.Error(0, 0, new InvalidOperationException($"Battery capacity must be greater than zero ({this})"));
@@ -253,6 +253,6 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     /// </summary>
     /// <param name="distanceKm">The distance in km for which to calculate SoC consumptions.</param>
     /// <returns>The SoC used for driving the specified distance.</returns>
-    public readonly float SoCForDistance(float distanceKm) =>
+    public readonly float SoCUsedAfterADistance(float distanceKm) =>
         (Battery.CurrentChargeKWh - EnergyForDistanceKWh(distanceKm)) / Battery.MaxCapacityKWh;
 }

@@ -42,10 +42,10 @@ public class ReachableStations
     /// <param name="ev">The EV looking for a Station to charge at.</param>
     /// <param name="chargeBufferPercent">A buffer to account for noise.</param>
     /// <returns>Returns a bool representing if a EV would arrive with more SoC than it needs to charge to.</returns>
-    public static bool ReachesStationWithTooMuchSoC(float distToStation, float distToDestination, ref EV ev, float chargeBufferPercent)
+    public static bool CheckIfTargetSoCIsLowerThatCurrentSoC(float distToStation, float distToDestination, ref EV ev, float chargeBufferPercent)
     {
         var socAtStation = (ev.Battery.CurrentChargeKWh - ev.EnergyForDistanceKWh(distToStation / 1000)) / ev.Battery.MaxCapacityKWh;
-        var expectChargeTarget = ev.CalcPreDesiredComputedSoC(distToDestination / 1000) * chargeBufferPercent;
+        var expectChargeTarget = ev.PreCalculatedTargetSoC(distToDestination / 1000) * chargeBufferPercent;
         return socAtStation > expectChargeTarget;
     }
 }

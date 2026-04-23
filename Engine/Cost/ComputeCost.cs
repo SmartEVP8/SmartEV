@@ -38,7 +38,7 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
             var urgencyCost = Urgency.CalculateChargeUrgency(ref ev, (uint)duration.durToStation);
             var priceCost = CalculatePriceCost(ref ev, station, weights, time, energyPrices);
             var effectiveWaitTimeCost = CalculateEffectiveWaitTimeCost(weights);
-            var cost = (effectiveQueueCost + pathDeviationCost + priceCost + effectiveWaitTimeCost) * (1 - urgencyCost);
+            var cost = (1 - urgencyCost) * (effectiveQueueCost + pathDeviationCost + priceCost + effectiveWaitTimeCost);
 
             if (double.IsNaN(cost))
             {
