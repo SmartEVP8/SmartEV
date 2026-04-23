@@ -1,4 +1,5 @@
 using Engine.Events;
+using Engine.Events.Middleware;
 
 /// <summary>
 /// Service responsible for pre-computing the candidate stations for an EV and caching the results for later retrieval.
@@ -8,7 +9,7 @@ public interface IFindCandidateStationService
     /// <summary>Gets the pre-computed candidate stations. Awaits result if it's not yet ready.</summary>
     /// <param name="evId">The EV's id.</param>
     /// <returns>The pre-computed candidate stations.</returns>
-    Task<Dictionary<ushort, float>> GetCandidateStationFromCache(int evId);
+    Task<Dictionary<ushort, DurToStationAndDest>> GetCandidateStationFromCache(int evId);
 
     /// <summary>
     /// Computes the calculation of the path calculations from an EV's position to its relevant stations.

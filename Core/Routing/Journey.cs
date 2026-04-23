@@ -162,6 +162,28 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
     /// <returns>Time to reach halfway to NextStop.</returns>
     public Time TimeToReachHalfToNextStop() => Current.Departure + (Current.DurationToNextStop / 2);
 
+    public bool CanReachThroughWaypoints(List<Position> waypoints, double distanceEvCanDrive)
+    {
+        var segments = Enumerable.Range(0, waypoints.Count - 1)
+            .Select(i =>
+
+                    GeoMath.EquirectangularDistance(waypoints[i], waypoints[i + 1])
+                )
+            .ToList();
+        var distanceCovered = 0.0;
+
+        foreach (var length in segments)
+        {
+            if (distanceCovered + length > distanceEvCanDrive)
+            {
+                return false;
+            }
+
+            distanceCovered += length;
+        }
+        return true;
+    }
+
     private float PercentageCompleted(Time currentTime)
     {
         if (Current.Duration == 0)

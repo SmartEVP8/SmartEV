@@ -56,6 +56,11 @@ public record EngineSettings
     required public double GridSize { get; init; }
 
     /// <summary>
+    /// Gets a ChargeBufferPercent, which is a buffer percentage applied to the target SoC when determining if a station is a viable candidate for charging.
+    /// </summary>
+    required public float ChargeBufferPercent { get; init; }
+
+    /// <summary>
     /// Gets the simulation end time, which determines
     /// when the simulation should stop running.
     /// </summary>

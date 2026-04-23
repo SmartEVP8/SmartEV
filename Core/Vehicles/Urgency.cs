@@ -1,4 +1,8 @@
+using Core.Shared;
+
 namespace Core.Vehicles;
+
+using Core.Shared;
 
 /// <summary>
 /// Provides a method to calculate the urgency of charging based on the state of charge (SoC) of the battery.
@@ -11,27 +15,31 @@ namespace Core.Vehicles;
 public static class Urgency
 {
     /// <summary>
-    /// Calculates the urgency of charging based on the state of charge (SoC) of the battery
+    /// Calculates the urgency of charging based on the state of charge (SoC) of the battery at arrival at
     /// and a minimum acceptable charge level.
     /// </summary>
-    /// <param name="stateOfCharge">The state of charge (SoC) of the battery, as a value between 0 and 1.</param>
-    /// <param name="minAcceptableCharge">The minimum acceptable charge level, as a value between 0 and 1.</param>
+    /// <param name="ev">The EV for which to calculate urgency.</param>
+    /// <param name="durationToStation">The estimated duration to reach the station, used to estimate SoC at arrival.</param>
     /// <returns>
     /// The urgency of charging as a value between 0 and 1, where a higher value indicates a more urgent need for charging.
     /// </returns>
-    public static double CalculateChargeUrgency(float stateOfCharge, float minAcceptableCharge)
+    public static double CalculateChargeUrgency(ref EV ev, Time durationToStation)
     {
         const double upperChargeLimit = 0.80;
 
-        double soc = Math.Clamp(stateOfCharge, 0f, 1f);
+        var distanceToStation = ev.DistanceEVCanDrive(durationToStation);
+        var soc = (ev.Battery.CurrentChargeKWh - ev.EnergyForDistanceKWh(distanceToStation)) / ev.Battery.MaxCapacityKWh;
+
+        if (soc <= 0)
+            return 1 - float.MaxValue;
+
         if (soc >= upperChargeLimit)
             return 0.0;
 
-        double minSoc = Math.Clamp(minAcceptableCharge, 0f, 1f);
-        if (soc <= minSoc)
-            return 1.0;
+        if (soc <= ev.Preferences.MinAcceptableCharge)
+            return 0.9999;
 
-        return 0.02 * Math.Pow(soc * 100, 2);
+        return 1.56 * Math.Pow(soc, 2);
     }
 
     /// <summary>

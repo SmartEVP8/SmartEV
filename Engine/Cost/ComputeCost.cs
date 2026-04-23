@@ -6,6 +6,7 @@ using Core.Shared;
 using Core.Vehicles;
 using Engine.Services;
 using Core.Helper;
+using Engine.Events.Middleware;
 
 /// <summary>
 /// Computes the cost of detouring to each station and selects the station with the lowest cost.
@@ -23,30 +24,29 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
     /// <param name="time">The current time.</param>
     /// <returns>The station with the lowest cost.</returns>
     /// <exception cref="NoNullAllowedException">If no suitable station is found.</exception>
-    public Station Compute(ref EV ev, Dictionary<ushort, float> stationDurations, Time time)
+    public Station Compute(ref EV ev, Dictionary<ushort, DurToStationAndDest> stationDurations, Time time)
     {
         var bestCost = double.MaxValue;
         var weights = costStore.GetWeights() ?? throw Log.Error(0, time, new NoNullAllowedException("Cost weights not found in store."), ("EV", ev));
         Station? bestStation = null;
 
-        foreach (var (stationId, duration) in stationDurations)
+        foreach (var (stationId, durations) in stationDurations)
         {
             var station = stationService.GetStation(stationId);
 
             var effectiveQueueCost = CalculateEffectiveQueueSizeCost(station, weights);
-            var pathDeviationCost = CalculatePathDeviationCost(ref ev, duration, weights, time);
-            var urgencyCost = CalculateUrgencyCost(ref ev, weights);
+            var pathDeviationCost = CalculatePathDeviationCost(ref ev, durations.DurToDest + durations.DurToStation, weights, time);
+            var urgencyCost = Urgency.CalculateChargeUrgency(ref ev, (uint)durations.DurToStation);
             var priceCost = CalculatePriceCost(ref ev, station, weights, time, energyPrices);
-            var effectiveWaitTimeCost = CalculateEffectiveWaitTimeCost(weights, time, duration, stationId);
-            var cost = effectiveQueueCost + pathDeviationCost + urgencyCost + priceCost + effectiveQueueCost;
+            var effectiveWaitTimeCost = CalculateEffectiveWaitTimeCost(weights, time, durations.DurToStation, stationId);
+            var cost = (1 - urgencyCost) * (effectiveQueueCost + pathDeviationCost + priceCost + effectiveWaitTimeCost);
 
             if (double.IsNaN(cost))
             {
                 throw Log.Error(0, time, new InvalidOperationException(
                     $"Invalid cost calculated for station {stationId}: {cost}. " +
                     $"Queue={effectiveQueueCost}, PathDev={pathDeviationCost}, " +
-                    $"Urgency={urgencyCost}, Price={priceCost}, Wait={effectiveWaitTimeCost}"),
-                    ("EV", ev), ("StationId", stationId));
+                    $"Urgency={urgencyCost}, Price={priceCost}, Wait={effectiveWaitTimeCost}"));
             }
 
             if (cost < bestCost)
@@ -96,20 +96,14 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
             return 0;
 
         var extraTimeCostMinutes = extraTimeCostMilliseconds / Time.MillisecondsPerMinute;
-        return weights.PathDeviation * extraTimeCostMinutes;
-    }
-
-    private static double CalculateUrgencyCost(ref EV ev, CostWeights weights)
-    {
-        var urgency = Urgency.CalculateChargeUrgency(ev.Battery.StateOfCharge, ev.Preferences.MinAcceptableCharge);
-        return weights.Urgency * urgency;
+        return weights.PathDeviation * Math.Clamp(extraTimeCostMinutes, 0, float.MaxValue);
     }
 
     private static float CalculatePriceCost(ref EV ev, Station station, CostWeights weights, Time time, EnergyPrices energyPrices)
     {
         var currentPrice = station.GetPrice(time);
-        var averagePrice = energyPrices.GetHourPrice(time.DayOfWeek, (int)time.Hours);
-        return weights.PriceSensitivity * ev.Preferences.PriceSensitivity * (currentPrice - averagePrice) * 100; // Scale factor to convert price difference to a comparable cost value
+        var lowestPrice = energyPrices.GetLowestPrice();
+        return weights.PriceSensitivity * ev.Preferences.PriceSensitivity * (currentPrice - lowestPrice) * 100; // Scale factor to convert price difference to a comparable cost value
     }
 
     private float CalculateEffectiveWaitTimeCost(CostWeights weights, Time time, float duration, ushort stationId)

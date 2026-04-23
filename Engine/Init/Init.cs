@@ -130,7 +130,8 @@ public static class Init
             var grid = sp.GetRequiredService<SpatialGrid>();
             var evStore = sp.GetRequiredService<EVStore>();
             var stationService = sp.GetRequiredService<StationService>();
-            return new FindCandidateStationService(router, stations, grid, evStore, stationService);
+            var settings = sp.GetRequiredService<EngineSettings>();
+            return new FindCandidateStationService(router, stations, grid, evStore, stationService, settings);
         });
 
         services.AddSingleton(sp =>

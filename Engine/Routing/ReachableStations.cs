@@ -1,3 +1,4 @@
+using Engine.Events;
 namespace Engine.Routing;
 
 using Core.Shared;
@@ -32,5 +33,35 @@ public class ReachableStations
                 var dist = GeoMath.DistancesThroughPath(waypoints, stations[id].Position, radius);
                 return dist > -1 && dist <= reach;
             })];
+    }
+
+    public static Dictionary<ushort, (float, float)> FilterCandidates(ref EV ev, RoutingLegsResult detourLegs, ushort[] reachableStationIds, float chargeBufferPercent)
+    {
+        var result = new Dictionary<ushort, (float, float)>();
+
+        for (var i = 0; i < reachableStationIds.Length; i++)
+        {
+            var toStationDur = detourLegs.ToStation.Durations[i];
+            var toStationDist = detourLegs.ToStation.Distances[i];
+            var toDestDur = detourLegs.ToDest.Durations[i];
+            var toDestDist = detourLegs.ToDest.Distances[i];
+
+            var energyToStationKWh = ev.EnergyForDistanceKWh(toStationDist / 1000f);
+            var chargeAtStationKWh = ev.Battery.CurrentChargeKWh - energyToStationKWh;
+            var socAtStation = chargeAtStationKWh / ev.Battery.MaxCapacityKWh;
+
+            var chargingThreshold = ev.CalcPreDesiredComputedSoC(toDestDist) * chargeBufferPercent;
+
+            if (socAtStation >= chargingThreshold)
+            {
+                Console.WriteLine($"Station {reachableStationIds[i]} filtered out: SOC at station {socAtStation:P} is above threshold {chargingThreshold:P}.");
+                continue;
+            }
+
+            result[reachableStationIds[i]] = (toStationDur, toDestDur);
+        }
+
+        return result;
+
     }
 }

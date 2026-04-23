@@ -50,6 +50,12 @@ public class EnergyPrices(FileInfo csvPath, Random random)
     }
 
     /// <summary>
+    /// Finds the lowest overall price.
+    /// </summary>
+    /// <returns>Returns a lowest price as a float.</returns>
+    public float GetLowestPrice() => _energyPriceTable.Min(x => x.Price);
+
+    /// <summary>
     /// Calculates a price and applies a random deviation of 0–20% to the base hourly price.
     /// Call this periodically to simulate dynamic pricing.
     /// </summary>

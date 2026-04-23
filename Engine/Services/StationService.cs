@@ -107,9 +107,8 @@ public class StationService : IStationService
         Log.Verbose(e.EVId, e.Time, $"Handling ArrivalAtStation for EV {e.EVId} at time {e.Time}. Current EV data: {evRef}. SoC: {evRef.Battery.StateOfCharge}. Wants to charge to {e.TargetSoC}");
         var chargers = GetStation(e.StationId).Chargers;
 
-        // TODO: FIX THIS
-        //if (evRef.Battery.StateOfCharge >= e.TargetSoC)
-        //   throw Log.Error(e.EVId, e.Time, new SkillissueException($"EV wants to charge to a SoC: {e.TargetSoC}, which is lower than its current SoC: {evRef.Battery.StateOfCharge}."), ((string Key, object Value))("EV", evRef), ((string Key, object Value))("TargetSoC", e.TargetSoC));
+        if (evRef.Battery.StateOfCharge >= e.TargetSoC)
+            throw Log.Error(e.EVId, e.Time, new SkillissueException($"EV wants to charge to a SoC: {e.TargetSoC}, which is lower than its current SoC: {evRef.Battery.StateOfCharge}."), ((string Key, object Value))("EV", evRef), ((string Key, object Value))("TargetSoC", e.TargetSoC));
 
         var target = chargers
             .OrderBy(cs => cs.IsFree ? 0 : 1)
