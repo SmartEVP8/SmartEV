@@ -23,7 +23,6 @@ public static class CostWeightMapper
             PriceSensitivity: Get(dict, CostWeightField.PriceSensitivity, current.PriceSensitivity),
             PathDeviation: Get(dict, CostWeightField.PathDeviation, current.PathDeviation),
             EffectiveQueueSize: Get(dict, CostWeightField.EffectiveQueueSize, current.EffectiveQueueSize),
-            Urgency: Get(dict, CostWeightField.Urgency, current.Urgency),
             ExpectedWaitTime: Get(dict, CostWeightField.ExpectedWaitTime, current.ExpectedWaitTime));
     }
 

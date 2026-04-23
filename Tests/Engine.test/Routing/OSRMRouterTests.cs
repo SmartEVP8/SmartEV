@@ -133,6 +133,7 @@ public class OSRMRouterTests
         var withStopsRes = router.QueryDestinationWithStop(
             _evPosition[0], _evPosition[1], stationLon, stationLat, _destPosition[0], _destPosition[1]);
 
+        // Values are baselines from OSRM public API
         Assert.Equal(272000f, singleRes.Duration, 5000f);
         Assert.Equal(477000f, singleResDest.Duration, 5000f);
         Assert.Equal(274000f, singleResStationDest.Duration, 5000f);

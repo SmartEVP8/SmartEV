@@ -37,7 +37,6 @@ public static class EngineConfiguration
                 PathDeviation = ReadWeightFromEnvironment(_pathDeviationEnvVar, 0.8f, 0f, 1f),
                 PriceSensitivity = ReadWeightFromEnvironment(_priceSensitivityEnvVar, 0.4f, 0f, 1f),
                 ExpectedWaitTime = ReadWeightFromEnvironment(_expectedWaitTimeEnvVar, 1f, 0f, 1f),
-                Urgency = ReadWeightFromEnvironment(_urgencyEnvVar, 0.5f, 0f, 1f),
             },
             RunId = Guid.NewGuid(),
             MetricsConfig = new MetricsConfig
@@ -62,8 +61,9 @@ public static class EngineConfiguration
             EVDistributionWindowsSize = 1 * 60 * 1000,
             EVSpawnFraction = 0.10f,
             PopulationScaler = 0.7f,
+            ChargeBufferPercent = 0.9f,
             DistanceScaler = 1.7f,
-            GridSize = 0.025f,
+            GridSize = 0.025,
             EnergyPricesPath = new FileInfo(Path.Combine(dataPath.FullName, "energy_prices.csv")),
             OsrmPath = new FileInfo(Path.Combine(dataPath.FullName, "osrm/output.osrm")),
             CitiesPath = new FileInfo(Path.Combine(dataPath.FullName, "CityInfo.csv")),
