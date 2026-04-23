@@ -1,3 +1,5 @@
+using Core.Shared;
+
 namespace Core.Vehicles;
 
 using Core.Shared;

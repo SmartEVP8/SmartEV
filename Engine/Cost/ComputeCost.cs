@@ -30,13 +30,13 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
         var weights = costStore.GetWeights() ?? throw Log.Error(0, time, new NoNullAllowedException("Cost weights not found in store."), ("EV", ev));
         Station? bestStation = null;
 
-        foreach (var (stationId, duration) in stationDurations)
+        foreach (var (stationId, durations) in stationDurations)
         {
             var station = stationService.GetStation(stationId);
 
             var effectiveQueueCost = CalculateEffectiveQueueSizeCost(station, weights);
-            var pathDeviationCost = CalculatePathDeviationCost(ref ev, duration.DurToDest + duration.DurToStation, weights, time);
-            var urgencyCost = Urgency.CalculateChargeUrgency(ref ev, (uint)duration.DurToStation);
+            var pathDeviationCost = CalculatePathDeviationCost(ref ev, durations.DurToDest + durations.DurToStation, weights, time);
+            var urgencyCost = Urgency.CalculateChargeUrgency(ref ev, (uint)durations.DurToStation);
             var priceCost = CalculatePriceCost(ref ev, station, weights, time, energyPrices);
             var effectiveWaitTimeCost = CalculateEffectiveWaitTimeCost(weights);
             var cost = (1 - urgencyCost) * (effectiveQueueCost + pathDeviationCost + priceCost + effectiveWaitTimeCost);
@@ -46,8 +46,7 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
                 throw Log.Error(0, time, new InvalidOperationException(
                     $"Invalid cost calculated for station {stationId}: {cost}. " +
                     $"Queue={effectiveQueueCost}, PathDev={pathDeviationCost}, " +
-                    $"Urgency={urgencyCost}, Price={priceCost}, Wait={effectiveWaitTimeCost}"),
-                    ("EV", ev), ("StationId", stationId));
+                    $"Urgency={urgencyCost}, Price={priceCost}, Wait={effectiveWaitTimeCost}"));
             }
 
             if (cost < bestCost)

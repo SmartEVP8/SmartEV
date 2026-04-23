@@ -3,6 +3,7 @@ namespace Core.Vehicles;
 using Core.Routing;
 using Core.Shared;
 using Core.Helper;
+using Parquet.Meta;
 
 /// <summary>
 /// Defines the possible states of an EV.
@@ -185,6 +186,21 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
         var energyNeededKWh = EnergyForDistanceKWh(journey.DistanceToNextStopKm);
         var socDrop = energyNeededKWh / Battery.MaxCapacityKWh;
         return Math.Clamp(Battery.StateOfCharge - socDrop, 0f, 1f);
+    }
+
+    public readonly float CalcPreDesiredComputedSoC(float distanceToDestination)
+    {
+        if (Battery.MaxCapacityKWh <= 0)
+            throw Log.Error(0, 0, new InvalidOperationException($"Battery capacity must be greater than zero ({this})"));
+        var energyToDestinationKWh = EnergyForDistanceKWh(distanceToDestination);
+
+        var energyNeededToDest = (Preferences.MinAcceptableCharge * Battery.MaxCapacityKWh) + energyToDestinationKWh;
+
+        var chargeToPercent = energyNeededToDest / Battery.MaxCapacityKWh;
+        var desiredSoC = chargeToPercent > 1f ? 0.8f : chargeToPercent;
+        return float.IsFinite(desiredSoC)
+            ? Math.Clamp(desiredSoC + 0.01f, 0f, 1f)
+            : throw Log.Error(0, 0, new InvalidOperationException($"Calculated desired SoC is not finite (desiredSoC={desiredSoC}"));
     }
 
     /// <summary>
