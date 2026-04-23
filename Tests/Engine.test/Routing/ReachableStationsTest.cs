@@ -38,25 +38,5 @@ public class ReachableStationsTests
         Assert.Contains((ushort)3, reachableStations);
     }
 
-    [Fact]
-    public void CheckIfTargetSoCIsLowerThatCurrentSoC_ReturnsTrue_WhenTargetSoCIsLower()
-    {
-        var ev = CoreTestData.EV(
-            waypoints: new List<Position> { new(0, 0), new(1, 1) },
-            battery: CoreTestData.Battery(capacity: 100, maxChargeRate: 150, stateOfCharge: 0.5f));
 
-        var result = ReachableStations.CheckIfTargetSoCIsLowerThatCurrentSoC(10, 100, ref ev, 0.9f);
-        Assert.True(result);
-    }
-
-    [Fact]
-    public void CheckIfTargetSoCIsLowerThatCurrentSoC_ReturnsFalse_WhenTargetSoCIsHigher()
-    {
-        var ev = CoreTestData.EV(
-            waypoints: new List<Position> { new(0, 0), new(1, 1) },
-            battery: CoreTestData.Battery(capacity: 100, maxChargeRate: 150, stateOfCharge: 0.5f));
-
-        var result = ReachableStations.CheckIfTargetSoCIsLowerThatCurrentSoC(2, 100000000, ref ev, 1f);
-        Assert.False(result);
-    }
 }

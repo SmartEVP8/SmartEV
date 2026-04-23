@@ -5,6 +5,7 @@ namespace Engine.Test.Events.Middleware
     using Core.Vehicles;
     using Engine.Events;
     using Engine.Events.Middleware;
+    using Engine.Init;
     using Engine.Routing;
     using Engine.test.Builders;
     using Engine.Vehicles;
@@ -29,13 +30,14 @@ namespace Engine.Test.Events.Middleware
 
             float[] durations = [10f, 7200f, 25f, 9000f, 180f];
             float[] distances = [500f, 1900f, 130f, 2200f, 300f];
+
             var stubRouter = new StubRouter(durations, distances);
             _service = new FindCandidateStationService(
                 stubRouter,
                 stations,
                 spatialGrid,
                 _evStore,
-                EngineTestData.StationService(stations, new EventScheduler(), _evStore));
+                EngineTestData.StationService(stations, new EventScheduler(), _evStore), EngineConfiguration.CreateDefaultSettings());
         }
 
         [Fact]
@@ -67,11 +69,11 @@ namespace Engine.Test.Events.Middleware
             action(e);
             var candidates = await _service.GetCandidateStationFromCache(evId);
 
-            var expected = new Dictionary<ushort, (float, float)>
+            var expected = new Dictionary<ushort, DurToStationAndDest>
             {
-                { 0, (10.0f, 0) },
-                { 2, (25f, 0) },
-                { 4, (180, 0) },
+                { 0, new DurToStationAndDest(10.0f, 0f) },
+                { 2, new DurToStationAndDest(25f, 0f) },
+                { 4, new DurToStationAndDest(180f, 0f) },
             };
             Assert.Equal(expected, candidates);
         }

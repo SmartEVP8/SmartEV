@@ -1,5 +1,6 @@
-using Core.Shared;
 namespace Core.Vehicles;
+
+using Core.Shared;
 
 /// <summary>
 /// Provides a method to calculate the urgency of charging based on the state of charge (SoC) of the battery.
@@ -24,7 +25,7 @@ public static class Urgency
     {
         const double upperChargeLimit = 0.80;
 
-        var distanceToStation = ev.DistanceEVCanDriveInTime(durationToStation);
+        var distanceToStation = ev.DistanceEVCanDrive(durationToStation);
         var soc = (ev.Battery.CurrentChargeKWh - ev.EnergyForDistanceKWh(distanceToStation)) / ev.Battery.MaxCapacityKWh;
 
         if (soc <= 0)

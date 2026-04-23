@@ -6,6 +6,7 @@ using Core.Shared;
 using Core.Vehicles;
 using Engine.Services;
 using Core.Helper;
+using Engine.Events.Middleware;
 
 /// <summary>
 /// Computes the cost of detouring to each station and selects the station with the lowest cost.
@@ -23,7 +24,7 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
     /// <param name="time">The current time.</param>
     /// <returns>The station with the lowest cost.</returns>
     /// <exception cref="NoNullAllowedException">If no suitable station is found.</exception>
-    public Station Compute(ref EV ev, Dictionary<ushort, (float durToStation, float durToDest)> stationDurations, Time time)
+    public Station Compute(ref EV ev, Dictionary<ushort, DurToStationAndDest> stationDurations, Time time)
     {
         var bestCost = double.MaxValue;
         var weights = costStore.GetWeights() ?? throw Log.Error(0, time, new NoNullAllowedException("Cost weights not found in store."), ("EV", ev));
@@ -34,8 +35,8 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
             var station = stationService.GetStation(stationId);
 
             var effectiveQueueCost = CalculateEffectiveQueueSizeCost(station, weights);
-            var pathDeviationCost = CalculatePathDeviationCost(ref ev, duration.durToDest + duration.durToStation, weights, time);
-            var urgencyCost = Urgency.CalculateChargeUrgency(ref ev, (uint)duration.durToStation);
+            var pathDeviationCost = CalculatePathDeviationCost(ref ev, duration.DurToDest + duration.DurToStation, weights, time);
+            var urgencyCost = Urgency.CalculateChargeUrgency(ref ev, (uint)duration.DurToStation);
             var priceCost = CalculatePriceCost(ref ev, station, weights, time, energyPrices);
             var effectiveWaitTimeCost = CalculateEffectiveWaitTimeCost(weights);
             var cost = (1 - urgencyCost) * (effectiveQueueCost + pathDeviationCost + priceCost + effectiveWaitTimeCost);

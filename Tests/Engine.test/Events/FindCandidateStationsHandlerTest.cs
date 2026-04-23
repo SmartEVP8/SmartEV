@@ -1,3 +1,4 @@
+using Engine.Events.Middleware;
 namespace Engine.Test.Events;
 
 using Core.Shared;
@@ -64,7 +65,7 @@ public class FindCandidateStationsHandlerTest
 
         var stubService = (StubFindCandidateStationService)_findCandidateStationService;
         var stationId = EngineTestData.AllStations.Keys.First();
-        stubService.SetCandidates(index1, new Dictionary<ushort, (float, float)> { { stationId, (100f, 100f) } });
+        stubService.SetCandidates(index1, new Dictionary<ushort, DurToStationAndDest> { { stationId, new DurToStationAndDest(100f, 100f) } });
 
         await _handler.Handle(e);
 
@@ -111,7 +112,7 @@ public class FindCandidateStationsHandlerTest
         var e = new FindCandidateStations(index1, 0);
 
         var stubService = (StubFindCandidateStationService)_findCandidateStationService;
-        stubService.SetCandidates(index1, new Dictionary<ushort, (float, float)> { { stationId, (1000f, 1000f) } });
+        stubService.SetCandidates(index1, new Dictionary<ushort, DurToStationAndDest> { { stationId, new DurToStationAndDest(1000f, 1000f) } });
 
         await _handler.Handle(e);
 
@@ -137,7 +138,7 @@ public class FindCandidateStationsHandlerTest
 
         var stubService = (StubFindCandidateStationService)_findCandidateStationService;
         var betterStationId = EngineTestData.AllStations.Keys.Skip(1).First();
-        stubService.SetCandidates(index1, new Dictionary<ushort, (float, float)> { { betterStationId, (50f, 50f) } });
+        stubService.SetCandidates(index1, new Dictionary<ushort, DurToStationAndDest> { { betterStationId, new DurToStationAndDest(50f, 50f) } });
 
         await _handler.Handle(e);
         var eventAfterCancel = _eventScheduler.GetNextEvent();
@@ -164,7 +165,7 @@ public class FindCandidateStationsHandlerTest
         var e = new FindCandidateStations(index1, 1);
 
         var stubService = (StubFindCandidateStationService)_findCandidateStationService;
-        stubService.SetCandidates(index1, new Dictionary<ushort, (float, float)> { { stationId, (1f, 1f) } });
+        stubService.SetCandidates(index1, new Dictionary<ushort, DurToStationAndDest> { { stationId, new DurToStationAndDest(1f, 1f) } });
 
         await _handler.Handle(e);
 
@@ -175,11 +176,11 @@ public class FindCandidateStationsHandlerTest
 
     private class StubFindCandidateStationService : IFindCandidateStationService
     {
-        private readonly Dictionary<int, Dictionary<ushort, (float, float)>> _candidates = [];
+        private readonly Dictionary<int, Dictionary<ushort, DurToStationAndDest>> _candidates = [];
 
-        public void SetCandidates(int evId, Dictionary<ushort, (float, float)> candidates) => _candidates[evId] = candidates;
+        public void SetCandidates(int evId, Dictionary<ushort, DurToStationAndDest> candidates) => _candidates[evId] = candidates;
 
-        public Task<Dictionary<ushort, (float, float)>> GetCandidateStationFromCache(int evId) => Task.FromResult(_candidates.TryGetValue(evId, out var c) ? c : []);
+        public Task<Dictionary<ushort, DurToStationAndDest>> GetCandidateStationFromCache(int evId) => Task.FromResult(_candidates.TryGetValue(evId, out var c) ? c : []);
 
         public Action<IMiddlewareEvent> PreComputeCandidateStation() => _ => { };
     }

@@ -132,19 +132,19 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     }
 
     /// <summary>
-    /// Calculates the expected amout a EV needs to charge at a station.
+    /// Calculates the expected amount an EV needs to charge at a station.
     /// </summary>
-    /// <param name="distanceToDestination">The distance to the destination from the station.</param>
+    /// <param name="distanceKM">The distance an EV needs to drive after charging.</param>
     /// <returns>Returns the expected SoC an EV should charge to.</returns>
-    public readonly float PreCalculatedTargetSoC(float distanceToDestination)
+    public readonly float PreCalculatedTargetSoC(float distanceKM)
     {
         if (Battery.MaxCapacityKWh <= 0)
             throw Log.Error(0, 0, new InvalidOperationException($"Battery capacity must be greater than zero ({this})"));
-        var energyToDestinationKWh = EnergyForDistanceKWh(distanceToDestination);
+        var energyToDestinationKWh = EnergyForDistanceKWh(distanceKM);
 
-        var energyNeededToDest = (Preferences.MinAcceptableCharge * Battery.MaxCapacityKWh) + energyToDestinationKWh;
+        var energyNeededToDestKWh = (Preferences.MinAcceptableCharge * Battery.MaxCapacityKWh) + energyToDestinationKWh;
 
-        var chargeToPercent = energyNeededToDest / Battery.MaxCapacityKWh;
+        var chargeToPercent = energyNeededToDestKWh / Battery.MaxCapacityKWh;
         var desiredSoC = chargeToPercent > 1f ? 0.8f : chargeToPercent;
         return float.IsFinite(desiredSoC)
             ? Math.Clamp(desiredSoC + 0.01f, 0f, 1f)
@@ -155,7 +155,7 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     /// Calculates the amount of SoC should have been used within a time interval.
     /// </summary>
     /// <param name="duration">The time the EV has to drive in.</param>
-    /// <returns>Returns how much SoC a EV has after a Time interval.</returns>
+    /// <returns>Returns how much SoC an EV has after a Time interval.</returns>
     public readonly float EstimateSoCAfterADuration(Time duration)
     {
         if (Battery.MaxCapacityKWh <= 0)
@@ -196,9 +196,9 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     /// <summary>
     /// Calculates how far an EV can drive in a given time based on its current route's average speed.
     /// </summary>
-    /// <param name="time">The amout of time an EV has to drive.</param>
+    /// <param name="time">The amount of time an EV has to drive.</param>
     /// <returns>Returns the distance an EV can drive in a time period.</returns>
-    public readonly float DistanceEVCanDriveInTime(Time time) => journey.Current.DistanceKm / journey.Current.Duration.Milliseconds * time.Milliseconds;
+    public readonly float DistanceEVCanDrive(Time time) => journey.Current.DistanceKm / journey.Current.Duration.Milliseconds * time.Milliseconds;
 
     /// <summary>
     /// Calculates the next time to check for candidate stations, which is the minimum of:
@@ -255,4 +255,18 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     /// <returns>The SoC used for driving the specified distance.</returns>
     public readonly float SoCUsedAfterADistance(float distanceKm) =>
         (Battery.CurrentChargeKWh - EnergyForDistanceKWh(distanceKm)) / Battery.MaxCapacityKWh;
+
+    /// <summary>
+    /// Checks if the EV can reach a station without exceeding a certain state of charge threshold at the station, which is based on the distance to the station and the distance to the destination.
+    /// </summary>
+    /// <param name="distToStation">The distance to a station from its current position.</param>
+    /// <param name="distToDestination">The distance to an EV's destination from a station.</param>
+    /// <param name="chargeBufferPercent">A buffer to account for noise.</param>
+    /// <returns>Returns a bool representing if a EV would arrive with more SoC than it needs to charge to.</returns>
+    public readonly bool CheckIfTargetSoCIsLowerThanCurrentSoC(float distToStation, float distToDestination, float chargeBufferPercent)
+    {
+        var socAtStation = (Battery.CurrentChargeKWh - EnergyForDistanceKWh(distToStation / 1000)) / Battery.MaxCapacityKWh;
+        var expectChargeTarget = PreCalculatedTargetSoC(distToDestination / 1000) * chargeBufferPercent;
+        return socAtStation > expectChargeTarget;
+    }
 }
