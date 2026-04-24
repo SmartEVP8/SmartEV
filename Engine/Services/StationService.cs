@@ -168,7 +168,7 @@ public class StationService : IStationService
         else
         {
             Log.Info(e.EVId, e.Time, $"EV {e.EVId} has completed its charging but cannot continue to its destination with SoC {ev.Battery.StateOfCharge}. Scheduling search for candidate stations.");
-            _scheduler.ScheduleEvent(new FindCandidateStations(e.EVId, ev.TimeToNextFindCandidateCheck(e.Time)));
+            _scheduler.ScheduleEvent(new FindCandidateStations(e.EVId, ev.TimeAtNextFindCandidateCheck(e.Time)));
         }
 
         if (!_evReservations.TryGetValue(e.EVId, out var stationId))
