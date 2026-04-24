@@ -39,7 +39,7 @@ public class EVPopulatorBenchMark
         var distanceScalar = 1.7f;
         var populationScalar = 0.7f;
 
-        var evFactory = new EVFactory(new Random(1), new JourneySamplerProvider(jp, distanceScalar, populationScalar, []), router);
+        var evFactory = new EVFactory(new Random(1), new JourneySamplerProvider(jp, distanceScalar, populationScalar, []), router, new EVOptions());
         var evStore = new EVStore(_count);
         var eventScheduler = new EventScheduler();
 
