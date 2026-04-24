@@ -286,6 +286,10 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     {
         var socAtStation = (Battery.CurrentChargeKWh - EnergyForDistanceKWh(distToStation / 1000)) / Battery.MaxCapacityKWh;
         var expectChargeTarget = PreCalculatedTargetSoC(distToDestination / 1000) * chargeBufferPercent;
-        return socAtStation > expectChargeTarget;
+
+        var socAtDestination = socAtStation - EnergyForDistanceKWh(distToDestination / 1000) / Battery.MaxCapacityKWh;
+        var canReachDestWithMinCharge = socAtDestination >= Preferences.MinAcceptableCharge;
+
+        return socAtStation > expectChargeTarget && canReachDestWithMinCharge;
     }
 }

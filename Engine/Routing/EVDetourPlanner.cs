@@ -33,7 +33,7 @@ public class EVDetourPlanner(IDestinationRouter router) : IEVDetourPlanner
             station.Id);
 
         if (res.Duration < 0 || string.IsNullOrEmpty(res.Polyline))
-            throw Log.Error(0, 0, new InvalidOperationException($"Route query failed for station {station.Id}."), ("StationId", station.Id));
+            throw Log.Error(0, currentTime, new InvalidOperationException($"Route query failed for station {station.Id}."), ("StationId", station.Id));
 
         var detourPath = Polyline6ToPoints.DecodePolyline(res.Polyline);
         var newWaypoints = new List<Position>([currentPos, .. detourPath]);
