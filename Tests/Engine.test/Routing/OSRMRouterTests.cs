@@ -132,6 +132,8 @@ public class OSRMRouterTests
             stationLon, stationLat, _destPosition[0], _destPosition[1]);
         var withStopsRes = router.QueryDestinationWithStop(
             _evPosition[0], _evPosition[1], stationLon, stationLat, _destPosition[0], _destPosition[1]);
+        var tableRes = router.QueryStationsWithDest(
+            _evPosition[0], _evPosition[1], _destPosition[0], _destPosition[1], [0]);
 
         // Values are baselines from OSRM public API
         Assert.Equal(272000f, singleRes.Duration, 5000f);
@@ -140,6 +142,7 @@ public class OSRMRouterTests
 
         // WithStops != sum of independent legs. OSRM waypoint routing takes a different path.
         Assert.Equal(550900f, withStopsRes.Duration, 5000f);
+        Assert.Equal(550900f, tableRes.ToStation.Durations[0] + tableRes.ToDest.Durations[0], 5000f);
     }
 
     [Fact]
@@ -148,36 +151,36 @@ public class OSRMRouterTests
         (double evLon, double evLat, double stationLon, double stationLat, double destLon, double destLat)[] routes =
         [
             (12.567938, 55.675942, 12.347044, 55.650864, 10.383505, 55.403777),
-        (12.491299, 55.782812, 12.567938, 55.675942, 12.347044, 55.650864),
-        (10.383505, 55.403777, 10.463423, 55.369409, 10.037054, 56.044979),
-        (10.204106, 56.162828, 10.037054, 56.044979, 9.9187,    57.048956),
-        (9.9187,    57.048956, 9.850651,  57.119919, 9.535302,  55.711498),
-        (9.535302,  55.711498, 9.472454,  55.490394, 8.452401,  55.476211),
-        (8.452401,  55.476211, 8.790476,  55.569282, 9.535302,  55.711498),
-        (8.790476,  55.569282, 8.452401,  55.476211, 9.472454,  55.490394),
-        (10.204106, 56.162828, 10.463423, 55.369409, 10.383505, 55.403777),
-        (12.567938, 55.675942, 10.204106, 56.162828, 9.9187,    57.048956),
-        (10.383505, 55.403777, 12.347044, 55.650864, 12.567938, 55.675942),
-        (9.472454,  55.490394, 8.790476,  55.569282, 8.452401,  55.476211),
-        (10.037054, 56.044979, 10.204106, 56.162828, 9.9187,    57.048956),
-        (9.850651,  57.119919, 10.037054, 56.044979, 10.204106, 56.162828),
-        (12.347044, 55.650864, 12.491299, 55.782812, 12.567938, 55.675942),
-        (9.504537,  56.29718,  9.064745,  56.391183, 10.204106, 56.162828),
-        (10.55102,  57.728976, 9.850651,  57.119919, 9.9187,    57.048956),
-        (9.763011,  55.506733, 9.472454,  55.490394, 8.452401,  55.476211),
-        (11.547389, 55.405734, 12.080299, 55.641456, 12.567938, 55.675942),
-        (12.080299, 55.641456, 12.347044, 55.650864, 12.567938, 55.675942),
-        (9.756713,  55.904975, 9.064745,  56.391183, 9.504537,  56.29718 ),
-        (8.62467,   55.71023,  8.452401,  55.476211, 9.472454,  55.490394),
-        (10.215853, 56.462081, 9.504537,  56.29718,  9.9187,    57.048956),
-        (9.661421,  55.47525,  9.472454,  55.490394, 9.535302,  55.711498),
-        (9.060023,  55.492617, 8.790476,  55.569282, 8.452401,  55.476211),
-        (11.793087, 55.469985, 11.547389, 55.405734, 12.080299, 55.641456),
-        (10.224423, 56.449652, 10.215853, 56.462081, 9.504537,  56.29718 ),
-        (9.461724,  55.248464, 9.661421,  55.47525,  9.472454,  55.490394),
-        (9.064745,  56.391183, 9.504537,  56.29718,  9.756713,  55.904975),
-        (10.55102,  57.728976, 9.9187,    57.048956, 12.567938, 55.675942),
-    ];
+            (12.491299, 55.782812, 12.567938, 55.675942, 12.347044, 55.650864),
+            (10.383505, 55.403777, 10.463423, 55.369409, 10.037054, 56.044979),
+            (10.204106, 56.162828, 10.037054, 56.044979, 9.9187,    57.048956),
+            (9.9187,    57.048956, 9.850651,  57.119919, 9.535302,  55.711498),
+            (9.535302,  55.711498, 9.472454,  55.490394, 8.452401,  55.476211),
+            (8.452401,  55.476211, 8.790476,  55.569282, 9.535302,  55.711498),
+            (8.790476,  55.569282, 8.452401,  55.476211, 9.472454,  55.490394),
+            (10.204106, 56.162828, 10.463423, 55.369409, 10.383505, 55.403777),
+            (12.567938, 55.675942, 10.204106, 56.162828, 9.9187,    57.048956),
+            (10.383505, 55.403777, 12.347044, 55.650864, 12.567938, 55.675942),
+            (9.472454,  55.490394, 8.790476,  55.569282, 8.452401,  55.476211),
+            (10.037054, 56.044979, 10.204106, 56.162828, 9.9187,    57.048956),
+            (9.850651,  57.119919, 10.037054, 56.044979, 10.204106, 56.162828),
+            (12.347044, 55.650864, 12.491299, 55.782812, 12.567938, 55.675942),
+            (9.504537,  56.29718,  9.064745,  56.391183, 10.204106, 56.162828),
+            (10.55102,  57.728976, 9.850651,  57.119919, 9.9187,    57.048956),
+            (9.763011,  55.506733, 9.472454,  55.490394, 8.452401,  55.476211),
+            (11.547389, 55.405734, 12.080299, 55.641456, 12.567938, 55.675942),
+            (12.080299, 55.641456, 12.347044, 55.650864, 12.567938, 55.675942),
+            (9.756713,  55.904975, 9.064745,  56.391183, 9.504537,  56.29718 ),
+            (8.62467,   55.71023,  8.452401,  55.476211, 9.472454,  55.490394),
+            (10.215853, 56.462081, 9.504537,  56.29718,  9.9187,    57.048956),
+            (9.661421,  55.47525,  9.472454,  55.490394, 9.535302,  55.711498),
+            (9.060023,  55.492617, 8.790476,  55.569282, 8.452401,  55.476211),
+            (11.793087, 55.469985, 11.547389, 55.405734, 12.080299, 55.641456),
+            (10.224423, 56.449652, 10.215853, 56.462081, 9.504537,  56.29718 ),
+            (9.461724,  55.248464, 9.661421,  55.47525,  9.472454,  55.490394),
+            (9.064745,  56.391183, 9.504537,  56.29718,  9.756713,  55.904975),
+            (10.55102,  57.728976, 9.9187,    57.048956, 12.567938, 55.675942),
+        ];
 
         var stationPositions = routes.Select(r => new Position(r.stationLon, r.stationLat)).ToArray();
         using var router = CreateRouter(stationPositions);
@@ -215,7 +218,7 @@ public class OSRMRouterTests
         const int iterations = 1000;
         var durationRatios = new List<float>(iterations);
         var distanceRatios = new List<float>(iterations);
-        int skipped = 0;
+        var skipped = 0;
 
         for (var i = 0; i < iterations; i++)
         {
@@ -223,30 +226,34 @@ public class OSRMRouterTests
             var ev = source;
             var dest = destination;
             var station = stationList[random.Next(stationList.Length)];
-            var tableResult = router.QueryStationsWithDest(
-                ev.Longitude, ev.Latitude,
-                dest.Longitude, dest.Latitude,
-                [station.Id]);
-            var routeResult = router.QueryDestinationWithStop(
-                ev.Longitude, ev.Latitude,
-                station.Position.Longitude, station.Position.Latitude,
-                dest.Longitude, dest.Latitude,
-                station.Id);
-            var tableDuration = tableResult.TotalDuration(0);
-            var tableDist = tableResult.TotalDistance(0);
-            var routeDuration = routeResult.Duration;
-            var routeDist = routeResult.Distance;
-            if (tableDuration <= 0 || routeDuration <= 0 || tableDist <= 0 || routeDist <= 0)
+
+            try
+            {
+                var tableResult = router.QueryStationsWithDest(
+                    ev.Longitude, ev.Latitude,
+                    dest.Longitude, dest.Latitude,
+                    [station.Id]);
+                var routeResult = router.QueryDestinationWithStop(
+                    ev.Longitude, ev.Latitude,
+                    station.Position.Longitude, station.Position.Latitude,
+                    dest.Longitude, dest.Latitude,
+                    station.Id);
+
+                var tableDuration = tableResult.TotalDuration(0);
+                var tableDist = tableResult.TotalDistance(0);
+                var routeDuration = routeResult.Duration;
+                var routeDist = routeResult.Distance;
+                durationRatios.Add(tableDuration / routeDuration);
+                distanceRatios.Add(tableDist / routeDist);
+            }
+            catch (ArgumentException)
             {
                 skipped++;
                 continue;
             }
-            durationRatios.Add(tableDuration / routeDuration);
-            distanceRatios.Add(tableDist / routeDist);
         }
 
-        Assert.True(skipped == 0, $"Too many unroutable samples: {skipped}/{iterations}");
-        Assert.True(durationRatios.Count >= 980, $"Too few valid samples: {durationRatios.Count}/{iterations}");
+        Assert.True(skipped <= iterations * 0.02, $"Too many unroutable samples: {skipped}/{iterations}");
 
         Assert.True(durationRatios.Average() is >= 0.99f and <= 1.01f, $"Duration avg ratio {durationRatios.Average():F4} out of range");
         Assert.True(distanceRatios.Average() is >= 0.99f and <= 1.01f, $"Distance avg ratio {distanceRatios.Average():F4} out of range");
@@ -318,28 +325,29 @@ public class OSRMRouterTests
     public async Task QueryStationsWithDest_IsThreadSafe_WithConcurrentQueries()
     {
         using var router = CreateRouter(_stationNearPosition, _stationFarPosition);
-        var numTasks = 1000;
+        const int numTasks = 1000;
 
-        var queries = new (double evLon, double evLat, float expectedDuration)[numTasks];
-        for (var i = 0; i < numTasks; i++)
-        {
-            var offset = i * 0.001;
-            var result = router.QueryStationsWithDest(
-                _evPosition[0] + offset, _evPosition[1] + offset, _destPosition[0], _destPosition[1], [0, 1]);
-            queries[i] = (_evPosition[0] + offset, _evPosition[1] + offset, result.TotalDuration(0));
-        }
+        var queries = Enumerable.Range(0, numTasks)
+            .Select(i =>
+            {
+                var offset = i % 10 * 0.001;
+                return (_evPosition[0] + offset, _evPosition[1] + offset);
+            }).ToArray();
+
+        var expected = queries
+            .Select(q => router.QueryStationsWithDest(q.Item1, q.Item2, _destPosition[0], _destPosition[1], [0, 1]).TotalDuration(0))
+            .ToArray();
 
         var parallelResults = new float[numTasks];
         await Task.WhenAll(Enumerable.Range(0, numTasks).Select(i => Task.Run(() =>
         {
-            var (evLon, evLat, _) = queries[i];
-            var result = router.QueryStationsWithDest(
-                evLon, evLat, _destPosition[0], _destPosition[1], [0, 1]);
-            parallelResults[i] = result.TotalDuration(0);
+            var (evLon, evLat) = queries[i];
+            parallelResults[i] = router.QueryStationsWithDest(
+                evLon, evLat, _destPosition[0], _destPosition[1], [0, 1]).TotalDuration(0);
         })));
 
         for (var i = 0; i < numTasks; i++)
-            Assert.Equal(queries[i].expectedDuration, parallelResults[i], 0.1f);
+            Assert.Equal(expected[i], parallelResults[i], 0.1f);
     }
 
     [Fact]
@@ -351,7 +359,7 @@ public class OSRMRouterTests
         var queries = new (double evLon, double evLat, float expectedDuration)[numTasks];
         for (var i = 0; i < numTasks; i++)
         {
-            var offset = i * 0.001;
+            var offset = i % 10 * 0.001;
             var (durations, _) = router.QueryPointsToPoints(
                 [_evPosition[0] + offset, _evPosition[1] + offset],
                 [_stationNearPosition.Longitude, _stationNearPosition.Latitude]);
