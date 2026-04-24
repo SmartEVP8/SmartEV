@@ -125,13 +125,14 @@ public static class Init
 
         services.AddSingleton(sp =>
         {
+            var settings = sp.GetRequiredService<EngineSettings>();
             var router = sp.GetRequiredService<IOSRMRouter>();
             var stations = sp.GetRequiredService<Dictionary<ushort, Station>>();
             var grid = sp.GetRequiredService<SpatialGrid>();
             var evStore = sp.GetRequiredService<EVStore>();
             var stationService = sp.GetRequiredService<StationService>();
-            var settings = sp.GetRequiredService<EngineSettings>();
-            return new FindCandidateStationService(router, stations, grid, evStore, stationService, settings);
+            var chargerBufferPercent = settings.ChargeBufferPercent;
+            return new FindCandidateStationService(router, stations, grid, evStore, stationService, chargerBufferPercent, Environment.ProcessorCount);
         });
 
         services.AddSingleton(sp =>
