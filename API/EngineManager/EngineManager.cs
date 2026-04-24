@@ -69,6 +69,8 @@ public class EngineManager
                 TotalChargers = configDTO.NumberOfChargers
             },
             CostConfig = configDTO.CostWeights.ToDomain(defaultSettings.CostConfig),
+            SimulationStartTime = configDTO.StartTime,
+            SimulationEndTime = configDTO.EndTime
         };
     }
 
