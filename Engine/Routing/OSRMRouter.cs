@@ -149,10 +149,13 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
 
         for (var i = 0; i < indices.Length; i++)
         {
-            toStationDurations[i] = results[i].SrcToStation.Durations * Time.MillisecondsPerSecond;
-            toStationDistances[i] = results[i].SrcToStation.Distances;
-            toDestDurations[i] = results[i].StationToDest.Durations * Time.MillisecondsPerSecond;
-            toDestDistances[i] = results[i].StationToDest.Distances;
+            var srcToStation = results[i].SrcToStation;
+            var stationToDest = results[i].StationToDest;
+
+            toStationDurations[i] = float.IsNaN(srcToStation.Durations) ? throw new ArgumentException("Invalid duration") : srcToStation.Durations * Time.MillisecondsPerSecond;
+            toStationDistances[i] = float.IsNaN(srcToStation.Distances) ? throw new ArgumentException("Invalid distance") : srcToStation.Distances;
+            toDestDurations[i] = float.IsNaN(stationToDest.Durations) ? throw new ArgumentException("Invalid duration") : stationToDest.Durations * Time.MillisecondsPerSecond;
+            toDestDistances[i] = float.IsNaN(stationToDest.Distances) ? throw new ArgumentException("Invalid distance") : stationToDest.Distances;
         }
 
         return new RoutingLegsResult(
@@ -175,7 +178,7 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
             destLat);
 
         if (resultPtr == IntPtr.Zero)
-            return new RouteSegment(-1, -1, string.Empty);
+            throw new ArgumentException("OSRM query failed to compute a route.");
 
         var result = Marshal.PtrToStructure<RouteResult>(resultPtr);
         var polylineStr = Marshal.PtrToStringAnsi(result.Polyline)!;
@@ -200,7 +203,7 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
             index);
 
         if (resultPtr == IntPtr.Zero)
-            return new RouteSegment(-1, -1, string.Empty);
+            throw new ArgumentException("OSRM query failed to compute a route.");
 
         var result = Marshal.PtrToStructure<RouteResult>(resultPtr);
         var polylineStr = Marshal.PtrToStringAnsi(result.Polyline)!;
@@ -230,7 +233,10 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
         }
 
         for (var i = 0; i < durations.Length; i++)
-            durations[i] *= Time.MillisecondsPerSecond;
+        {
+            durations[i] = float.IsNaN(durations[i]) ? -1f : durations[i] * Time.MillisecondsPerSecond;
+            distances[i] = float.IsNaN(distances[i]) ? -1f : distances[i];
+        }
 
         return new RoutingResult(durations, distances);
     }
