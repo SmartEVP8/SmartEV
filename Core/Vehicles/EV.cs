@@ -97,17 +97,15 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     }
 
     /// <summary>
-    /// Whether the EV can tolerate a detour that goes through a station and still
-    /// keep at least <paramref name="minAcceptableCharge"/> SoC on arrival.
+    /// Whether the EV can reach a station and still keep at least
+    /// <paramref name="minAcceptableCharge"/> SoC on arrival.
     /// </summary>
-    /// <param name="detourDistanceKm">The total detour distance from the current position to the destination via the station.</param>
-    /// <param name="directDistanceKm">The direct current-route distance from the current position to the destination.</param>
+    /// <param name="distanceToStationKm">Distance from the current position to the station in km.</param>
     /// <param name="minAcceptableCharge">Minimum SoC required on arrival. Defaults to 0.1.</param>
-    /// <returns>True if the implied station leg is reachable with the specified reserve; otherwise, false.</returns>
-    public readonly bool CanReachViaDetour(float detourDistanceKm, float directDistanceKm, float minAcceptableCharge = 0.1f)
+    /// <returns>True if the station leg is reachable with the specified reserve; otherwise, false.</returns>
+    public readonly bool CanReachToStation(float distanceToStationKm, float minAcceptableCharge = 0.1f)
     {
-        var inferredStationLegKm = Math.Max(0f, detourDistanceKm - directDistanceKm);
-        return CanReach(inferredStationLegKm, minAcceptableCharge);
+        return CanReach(distanceToStationKm, minAcceptableCharge);
     }
 
     /// <summary>

@@ -54,7 +54,10 @@ public class FindCandidateStationsHandler(
 
         var remaining = ev.Journey.Current.DurationToNextStop;
         var etaAtStation = e.Time + remaining;
-        var targetSoC = ev.CalcDesiredSoC(etaAtStation);
+        var candidate = candidateStations[bestStation.Id];
+        var targetSoC = candidate.DistStationToDestMeters > 0f
+            ? ev.PreCalculatedTargetSoC(candidate.DistStationToDestMeters / 1000f)
+            : ev.CalcDesiredSoC(etaAtStation);
         var socAtArrival = ev.EstimateSoCAtNextStop();
         stationService.HandleReservation(new Reservation(e.EVId, etaAtStation, socAtArrival, targetSoC), bestStation.Id);
 

@@ -190,31 +190,24 @@ public class EVTests
     }
 
     [Fact]
-    public void CanReachViaDetour_ReturnsTrueWhenEnoughCharge()
+    public void CanReachToStation_ReturnsTrueWhenEnoughCharge()
     {
         var ev = CoreTestData.EV(battery: CoreTestData.Battery(stateOfCharge: 0.2f));
-        Assert.True(ev.CanReachViaDetour(15, 10, minAcceptableCharge: 0.1f));
+        Assert.True(ev.CanReachToStation(5, minAcceptableCharge: 0.1f));
     }
 
     [Fact]
-    public void CanReachViaDetour_ReturnsFalseWhenNotEnoughCharge()
+    public void CanReachToStation_ReturnsFalseWhenNotEnoughCharge()
     {
         var ev = CoreTestData.EV(battery: CoreTestData.Battery(stateOfCharge: 0.2f));
-        Assert.False(ev.CanReachViaDetour(1000, 10, minAcceptableCharge: 0.1f));
+        Assert.False(ev.CanReachToStation(1000, minAcceptableCharge: 0.1f));
     }
 
     [Fact]
-    public void CanReachViaDetour_DetourEqualsDirect_ZeroExtraCost()
+    public void CanReachToStation_MassiveDistance_ReturnsFalse()
     {
         var ev = CoreTestData.EV(battery: CoreTestData.Battery(stateOfCharge: 0.2f));
-        Assert.True(ev.CanReachViaDetour(10, 10, minAcceptableCharge: 0.1f));
-    }
-
-    [Fact]
-    public void CanReachViaDetour_MassiveDetour_ReturnsFalse()
-    {
-        var ev = CoreTestData.EV(battery: CoreTestData.Battery(stateOfCharge: 0.2f));
-        Assert.False(ev.CanReachViaDetour(10000, 10, minAcceptableCharge: 0.1f));
+        Assert.False(ev.CanReachToStation(10000, minAcceptableCharge: 0.1f));
     }
 
     [Fact]

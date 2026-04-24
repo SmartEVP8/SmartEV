@@ -71,9 +71,9 @@ namespace Engine.Test.Events.Middleware
 
             var expected = new Dictionary<ushort, DurToStationAndDest>
             {
-                { 0, new DurToStationAndDest(10.0f, 0f) },
-                { 2, new DurToStationAndDest(25f, 0f) },
-                { 4, new DurToStationAndDest(180f, 0f) },
+                { 0, new DurToStationAndDest(10.0f, 0f, 300_000f) },
+                { 2, new DurToStationAndDest(25f, 0f, 300_000f) },
+                { 4, new DurToStationAndDest(180f, 0f, 300_000f) },
             };
             Assert.Equal(expected, candidates);
         }
