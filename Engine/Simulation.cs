@@ -53,7 +53,7 @@ public class Simulation(
         Console.WriteLine("Starting Simulation");
 
         _scheduler.ScheduleEvent(new SpawnEVS(_startFrom));
-        _scheduler.ScheduleEvent(new SnapshotEvent(_runUntil));
+        _scheduler.ScheduleEvent(new SnapshotEvent(_startFrom));
 
         try
         {
