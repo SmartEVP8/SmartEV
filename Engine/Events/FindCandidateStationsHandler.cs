@@ -56,17 +56,33 @@ public class FindCandidateStationsHandler(
         }
 
         var bestStation = costFunction.Compute(ref ev, candidateStations, e.Time) ?? throw Log.Error(e.EVId, e.Time, new SkillissueException("Cost function did not return a station, but should never get this far."));
+        var candidate = candidateStations[bestStation.Id];
 
         if (stationService.GetReservationStationId(e.EVId) != bestStation.Id)
-            evDetourPlanner.Update(ref ev, bestStation, e.Time);
+        {
+            evDetourPlanner.Update(
+                ref ev,
+                bestStation,
+                e.Time,
+                candidate.DurToStation + candidate.DurToDest,
+                candidate.DistToStationMeters + candidate.DistStationToDestMeters);
+        }
 
         var remaining = ev.Journey.Current.DurationToNextStop;
         var etaAtStation = e.Time + remaining;
-        var candidate = candidateStations[bestStation.Id];
         var targetSoC = candidate.DistStationToDestMeters > 0f
             ? ev.PreCalculatedTargetSoC(candidate.DistStationToDestMeters / 1000f)
             : ev.CalcDesiredSoC(etaAtStation);
         var socAtArrival = ev.EstimateSoCAtNextStop();
+
+        if (socAtArrival >= targetSoC)
+        {
+            throw Log.Error(e.EVId, e.Time, new InvalidOperationException(
+                $"Invalid reservation for EV {e.EVId}: estimated SoC at arrival ({socAtArrival}) is >= target SoC ({targetSoC})."),
+                ("Candidate", candidate),
+                ("BestStationId", bestStation.Id));
+        }
+
         stationService.HandleReservation(new Reservation(e.EVId, etaAtStation, socAtArrival, targetSoC), bestStation.Id);
 
         if (remaining <= Time.MillisecondsPerMinute * 10)

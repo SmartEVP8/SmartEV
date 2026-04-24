@@ -1,6 +1,6 @@
-using Engine.Events.Middleware;
 namespace Engine.test.Cost;
 
+using Engine.Events.Middleware;
 using Core.Charging;
 using Core.Routing;
 using Core.Shared;
@@ -34,8 +34,8 @@ public class ComputeCostTest
 
         var stationDurations = new Dictionary<ushort, DurToStationAndDest>
         {
-            { 1, new DurToStationAndDest(500000f, 500000f) }, // Deviation = 0
-            { 2, new DurToStationAndDest(600000f, 600000f) }, // Deviation = 100
+            { 1, new DurToStationAndDest(500000f, 500000f, 0f, 0f) }, // Deviation = 0
+            { 2, new DurToStationAndDest(600000f, 600000f, 100f, 100f) }, // Deviation = 100
         };
 
         var bestStation = computeCost.Compute(ref ev, stationDurations, _time);
@@ -64,8 +64,8 @@ public class ComputeCostTest
 
         var stationDurations = new Dictionary<ushort, DurToStationAndDest>
         {
-            { 1, new DurToStationAndDest(500000f, 500000f) },
-            { 2, new DurToStationAndDest(500000f, 500000f) },
+            { 1, new DurToStationAndDest(500000f, 500000f, 0f, 0f) },
+            { 2, new DurToStationAndDest(500000f, 500000f, 0f, 0f) },
         };
 
         var bestStation = computeCost.Compute(ref ev, stationDurations, _time);
@@ -95,8 +95,8 @@ public class ComputeCostTest
 
         var stationDurations = new Dictionary<ushort, DurToStationAndDest>
             {
-                { 1, new DurToStationAndDest(500000f, 500000f) },
-                { 2, new DurToStationAndDest(500000f, 500000f) },
+                { 1, new DurToStationAndDest(500000f, 500000f, 0f, 0f) },
+                { 2, new DurToStationAndDest(500000f, 500000f, 0f, 0f) },
             };
 
         var bestStation = computeCost.Compute(ref ev, stationDurations, _time);
@@ -152,7 +152,7 @@ public class ComputeCostTest
             duration: new Time(900000),
             newDistanceKm: 150);
 
-        var stationDurations = new Dictionary<ushort, DurToStationAndDest> { { 1, new DurToStationAndDest(600000f, 600000f) }, { 2, new DurToStationAndDest(650000f, 650000f) } };
+        var stationDurations = new Dictionary<ushort, DurToStationAndDest> { { 1, new DurToStationAndDest(600000f, 600000f, 0f, 0f) }, { 2, new DurToStationAndDest(650000f, 650000f, 50f, 50f) } };
         var bestStation = computeCost.Compute(ref ev, stationDurations, new Time(250000));
 
         Assert.Equal(1, bestStation.Id);
@@ -203,7 +203,7 @@ public class ComputeCostTest
         // At time 600, choose between two more charging stations
         // Station 20: 600 second detour = 0 deviation (perfect match)
         // Station 30: 650 second detour = ~0.83 min deviation
-        var stationDurations = new Dictionary<ushort, DurToStationAndDest> { { 20, new DurToStationAndDest(600000f, 600000f) }, { 30, new DurToStationAndDest(650000f, 650000f) } };
+        var stationDurations = new Dictionary<ushort, DurToStationAndDest> { { 20, new DurToStationAndDest(600000f, 600000f, 0f, 0f) }, { 30, new DurToStationAndDest(650000f, 650000f, 50f, 50f) } };
         var bestStation = computeCost.Compute(ref ev, stationDurations, new Time(600000));
 
         Assert.Equal(20, bestStation.Id);

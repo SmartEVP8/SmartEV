@@ -39,7 +39,7 @@ public class ApplyNewPathToEVTests()
         var applyNewPath = new EVDetourPlanner(fakeRouter);
         var currentTime = new Time(10);
 
-        applyNewPath.Update(ref ev, station, currentTime);
+        applyNewPath.Update(ref ev, station, currentTime, tableDuration: fakeRouter.ReturnedDuration, tableDistance: 0);
 
         Assert.Equal(150.0f, (uint)ev.Journey.Current.Duration);
         Assert.Equal(10U, (uint)ev.Journey.Current.Departure);
@@ -77,12 +77,12 @@ public class ApplyNewPathToEVTests()
         var station = CoreTestData.Station(1, new Position(5, 5));
 
         Assert.Throws<InvalidOperationException>(() =>
-            applyNewPath.Update(ref ev, station, new Time(99000)));
+            applyNewPath.Update(ref ev, station, new Time(99000), fakeRouter.ReturnedDuration, 0));
 
         const uint outsideApproxTolerance = 310000; // 5 minutes and 10 seconds, which is outside the 5 minute tolerance
 
         Assert.Throws<ArgumentException>(() =>
-            applyNewPath.Update(ref ev, station, new Time(150000 + outsideApproxTolerance)));
+            applyNewPath.Update(ref ev, station, new Time(150000 + outsideApproxTolerance), fakeRouter.ReturnedDuration, 0));
     }
 
     public class FakeDestinationRouter : IDestinationRouter

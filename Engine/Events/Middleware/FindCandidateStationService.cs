@@ -14,7 +14,8 @@ using Core.Helper;
 /// <param name="DurToStation">Duration from the EV position to the candidate station.</param>
 /// <param name="DurToDest">Duration from the candidate station to the destination.</param>
 /// <param name="DistStationToDestMeters">Distance from the candidate station to the destination in meters.</param>
-public struct DurToStationAndDest(float DurToStation, float DurToDest, float DistStationToDestMeters = 0f)
+/// <param name="DistToStationMeters">Distance from the EV position to the candidate station in meters.</param>
+public struct DurToStationAndDest(float DurToStation, float DurToDest, float DistStationToDestMeters, float DistToStationMeters)
 {
     /// <summary>Duration from the EV position to the candidate station.</summary>
     public float DurToStation = DurToStation;
@@ -24,6 +25,9 @@ public struct DurToStationAndDest(float DurToStation, float DurToDest, float Dis
 
     /// <summary>Distance from the candidate station to the destination in meters.</summary>
     public float DistStationToDestMeters = DistStationToDestMeters;
+
+    /// <summary>Distance from the EV position to the candidate station in meters.</summary>
+    public float DistToStationMeters = DistToStationMeters;
 }
 
 /// <summary>Service responsible for pre-computing the candidate stations for an EV and caching the results for later retrieval.</summary>
@@ -107,7 +111,7 @@ public class FindCandidateStationService(
                 if (ev.CheckIfTargetSoCIsLowerThanCurrentSoC(toStation.Item2, toDestination.Item2, settings.ChargeBufferPercent))
                     continue;
 
-                refinedCandidateDurations[stationId] = new DurToStationAndDest(toStation.Item1, toDestination.Item1, toDestination.Item2);
+                refinedCandidateDurations[stationId] = new DurToStationAndDest(toStation.Item1, toDestination.Item1, toDestination.Item2, toStation.Item2);
             }
 
             if (refinedCandidateDurations.Count == 0 && stationService.GetReservationStationId(e.EVId) is ushort && ev.DistanceOnCurrentChargeKm() > pathDeviationMultiplied)
