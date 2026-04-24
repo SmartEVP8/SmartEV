@@ -21,8 +21,32 @@ public class StationHandler
     private readonly EVStore _evStore;
     private readonly EventScheduler _scheduler;
 
+    /// <summary>
+    /// Precomputed greedy assignment of all reservations to chargers, in arrival order.
+    /// </summary>
+    private List<PlanEntry>? _plan;
+
+    /// <summary>
+    /// The minimum charger availability before any reservations are accounted for.
+    /// Valid whenever <see cref="_plan"/> is non-null.
+    /// </summary>
+    private Time _planInitialAvailability;
+
+    private readonly record struct PlanEntry(Time ArrivalTime, Time MinChargerAvailability);
+
+    /// <summary>
+    /// Gets the station model associated with this handler.
+    /// </summary>
     public Station Station => _station;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="StationHandler"/> class.
+    /// </summary>
+    /// <param name="station">The station entity containing chargers and reservations.</param>
+    /// <param name="integrator">The charging integrator for power calculations.</param>
+    /// <param name="scheduler">The event scheduler for simulation events.</param>
+    /// <param name="evStore">The store containing all EV state data.</param>
+    /// <param name="metrics">The service for recording simulation metrics.</param>
     public StationHandler(
         Station station,
         ChargingIntegrator integrator,
@@ -48,27 +72,46 @@ public class StationHandler
         }
     }
 
+    /// <summary>
+    /// Gets the collection of IDs for all chargers managed by this station.
+    /// </summary>
     public IEnumerable<int> ChargerIds => _chargerIndex.Keys;
 
+    /// <summary>
+    /// Retrieves the logic handler for a specific charger.
+    /// </summary>
+    /// <param name="chargerId">The unique identifier of the charger.</param>
+    /// <returns>The handler implementing <see cref="IChargerHandler"/>.</returns>
+    /// <exception cref="SkillissueException">Thrown if the charger ID is not found.</exception>
     public IChargerHandler GetChargerHandler(int chargerId)
         => _chargerIndex.TryGetValue(chargerId, out var pair)
             ? pair.Handler
             : throw new SkillissueException($"Trying to get charger handler {chargerId} which does not exist.");
 
     /// <summary>
+    /// Invalidates the cached wait time plan.
+    /// </summary>
+    public void InvalidatePlan() => _plan = null;
+
+    /// <summary>
     /// Finds the best compatible charger, joins its queue, and starts charging only if a side is free.
     /// </summary>
+    /// <param name="e">The arrival event details.</param>
     public void HandleArrivalAtStation(ArriveAtStation e)
     {
+        InvalidatePlan();
+
         ref var evRef = ref _evStore.Get(e.EVId);
         evRef.Advance(e.Time);
         Log.Verbose(e.EVId, e.Time, $"Handling ArrivalAtStation for EV {e.EVId} at time {e.Time}. Current EV data: {evRef}. SoC: {evRef.Battery.StateOfCharge}. Wants to charge to {e.TargetSoC}");
 
         if (evRef.Battery.StateOfCharge >= e.TargetSoC)
+        {
             throw Log.Error(e.EVId, e.Time,
                 new SkillissueException($"EV wants to charge to a SoC: {e.TargetSoC}, which is lower than its current SoC: {evRef.Battery.StateOfCharge}."),
                 ((string Key, object Value))("EV", evRef),
                 ((string Key, object Value))("TargetSoC", e.TargetSoC));
+        }
 
         var target = _station.Chargers
             .OrderBy(cs => cs.IsFree ? 0 : 1)
@@ -99,8 +142,11 @@ public class StationHandler
     /// Ends the charging session, updates EV state, and starts the next car.
     /// Cross-station reservation cleanup is left to the caller (StationService).
     /// </summary>
+    /// <param name="e">The end charging event details.</param>
     public void HandleEndCharging(EndCharging e)
     {
+        InvalidatePlan();
+
         if (!_chargerIndex.TryGetValue(e.ChargerId, out var entry))
             return;
 
@@ -115,8 +161,10 @@ public class StationHandler
             ev.Battery.StateOfCharge = (float)Math.Clamp(soc, 0d, 1d);
 
         if (!_arrivalTimes.TryGetValue(e.EVId, out var arrivalTime))
+        {
             throw Log.Error(e.EVId, e.Time,
                 new SkillissueException($"Logic Error: Missing arrival time for EV {e.EVId} at EndCharging."));
+        }
 
         _arrivalTimes.Remove(e.EVId);
         var timeAtStation = e.Time - arrivalTime;
@@ -136,8 +184,36 @@ public class StationHandler
         StartChargingNextCar(charger, e.Time);
     }
 
+    /// <summary>
+    /// Returns the earliest absolute simulation time at which a charger will be free for an EV
+    /// arriving at <paramref name="arrival"/>, accounting for all reservations ahead of it.
+    /// </summary>
+    /// <param name="simNow">Current simulation time.</param>
+    /// <param name="arrival">The projected arrival time of the EV.</param>
+    /// <returns>Absolute time when a charger side becomes available.</returns>
     public Time ExpectedWaitTime(Time simNow, Time arrival)
     {
+        EnsurePlan(simNow);
+        var index = _plan?.FindLastIndex(p => p.ArrivalTime <= arrival) ?? -1;
+        return index >= 0
+            ? _plan![index].MinChargerAvailability
+            : _planInitialAvailability;
+    }
+
+    /// <summary>
+    /// Builds the full integrated charger availability plan over all reservations if it is not
+    /// already cached. Each entry in <see cref="_plan"/> answers: "after greedily assigning
+    /// every reservation up to and including this one, what is the earliest a new EV could start
+    /// charging?".
+    /// </summary>
+    /// <param name="simNow">Current simulation time.</param>
+    private void EnsurePlan(Time simNow)
+    {
+        if (_plan is not null)
+            return;
+
+        _plan = [];
+
         var waitTimes = new PriorityQueue<int, Time>();
         var reservationQueues = new Dictionary<int, List<ConnectedEV>>();
         var initialAvailability = new Dictionary<int, Time>();
@@ -153,14 +229,13 @@ public class StationHandler
             initialAvailability[charger.Id] = estimatedWait;
         }
 
-        var reservationsBefore = _station.Reservations.ReservationsBefore(arrival);
+        _planInitialAvailability = waitTimes.TryPeek(out _, out var initMin) ? initMin : simNow;
 
-        foreach (var reservation in reservationsBefore)
+        foreach (var reservation in _station.Reservations.AllReservations)
         {
             waitTimes.TryDequeue(out var chargerId, out var currentAvailableAt);
 
             var battery = _evStore.Get(reservation.EVId).Battery;
-
             var connectedEV = new ConnectedEV(
                 EVId: reservation.EVId,
                 CurrentSoC: reservation.SoCAtArrival,
@@ -177,11 +252,16 @@ public class StationHandler
 
             var (availableAt, _) = handler.EstimateWaitTime(baseTime, queue);
             waitTimes.Enqueue(chargerId, availableAt + baseTime);
+            waitTimes.TryPeek(out _, out var minAfter);
+            _plan.Add(new PlanEntry(reservation.TimeOfArrival, minAfter));
         }
-
-        return waitTimes.TryDequeue(out var _, out var minWait) ? minWait : simNow;
     }
 
+    /// <summary>
+    /// Transitions a charger from idle/queueing to active charging for the next EV in line.
+    /// </summary>
+    /// <param name="charger">The charger state object.</param>
+    /// <param name="simNow">Current simulation time.</param>
     private void StartChargingNextCar(ChargerBase charger, Time simNow)
     {
         if (!charger.Queue.TryPeek(out var top))
