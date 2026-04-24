@@ -33,7 +33,6 @@ public static class EngineConfiguration
             Seed = new Random(42),
             CostConfig = new CostWeights
             {
-                EffectiveQueueSize = ReadWeightFromEnvironment(_effectiveQueueSizeEnvVar, 1f, 0f, 1f),
                 PathDeviation = ReadWeightFromEnvironment(_pathDeviationEnvVar, 0.8f, 0f, 1f),
                 PriceSensitivity = ReadWeightFromEnvironment(_priceSensitivityEnvVar, 0.4f, 0f, 1f),
                 ExpectedWaitTime = ReadWeightFromEnvironment(_expectedWaitTimeEnvVar, 1f, 0f, 1f),
