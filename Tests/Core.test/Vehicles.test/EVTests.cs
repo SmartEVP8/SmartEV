@@ -222,7 +222,7 @@ public class EVTests
             efficiency: 150,
             distanceMeter: 100000f);
 
-        var result = ev.TimeToNextFindCandidateCheck(0);
+        var result = ev.TimeAtNextFindCandidateCheck(0);
 
         Assert.Equal(1800u, result.TotalSeconds);
     }
@@ -239,7 +239,7 @@ public class EVTests
             efficiency: 150,
             distanceMeter: 100000f);
 
-        var result = ev.TimeToNextFindCandidateCheck(0);
+        var result = ev.TimeAtNextFindCandidateCheck(0);
 
         Assert.Equal(720u, result.TotalSeconds);
     }
@@ -256,7 +256,7 @@ public class EVTests
             efficiency: 150,
             distanceMeter: 100000f);
 
-        var result = ev.TimeToNextFindCandidateCheck(0);
+        var result = ev.TimeAtNextFindCandidateCheck(0);
 
         Assert.Equal(1800u, result.TotalSeconds);
     }
@@ -273,7 +273,7 @@ public class EVTests
             efficiency: 150,
             distanceMeter: 100000f);
 
-        var result = ev.TimeToNextFindCandidateCheck(1000);
+        var result = ev.TimeAtNextFindCandidateCheck(1000);
 
         Assert.Equal(721u, result.TotalSeconds);
     }

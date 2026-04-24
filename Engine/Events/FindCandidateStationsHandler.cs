@@ -40,6 +40,14 @@ public class FindCandidateStationsHandler(
         ref var ev = ref evStore.Get(e.EVId);
         ev.Advance(e.Time);
 
+        if (ev.Battery.StateOfCharge >= 0.7f)
+        {
+            var nextCheckTime = ev.TimeAtNextFindCandidateCheck(e.Time);
+            Log.Info(e.EVId, e.Time, $"EV {e.EVId} has more than 70% SoC at find candidate stations. Rescheduling next check at {nextCheckTime}.");
+            eventScheduler.ScheduleEvent(new FindCandidateStations(e.EVId, nextCheckTime));
+            return;
+        }
+
         Log.Verbose(e.EVId, e.Time, $"Handling FindCandidateStations for EV {e.EVId} at time {e.Time}. Current EV data: {ev}. SoC: {ev.Battery.StateOfCharge}, Next stop in {ev.Journey.Current.DurationToNextStop}ms.)", ("Journey", ev.Journey));
         if (candidateStations.Count == 0)
         {
@@ -68,7 +76,7 @@ public class FindCandidateStationsHandler(
             return;
         }
 
-        eventScheduler.ScheduleEvent(new FindCandidateStations(e.EVId, ev.TimeToNextFindCandidateCheck(e.Time)));
+        eventScheduler.ScheduleEvent(new FindCandidateStations(e.EVId, ev.TimeAtNextFindCandidateCheck(e.Time)));
     }
 
     private void HandleNoCandidates(FindCandidateStations e, ref EV ev)

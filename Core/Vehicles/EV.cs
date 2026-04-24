@@ -221,7 +221,7 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     /// </summary>
     /// <param name="currentTime">The current simulation time.</param>
     /// <returns>The Time the next FindCandidateStation Event should occur.</returns>
-    public readonly Time TimeToNextFindCandidateCheck(Time currentTime) => Math.Min(Journey.TimeToReachHalfToNextStop(), TimeUntilHalfOfBattery(currentTime));
+    public readonly Time TimeAtNextFindCandidateCheck(Time currentTime) => Math.Min(Journey.TimeToReachHalfToNextStop(), TimeUntilHalfOfBattery(currentTime));
 
     private readonly Time TimeUntilHalfOfBattery(Time currentTime)
     {
