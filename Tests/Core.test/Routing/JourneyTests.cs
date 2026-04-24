@@ -183,20 +183,25 @@ public class JourneyTests
     }
 
     [Fact]
-    public void DurationToNextStop_NotOnRoute_EqualsTotalDuration()
+    public void UpdateRoute_WhenNextStopNotOnRoute_ThrowsInvalidOperationException()
     {
         var waypoints = new List<Position>
-        {
-            new(0, 0),
-            new(1, 1),
-            new(2, 2),
-        };
+    {
+        new(0, 0),
+        new(1, 1),
+        new(2, 2),
+    };
 
         var nextStopNotOnRoute = new Position(99, 99);
         var journey = new Journey(departure: 0, duration: 60000, distanceMeters: 100, waypoints);
-        journey.UpdateRoute(waypoints, nextStopNotOnRoute, departure: 0, duration: 60000, newDistanceKm: 0.1f);
 
-        Assert.Equal(journey.Current.EtaToNextStop, journey.Current.Eta);
+        Assert.Throws<InvalidOperationException>(() =>
+            journey.UpdateRoute(
+                waypoints,
+                nextStopNotOnRoute,
+                departure: 0,
+                duration: 60000,
+                newDistanceKm: 0.1f));
     }
 
     [Fact]

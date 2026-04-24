@@ -2,27 +2,42 @@ namespace Engine.test.Events;
 
 using Engine.Metrics.Events;
 using Core.Vehicles;
-using Engine.test.Builders;
 using Core.test.Builders;
 using Core.Shared;
 
 public class ArriveAtDestinationMetricTest
 {
-    /// <summary>
-    /// The Collect method should extract all required fields from the EV's journey and arrival time.
-    /// </summary>
     [Fact]
     public void Collect_ExtractsAllMetricFields()
     {
-        var departure = 100000U;
-        var originalDuration = 50000U;
-        var deviation = 12000;
+        const uint departure = 100000U;
+        const uint originalDuration = 50000U;
+        const int deviation = 12000;
         var simNow = (Time)(departure + originalDuration + deviation);
 
         var battery = CoreTestData.Battery();
         var preferences = CoreTestData.Preferences();
-        var journey = CoreTestData.Journey(waypoints: null, departure: 100000U, originalDuration: 50000U);
-        journey.UpdateRoute(new List<Position>([]), new(0, 0), departure: 100000U, duration: 62000U, newDistanceKm: 10);
+
+        var nextStop = new Position(1, 1);
+        var route = new List<Position>
+        {
+            new(0, 0),
+            nextStop,
+            new(2, 2),
+        };
+
+        var journey = CoreTestData.Journey(
+            waypoints: route,
+            departure: departure,
+            originalDuration: originalDuration);
+
+        journey.UpdateRoute(
+            route,
+            nextStop,
+            departure: departure,
+            duration: originalDuration + deviation,
+            newDistanceKm: 10);
+
         var ev = new EV(battery, preferences, journey, 150);
 
         var metric = ArrivalAtDestinationMetric.Collect(ref ev, simNow);
@@ -31,21 +46,28 @@ public class ArriveAtDestinationMetricTest
         Assert.Equal(deviation, metric.PathDeviation);
     }
 
-    /// <summary>
-    /// MissedDeadline should be true when the EV accumulated deviation that pushed
-    /// actual arrival past the expected duration.
-    /// </summary>
     [Fact]
     public void MissedDeadline_ComputedCorrectly()
     {
-        var departure = 100000U;
-        var originalDuration = 50000U;
-        var deviation = 12000U;
+        const uint departure = 100000U;
+        const uint originalDuration = 50000U;
+        const uint deviation = 12000U;
         var simNow = (Time)(departure + originalDuration + deviation);
 
         var battery = CoreTestData.Battery();
         var preferences = CoreTestData.Preferences();
-        var journey = CoreTestData.Journey(waypoints: null, departure: departure, originalDuration: originalDuration);
+
+        var route = new List<Position>
+        {
+            new(0, 0),
+            new(1, 1),
+        };
+
+        var journey = CoreTestData.Journey(
+            waypoints: route,
+            departure: departure,
+            originalDuration: originalDuration);
+
         var ev = new EV(battery, preferences, journey, 150);
 
         var metric = ArrivalAtDestinationMetric.Collect(ref ev, simNow);
