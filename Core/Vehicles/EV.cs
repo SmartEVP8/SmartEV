@@ -45,6 +45,11 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     public Journey Journey { get; } = journey;
 
     /// <summary>
+    /// Gets or sets a value indicating whether the EV should drive directly to its destination without charging.
+    /// </summary>
+    public bool DriveDirectlyToDestination { get; set; } = false;
+
+    /// <summary>
     /// Gets or sets the current state of the EV.
     /// </summary>
     public EVState EVState { get; set; } = EVState.Driving;

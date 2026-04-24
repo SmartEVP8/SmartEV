@@ -101,7 +101,8 @@ public static class Init
             var journeySamplerProvider = sp.GetRequiredService<IJourneySamplerProvider>();
             var router = sp.GetRequiredService<IOSRMRouter>();
             var random = settings.Seed;
-            return new EVFactory(random, journeySamplerProvider, router);
+            var options = new EVOptions();
+            return new EVFactory(random, journeySamplerProvider, router, options);
         });
 
         services.AddSingleton(sp =>
