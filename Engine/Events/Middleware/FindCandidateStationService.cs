@@ -19,13 +19,17 @@ using Core.Helper;
 /// </summary>
 /// <param name="DurToStation">Duration from the EV position to the candidate station.</param>
 /// <param name="DurToDest">Duration from the candidate station to the destination.</param>
-public struct DurToStationAndDest(float DurToStation, float DurToDest)
+/// <param name="DistStationToDestMeters">Distance from the candidate station to the destination in meters.</param>
+public struct DurToStationAndDest(float DurToStation, float DurToDest, float DistStationToDestMeters = 0f)
 {
     /// <summary>Duration from the EV position to the candidate station.</summary>
     public float DurToStation = DurToStation;
 
     /// <summary>Duration from the candidate station to the destination.</summary>
     public float DurToDest = DurToDest;
+
+    /// <summary>Distance from the candidate station to the destination in meters.</summary>
+    public float DistStationToDestMeters = DistStationToDestMeters;
 }
 
 /// <summary>Service responsible for pre-computing the candidate stations for an EV and caching the results for later retrieval.</summary>
@@ -159,8 +163,6 @@ public class FindCandidateStationService : IFindCandidateStationService
                 reachableStationIds);
 
             var refinedCandidateDurations = new Dictionary<ushort, DurToStationAndDest>(reachableStationIds.Length);
-            var baselineDirectDistanceKm = ev.Journey.Current.DistanceKm;
-
             for (var i = 0; i < reachableStationIds.Length; i++)
             {
                 var stationId = reachableStationIds[i];
@@ -168,18 +170,18 @@ public class FindCandidateStationService : IFindCandidateStationService
                 if (detourDistanceMeters < 0 || float.IsNaN(detourDistanceMeters))
                     continue;
 
-                if (!ev.CanReachViaDetour(detourDistanceMeters / 1000f, baselineDirectDistanceKm, ev.Preferences.MinAcceptableCharge))
-                    continue;
-
                 var toStation = (detourResult.ToStation.Durations[i], detourResult.ToStation.Distances[i]);
                 var toDestination = (detourResult.ToDest.Durations[i], detourResult.ToDest.Distances[i]);
-                if (ev.SoCUsedAfterADistance(toStation.Item2 / 1000f) <= 0)
+                if (!ev.CanReachToStation(toStation.Item2 / 1000f, ev.Preferences.MinAcceptableCharge))
+                    continue;
+
+                if (ev.SoCUsedAfterADistance(toStation.Item2 / 1000) <= 0)
                     continue;
 
                 if (ev.CheckIfTargetSoCIsLowerThanCurrentSoC(toStation.Item2, toDestination.Item2, _chargerBufferPercent))
                     continue;
 
-                refinedCandidateDurations[stationId] = new DurToStationAndDest(toStation.Item1, toDestination.Item1);
+                refinedCandidateDurations[stationId] = new DurToStationAndDest(toStation.Item1, toDestination.Item1, toDestination.Item2);
             }
 
             if (refinedCandidateDurations.Count == 0 && _stationService.GetReservationStationId(e.EVId) is ushort && ev.DistanceOnCurrentChargeKm() > pathDeviationMultiplied)

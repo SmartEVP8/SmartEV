@@ -15,9 +15,12 @@ using Core.Helper;
 /// <param name="random">An instance of Random.</param>
 /// <param name="samplersProvider">The provider of the samplers used to sample the EVs' journeys.</param>
 /// <param name="pointToPointRouter">Used to get the duration and path of the EVs' journeys.</param>
-public class EVFactory(Random random, IJourneySamplerProvider samplersProvider, IPointToPointRouter pointToPointRouter)
+/// <param name="EVOptions">The options used to configure the EVs.</param>
+public class EVFactory(Random random, IJourneySamplerProvider samplersProvider, IPointToPointRouter pointToPointRouter, EVOptions EVOptions)
 {
     private readonly AliasSampler _sampler = new([.. EVModels.Models.Select(m => m.SpawnChance)]);
+
+    private readonly EVOptions _options = EVOptions;
 
     /// <summary>
     /// Creates a single EV. For batch creation use <see cref="SampleParams"/> and <see cref="Create(SampledEVParams, Time)"/>.
@@ -42,6 +45,31 @@ public class EVFactory(Random random, IJourneySamplerProvider samplersProvider, 
         float MaxPathDeviation,
         (Position Source, Position Destination) SourceDest
     );
+
+    private float GetRandomStartingSoC()
+    {
+        var startSocDistribution = _options.StartSoCDistribution;
+        if (startSocDistribution.Values.Sum() is not (>= 0.99 and <= 1.01))
+        {
+            throw Log.Error(0, 0, new ArgumentException($"StartSoCDistribution probabilities must sum to 1 (current sum={startSocDistribution.Values.Sum()})."));
+        }
+
+        var randomValue = random.NextDouble();
+        var cumulativeProbability = 0.0;
+
+        foreach (var (stateOfCharge, probability) in startSocDistribution)
+        {
+            cumulativeProbability += probability;
+
+            if (randomValue < cumulativeProbability)
+            {
+                return stateOfCharge;
+            }
+        }
+
+        // Fallback for floating-point edge cases.
+        return 0.8f;
+    }
 
     /// <summary>
     /// Creates a single EV from pre-sampled parameters. This method is thread-safe
@@ -72,7 +100,7 @@ public class EVFactory(Random random, IJourneySamplerProvider samplersProvider, 
         {
             parameters[i] = new SampledEVParams(
                 Config: EVModels.Models[_sampler.Sample(random)],
-                CurrCharge: NextFloatInRange(0.4f, 1f),
+                CurrCharge: GetRandomStartingSoC(),
                 PriceSensPref: random.NextSingle(),
                 MinAcceptableCharge: NextFloatInRange(0.05f, 0.2f),
                 MaxPathDeviation: NextFloatInRange(5.0f, 30.0f),
