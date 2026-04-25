@@ -2,7 +2,6 @@ namespace Engine.test.Routing;
 
 using Core.Shared;
 using Engine.Routing;
-
 using Engine.test.Builders;
 using Core.test.Builders;
 
@@ -17,9 +16,10 @@ public class ApplyNewPathToEVTests()
             originalDuration: 60000U);
 
         var stationPosition = new Position(2, 2);
-        var dummyRoute = new List<Position>([new(0, 0), stationPosition, new(5, 5)]);
-        journey.UpdateRoute(dummyRoute, stationPosition, departure: new Time(0), duration: new Time(60000), 0);
-        journey.UpdateRoute(dummyRoute, stationPosition, departure: new Time(20000), duration: new Time(40000), 0);
+        var dummyRoute = new List<Position> { new(0, 0), stationPosition, new(5, 5) };
+
+        journey.UpdateRoute(dummyRoute, stationPosition, departure: new Time(0), duration: new Time(60000), newDistanceKm: 10);
+        journey.UpdateRoute(dummyRoute, stationPosition, departure: new Time(20000), duration: new Time(40000), newDistanceKm: 10);
 
         Assert.Equal(0U, (uint)journey.Current.PathDeviation);
     }
@@ -27,21 +27,25 @@ public class ApplyNewPathToEVTests()
     [Fact]
     public void ApplyNewPathToEV_ConvertsAndRoundsDurationCorrectly()
     {
-        var ev = CoreTestData.EV(waypoints: [
-            new (0, 0),
-            new (10, 10)
+        var ev = CoreTestData.EV(waypoints:
+        [
+            new(0, 0),
+            new(10, 10),
         ]);
-        var station = CoreTestData.Station(1, new(5, 5));
+
+        var station = CoreTestData.Station(1, new(10, 10));
         var fakeRouter = new FakeDestinationRouter
         {
-            ReturnedDuration = 150f, // 2.5 minutes, should round to 2
+            ReturnedDuration = 150f,
+            ReturnedPolyline = "??_qo]_qo]_qo]_qo]",
         };
+
         var applyNewPath = new EVDetourPlanner(fakeRouter);
         var currentTime = new Time(10);
 
         applyNewPath.Update(ref ev, station, currentTime, tableDuration: fakeRouter.ReturnedDuration, tableDistance: 0);
 
-        Assert.Equal(150.0f, (uint)ev.Journey.Current.Duration);
+        Assert.Equal(150U, (uint)ev.Journey.Current.Duration);
         Assert.Equal(10U, (uint)ev.Journey.Current.Departure);
     }
 
@@ -49,18 +53,28 @@ public class ApplyNewPathToEVTests()
     public void UpdateRoute_AccumulatesPathDeviationCorrectly()
     {
         var journey = CoreTestData.Journey(
-            waypoints: null,
+            waypoints:
+            [
+                new(0, 0),
+                new(10, 10),
+            ],
             departure: new Time(100000),
             originalDuration: 50000U);
 
-        var dummyRoute = new List<Position>([]);
-        var dummyPosition = new Position(0, 0);
-        var dummyJourneyLengthkm = 10;
+        var stationPosition = new Position(5, 5);
+        var dummyRoute = new List<Position>
+        {
+            new(0, 0),
+            stationPosition,
+            new(10, 10),
+        };
 
-        journey.UpdateRoute(dummyRoute, dummyPosition, departure: new Time(100000), duration: new Time(60000), dummyJourneyLengthkm);
+        const float dummyJourneyLengthKm = 10;
+
+        journey.UpdateRoute(dummyRoute, stationPosition, departure: new Time(100000), duration: new Time(60000), dummyJourneyLengthKm);
         Assert.Equal(10000U, (uint)journey.Current.PathDeviation);
 
-        journey.UpdateRoute(dummyRoute, dummyPosition, departure: new Time(110000), duration: new Time(40000), dummyJourneyLengthkm);
+        journey.UpdateRoute(dummyRoute, stationPosition, departure: new Time(110000), duration: new Time(40000), dummyJourneyLengthKm);
         Assert.Equal(0U, (uint)journey.Current.PathDeviation);
     }
 
@@ -68,7 +82,11 @@ public class ApplyNewPathToEVTests()
     public void ApplyNewPathToEV_ThrowsArgumentException_WhenTimeIsOutOfBounds()
     {
         var ev = CoreTestData.EV(
-            waypoints: [new Position(0, 0), new Position(10, 10)],
+            waypoints:
+            [
+                new(0, 0),
+                new(10, 10),
+            ],
             departureTime: new Time(100000),
             originalDuration: 50000U);
 
@@ -79,7 +97,7 @@ public class ApplyNewPathToEVTests()
         Assert.Throws<InvalidOperationException>(() =>
             applyNewPath.Update(ref ev, station, new Time(99000), fakeRouter.ReturnedDuration, 0));
 
-        const uint outsideApproxTolerance = 310000; // 5 minutes and 10 seconds, which is outside the 5 minute tolerance
+        const uint outsideApproxTolerance = 310000;
 
         Assert.Throws<ArgumentException>(() =>
             applyNewPath.Update(ref ev, station, new Time(150000 + outsideApproxTolerance), fakeRouter.ReturnedDuration, 0));
@@ -96,6 +114,12 @@ public class ApplyNewPathToEVTests()
         public string ReturnedPolyline { get; set; } = "_p~iF~ps|U_ulLnnqC_mqNvxq`@";
 
         public RouteSegment QueryDestinationWithStop(
-            double evLon, double evLat, double stationLon, double stationLat, double destLon, double destLat, ushort index) => new(ReturnedDuration, ReturnedDistance, ReturnedPolyline);
+            double evLon,
+            double evLat,
+            double stationLon,
+            double stationLat,
+            double destLon,
+            double destLat,
+            ushort index) => new(ReturnedDuration, ReturnedDistance, ReturnedPolyline);
     }
 }
