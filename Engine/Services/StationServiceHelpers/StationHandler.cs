@@ -15,6 +15,8 @@ using Engine.Vehicles;
 /// </summary>
 public class StationHandler
 {
+    private const uint _costPlanTtl = 60_000;
+
     private readonly Dictionary<int, (ChargerBase State, IChargerHandler Handler)> _chargerIndex = [];
     private readonly Dictionary<int, uint> _arrivalTimes = [];
     private readonly Station _station;
@@ -31,6 +33,9 @@ public class StationHandler
     /// Valid whenever <see cref="_plan"/> is non-null.
     /// </summary>
     private Time _planInitialAvailability;
+    private Time _costPlanInitialAvailability;
+    private Time _costPlanCachedAt = 0;
+    private List<PlanEntry>? _costPlan;
 
     private readonly record struct PlanEntry(Time ArrivalTime, Time MinChargerAvailability);
 
@@ -89,7 +94,7 @@ public class StationHandler
             : throw new SkillissueException($"Trying to get charger handler {chargerId} which does not exist.");
 
     /// <summary>
-    /// Invalidates the cached wait time plan.
+    /// Invalidates the charging logic plan only. The cost plan is time-based and unaffected.
     /// </summary>
     public void InvalidatePlan() => _plan = null;
 
@@ -186,18 +191,30 @@ public class StationHandler
 
     /// <summary>
     /// Returns the earliest absolute simulation time at which a charger will be free for an EV
-    /// arriving at <paramref name="arrival"/>, accounting for all reservations ahead of it.
+    /// arriving at <paramref name="arrival"/>, using a time-based cached plan so that frequent
+    /// arrivals/departures do not cause constant recomputation during cost evaluation.
     /// </summary>
     /// <param name="simNow">Current simulation time.</param>
     /// <param name="arrival">The projected arrival time of the EV.</param>
     /// <returns>Absolute time when a charger side becomes available.</returns>
     public Time ExpectedWaitTime(Time simNow, Time arrival)
     {
-        EnsurePlan(simNow);
-        var index = _plan?.FindLastIndex(p => p.ArrivalTime <= arrival) ?? -1;
+        EnsureCostPlan(simNow);
+        var index = _costPlan?.FindLastIndex(p => p.ArrivalTime <= arrival) ?? -1;
         return index >= 0
-            ? _plan![index].MinChargerAvailability
-            : _planInitialAvailability;
+            ? _costPlan![index].MinChargerAvailability
+            : _costPlanInitialAvailability;
+    }
+
+    private void EnsureCostPlan(Time simNow)
+    {
+        if (_costPlan is not null && simNow - _costPlanCachedAt < _costPlanTtl)
+            return;
+
+        _costPlanCachedAt = simNow;
+        EnsurePlan(simNow);
+        _costPlan = _plan;
+        _costPlanInitialAvailability = _planInitialAvailability;
     }
 
     /// <summary>
