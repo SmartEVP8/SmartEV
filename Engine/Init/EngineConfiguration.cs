@@ -16,7 +16,6 @@ public static class EngineConfiguration
 {
     private const string _priceSensitivityEnvVar = "COST_WEIGHT_PRICE_SENSITIVITY";
     private const string _pathDeviationEnvVar = "COST_WEIGHT_PATH_DEVIATION";
-    private const string _effectiveQueueSizeEnvVar = "COST_WEIGHT_EFFECTIVE_QUEUE_SIZE";
     private const string _expectedWaitTimeEnvVar = "COST_WEIGHT_EXPECTED_WAIT_TIME";
 
     /// <summary>
@@ -58,6 +57,7 @@ public static class EngineConfiguration
             SimulationStartTime = Time.MillisecondsPerDay,
             SimulationEndTime = Time.MillisecondsPerDay * 7,
             SnapshotInterval = 1000 * 20 * 60,
+            EnablePerformanceMetrics = true,
             EVDistributionWindowsSize = 30 * 60 * 1000,
             EVSpawnFraction = 0.1f,
             PopulationScaler = 0.7f,
