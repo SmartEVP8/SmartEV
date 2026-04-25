@@ -64,22 +64,38 @@ public class FindCandidateStationsHandler(
         var sw = Stopwatch.StartNew();
         var bestStation = costFunction.Compute(ref ev, candidateStations, e.Time)
             ?? throw Log.Error(e.EVId, e.Time, new SkillissueException("Cost function did not return a station, but should never get this far."));
+        var candidate = candidateStations[bestStation.Id];
         metrics?.Record("FindCandidateStations.ComputeCost", sw.Elapsed.TotalMilliseconds);
 
         if (stationService.GetReservationStationId(e.EVId) != bestStation.Id)
         {
-            sw.Restart();
-            evDetourPlanner.Update(ref ev, bestStation, e.Time);
+            {
+                sw.Restart();
+                evDetourPlanner.Update(
+                    ref ev,
+                    bestStation,
+                    e.Time,
+                    candidate.DurToStation + candidate.DurToDest,
+                    candidate.DistToStationMeters + candidate.DistStationToDestMeters);
+            }
             metrics?.Record("FindCandidateStations.EvDetourUpdate", sw.Elapsed.TotalMilliseconds);
         }
 
         var remaining = ev.Journey.Current.DurationToNextStop;
         var etaAtStation = e.Time + remaining;
-        var candidate = candidateStations[bestStation.Id];
         var targetSoC = candidate.DistStationToDestMeters > 0f
             ? ev.PreCalculatedTargetSoC(candidate.DistStationToDestMeters / 1000f)
             : ev.CalcDesiredSoC(etaAtStation);
         var socAtArrival = ev.EstimateSoCAtNextStop();
+
+        if (socAtArrival >= targetSoC)
+        {
+            throw Log.Error(e.EVId, e.Time, new InvalidOperationException(
+                $"Invalid reservation for EV {e.EVId}: estimated SoC at arrival ({socAtArrival}) is >= target SoC ({targetSoC})."),
+                ("Candidate", candidate),
+                ("BestStationId", bestStation.Id));
+        }
+
         stationService.HandleReservation(new Reservation(e.EVId, etaAtStation, socAtArrival, targetSoC), bestStation.Id);
 
         if (remaining <= Time.MillisecondsPerMinute * 10)
@@ -107,6 +123,14 @@ public class FindCandidateStationsHandler(
             return;
         }
 
-        throw Log.Error(e.EVId, e.Time, new InvalidOperationException($"No candidate stations available for EV {e.EVId} at {e.Time}."));
+        var waypointText = string.Join(" -> ", ev.Journey.Current.Waypoints.Select(p => $"({p.Longitude:F6}, {p.Latitude:F6})"));
+        Log.Warn(e.EVId, e.Time, $"No candidate stations found for EV {e.EVId} at time {e.Time}, and no existing reservation.", ("EV", ev), ("Journey", ev.Journey), ("EV SoC", ev.Battery.StateOfCharge), ("Waypoints", waypointText));
+        throw Log.Error(
+            e.EVId,
+            e.Time,
+            new InvalidOperationException($"No candidate stations available for EV {e.EVId} at {e.Time}. EV data: {ev}, Journey: {ev.Journey}, Waypoints: {waypointText}"),
+            ("EV", ev),
+            ("Journey", ev.Journey),
+            ("Waypoints", waypointText));
     }
 }
