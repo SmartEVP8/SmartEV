@@ -29,6 +29,7 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
         var bestCost = double.MaxValue;
         var weights = costStore.GetWeights() ?? throw Log.Error(0, time, new NoNullAllowedException("Cost weights not found in store."), ("EV", ev));
         Station? bestStation = null;
+        var lowestPrice = energyPrices.GetLowestPrice();
 
         foreach (var (stationId, durations) in stationDurations)
         {
@@ -36,7 +37,7 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
 
             var pathDeviationCost = CalculatePathDeviationCost(ref ev, durations.DurToDest + durations.DurToStation, weights, time);
             var urgencyCost = Urgency.CalculateChargeUrgency(ref ev, (uint)durations.DurToDest);
-            var priceCost = CalculatePriceCost(ref ev, station, weights, time, energyPrices);
+            var priceCost = CalculatePriceCost(ref ev, station, weights, time, lowestPrice);
             var effectiveWaitTimeCost = CalculateEffectiveWaitTimeCost(weights, time, durations.DurToStation, stationId);
             var cost = (1 - urgencyCost) * (pathDeviationCost + priceCost + effectiveWaitTimeCost);
 
@@ -83,10 +84,9 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
         return weights.PathDeviation * Math.Clamp(extraTimeCostMinutes, 0, float.MaxValue);
     }
 
-    private static float CalculatePriceCost(ref EV ev, Station station, CostWeights weights, Time time, EnergyPrices energyPrices)
+    private static float CalculatePriceCost(ref EV ev, Station station, CostWeights weights, Time time, float lowestPrice)
     {
         var currentPrice = station.GetPrice(time);
-        var lowestPrice = energyPrices.GetLowestPrice();
         return weights.PriceSensitivity * ev.Preferences.PriceSensitivity * (currentPrice - lowestPrice);
     }
 
