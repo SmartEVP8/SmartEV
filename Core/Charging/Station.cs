@@ -137,6 +137,20 @@ public class Reservations()
     }
 
     /// <summary>
+    /// Removes the reservation associated with the given EV id.
+    /// Does nothing if no reservation exists for the given id.
+    /// </summary>
+    /// <param name="evId">The id of the EV whose reservation should be removed.</param>
+    public void Remove(int evId)
+    {
+        if (_index.TryGetValue(evId, out var reservation))
+        {
+            _reservations.Remove(reservation);
+            _index.Remove(evId);
+        }
+    }
+
+    /// <summary>
     /// Cancels the reservation associated with the given EV id, removing it from the station and incrementing the cancellation counter.
     /// Does nothing if no reservation exists for the given id.
     /// </summary>
