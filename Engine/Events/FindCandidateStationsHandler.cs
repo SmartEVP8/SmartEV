@@ -123,6 +123,14 @@ public class FindCandidateStationsHandler(
             return;
         }
 
-        throw Log.Error(e.EVId, e.Time, new InvalidOperationException($"No candidate stations available for EV {e.EVId} at {e.Time}."));
+        var waypointText = string.Join(" -> ", ev.Journey.Current.Waypoints.Select(p => $"({p.Longitude:F6}, {p.Latitude:F6})"));
+        Log.Warn(e.EVId, e.Time, $"No candidate stations found for EV {e.EVId} at time {e.Time}, and no existing reservation.", ("EV", ev), ("Journey", ev.Journey), ("EV SoC", ev.Battery.StateOfCharge), ("Waypoints", waypointText));
+        throw Log.Error(
+            e.EVId,
+            e.Time,
+            new InvalidOperationException($"No candidate stations available for EV {e.EVId} at {e.Time}. EV data: {ev}, Journey: {ev.Journey}, Waypoints: {waypointText}"),
+            ("EV", ev),
+            ("Journey", ev.Journey),
+            ("Waypoints", waypointText));
     }
 }
