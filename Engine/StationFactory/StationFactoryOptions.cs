@@ -1,5 +1,3 @@
-namespace Engine.StationFactory;
-
 /// <summary>
 /// Options controlling deterministic station generation behaviour.
 /// </summary>
@@ -23,7 +21,18 @@ public record StationFactoryOptions
     public int TotalChargers { get; init; } = 10000;
 
     /// <summary>
-    /// Gets the maximum power in kilowatts that a charger can deliver, which affects how quickly EVs can charge and how long they spend at charging stations.
+    /// Gets the probability distribution for charger power outputs in kW.
+    /// The probabilities should sum to 1.
     /// </summary>
-    public ushort MaxPowerKW { get; init; } = 400;
+    /// <remarks>
+    /// These probabilites are based on our dataset. The probabilities are calculated on only the amount of chargers
+    /// with over 100 kW power output so all stations with less have been excluded. 
+    /// </remarks>
+    public IReadOnlyDictionary<ushort, double> PowerOutputProbabilitiesKW { get; init; }
+        = new Dictionary<ushort, double>
+        {
+            { 120, 0.0085 },
+            { 150, 0.1010 },
+            { 400, 0.8905 },
+        };
 }
