@@ -37,7 +37,7 @@ namespace Engine.Test.Events.Middleware
                 stations,
                 spatialGrid,
                 _evStore,
-                EngineTestData.StationService(stations, new EventScheduler(), _evStore), EngineConfiguration.CreateDefaultSettings());
+                EngineTestData.StationService(stations, new EventScheduler(), _evStore), EngineConfiguration.CreateDefaultSettings().ChargeBufferPercent);
         }
 
         [Fact]

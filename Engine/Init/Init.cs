@@ -16,6 +16,7 @@ using Engine.Vehicles;
 using Microsoft.Extensions.DependencyInjection;
 using Engine.Events.Middleware;
 using Engine.Metrics.Snapshots;
+using Engine.Utils;
 
 /// <summary>
 /// Initializes the Engine by setting up all necessary services and configurations.
@@ -28,6 +29,10 @@ public static class Init
     /// <param name="services">The service collection to initialize.</param>
     public static void InitEngine(IServiceCollection services)
     {
+        var settings = services.BuildServiceProvider().GetRequiredService<EngineSettings>();
+        if (settings.EnablePerformanceMetrics)
+            services.AddSingleton(new PerformanceMetrics());
+
         services.AddSingleton(_ => new EventScheduler());
 
         services.AddSingleton(sp =>
@@ -126,13 +131,14 @@ public static class Init
 
         services.AddSingleton(sp =>
         {
+            var settings = sp.GetRequiredService<EngineSettings>();
             var router = sp.GetRequiredService<IOSRMRouter>();
             var stations = sp.GetRequiredService<Dictionary<ushort, Station>>();
             var grid = sp.GetRequiredService<SpatialGrid>();
             var evStore = sp.GetRequiredService<EVStore>();
             var stationService = sp.GetRequiredService<StationService>();
-            var settings = sp.GetRequiredService<EngineSettings>();
-            return new FindCandidateStationService(router, stations, grid, evStore, stationService, settings);
+            var chargerBufferPercent = settings.ChargeBufferPercent;
+            return new FindCandidateStationService(router, stations, grid, evStore, stationService, chargerBufferPercent, Environment.ProcessorCount);
         });
 
         services.AddSingleton(sp =>
@@ -193,7 +199,8 @@ public static class Init
             var evStore = sp.GetRequiredService<EVStore>();
             var applyNewPath = sp.GetRequiredService<EVDetourPlanner>();
             var stationService = sp.GetRequiredService<StationService>();
-            return new FindCandidateStationsHandler(findCandidateStationService, computeCost, scheduler, evStore, applyNewPath, stationService);
+            var metrics = sp.GetService<PerformanceMetrics>();
+            return new FindCandidateStationsHandler(findCandidateStationService, computeCost, scheduler, evStore, applyNewPath, stationService, metrics);
         });
 
         services.AddSingleton(sp =>
@@ -204,7 +211,8 @@ public static class Init
             var destinationArrivalHandler = sp.GetRequiredService<DestinationArrivalHandler>();
             var findCandidateStationsHandler = sp.GetRequiredService<FindCandidateStationsHandler>();
             var eventSubscriber = sp.GetService<IEngineEventSubscriber>();
-            return new EventDispatcher(stationService, snapshotHandler, findCandidateStationsHandler, evService, destinationArrivalHandler, eventSubscriber);
+            var metrics = sp.GetService<PerformanceMetrics>();
+            return new EventDispatcher(stationService, snapshotHandler, findCandidateStationsHandler, evService, destinationArrivalHandler, eventSubscriber, metrics);
         });
 
         services.AddSingleton(sp =>

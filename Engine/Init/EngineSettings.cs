@@ -51,6 +51,11 @@ public record EngineSettings
     required public uint SnapshotInterval { get; init; }
 
     /// <summary>
+    /// Gets a value indicating whether performance metrics should be collected and displayed.
+    /// </summary>
+    required public bool EnablePerformanceMetrics { get; init; } = true;
+
+    /// <summary>
     ///  Gets the size of the grid cells.
     /// </summary>
     required public double GridSize { get; init; }
