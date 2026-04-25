@@ -30,8 +30,8 @@ public class ApplyNewPathToEVTests()
         var ev = CoreTestData.EV(waypoints:
         [
             new(0, 0),
-        new(10, 10),
-    ]);
+            new(10, 10),
+        ]);
 
         var station = CoreTestData.Station(1, new(10, 10));
         var fakeRouter = new FakeDestinationRouter
@@ -85,7 +85,7 @@ public class ApplyNewPathToEVTests()
             waypoints:
             [
                 new(0, 0),
-            new(10, 10),
+                new(10, 10),
             ],
             departureTime: new Time(100000),
             originalDuration: 50000U);

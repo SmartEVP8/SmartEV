@@ -10,9 +10,9 @@ public class ArriveAtDestinationMetricTest
     [Fact]
     public void Collect_ExtractsAllMetricFields()
     {
-        const uint departure = 100000U;
-        const uint originalDuration = 50000U;
-        const int deviation = 12000;
+        var departure = 100000U;
+        var originalDuration = 50000U;
+        var deviation = 12000;
         var simNow = (Time)(departure + originalDuration + deviation);
 
         var battery = CoreTestData.Battery();
@@ -35,7 +35,7 @@ public class ArriveAtDestinationMetricTest
             route,
             nextStop,
             departure: departure,
-            duration: originalDuration + deviation,
+            duration: 62000U,
             newDistanceKm: 10);
 
         var ev = new EV(battery, preferences, journey, 150);
@@ -49,9 +49,9 @@ public class ArriveAtDestinationMetricTest
     [Fact]
     public void MissedDeadline_ComputedCorrectly()
     {
-        const uint departure = 100000U;
-        const uint originalDuration = 50000U;
-        const uint deviation = 12000U;
+        var departure = 100000U;
+        var originalDuration = 50000U;
+        var deviation = 12000U;
         var simNow = (Time)(departure + originalDuration + deviation);
 
         var battery = CoreTestData.Battery();
