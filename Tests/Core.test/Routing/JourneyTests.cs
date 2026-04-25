@@ -398,4 +398,184 @@ public class JourneyTests
         var etaToNext = journey.Current.EtaToNextStop;
         Assert.Throws<ArgumentException>(() => journey.AdvanceTo(etaToNext + 40000));
     }
+
+    [Fact]
+    public void UpdateRoute_WhenNextStopIsSlightlyOffWaypointWithinTolerance_UsesRequestedNextStop()
+    {
+        var waypoints = new List<Position>
+    {
+        new(0, 0),
+        new(1, 1),
+        new(2, 2),
+        new(3, 3),
+    };
+
+        var journey = new Journey(0, 100000, 1000, waypoints);
+
+        var nextStopWithinTolerance = new Position(2.000001, 2.000001);
+
+        journey.UpdateRoute(
+            waypoints,
+            nextStopWithinTolerance,
+            departure: 0,
+            duration: 100000,
+            newDistanceKm: 1f);
+
+        Assert.Equal(nextStopWithinTolerance, journey.Current.NextStop);
+        Assert.True(journey.Current.DurationToNextStop < journey.Current.Duration);
+        Assert.True(journey.Current.DurationToNextStop > 0);
+    }
+
+    [Fact]
+    public void UpdateRoute_WhenNextStopIsOutsideTolerance_ThrowsInvalidOperationException()
+    {
+        var waypoints = new List<Position>
+    {
+        new(0, 0),
+        new(1, 1),
+        new(2, 2),
+    };
+
+        var journey = new Journey(0, 60000, 1000, waypoints);
+
+        var nextStopOutsideTolerance = new Position(2.1, 2.1);
+
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            journey.UpdateRoute(
+                waypoints,
+                nextStopOutsideTolerance,
+                departure: 0,
+                duration: 60000,
+                newDistanceKm: 1f));
+
+        Assert.Contains("Next stop not found", ex.Message);
+    }
+
+    [Fact]
+    public void AdvanceTo_WhenExactlyAtEtaToNextStop_AllowsStoppingAtNextStop()
+    {
+        var waypoints = new List<Position>
+    {
+        new(0, 0),
+        new(1, 1),
+        new(2, 2),
+        new(3, 3),
+    };
+
+        var journey = new Journey(0, 90000, 1000, waypoints);
+
+        journey.UpdateRoute(
+            waypoints,
+            nextStop: waypoints[2],
+            departure: 0,
+            duration: 90000,
+            newDistanceKm: 1f);
+
+        var etaToNextStop = journey.Current.EtaToNextStop;
+
+        var pos = journey.AdvanceTo(etaToNextStop);
+
+        Assert.Equal(waypoints[2].Latitude, pos.Latitude, precision: 3);
+        Assert.Equal(waypoints[2].Longitude, pos.Longitude, precision: 3);
+        Assert.Equal(waypoints[2], journey.Current.Waypoints[0]);
+    }
+
+    [Fact]
+    public void UpdateRoute_WhenNextStopIsFinalWaypoint_DurationToNextStopEqualsDuration()
+    {
+        var waypoints = new List<Position>
+    {
+        new(0, 0),
+        new(1, 1),
+        new(2, 2),
+    };
+
+        var journey = new Journey(0, 60000, 1000, waypoints);
+
+        journey.UpdateRoute(
+            waypoints,
+            nextStop: waypoints[^1],
+            departure: 0,
+            duration: 60000,
+            newDistanceKm: 1f);
+
+        Assert.Equal(journey.Current.Duration, journey.Current.DurationToNextStop);
+        Assert.Equal(journey.Current.Eta, journey.Current.EtaToNextStop);
+    }
+
+    [Fact]
+    public void UpdateRoute_WhenNextStopIsMiddleWaypoint_DurationToNextStopIsLessThanFullDuration()
+    {
+        var waypoints = new List<Position>
+    {
+        new(0, 0),
+        new(1, 1),
+        new(2, 2),
+        new(3, 3),
+    };
+
+        var journey = new Journey(0, 90000, 1000, waypoints);
+
+        journey.UpdateRoute(
+            waypoints,
+            nextStop: waypoints[1],
+            departure: 0,
+            duration: 90000,
+            newDistanceKm: 1f);
+
+        Assert.True(journey.Current.DurationToNextStop < journey.Current.Duration);
+        Assert.Equal(30u, journey.Current.DurationToNextStop.TotalSeconds, tolerance: 2);
+    }
+
+    [Fact]
+    public void UpdateRoute_WhenMultipleWaypointsAreWithinTolerance_UsesClosestWaypointForDuration()
+    {
+        var waypoints = new List<Position>
+    {
+        new(0, 0),
+        new(0, 0.001),
+        new(0, 0.004),
+        new(0, 1),
+    };
+
+        var journey = new Journey(0, 100_000_000, 100_000, waypoints);
+
+        var nextStop = new Position(0, 0.0039);
+
+        journey.UpdateRoute(
+            waypoints,
+            nextStop,
+            departure: 0,
+            duration: 100_000_000,
+            newDistanceKm: 100f);
+
+        // If it picked waypoints[1], this would be roughly 100 seconds.
+        // If it picked waypoints[2], this should be roughly 400 seconds.
+        Assert.Equal(400u, journey.Current.DurationToNextStop.TotalSeconds, tolerance: 20);
+    }
+
+    [Fact]
+    public void UpdateRoute_WhenNoWaypointIsWithinTolerance_Throws()
+    {
+        var waypoints = new List<Position>
+    {
+        new(0, 0),
+        new(1, 1),
+        new(2, 2),
+    };
+
+        var journey = new Journey(0, 60000, 1000, waypoints);
+
+        var nextStopFarAway = new Position(10, 10);
+
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            journey.UpdateRoute(
+                waypoints,
+                nextStopFarAway,
+                departure: 0,
+                duration: 60000,
+                newDistanceKm: 1f));
+
+        Assert.Contains("Next stop not found in waypoints within tolerance", ex.Message);
+    }
 }
