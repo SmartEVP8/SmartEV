@@ -8,7 +8,6 @@ using Engine.Metrics;
 using Engine.Utils;
 using Engine.Vehicles;
 using Engine.Services.StationServiceHelpers;
-using Core.Vehicles;
 using Core.Helper;
 
 /// <summary>
@@ -51,6 +50,10 @@ public class StationService : IStationService
             ? handler.Station
             : throw Log.Error(0, 0, new SkillissueException($"Trying to get station {stationId} which does not exist."), ((string Key, object Value))("StationId", stationId));
 
+    /// <summary>Gets the charger handler with the given chargerId.</summary>
+    /// <param name="chargerId">The charger id.</param>
+    /// <returns>The chargerhandler.</returns>
+    /// <exception cref="SkillissueException">If the charger handler isn't present.</exception>
     public IChargerHandler GetChargerHandler(int chargerId)
         => _chargerToStation.TryGetValue(chargerId, out var stationId)
             ? _stationHandlers[stationId].GetChargerHandler(chargerId)
@@ -69,17 +72,13 @@ public class StationService : IStationService
     /// <param name="stationId">The station that recieves the reservation.</param>
     public void HandleReservation(Reservation reservation, ushort stationId)
     {
-        CancelReservation(reservation.EVId);
+        if (_evReservations.TryGetValue(reservation.EVId, out var oldStationId))
+        {
+            GetStation(oldStationId).Reservations.Cancel(reservation.EVId);
+        }
+
         _evReservations[reservation.EVId] = stationId;
         GetStation(stationId).Reservations.Reserve(reservation);
-    }
-
-    private void CancelReservation(int evId)
-    {
-        if (_evReservations.TryGetValue(evId, out var oldStationId))
-        {
-            GetStation(oldStationId).Reservations.Cancel(evId);
-        }
     }
 
     /// <summary>
@@ -102,10 +101,10 @@ public class StationService : IStationService
 
         _stationHandlers[stationId].HandleEndCharging(e);
 
-        if (!_evReservations.ContainsKey(e.EVId))
+        if (!_evReservations.Remove(e.EVId, out var oldStationId))
             throw Log.Error(e.EVId, e.Time, new SkillissueException("Should have a reservation at this point"));
 
-        CancelReservation(e.EVId);
+        GetStation(oldStationId).Reservations.Remove(e.EVId);
     }
 
     /// <inheritdoc/>
