@@ -3,7 +3,10 @@ namespace Engine.Init;
 using Engine.Cost;
 using Engine.Metrics;
 using Engine.StationFactory;
+using System.Globalization;
 using System.Reflection;
+using Core.Helper;
+using Core.Shared;
 
 /// <summary>
 /// Factory for creating EngineSettings with default configuration.
@@ -11,6 +14,10 @@ using System.Reflection;
 /// </summary>
 public static class EngineConfiguration
 {
+    private const string _priceSensitivityEnvVar = "COST_WEIGHT_PRICE_SENSITIVITY";
+    private const string _pathDeviationEnvVar = "COST_WEIGHT_PATH_DEVIATION";
+    private const string _expectedWaitTimeEnvVar = "COST_WEIGHT_EXPECTED_WAIT_TIME";
+
     /// <summary>
     /// Creates default EngineSettings with the standard workspace configuration.
     /// </summary>
@@ -25,19 +32,17 @@ public static class EngineConfiguration
             Seed = new Random(42),
             CostConfig = new CostWeights
             {
-                EffectiveQueueSize = 1,
-                PathDeviation = 0.8f,
-                PriceSensitivity = 0.4f,
-                ExpectedWaitTime = 1,
-                Urgency = 0.5f,
+                PathDeviation = ReadWeightFromEnvironment(_pathDeviationEnvVar, 0.8f, 0f, 1f),
+                PriceSensitivity = ReadWeightFromEnvironment(_priceSensitivityEnvVar, 0.4f, 0f, 1f),
+                ExpectedWaitTime = ReadWeightFromEnvironment(_expectedWaitTimeEnvVar, 1f, 0f, 1f),
             },
             RunId = Guid.NewGuid(),
             MetricsConfig = new MetricsConfig
             {
-                BufferSize = 5000,
+                BufferSize = 3000,
                 OutputDirectory = outputPath,
-                RecordCarSnapshots = true,
                 RecordArrivals = true,
+                RecordEVWaitTimeInQueue = true,
                 RecordStationSnapshots = true,
                 RecordChargerSnapshots = true,
             },
@@ -49,20 +54,36 @@ public static class EngineConfiguration
             },
             CurrentAmountOfEVsInDenmark = 583320, // Based on the number of registered EVs in Denmark as of 2026-03-22 https://mobility.dk/nyheder/nu-koerer-hver-femte-personbil-i-danmark-paa-el/
             ChargingStepSeconds = 60 * 1000,
-            SimulationEndTime = 10000 * 60 * 1000,
+            SimulationStartTime = Time.MillisecondsPerDay,
+            SimulationEndTime = Time.MillisecondsPerDay * 7,
             SnapshotInterval = 1000 * 20 * 60,
-            EVDistributionWindowsSize = 1 * 60 * 1000,
-            EVSpawnFraction = 0.10f,
+            EnablePerformanceMetrics = true,
+            EVDistributionWindowsSize = 30 * 60 * 1000,
+            EVSpawnFraction = 0.1f,
             PopulationScaler = 0.7f,
+            ChargeBufferPercent = 0.9f,
             DistanceScaler = 1.7f,
-            GridSize = 0.1,
+            GridSize = 0.025,
             EnergyPricesPath = new FileInfo(Path.Combine(dataPath.FullName, "energy_prices.csv")),
             OsrmPath = new FileInfo(Path.Combine(dataPath.FullName, "osrm/output.osrm")),
             CitiesPath = new FileInfo(Path.Combine(dataPath.FullName, "CityInfo.csv")),
             GridPath = new FileInfo(Path.Combine(dataPath.FullName, "denmark_charging_locations.json")),
             StationsPath = new FileInfo(Path.Combine(dataPath.FullName, "denmark_charging_locations.json")),
-            PolygonPath = new FileInfo(Path.Combine(dataPath.FullName, "denmark.polygon.json")),
+            PolygonPath = new FileInfo(Path.Combine(dataPath.FullName, "denmark_polygon.json")),
+            WetPolygonPath = new FileInfo(Path.Combine(dataPath.FullName, "denmark_wet_polygon.json")),
         };
+    }
+
+    private static float ReadWeightFromEnvironment(string envVar, float defaultValue, float min, float max)
+    {
+        var value = Environment.GetEnvironmentVariable(envVar);
+        if (string.IsNullOrWhiteSpace(value))
+            return defaultValue;
+
+        if (!float.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed))
+            return defaultValue;
+
+        return Math.Clamp(parsed, min, max);
     }
 
     private static DirectoryInfo FindDataDirectory()
@@ -78,6 +99,6 @@ public static class EngineConfiguration
             searchDir = searchDir.Parent;
         }
 
-        throw new DirectoryNotFoundException("Could not find 'data' directory in project hierarchy");
+        throw Log.Error(0, 0, new DirectoryNotFoundException("Could not find 'data' directory in project hierarchy"));
     }
 }

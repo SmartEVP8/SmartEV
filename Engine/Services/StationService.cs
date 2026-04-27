@@ -8,19 +8,16 @@ using Engine.Metrics;
 using Engine.Utils;
 using Engine.Vehicles;
 using Engine.Services.StationServiceHelpers;
-using Core.Vehicles;
+using Core.Helper;
 
 /// <summary>
-/// Service responsible for managing the state of stations and chargers, handling events related to reservations, arrivals, and charging sessions.
+/// Coordinates station handlers and manages cross-station state (reservations, charger routing).
 /// </summary>
 public class StationService : IStationService
 {
-    private readonly Dictionary<int, (ChargerBase State, IChargerHandler Handler)> _chargerIndex = [];
-    private readonly Dictionary<ushort, Station> _stationIndex = [];
-    private readonly Dictionary<int, uint> _arrivalTimes = [];
+    private readonly Dictionary<ushort, StationHandler> _stationHandlers = [];
+    private readonly Dictionary<int, ushort> _chargerToStation = [];
     private readonly Dictionary<int, ushort> _evReservations = [];
-    private readonly EventScheduler _scheduler;
-    private readonly EVStore _eVStore;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="StationService"/> class.
@@ -37,31 +34,30 @@ public class StationService : IStationService
         EVStore evStore,
         MetricsService metrics)
     {
-        _scheduler = scheduler;
-        _eVStore = evStore;
-
         foreach (var station in stations)
         {
-            _stationIndex[station.Id] = station;
+            var handler = new StationHandler(station, integrator, scheduler, evStore, metrics);
+            _stationHandlers[station.Id] = handler;
 
-            foreach (var charger in station.Chargers)
-            {
-                IChargerHandler handler = charger switch
-                {
-                    SingleCharger s => new SingleChargerHandler(s, integrator, scheduler, metrics),
-                    DualCharger d => new DualChargerHandler(d, integrator, scheduler, metrics),
-                    _ => throw new InvalidOperationException($"Unknown charger type: {charger.GetType()}")
-                };
-                _chargerIndex[charger.Id] = (charger, handler);
-            }
+            foreach (var chargerId in handler.ChargerIds)
+                _chargerToStation[chargerId] = station.Id;
         }
     }
 
     /// <inheritdoc/>
     public Station GetStation(ushort stationId)
-        => _stationIndex.TryGetValue(stationId, out var station)
-            ? station
-            : throw new SkillissueException($"Trying to get station {stationId} which does not exist.");
+        => _stationHandlers.TryGetValue(stationId, out var handler)
+            ? handler.Station
+            : throw Log.Error(0, 0, new SkillissueException($"Trying to get station {stationId} which does not exist."), ((string Key, object Value))("StationId", stationId));
+
+    /// <summary>Gets the charger handler with the given chargerId.</summary>
+    /// <param name="chargerId">The charger id.</param>
+    /// <returns>The chargerhandler.</returns>
+    /// <exception cref="SkillissueException">If the charger handler isn't present.</exception>
+    public IChargerHandler GetChargerHandler(int chargerId)
+        => _chargerToStation.TryGetValue(chargerId, out var stationId)
+            ? _stationHandlers[stationId].GetChargerHandler(chargerId)
+            : throw new SkillissueException($"Trying to get charger handler {chargerId} which does not exist.");
 
     /// <summary>Gets the stationId that an EV has a reservation for if any.</summary>
     /// <param name="evId">The id used for checking for a reservation.</param>
@@ -76,18 +72,13 @@ public class StationService : IStationService
     /// <param name="stationId">The station that recieves the reservation.</param>
     public void HandleReservation(Reservation reservation, ushort stationId)
     {
-        CancelReservation(reservation.EVId);
-        _evReservations[reservation.EVId] = stationId;
-        GetStation(stationId).Reservations.Reserve(
-                new Reservation(reservation.EVId, reservation.TimeOfArrival, reservation.SoCAtArrival, reservation.TargetSoC));
-    }
-
-    private void CancelReservation(int evId)
-    {
-        if (_evReservations.TryGetValue(evId, out var oldStationId))
+        if (_evReservations.TryGetValue(reservation.EVId, out var oldStationId))
         {
-            GetStation(oldStationId).Reservations.Cancel(evId);
+            GetStation(oldStationId).Reservations.Cancel(reservation.EVId);
         }
+
+        _evReservations[reservation.EVId] = stationId;
+        GetStation(stationId).Reservations.Reserve(reservation);
     }
 
     /// <summary>
@@ -96,37 +87,7 @@ public class StationService : IStationService
     /// </summary>
     /// <param name="e">The arrival event.</param>
     public void HandleArrivalAtStation(ArriveAtStation e)
-    {
-        ref var evRef = ref _eVStore.Get(e.EVId);
-        evRef.Advance(e.Time);
-
-        var chargers = GetStation(e.StationId).Chargers;
-
-        // TODO : FIX ASAP
-        // if (evRef.Battery.StateOfCharge >= e.TargetSoC)
-        //     throw new SkillissueException($"EV wants to charge to a SoC: {e.TargetSoC}, which is lower than its current SoC: {evRef.Battery.StateOfCharge}.");
-        var target = chargers
-            .OrderBy(cs => cs.IsFree ? 0 : 1)
-            .ThenBy(cs => cs.Queue.Count)
-            .FirstOrDefault()
-            ?? throw new SkillissueException($"Logic Error: Station {e.StationId} has no chargers.");
-
-        var connectedEV = new ConnectedEV(
-            EVId: e.EVId,
-            CurrentSoC: evRef.Battery.StateOfCharge,
-            TargetSoC: e.TargetSoC,
-            CapacityKWh: evRef.Battery.MaxCapacityKWh,
-            MaxChargeRateKW: evRef.Battery.MaxChargeRateKW,
-            ArrivalTime: e.Time);
-
-        _arrivalTimes[e.EVId] = e.Time;
-        target.Queue.Enqueue(connectedEV);
-        _eVStore.Get(e.EVId).EVState = EVState.Queueing;
-        target.UpdateWindowStats();
-
-        if (target.IsFree)
-            StartChargingNextCar(target, e.Time, e.StationId);
-    }
+        => GetStationHandler(e.StationId).HandleArrivalAtStation(e);
 
     /// <summary>
     /// Called when a charging session ends for a specific EV.
@@ -135,48 +96,25 @@ public class StationService : IStationService
     /// <param name="e">The EndCharging event containing the EVId, ChargerId, and Time of the event.</param>
     public void HandleEndCharging(EndCharging e)
     {
-        if (!_chargerIndex.TryGetValue(e.ChargerId, out var entry))
+        if (!_chargerToStation.TryGetValue(e.ChargerId, out var stationId))
             return;
 
-        var (charger, handler) = entry;
-        charger.AccumulateEnergy(e.Time);
+        _stationHandlers[stationId].HandleEndCharging(e);
 
-        var finalSoC = handler.EndSession(e.EVId, e.Time);
+        if (!_evReservations.Remove(e.EVId, out var oldStationId))
+            throw Log.Error(e.EVId, e.Time, new SkillissueException("Should have a reservation at this point"));
 
-        ref var ev = ref _eVStore.Get(e.EVId);
-
-        if (finalSoC is { } soc)
-            ev.Battery.StateOfCharge = (float)Math.Clamp(soc, 0d, 1d);
-
-        if (!_arrivalTimes.TryGetValue(e.EVId, out var arrivalTime))
-            throw new SkillissueException($"Logic Error: Missing arrival time for EV {e.EVId} at EndCharging.");
-
-        _arrivalTimes.Remove(e.EVId);
-        var timeAtStation = e.Time - arrivalTime;
-        ev.EVState = EVState.Driving;
-
-        if (ev.CanCompleteJourney(timeAtStation, ev.Preferences.MinAcceptableCharge))
-            _scheduler.ScheduleEvent(new ArriveAtDestination(e.EVId, e.Time));
-        else
-            _scheduler.ScheduleEvent(new FindCandidateStations(e.EVId, ev.TimeToNextFindCandidateCheck(e.Time)));
-
-        if (!_evReservations.TryGetValue(e.EVId, out var stationId))
-            throw new SkillissueException("Should have a reservation at this point");
-
-        CancelReservation(e.EVId);
-        StartChargingNextCar(charger, e.Time, stationId);
+        GetStation(oldStationId).Reservations.Remove(e.EVId);
     }
 
-    private void StartChargingNextCar(ChargerBase charger, Time simNow, ushort stationId)
-    {
-        if (!charger.Queue.TryPeek(out var top))
-        {
-            return;
-        }
+    /// <inheritdoc/>
+    public Time ExpectedWaitTime(ushort stationId, Time simNow, Time arrival)
+        => GetStationHandler(stationId).ExpectedWaitTime(simNow, arrival);
 
-        charger.AccumulateEnergy(simNow);
-        _chargerIndex[charger.Id].Handler.StartNext(simNow, stationId);
-        _eVStore.Get(top.EVId).EVState = EVState.Charging;
-        charger.UpdateWindowStats();
-    }
+    private StationHandler GetStationHandler(ushort stationId)
+        => _stationHandlers.TryGetValue(stationId, out var handler)
+            ? handler
+            : throw Log.Error(0, 0,
+                new SkillissueException($"Trying to get station handler {stationId} which does not exist."),
+                ((string Key, object Value))("StationId", stationId));
 }

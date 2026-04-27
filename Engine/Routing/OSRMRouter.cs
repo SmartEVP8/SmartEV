@@ -3,10 +3,30 @@ namespace Engine.Routing;
 using System.Runtime.InteropServices;
 using Core.Charging;
 using Core.Shared;
+using Core.Helper;
 
 public record RoutingResult(float[] Durations, float[] Distances);
 
 public record RouteSegment(float Duration, float Distance, string Polyline);
+
+public record RoutingLeg(float[] Durations, float[] Distances);
+
+public record RoutingLegsResult(RoutingLeg ToStation, RoutingLeg ToDest)
+{
+    /// <summary>
+    /// Calculates the total duration from the source to the station and then to the destination for a given index, by summing the corresponding durations from the ToStation and ToDest legs.
+    /// </summary>
+    /// <param name="i">The EV-Station route leg index.</param>
+    /// <returns>Returns the total duration for the specified station index.</returns>
+    public float TotalDuration(int i) => ToStation.Durations[i] + ToDest.Durations[i];
+
+    /// <summary>
+    /// Calculates the total distance from the source to the station and then to the destination for a given index, by summing the corresponding distances from the ToStation and ToDest legs.
+    /// </summary>
+    /// <param name="i">The EV-Station route leg index.</param>
+    /// <returns>Returns the total distance for the specified station index.</returns>
+    public float TotalDistance(int i) => ToStation.Distances[i] + ToDest.Distances[i];
+}
 
 /// <summary>
 /// Provides routing and station query functionality using the OSRM (Open Source Routing Machine) wrapper library.
@@ -34,18 +54,31 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
         [Out] double[] outSnappedCoords
     );
 
+    [StructLayout(LayoutKind.Sequential)]
+    private struct TableLeg
+    {
+        public float Durations;
+        public float Distances;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct TableResult
+    {
+        public TableLeg SrcToStation;
+        public TableLeg StationToDest;
+    }
+
     [LibraryImport(_lib)]
     private static partial void ComputeTableIndexedWithDest(
-            IntPtr osrm,
-            double evLon,
-            double evLat,
-            double destLon,
-            double destLat,
-            [In] ushort[] indices,
-            int numIndices,
-            float* outDurations,
-            float* outDistances
-        );
+        IntPtr osrm,
+        double evLon,
+        double evLat,
+        double destLon,
+        double destLat,
+        [In] ushort[] indices,
+        int numIndices,
+        TableResult* outResults
+    );
 
     [LibraryImport(_lib)]
     private static partial IntPtr ComputeSrcToDest(
@@ -95,34 +128,50 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
     {
         _osrm = InitializeOSRM(mapPath.ToString());
         if (_osrm == IntPtr.Zero)
-            throw new Exception("OSRM initialization failed.");
+            throw Log.Error(0, 0, new Exception("OSRM initialization failed."));
         InitStations(stations);
     }
 
     /// <inheritdoc/>
-    public RoutingResult QueryStationsWithDest(
-        double evLon,
-        double evLat,
-        double destLon,
-        double destLat,
-        ushort[] indices)
+    public RoutingLegsResult QueryStationsWithDest(
+    double evLon,
+    double evLat,
+    double destLon,
+    double destLat,
+    ushort[] indices)
     {
         if (indices.Length == 0)
-            return new RoutingResult([], []);
+            return new RoutingLegsResult(new RoutingLeg([], []), new RoutingLeg([], []));
 
-        var durations = new float[indices.Length];
-        var distances = new float[indices.Length];
+        var results = new TableResult[indices.Length];
 
-        fixed (float* durPtr = durations)
-        fixed (float* distPtr = distances)
+        fixed (TableResult* resultsPtr = results)
         {
-            ComputeTableIndexedWithDest(_osrm, evLon, evLat, destLon, destLat, indices, indices.Length, durPtr, distPtr);
+            ComputeTableIndexedWithDest(
+                _osrm, evLon, evLat, destLon, destLat,
+                indices, indices.Length,
+                resultsPtr);
         }
 
-        for (var i = 0; i < durations.Length; i++)
-            durations[i] *= Time.MillisecondsPerSecond;
+        var toStationDurations = new float[indices.Length];
+        var toStationDistances = new float[indices.Length];
+        var toDestDurations = new float[indices.Length];
+        var toDestDistances = new float[indices.Length];
 
-        return new RoutingResult(durations, distances);
+        for (var i = 0; i < indices.Length; i++)
+        {
+            var srcToStation = results[i].SrcToStation;
+            var stationToDest = results[i].StationToDest;
+
+            toStationDurations[i] = srcToStation.Durations == 0 ? throw new ArgumentException($"Invalid duration between EV ({evLon}, {evLat}) and station {indices[i]}") : srcToStation.Durations * Time.MillisecondsPerSecond;
+            toStationDistances[i] = srcToStation.Distances == 0 ? throw new ArgumentException($"Invalid distance between EV ({evLon}, {evLat}) and station {indices[i]}") : srcToStation.Distances;
+            toDestDurations[i] = stationToDest.Durations == 0 ? throw new ArgumentException($"Invalid duration between station {indices[i]} and destination ({destLon}, {destLat})") : stationToDest.Durations * Time.MillisecondsPerSecond;
+            toDestDistances[i] = stationToDest.Distances == 0 ? throw new ArgumentException($"Invalid distance between station {indices[i]} and destination ({destLon}, {destLat})") : stationToDest.Distances;
+        }
+
+        return new RoutingLegsResult(
+            new RoutingLeg(toStationDurations, toStationDistances),
+            new RoutingLeg(toDestDurations, toDestDistances));
     }
 
     /// <inheritdoc/>
@@ -132,9 +181,7 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
         double destLon,
         double destLat)
     {
-        IntPtr resultPtr;
-
-        resultPtr = ComputeSrcToDest(
+        var resultPtr = ComputeSrcToDest(
             _osrm,
             evLon,
             evLat,
@@ -142,13 +189,16 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
             destLat);
 
         if (resultPtr == IntPtr.Zero)
-            return new RouteSegment(-1, -1, string.Empty);
+            throw new ArgumentException($"OSRM failed to compute a route: Returned 0 with route from ({evLon}, {evLat}) to ({destLon}, {destLat}).");
 
         var result = Marshal.PtrToStructure<RouteResult>(resultPtr);
         var polylineStr = Marshal.PtrToStringAnsi(result.Polyline)!;
 
         FreeMemory(result.Polyline);
         FreeMemory(resultPtr);
+
+        if (string.IsNullOrEmpty(polylineStr))
+            throw new ArgumentException($"OSRM returned a result with an empty polyline from ({evLon}, {evLat}) to ({destLon}, {destLat}).");
 
         return new RouteSegment(result.Duration * Time.MillisecondsPerSecond, result.Distance, polylineStr);
     }
@@ -156,18 +206,27 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
     /// <inheritdoc/>
     public RouteSegment QueryDestinationWithStop(double evLon, double evLat, double stationLon, double stationLat, double destLon, double destLat, ushort index = ushort.MaxValue)
     {
-        IntPtr resultPtr;
-
-        resultPtr = ComputeSrcToDestWithStop(_osrm, evLon, evLat, stationLon, stationLat, destLon, destLat, index);
+        var resultPtr = ComputeSrcToDestWithStop(
+            _osrm,
+            evLon,
+            evLat,
+            stationLon,
+            stationLat,
+            destLon,
+            destLat,
+            index);
 
         if (resultPtr == IntPtr.Zero)
-            return new RouteSegment(-1, -1, string.Empty);
+            throw new ArgumentException($"OSRM failed to compute a route: Returned 0 with route from ({evLon}, {evLat}) via ({stationLon}, {stationLat}) to ({destLon}, {destLat}).");
 
         var result = Marshal.PtrToStructure<RouteResult>(resultPtr);
         var polylineStr = Marshal.PtrToStringAnsi(result.Polyline)!;
 
         FreeMemory(result.Polyline);
         FreeMemory(resultPtr);
+
+        if (string.IsNullOrEmpty(polylineStr))
+            throw new ArgumentException($"OSRM returned a result with an empty polyline from ({evLon}, {evLat}) via ({stationLon}, {stationLat}) to ({destLon}, {destLat}).");
 
         return new RouteSegment(result.Duration * Time.MillisecondsPerSecond, result.Distance, polylineStr);
     }
@@ -183,13 +242,18 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
         var distances = new float[numSrcs * numDsts];
 
         fixed (float* durPtr = durations)
-        fixed (float* distPtr = distances)
         {
-            PointsToPoints(_osrm, srcCoords, numSrcs, dstCoords, numDsts, durPtr, distPtr);
+            fixed (float* distPtr = distances)
+            {
+                PointsToPoints(_osrm, srcCoords, numSrcs, dstCoords, numDsts, durPtr, distPtr);
+            }
         }
 
         for (var i = 0; i < durations.Length; i++)
-            durations[i] *= Time.MillisecondsPerSecond;
+        {
+            durations[i] = durations[i] == 0 ? throw new ArgumentException($"Invalid duration between source ({srcCoords[i * 2]}, {srcCoords[i * 2 + 1]}) and destination ({dstCoords[i * 2]}, {dstCoords[i * 2 + 1]})") : durations[i] * Time.MillisecondsPerSecond;
+            distances[i] = distances[i] == 0 ? throw new ArgumentException($"Invalid distance between source ({srcCoords[i * 2]}, {srcCoords[i * 2 + 1]}) and destination ({dstCoords[i * 2]}, {dstCoords[i * 2 + 1]})") : distances[i];
+        }
 
         return new RoutingResult(durations, distances);
     }
@@ -217,7 +281,7 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
         var ok = RegisterStations(_osrm, coords, stations.Count, snappedCoords);
 
         if (!ok)
-            throw new InvalidOperationException("Failed to snap one or more stations to the road network.");
+            throw Log.Error(0, 0, new InvalidOperationException("Failed to snap one or more stations to the road network."));
 
         for (var i = 0; i < stations.Count; i++)
         {

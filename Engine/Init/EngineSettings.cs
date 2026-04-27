@@ -51,15 +51,31 @@ public record EngineSettings
     required public uint SnapshotInterval { get; init; }
 
     /// <summary>
+    /// Gets a value indicating whether performance metrics should be collected and displayed.
+    /// </summary>
+    required public bool EnablePerformanceMetrics { get; init; } = true;
+
+    /// <summary>
     ///  Gets the size of the grid cells.
     /// </summary>
     required public double GridSize { get; init; }
 
     /// <summary>
+    /// Gets a ChargeBufferPercent, which is a buffer percentage applied to the target SoC when determining if a station is a viable candidate for charging.
+    /// </summary>
+    required public float ChargeBufferPercent { get; init; }
+
+    /// <summary>
     /// Gets the simulation end time, which determines
     /// when the simulation should stop running.
     /// </summary>
-    required public Time SimulationEndTime { get; init; }
+    required public Time SimulationEndTime { get; init; } = Time.MillisecondsPerDay * 7;
+
+    /// <summary>
+    /// Gets the simulation start time,
+    /// which determines when the simulation starts.
+    /// </summary>
+    required public Time SimulationStartTime { get; init; } = Time.MillisecondsPerDay;
 
     /// <summary>
     /// Gets the size of the windows in which EVs are spawned, which affects the distribution of EV arrivals over time.
@@ -110,4 +126,9 @@ public record EngineSettings
     /// Gets the file path for Polygon data required by the engine.
     /// </summary>
     required public FileInfo PolygonPath { get; init; }
+
+    /// <summary>
+    /// Gets the file path for WetPolygon data required by the engine, which is used for determining where EVs cannot be spawned.
+    /// </summary>
+    required public FileInfo WetPolygonPath { get; init; }
 }

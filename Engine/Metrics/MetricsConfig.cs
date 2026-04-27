@@ -11,9 +11,6 @@ public sealed class MetricsConfig
     /// <summary>Gets the output directory for metric files.</summary>
     public DirectoryInfo OutputDirectory { get; init; } = new DirectoryInfo("metrics");
 
-    /// <summary>Gets a value indicating whether car snapshots are recorded.</summary>
-    public bool RecordCarSnapshots { get; init; }
-
     /// <summary>Gets a value indicating whether station snapshots are recorded.</summary>
     public bool RecordStationSnapshots { get; init; }
 
@@ -30,5 +27,5 @@ public sealed class MetricsConfig
     public bool RecordArrivals { get; init; }
 
     /// <summary> Gets a value indicating whether EV wait time metric are recorded. </summary>
-    public bool RecordEVWaitTime { get; init; }
+    public bool RecordEVWaitTimeInQueue { get; init; }
 }

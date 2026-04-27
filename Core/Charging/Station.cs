@@ -95,6 +95,7 @@ public class Reservations()
     private uint _totalReservationsInPeriod;
     private uint _totalCancellationsInPeriod;
 
+    public IEnumerable<Reservation> AllReservations => _reservations;
 
     /// <summary>
     /// Gets all the ev ids that have a reservation on the station.
@@ -133,6 +134,20 @@ public class Reservations()
         _reservations.Add(reservation);
         _index[reservation.EVId] = reservation;
         _totalReservationsInPeriod++;
+    }
+
+    /// <summary>
+    /// Removes the reservation associated with the given EV id.
+    /// Does nothing if no reservation exists for the given id.
+    /// </summary>
+    /// <param name="evId">The id of the EV whose reservation should be removed.</param>
+    public void Remove(int evId)
+    {
+        if (_index.TryGetValue(evId, out var reservation))
+        {
+            _reservations.Remove(reservation);
+            _index.Remove(evId);
+        }
     }
 
     /// <summary>

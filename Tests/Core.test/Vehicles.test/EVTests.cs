@@ -190,31 +190,24 @@ public class EVTests
     }
 
     [Fact]
-    public void CanReachViaDetour_ReturnsTrueWhenEnoughCharge()
+    public void CanReachToStation_ReturnsTrueWhenEnoughCharge()
     {
         var ev = CoreTestData.EV(battery: CoreTestData.Battery(stateOfCharge: 0.2f));
-        Assert.True(ev.CanReachViaDetour(15, 10, minAcceptableCharge: 0.1f));
+        Assert.True(ev.CanReachToStation(5, minAcceptableCharge: 0.1f));
     }
 
     [Fact]
-    public void CanReachViaDetour_ReturnsFalseWhenNotEnoughCharge()
+    public void CanReachToStation_ReturnsFalseWhenNotEnoughCharge()
     {
         var ev = CoreTestData.EV(battery: CoreTestData.Battery(stateOfCharge: 0.2f));
-        Assert.False(ev.CanReachViaDetour(1000, 10, minAcceptableCharge: 0.1f));
+        Assert.False(ev.CanReachToStation(1000, minAcceptableCharge: 0.1f));
     }
 
     [Fact]
-    public void CanReachViaDetour_DetourEqualsDirect_ZeroExtraCost()
+    public void CanReachToStation_MassiveDistance_ReturnsFalse()
     {
         var ev = CoreTestData.EV(battery: CoreTestData.Battery(stateOfCharge: 0.2f));
-        Assert.True(ev.CanReachViaDetour(10, 10, minAcceptableCharge: 0.1f));
-    }
-
-    [Fact]
-    public void CanReachViaDetour_MassiveDetour_ReturnsFalse()
-    {
-        var ev = CoreTestData.EV(battery: CoreTestData.Battery(stateOfCharge: 0.2f));
-        Assert.False(ev.CanReachViaDetour(10000, 10, minAcceptableCharge: 0.1f));
+        Assert.False(ev.CanReachToStation(10000, minAcceptableCharge: 0.1f));
     }
 
     [Fact]
@@ -229,7 +222,7 @@ public class EVTests
             efficiency: 150,
             distanceMeter: 100000f);
 
-        var result = ev.TimeToNextFindCandidateCheck(0);
+        var result = ev.TimeAtNextFindCandidateCheck(0);
 
         Assert.Equal(1800u, result.TotalSeconds);
     }
@@ -246,7 +239,7 @@ public class EVTests
             efficiency: 150,
             distanceMeter: 100000f);
 
-        var result = ev.TimeToNextFindCandidateCheck(0);
+        var result = ev.TimeAtNextFindCandidateCheck(0);
 
         Assert.Equal(720u, result.TotalSeconds);
     }
@@ -263,7 +256,7 @@ public class EVTests
             efficiency: 150,
             distanceMeter: 100000f);
 
-        var result = ev.TimeToNextFindCandidateCheck(0);
+        var result = ev.TimeAtNextFindCandidateCheck(0);
 
         Assert.Equal(1800u, result.TotalSeconds);
     }
@@ -280,8 +273,86 @@ public class EVTests
             efficiency: 150,
             distanceMeter: 100000f);
 
-        var result = ev.TimeToNextFindCandidateCheck(1000);
+        var result = ev.TimeAtNextFindCandidateCheck(1000);
 
         Assert.Equal(721u, result.TotalSeconds);
+    }
+
+    [Fact]
+    public void CalcPreComputedDesiredSoC_ReturnsExpectedValue()
+    {
+        var waypoints = new List<Position> { new(0, 0), new(45, 0), new(90, 0) };
+        var journey = new Journey(departure: 0, duration: 5400, distanceMeters: 90, waypoints);
+        var battery = new Battery(75, 150, 0.5f);
+        var preferences = new Preferences(1f, 0.15f, 10.0f);
+        var ev = new EV(battery, preferences, journey, 180);
+
+        var distanceToDestinationKm = 45f;
+        var preComputedDesiredSoC = ev.PreCalculatedTargetSoC(distanceToDestinationKm);
+
+        Assert.Equal(0.27f, preComputedDesiredSoC, precision: 2);
+    }
+
+    [Fact]
+    public void EstimateSoCAfterDuration()
+    {
+        var waypoints = new List<Position> { new(0, 0), new(10, 0) };
+        var journey = new Journey(departure: 0, duration: 3600, distanceMeters: 10000, waypoints);
+        var battery = new Battery(100, 100, 1f);
+        var preferences = new Preferences(1f, 0.1f, 10.0f);
+        var ev = new EV(battery, preferences, journey, 200);
+
+        var estimatedSoC = ev.EstimateSoCAfterADuration(1800000);
+
+        Assert.InRange(estimatedSoC, 0.9f, 0.91f);
+    }
+
+    [Fact]
+    public void EstimateSoCAfterDuration_ZeroDuration_ReturnsCurrentSoC()
+    {
+        var waypoints = new List<Position> { new(0, 0), new(10, 0) };
+        var journey = new Journey(departure: 0, duration: 3600, distanceMeters: 10000, waypoints);
+        var battery = new Battery(100, 100, 0.5f);
+        var preferences = new Preferences(1f, 0.1f, 10.0f);
+        var ev = new EV(battery, preferences, journey, 200);
+
+        var estimatedSoC = ev.EstimateSoCAfterADuration(0);
+        Assert.InRange(estimatedSoC, 0.499f, 0.501f);
+    }
+
+    [Fact]
+    public void SoCUsedAfterADistance_ReturnsExpectedValue()
+    {
+        var waypoints = new List<Position> { new(0, 0), new(10, 0) };
+        var journey = new Journey(departure: 0, duration: 3600, distanceMeters: 10000, waypoints);
+        var battery = new Battery(100, 100, 1f);
+        var preferences = new Preferences(1f, 0.1f, 10.0f);
+        var ev = new EV(battery, preferences, journey, 200);
+
+        var socUsed = ev.SoCUsedAfterADistance(300);
+
+        Assert.InRange(socUsed, 0.4f, 0.41f);
+    }
+
+    [Fact]
+    public void CheckIfTargetSoCIsLowerThatCurrentSoC_ReturnsTrue_WhenTargetSoCIsLower()
+    {
+        var ev = CoreTestData.EV(
+            waypoints: new List<Position> { new(0, 0), new(1, 1) },
+            battery: CoreTestData.Battery(capacity: 100, maxChargeRate: 150, stateOfCharge: 0.5f));
+
+        var result = ev.CheckIfTargetSoCIsLowerThanCurrentSoC(10, 100, 0.9f);
+        Assert.True(result);
+    }
+
+    [Fact]
+    public void CheckIfTargetSoCIsLowerThatCurrentSoC_ReturnsFalse_WhenTargetSoCIsHigher()
+    {
+        var ev = CoreTestData.EV(
+            waypoints: new List<Position> { new(0, 0), new(1, 1) },
+            battery: CoreTestData.Battery(capacity: 100, maxChargeRate: 150, stateOfCharge: 0.5f));
+
+        var result = ev.CheckIfTargetSoCIsLowerThanCurrentSoC(2, 100000000, 1f);
+        Assert.False(result);
     }
 }

@@ -19,8 +19,8 @@ public class WaitTimeMetricTests
             StartChargingTime = startCharge,
         };
 
-        var result = metric.WaitTime;
+        var result = metric.WaitTimeInQueue;
 
-        Assert.Equal(150u, result.Milliseconds);
+        Assert.Equal(150u, result);
     }
 }

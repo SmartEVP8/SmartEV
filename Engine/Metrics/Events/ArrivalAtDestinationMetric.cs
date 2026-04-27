@@ -24,6 +24,11 @@ public readonly struct ArrivalAtDestinationMetric
     required public int PathDeviation { get; init; }
 
     /// <summary>
+    /// Gets a value indicating whether an EV drives directly to its destination or goes charging.
+    /// </summary>
+    required public bool DriveDirectlyToDestination { get; init; }
+
+    /// <summary>
     /// Gets the difference between actual and expected arrival time.
     /// </summary>
     public int DeltaArrivalTime => (int)ActualArrivalTime - (int)ExpectedArrivalTime;
@@ -50,6 +55,7 @@ public readonly struct ArrivalAtDestinationMetric
             ActualArrivalTime = actualArrivalTime,
             PathDeviation = ev.Journey.Current.PathDeviation,
             MissedDeadline = actualArrivalTime > expectedArrivalTime,
+            DriveDirectlyToDestination = ev.DriveDirectlyToDestination,
         };
     }
 }

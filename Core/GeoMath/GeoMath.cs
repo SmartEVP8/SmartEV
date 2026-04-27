@@ -1,6 +1,7 @@
 namespace Core.GeoMath;
 
 using Core.Shared;
+using Core.Helper;
 
 /// <summary>
 /// This class provides methods for calculating distances and bearings between
@@ -43,6 +44,12 @@ public static class GeoMath
     {
         // We scale the longitude by the cosine of the latitude to account for the fact that
         // the distance represented by a degree of longitude varies with latitude.
+        if (Math.Cos(wp1.Latitude + wp2.Latitude) == 0)
+            throw Log.Error(0, 0, new ArgumentException("Waypoints cannot be at the poles where cosine of latitude is zero."), ("wp1", wp1), ("wp2", wp2));
+
+        if (radius <= 0)
+            throw Log.Error(0, 0, new ArgumentOutOfRangeException(nameof(radius), $"Radius must be positive. Received {radius}."), ("wp1", wp1), ("wp2", wp2), ("Radius", radius));
+
         var cosLat = Math.Cos((wp1.Latitude + wp2.Latitude) / 2.0 * Math.PI / 180.0);
 
         var aPoint = new Vec2(wp1.Longitude * cosLat, wp1.Latitude);
@@ -73,6 +80,8 @@ public static class GeoMath
     public static double DistancesThroughPath(
     List<Position> waypoints, Position position, double radius)
     {
+        if (radius <= 0)
+            throw Log.Error(0, 0, new ArgumentOutOfRangeException(nameof(radius), $"Radius must be positive. Received {radius}."), ("Waypoints", waypoints), ("Position", position), ("Radius", radius));
         var matchIndex = -1;
         var radiusDeg = radius / KmPerLatitudeDegree;
 
@@ -119,6 +128,9 @@ public static class GeoMath
         var lat1 = a.Latitude * DegToRad;
         var lat2 = b.Latitude * DegToRad;
         var dLon = (b.Longitude - a.Longitude) * DegToRad;
+
+        if (Math.Cos((lat1 + lat2) / 2) == 0)
+            throw Log.Error(0, 0, new ArgumentException("Positions cannot be at the poles where cosine of latitude is zero."), ("PositionA", a), ("PositionB", b));
 
         var x = dLon * Math.Cos((lat1 + lat2) / 2);
         var y = lat2 - lat1;

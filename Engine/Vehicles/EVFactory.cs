@@ -7,6 +7,7 @@ using Core.Vehicles.Configs;
 using Engine.Routing;
 using Engine.Spawning;
 using Engine.Utils;
+using Core.Helper;
 
 /// <summary>
 /// Factory for creating EVs, supporting single or batch creation.
@@ -14,9 +15,12 @@ using Engine.Utils;
 /// <param name="random">An instance of Random.</param>
 /// <param name="samplersProvider">The provider of the samplers used to sample the EVs' journeys.</param>
 /// <param name="pointToPointRouter">Used to get the duration and path of the EVs' journeys.</param>
-public class EVFactory(Random random, IJourneySamplerProvider samplersProvider, IPointToPointRouter pointToPointRouter)
+/// <param name="EVOptions">The options used to configure the EVs.</param>
+public class EVFactory(Random random, IJourneySamplerProvider samplersProvider, IPointToPointRouter pointToPointRouter, EVOptions EVOptions)
 {
     private readonly AliasSampler _sampler = new([.. EVModels.Models.Select(m => m.SpawnChance)]);
+
+    private readonly EVOptions _options = EVOptions;
 
     /// <summary>
     /// Creates a single EV. For batch creation use <see cref="SampleParams"/> and <see cref="Create(SampledEVParams, Time)"/>.
@@ -42,6 +46,31 @@ public class EVFactory(Random random, IJourneySamplerProvider samplersProvider, 
         (Position Source, Position Destination) SourceDest
     );
 
+    private float GetRandomStartingSoC()
+    {
+        var startSocDistribution = _options.StartSoCDistribution;
+        if (startSocDistribution.Values.Sum() is not (>= 0.99 and <= 1.01))
+        {
+            throw Log.Error(0, 0, new ArgumentException($"StartSoCDistribution probabilities must sum to 1 (current sum={startSocDistribution.Values.Sum()})."));
+        }
+
+        var randomValue = random.NextDouble();
+        var cumulativeProbability = 0.0;
+
+        foreach (var (stateOfCharge, probability) in startSocDistribution)
+        {
+            cumulativeProbability += probability;
+
+            if (randomValue < cumulativeProbability)
+            {
+                return stateOfCharge;
+            }
+        }
+
+        // Fallback for floating-point edge cases.
+        return 0.8f;
+    }
+
     /// <summary>
     /// Creates a single EV from pre-sampled parameters. This method is thread-safe
     /// and can be called in parallel as it performs no random sampling.
@@ -54,7 +83,7 @@ public class EVFactory(Random random, IJourneySamplerProvider samplersProvider, 
         var batteryConfig = p.Config.BatteryConfig;
         var battery = new Battery(batteryConfig.MaxCapacityKWh, batteryConfig.ChargeRateKW, p.CurrCharge);
         var preferences = new Preferences(p.PriceSensPref, p.MinAcceptableCharge, p.MaxPathDeviation);
-        var journey = CreateJourney(departure, p.SourceDest);
+        var journey = CreateJourney(departure, p.SourceDest) ?? throw Log.Error(0, 0, new InvalidOperationException($"Failed to create journey for EV with source {p.SourceDest.Source} and destination {p.SourceDest.Destination}. This should not happen."), ("SampledData", p));
         return new EV(battery, preferences, journey, p.Config.Efficiency);
     }
 
@@ -71,7 +100,7 @@ public class EVFactory(Random random, IJourneySamplerProvider samplersProvider, 
         {
             parameters[i] = new SampledEVParams(
                 Config: EVModels.Models[_sampler.Sample(random)],
-                CurrCharge: NextFloatInRange(0.4f, 1f),
+                CurrCharge: GetRandomStartingSoC(),
                 PriceSensPref: random.NextSingle(),
                 MinAcceptableCharge: NextFloatInRange(0.05f, 0.2f),
                 MaxPathDeviation: NextFloatInRange(5.0f, 30.0f),
@@ -92,8 +121,6 @@ public class EVFactory(Random random, IJourneySamplerProvider samplersProvider, 
 
         var segments = Polyline6ToPoints.DecodePolyline(queryResult.Polyline);
         var durationMS = (uint)Math.Ceiling(queryResult.Duration);
-        if (durationMS == 0)
-            throw new InvalidOperationException($"Duration of journey cannot be zero (source={source}, destination={destination}, queryResult={queryResult})");
         return new Journey(departure, durationMS, queryResult.Distance, segments);
     }
 

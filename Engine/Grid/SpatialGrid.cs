@@ -3,6 +3,7 @@ namespace Engine.Grid;
 using Core.Charging;
 using Core.Shared;
 using Core.GeoMath;
+using Core.Helper;
 
 /// <summary>
 /// The SpatialGrid class is a spatial index that allows for efficient querying of stations based on their geographic location.
@@ -41,7 +42,7 @@ public class SpatialGrid : ISpatialGrid
             var key = ToRowCol(station.Value.Position.Latitude, station.Value.Position.Longitude);
 
             if (!_cells.TryGetValue(key, out var list))
-                key = FindNearestSpawnableCell(key) ?? throw new Exception($"Station {station.Value.Position.Latitude}, {station.Value.Position.Longitude} has no nearby spawnable cell.");
+                key = FindNearestSpawnableCell(key) ?? throw Log.Error(0, 0, new Exception($"Station {station.Value.Position.Latitude}, {station.Value.Position.Longitude} has no nearby spawnable cell."), ("StationId", station.Key), ("Position", station.Value.Position));
 
             _cells[key].Add(station.Key);
         }

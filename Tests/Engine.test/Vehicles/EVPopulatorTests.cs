@@ -2,7 +2,6 @@ namespace Engine.test.Vehicles;
 
 using Core.Shared;
 using Engine.Events;
-using Engine.Spawning;
 using Engine.test.Builders;
 using Engine.Vehicles;
 
@@ -13,11 +12,12 @@ public class EVPopulatorTests
     {
         var journeySamplerProvider = EngineTestData.JourneySamplerProvider();
         var fakeScheduler = new FakeScheduler();
+        var evOptions = new EVOptions();
         var evStore1 = new EVStore(100);
         var evStore2 = new EVStore(100);
 
-        var evPopulator1 = new EVPopulator(new EVFactory(new Random(1), journeySamplerProvider, EngineTestData.OSRMRouter), evStore1, fakeScheduler);
-        var evPopulator2 = new EVPopulator(new EVFactory(new Random(1), journeySamplerProvider, EngineTestData.OSRMRouter), evStore2, fakeScheduler);
+        var evPopulator1 = new EVPopulator(new EVFactory(new Random(1), journeySamplerProvider, EngineTestData.OSRMRouter, evOptions), evStore1, fakeScheduler);
+        var evPopulator2 = new EVPopulator(new EVFactory(new Random(1), journeySamplerProvider, EngineTestData.OSRMRouter, evOptions), evStore2, fakeScheduler);
 
         evPopulator1.CreateEVs(100, 3600);
         evPopulator2.CreateEVs(100, 3600);

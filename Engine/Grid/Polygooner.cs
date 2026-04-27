@@ -1,5 +1,6 @@
 namespace Engine.Grid;
 
+using Core.GeoMath;
 using Core.Shared;
 
 /// <summary>
@@ -7,13 +8,18 @@ using Core.Shared;
 /// </summary>
 public static class Polygooner
 {
+    private const double _boundingBoxRadiusKm = 0.05;
+
     /// <summary>
-    /// Generates a grid of the specified size (in degrees) and marks cells that are inside any of the provided polygons.
+    /// Generates a grid of the specified size and marks cells as spawnable when they intersect
+    /// included polygons and do not intersect excluded polygons.
     /// </summary>
     /// <param name="size">The size in degrees of each grid cell.</param>
-    /// <param name="polygons">The polygons to check intersections against.</param>
+    /// <param name="polygons">Land polygons where spawning is allowed.</param>
+    /// <param name="wetPolygons">Wet polygons (lakes/sea/etc.) where spawning is disallowed.</param>
+    /// <param name="stationPositions">The positions of charging stations.</param>
     /// <returns>A 2D grid with 1 or 0.</returns>
-    public static SpawnGrid GenerateGrid(double size, List<List<Position>> polygons)
+    public static SpawnGrid GenerateGrid(double size, List<List<Position>> polygons, List<List<Position>> wetPolygons, IEnumerable<Position> stationPositions)
     {
         var (min, max) = ComputeBoundingBox(polygons);
         var diffLat = max.Latitude - min.Latitude;
@@ -29,24 +35,24 @@ public static class Polygooner
         var halfLat = size / 2.0;
         var halfLon = lonSize / 2.0;
 
-        var gridCells = new List<List<GridCell>>(latSteps);
+        var spawnBounded = PrecomputeBounds(polygons);
+        var wetBounded = PrecomputeBounds(wetPolygons);
+        var stationsBounded = ComputeStationExclusionBounds(stationPositions);
 
+        var gridCells = new List<List<GridCell>>(latSteps);
         for (var i = 0; i < latSteps; i++)
         {
             var row = new List<GridCell>(lonSteps);
-
             for (var j = 0; j < lonSteps; j++)
             {
                 var centerLat = min.Latitude + ((i + 0.5) * size);
                 var centerLon = min.Longitude + ((j + 0.5) * lonSize);
                 var centerPos = new Position(centerLon, centerLat);
 
-                var spawnable = polygons.Any(polygon =>
-                    PointInPolygon(polygon, centerLon, centerLat) ||
-                    PointInPolygon(polygon, centerLon - halfLon, centerLat - halfLat) ||
-                    PointInPolygon(polygon, centerLon + halfLon, centerLat - halfLat) ||
-                    PointInPolygon(polygon, centerLon - halfLon, centerLat + halfLat) ||
-                    PointInPolygon(polygon, centerLon + halfLon, centerLat + halfLat));
+                var inSpawnPolygon = IntersectsAnyPolygon(spawnBounded, centerLon, centerLat, halfLon, halfLat);
+                var inWetPolygon = IntersectsAnyPolygon(wetBounded, centerLon, centerLat, halfLon, halfLat);
+                var inStationsPolygon = IntersectsAnyPolygon(stationsBounded, centerLon, centerLat, halfLon, halfLat);
+                var spawnable = inSpawnPolygon && !inWetPolygon && !inStationsPolygon;
 
                 row.Add(new GridCell(spawnable, centerPos));
             }
@@ -55,6 +61,18 @@ public static class Polygooner
         }
 
         return new SpawnGrid(gridCells, min, size, lonSize);
+    }
+
+    private static bool IntersectsAnyPolygon(List<PolygonWithBounds> polygons, double centerLon, double centerLat, double halfLon, double halfLat)
+    {
+        return polygons.Any(p =>
+            !(centerLon + halfLon < p.MinLon || centerLon - halfLon > p.MaxLon ||
+              centerLat + halfLat < p.MinLat || centerLat - halfLat > p.MaxLat) &&
+            (PointInPolygon(p.Polygon, centerLon, centerLat) ||
+             PointInPolygon(p.Polygon, centerLon - halfLon, centerLat - halfLat) ||
+             PointInPolygon(p.Polygon, centerLon + halfLon, centerLat - halfLat) ||
+             PointInPolygon(p.Polygon, centerLon - halfLon, centerLat + halfLat) ||
+             PointInPolygon(p.Polygon, centerLon + halfLon, centerLat + halfLat)));
     }
 
     /// <summary>
@@ -112,5 +130,42 @@ public static class Polygooner
         }
 
         return (new Position(minLon, minLat), new Position(maxLon, maxLat));
+    }
+
+    private record PolygonWithBounds(List<Position> Polygon, double MinLat, double MaxLat, double MinLon, double MaxLon);
+
+    private static List<PolygonWithBounds> PrecomputeBounds(List<List<Position>> polygons) =>
+        [.. polygons.Select(p => new PolygonWithBounds(
+            p,
+            p.Min(v => v.Latitude),
+            p.Max(v => v.Latitude),
+            p.Min(v => v.Longitude),
+            p.Max(v => v.Longitude)))];
+
+    private static List<PolygonWithBounds> ComputeStationExclusionBounds(
+    IEnumerable<Position> stationPositions)
+    {
+        var latOffset = _boundingBoxRadiusKm / GeoMath.KmPerLatitudeDegree;
+
+        return [.. stationPositions.Select(station =>
+        {
+            var cosLat = Math.Cos(station.Latitude * Math.PI / 180.0);
+            var lonOffset = latOffset / cosLat;
+
+            var polygon = new List<Position>
+            {
+            new(station.Longitude - lonOffset, station.Latitude - latOffset), // bottom-left
+            new(station.Longitude + lonOffset, station.Latitude - latOffset), // bottom-right
+            new(station.Longitude + lonOffset, station.Latitude + latOffset), // top-right
+            new(station.Longitude - lonOffset, station.Latitude + latOffset), // top-left
+            };
+
+            return new PolygonWithBounds(
+                polygon,
+                station.Latitude - latOffset,
+                station.Latitude + latOffset,
+                station.Longitude - lonOffset,
+                station.Longitude + lonOffset);
+        })];
     }
 }

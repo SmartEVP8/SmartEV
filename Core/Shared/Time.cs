@@ -1,4 +1,6 @@
 namespace Core.Shared;
+
+using Core.Helper;
 /// <summary>
 /// Simple time wrapper with implicit conversion between uint and Time.
 /// The unit of <see cref="Milliseconds"/> is <b>milliseconds</b>.
@@ -15,6 +17,9 @@ public readonly record struct Time(uint Milliseconds) : IComparable<Time>
 
     // Implicitly convert Time → uint
     public static implicit operator uint(Time t) => t.Milliseconds;
+
+    public static Time operator +(Time left, Time right) => new(left.Milliseconds + right.Milliseconds);
+    public static Time operator -(Time left, Time right) => new(left.Milliseconds - right.Milliseconds);
 
     /// <summary>
     /// Milliseconds in a second.
@@ -60,7 +65,7 @@ public readonly record struct Time(uint Milliseconds) : IComparable<Time>
         4 => DayOfWeek.Thursday,
         5 => DayOfWeek.Friday,
         6 => DayOfWeek.Saturday,
-        _ => throw new InvalidOperationException("Unreachable")
+        _ => throw Log.Error(0, 0, new InvalidOperationException("Unreachable"))
     };
 
     /// <summary>

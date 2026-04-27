@@ -6,7 +6,10 @@ using Core.Vehicles;
 using Engine.Cost;
 using Engine.Routing;
 using Engine.Services;
+using Engine.Utils;
 using Engine.Vehicles;
+using Core.Helper;
+using System.Diagnostics;
 
 /// <summary>
 /// Event handler for finding candidate stations for an EV.
@@ -19,13 +22,15 @@ using Engine.Vehicles;
 /// <param name="evStore">EV store for retrieving EV data.</param>
 /// <param name="evDetourPlanner">To update a journey if a better one is found.</param>
 /// <param name="stationService">To check for ev reservations.</param>
+/// <param name="metrics">Optional collector of performance metrics.</param>
 public class FindCandidateStationsHandler(
     IFindCandidateStationService findCandidateStationService,
     CostFunction costFunction,
     IEventScheduler eventScheduler,
     EVStore evStore,
     IEVDetourPlanner evDetourPlanner,
-    StationService stationService)
+    StationService stationService,
+    PerformanceMetrics? metrics = null)
 {
     /// <summary>
     /// Handles the <see cref="FindCandidateStations"/> event by pre-computing candidate stations.
@@ -34,34 +39,73 @@ public class FindCandidateStationsHandler(
     /// <returns>A task representing the asynchronous operation.</returns>
     public async Task Handle(FindCandidateStations e)
     {
-        var candidateStationDurations = await findCandidateStationService.GetCandidateStationFromCache(e.EVId);
+        var candidateStations = await findCandidateStationService.GetCandidateStationFromCache(e.EVId)
+            .MeasureAsync("FindCandidateStations.GetCandidates", metrics);
+
         ref var ev = ref evStore.Get(e.EVId);
         ev.Advance(e.Time);
 
-        if (candidateStationDurations.Count == 0)
+        if (ev.Battery.StateOfCharge >= 0.7f)
+        {
+            var nextCheckTime = ev.TimeAtNextFindCandidateCheck(e.Time);
+            Log.Info(e.EVId, e.Time, $"EV {e.EVId} has more than 70% SoC at find candidate stations. Rescheduling next check at {nextCheckTime}.");
+            eventScheduler.ScheduleEvent(new FindCandidateStations(e.EVId, nextCheckTime));
+            return;
+        }
+
+        Log.Verbose(e.EVId, e.Time, $"Handling FindCandidateStations for EV {e.EVId} at time {e.Time}. Current EV data: {ev}. SoC: {ev.Battery.StateOfCharge}, Next stop in {ev.Journey.Current.DurationToNextStop}ms.)", ("Journey", ev.Journey));
+
+        if (candidateStations.Count == 0)
         {
             HandleNoCandidates(e, ref ev);
             return;
         }
 
-        var bestStation = costFunction.Compute(ref ev, candidateStationDurations, e.Time);
+        var sw = Stopwatch.StartNew();
+        var bestStation = costFunction.Compute(ref ev, candidateStations, e.Time)
+            ?? throw Log.Error(e.EVId, e.Time, new SkillissueException("Cost function did not return a station, but should never get this far."));
+        var candidate = candidateStations[bestStation.Id];
+        metrics?.Record("FindCandidateStations.ComputeCost", sw.Elapsed.TotalMilliseconds);
 
         if (stationService.GetReservationStationId(e.EVId) != bestStation.Id)
-            evDetourPlanner.Update(ref ev, bestStation, e.Time);
+        {
+            {
+                sw.Restart();
+                evDetourPlanner.Update(
+                    ref ev,
+                    bestStation,
+                    e.Time,
+                    candidate.DurToStation + candidate.DurToDest,
+                    candidate.DistToStationMeters + candidate.DistStationToDestMeters);
+            }
+            metrics?.Record("FindCandidateStations.EvDetourUpdate", sw.Elapsed.TotalMilliseconds);
+        }
 
         var remaining = ev.Journey.Current.DurationToNextStop;
         var etaAtStation = e.Time + remaining;
-        var targetSoC = ev.CalcDesiredSoC(etaAtStation);
+        var targetSoC = candidate.DistStationToDestMeters > 0f
+            ? ev.PreCalculatedTargetSoC(candidate.DistStationToDestMeters / 1000f)
+            : ev.CalcDesiredSoC(etaAtStation);
         var socAtArrival = ev.EstimateSoCAtNextStop();
+
+        if (socAtArrival >= targetSoC)
+        {
+            throw Log.Error(e.EVId, e.Time, new InvalidOperationException(
+                $"Invalid reservation for EV {e.EVId}: estimated SoC at arrival ({socAtArrival}) is >= target SoC ({targetSoC})."),
+                ("Candidate", candidate),
+                ("BestStationId", bestStation.Id));
+        }
+
         stationService.HandleReservation(new Reservation(e.EVId, etaAtStation, socAtArrival, targetSoC), bestStation.Id);
 
         if (remaining <= Time.MillisecondsPerMinute * 10)
         {
+            Log.Info(e.EVId, e.Time, $"EV {e.EVId} is close to station {bestStation.Id} with ETA {etaAtStation} and SoC at arrival {socAtArrival} with a current SoC of {ev.Battery.StateOfCharge}. Making arrival at station event immediately.");
             eventScheduler.ScheduleEvent(new ArriveAtStation(e.EVId, bestStation.Id, targetSoC, etaAtStation));
             return;
         }
 
-        eventScheduler.ScheduleEvent(new FindCandidateStations(e.EVId, ev.TimeToNextFindCandidateCheck(e.Time)));
+        eventScheduler.ScheduleEvent(new FindCandidateStations(e.EVId, ev.TimeAtNextFindCandidateCheck(e.Time)));
     }
 
     private void HandleNoCandidates(FindCandidateStations e, ref EV ev)
@@ -79,6 +123,14 @@ public class FindCandidateStationsHandler(
             return;
         }
 
-        throw new InvalidOperationException($"No candidate stations available for EV {e.EVId} at {e.Time}.");
+        var waypointText = string.Join(" -> ", ev.Journey.Current.Waypoints.Select(p => $"({p.Longitude:F6}, {p.Latitude:F6})"));
+        Log.Warn(e.EVId, e.Time, $"No candidate stations found for EV {e.EVId} at time {e.Time}, and no existing reservation.", ("EV", ev), ("Journey", ev.Journey), ("EV SoC", ev.Battery.StateOfCharge), ("Waypoints", waypointText));
+        throw Log.Error(
+            e.EVId,
+            e.Time,
+            new InvalidOperationException($"No candidate stations available for EV {e.EVId} at {e.Time}. EV data: {ev}, Journey: {ev.Journey}, Waypoints: {waypointText}"),
+            ("EV", ev),
+            ("Journey", ev.Journey),
+            ("Waypoints", waypointText));
     }
 }

@@ -1,5 +1,7 @@
 namespace Engine.Cost;
 
+using Core.Helper;
+
 /// <summary>
 /// Enum for the different cost weight fields.
 /// </summary>
@@ -7,8 +9,6 @@ public enum CostWeightField
 {
     PriceSensitivity,
     PathDeviation,
-    EffectiveQueueSize,
-    Urgency,
     ExpectedWaitTime,
 }
 
@@ -27,18 +27,14 @@ public static class CostWeightFieldExtensions
     {
         CostWeightField.PriceSensitivity => "Price Sensitivity",
         CostWeightField.PathDeviation => "Path Deviation",
-        CostWeightField.EffectiveQueueSize => "Effective Queue Size",
-        CostWeightField.Urgency => "Urgency",
         CostWeightField.ExpectedWaitTime => "Expected Wait Time",
-        _ => throw new ArgumentOutOfRangeException(nameof(field))
+        _ => throw Log.Error(0, 0, new ArgumentOutOfRangeException(nameof(field)))
     };
 }
 
 public record CostWeights(
     float PriceSensitivity = 0.4f,
     float PathDeviation = 0.8f,
-    float EffectiveQueueSize = 1.0f,
-    float Urgency = 0.5f,
     float ExpectedWaitTime = 1
 );
 
@@ -56,10 +52,8 @@ public static class CostWeightMetadata
     public static readonly IReadOnlyDictionary<CostWeightField, WeightMetadata> All =
         new Dictionary<CostWeightField, WeightMetadata>
         {
-            [CostWeightField.PriceSensitivity] = new(0, 0f, 1f, CostWeightField.PriceSensitivity.ToDisplayName()),
+            [CostWeightField.PriceSensitivity] = new(0, 0f, 10f, CostWeightField.PriceSensitivity.ToDisplayName()),
             [CostWeightField.PathDeviation] = new(1, 0f, 100f, CostWeightField.PathDeviation.ToDisplayName()),
-            [CostWeightField.EffectiveQueueSize] = new(2, 0f, 100f, CostWeightField.EffectiveQueueSize.ToDisplayName()),
-            [CostWeightField.Urgency] = new(3, 0f, 1f, CostWeightField.Urgency.ToDisplayName()),
-            [CostWeightField.ExpectedWaitTime] = new(4, 0f, 100f, CostWeightField.ExpectedWaitTime.ToDisplayName()),
+            [CostWeightField.ExpectedWaitTime] = new(2, 0f, 100f, CostWeightField.ExpectedWaitTime.ToDisplayName()),
         };
 }

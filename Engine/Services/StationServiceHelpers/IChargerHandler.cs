@@ -1,5 +1,7 @@
 namespace Engine.Services.StationServiceHelpers;
 
+using Core.Charging;
+using Core.Charging.ChargingModel;
 using Core.Shared;
 
 /// <summary>
@@ -21,4 +23,24 @@ public interface IChargerHandler
     /// <param name="simNow">The current simulation time.</param>
     /// <returns>The final SoC of the EV, or null if no matching session was found.</returns>
     double? EndSession(int evId, Time simNow);
+
+    /// <summary>
+    /// Estimates the next time the charger is available and generates a schedule of EV finish times.
+    /// <paramref name="evsOverride"/> Defaults to its currently charging evs + queue.
+    /// </summary>
+    /// <param name="simNow">The current time.</param>
+    /// <param name="evsOverride">Overrides the estimate for a custom list of connected evs.</param>
+    /// <returns>A tuple containing the next time the charger is available and the chronological schedule.</returns>
+    (Time AvailableAt, IReadOnlyList<(int EVId, Time FinishTime)> Schedule) EstimateWaitTime(Time simNow, IReadOnlyList<ConnectedEV>? evsOverride = null);
+
+    /// <summary>
+    /// Gets the charger that the handler manages.
+    /// </summary>
+    ChargerBase Charger { get; }
+
+    /// <summary>
+    /// Gets the sessions of the charger.
+    /// </summary>
+    /// <returns>The sessions.</returns>
+    (ActiveSession? A, ActiveSession? B) GetSessions();
 }

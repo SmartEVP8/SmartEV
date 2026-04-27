@@ -45,6 +45,8 @@ public class FindCandidateStationsBenchmark
         {
             // No-op for benchmarking
         }
+
+        public Time ExpectedWaitTime(ushort stationId, Time simNow, Time arrival) => throw new NotImplementedException();
     }
 
     /// <summary>
@@ -72,7 +74,7 @@ public class FindCandidateStationsBenchmark
         }
 
         var polygons = PolygonParser.Parse(File.ReadAllText(gridPath));
-        var grid = Polygooner.GenerateGrid(0.1, polygons);
+        var grid = Polygooner.GenerateGrid(0.1, polygons, [], []);
         var spatialGrid = new SpatialGrid(grid, stations);
 
         var costWeigths = new CostWeights(PathDeviation: 1);
@@ -83,12 +85,13 @@ public class FindCandidateStationsBenchmark
 
         var config = new MetricsConfig();
         var guid = Guid.NewGuid();
+        var settings = Engine.Init.EngineConfiguration.CreateDefaultSettings();
 
         _eventScheduler = new EventScheduler();
         _evStore = new EVStore(_count);
         _stationService = new StationService(stations.Values, new ChargingIntegrator(10), _eventScheduler, _evStore, new MetricsService(config, guid));
 
-        var findCandidateStationService = new FindCandidateStationService(router, stations, spatialGrid, _evStore, _stationService);
+        var findCandidateStationService = new FindCandidateStationService(router, stations, spatialGrid, _evStore, _stationService, settings.ChargeBufferPercent);
         _findCandidateStationsHandler = new FindCandidateStationsHandler(findCandidateStationService, computeCost, _eventScheduler, _evStore, applyNewPath, _stationService);
 
         var random = new Random(1);

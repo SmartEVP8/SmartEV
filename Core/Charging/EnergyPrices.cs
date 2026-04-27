@@ -3,6 +3,7 @@ namespace Core.Charging;
 using System.Collections.Immutable;
 using System;
 using System.Globalization;
+using Core.Helper;
 
 /// <summary>
 /// Provides estimated EV charging prices in DKK/kWh for each hour of the day (0–23).
@@ -41,12 +42,18 @@ public class EnergyPrices(FileInfo csvPath, Random random)
     public float GetHourPrice(DayOfWeek day, int hour)
     {
         if (!Enum.IsDefined(day))
-            throw new ArgumentOutOfRangeException(nameof(day), "Invalid day of week.");
+            throw Log.Error(0, 0, new ArgumentOutOfRangeException(nameof(day), "Invalid day of week."), ("Day", day), ("Hour", hour));
         else if (hour < 0 || hour > 23)
-            throw new ArgumentOutOfRangeException(nameof(hour), "Hour must be between 0 and 23.");
+            throw Log.Error(0, 0, new ArgumentOutOfRangeException(nameof(hour), "Hour must be between 0 and 23."), ("Day", day), ("Hour", hour));
 
         return _energyPriceTable.First(x => x.Day == day && x.Hour == hour).Price;
     }
+
+    /// <summary>
+    /// Finds the lowest overall price.
+    /// </summary>
+    /// <returns>Returns a lowest price as a float.</returns>
+    public float GetLowestPrice() => _energyPriceTable.Min(x => x.Price);
 
     /// <summary>
     /// Calculates a price and applies a random deviation of 0–20% to the base hourly price.

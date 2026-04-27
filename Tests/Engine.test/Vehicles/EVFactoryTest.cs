@@ -16,7 +16,7 @@ public class EVFactoryTest
     /// </summary>
     /// <param name="seed">The seed used to create EVs.</param>
     /// <returns>An EVFactory.</returns>
-    private static EVFactory MakeFactory(int seed = 42) => new(new Random(seed), new FakeJourneySamplerProvider(), new FakeRouter());
+    private static EVFactory MakeFactory(int seed = 42) => new(new Random(seed), new FakeJourneySamplerProvider(), new FakeRouter(), new EVOptions());
 
     private class FakeJourneySamplerProvider : IJourneySamplerProvider
     {

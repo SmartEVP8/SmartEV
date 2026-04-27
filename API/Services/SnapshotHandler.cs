@@ -3,8 +3,10 @@ namespace API.Services;
 using Core.Charging;
 using Engine.Events;
 using Engine.Services;
+using Engine.Services.StationServiceHelpers;
 using Engine.Vehicles;
 using API.Protocol;
+using Core.Helper;
 
 /// <summary>
 /// Handles snapshot requests from the client by querying the engine.
@@ -12,12 +14,10 @@ using API.Protocol;
 /// <param name="evStore">The store for managing electric vehicles.</param>
 /// <param name="stationService">The service for managing charging stations.</param>
 /// <param name="eventScheduler">The event scheduler for getting the current simulation time.</param>
-/// <param name="logger">The logger for recording events and errors.</param>
 public class SnapshotHandler(
     EVStore evStore,
     StationService stationService,
-    EventScheduler eventScheduler,
-    ILogger<SnapshotHandler> logger)
+    EventScheduler eventScheduler)
 {
     /// <summary>
     /// Builds a simulation snapshot response by querying the engine for the current state of the simulation.
@@ -47,13 +47,14 @@ public class SnapshotHandler(
         var station = stationService.GetStation(stationId);
         if (station == null)
         {
-            logger.LogWarning("Station with ID {StationId} not found", stationId);
+            Log.Warn(0, 0, $"Station with ID {stationId} not found", ("StationId", stationId));
             return new Envelope { StationStateResponse = stationState };
         }
 
         foreach (var charger in station.Chargers)
         {
-            var chargerState = CreateChargerState(charger);
+            var chargerHandlers = stationService.GetChargerHandler(charger.Id);
+            var chargerState = CreateChargerState(chargerHandlers);
             stationState.ChargerStates.Add(chargerState);
         }
 
@@ -62,24 +63,12 @@ public class SnapshotHandler(
         return new Envelope { StationStateResponse = stationState };
     }
 
-    private static ChargerState CreateChargerState(ChargerBase charger)
+    private ChargerState CreateChargerState(IChargerHandler chargerHandler)
     {
-        ActiveSession? sessionA;
-        ActiveSession? sessionB;
-        switch (charger)
-        {
-            case SingleCharger s:
-                sessionA = s.Session;
-                sessionB = null;
-                break;
+        var (sessionA, sessionB) = chargerHandler.GetSessions();
+        var charger = chargerHandler.Charger;
+        var schedule = chargerHandler.EstimateWaitTime(eventScheduler.CurrentTime).Schedule;
 
-            case DualCharger d:
-                sessionA = d.SessionA;
-                sessionB = d.SessionB;
-                break;
-            default:
-                throw new InvalidOperationException($"Unknown charger type: {charger.GetType()}");
-        }
 
         var chargerState = new ChargerState
         {
@@ -95,13 +84,14 @@ public class SnapshotHandler(
         if (sessionB is not null && sessionB.Plan is not null && sessionB.Plan.CarB is not null)
             chargerState.EvsCharging.Add(CreateEVChargerState(sessionB, sessionB.Plan.CarB.FinishTime));
 
-        foreach (var ev in charger.Queue)
+        foreach (var pair in charger.Queue.Zip(schedule, (ev, time) => new { ev, time }))
         {
             chargerState.EvsInQueue.Add(new EVChargerState
             {
-                EvId = ev.EVId,
-                Soc = (float)ev.CurrentSoC,
-                TargetSoc = (float)ev.TargetSoC,
+                EvId = pair.ev.EVId,
+                Soc = (float)pair.ev.CurrentSoC,
+                TargetSoc = (float)pair.ev.TargetSoC,
+                FinishTimeMs = pair.time.FinishTime,
             });
         }
 
@@ -112,7 +102,7 @@ public class SnapshotHandler(
     {
         return charger switch
         {
-            SingleCharger s when s.Session is not null && s.Session.EV is { } ev =>
+            SingleCharger s when s.Session?.EV is { } ev =>
                 CalculateUtilization(s.GetPowerOutput(s.MaxPowerKW, ev.CurrentSoC), ev.MaxChargeRateKW, s.MaxPowerKW),
             DualCharger d =>
                 CalculateDualUtilization(d),

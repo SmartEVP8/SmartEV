@@ -7,6 +7,7 @@ using Engine.Events;
 using Engine.Metrics;
 using Engine.Metrics.Events;
 using Engine.Utils;
+using Core.Helper;
 
 /// <summary>
 /// Handles the session lifecycle for a <see cref="SingleCharger"/>,
@@ -23,6 +24,13 @@ public class SingleChargerHandler(
     MetricsService metrics)
     : IChargerHandler
 {
+    /// <inheritdoc/>
+    public ChargerBase Charger => charger;
+
+    /// <inheritdoc/>
+    public (ActiveSession? A, ActiveSession? B) GetSessions()
+        => (charger.Session, null);
+
     /// <summary>
     /// Dequeues the next EV and starts a charging session if the charger is free.
     /// Does nothing if a session is already active or the queue is empty.
@@ -40,8 +48,11 @@ public class SingleChargerHandler(
 
         if (!charger.TryConnect())
         {
-            throw new SkillissueException(
-                $"Logic Error: EV {next.EVId} reached Charger {charger.Id} but TryConnect failed.");
+            throw Log.Error(0, simNow, new SkillissueException(
+                $"Logic Error: EV {next.EVId} reached Charger {charger.Id} but TryConnect failed."),
+                ((string Key, object Value))("StationId", stationId),
+                ((string Key, object Value))("Charger", charger),
+                ((string Key, object Value))("NextEV", next));
         }
 
         charger.Queue.Dequeue();
@@ -62,6 +73,7 @@ public class SingleChargerHandler(
 
         if (result.CarA.FinishTime is { } finishTime)
         {
+            Log.Info(charger.Session.EVId, finishTime, $"Scheduling EndCharging event for EV {charger.Session.EVId} on charger {charger.Id} at station {stationId} with finish time {finishTime}.");
             var token = scheduler.ScheduleEvent(new EndCharging(next.EVId, charger.Id, stationId, finishTime));
             charger.Session = charger.Session with { CancellationToken = token };
         }
@@ -84,5 +96,28 @@ public class SingleChargerHandler(
         charger.Disconnect();
         charger.Session = null;
         return finalSoC;
+    }
+
+    /// <inheritdoc/>
+    public (Time AvailableAt, IReadOnlyList<(int EVId, Time FinishTime)> Schedule) EstimateWaitTime(Time simNow, IReadOnlyList<ConnectedEV>? evsOverride = null)
+    {
+        var availableAt = simNow;
+        var evs = evsOverride ?? charger.CreateConnectedEVs(simNow);
+        var schedule = new List<(int, Time)>();
+
+        foreach (var ev in evs)
+        {
+            var result = integrator.IntegrateSingleToCompletion(
+                availableAt,
+                charger.MaxPowerKW,
+                charger,
+                ev);
+
+            availableAt = result.CarA.FinishTime ?? throw Log.Error(ev.EVId, simNow, new InvalidOperationException($"EV {ev.EVId} did not produce a finish time."), ("EV", ev), ("Result", result));
+            schedule.Add((ev.EVId, availableAt));
+        }
+
+        var availableAtTimestamp = availableAt > simNow ? availableAt - simNow : new Time(0);
+        return (availableAtTimestamp, schedule);
     }
 }

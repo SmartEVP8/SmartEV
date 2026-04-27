@@ -29,7 +29,7 @@ packages/
 data/osrm/
 Core/native/
 *.parquet
-
+logs/
 
 BenchmarkDotNet.Artifacts/
 

@@ -16,5 +16,7 @@ public interface IEVDetourPlanner
     /// <param name="ev">The EV to reroute.</param>
     /// <param name="station">The station the EV should reroute through.</param>
     /// <param name="currentTime">Used to determine the EV's current position in the journey.</param>
-    void Update(ref EV ev, Station station, Time currentTime);
+    /// <param name="tableDuration">Total detour duration from current position to destination via station.</param>
+    /// <param name="tableDistance">Total detour distance from current position to destination via station.</param>
+    void Update(ref EV ev, Station station, Time currentTime, float tableDuration, float tableDistance);
 }

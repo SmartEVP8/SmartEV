@@ -37,9 +37,15 @@ public static class EngineTestData
 
     public static JourneySamplerProvider JourneySamplerProvider(
     float populationScalar = 1.0f,
-    float distanceScalar = 1.0f) => new(JourneySamplers, populationScalar, distanceScalar);
-
-    public static readonly JourneyPipeline JourneySamplers = BuildJourneyPipeline();
+    float distanceScalar = 1.0f,
+    bool wetEnabled = false)
+    {
+        var wetPolygonPath = AppContext.GetData("WetPolygonPath") as string
+            ?? throw new InvalidOperationException("WetPolygonPath not set in project.");
+        var wetPolygons = PolygonParser.Parse(File.ReadAllText(wetPolygonPath));
+        var journeySamplers = BuildJourneyPipeline();
+        return new(journeySamplers, populationScalar, distanceScalar, wetEnabled ? wetPolygons : []);
+    }
 
     private static JourneyPipeline BuildJourneyPipeline()
     {
@@ -47,7 +53,8 @@ public static class EngineTestData
                     ?? throw new InvalidOperationException("GridPath not set in project.");
 
         var polygons = PolygonParser.Parse(File.ReadAllText(polygonPath));
-        var spawnGrid = Polygooner.GenerateGrid(size: 0.1, polygons);
+        var stationPositions = AllStations.Values.Select(s => s.Position).ToList();
+        var spawnGrid = Polygooner.GenerateGrid(size: 0.1, polygons, [], []);
 
         var cityPath = AppContext.GetData("CityDataPath") as string
                             ?? throw new InvalidOperationException("GridPath not set in project.");
@@ -81,7 +88,8 @@ public static class EngineTestData
         var gridPath = AppContext.GetData("GridPath") as string
             ?? throw new InvalidOperationException("GridPath not set.");
         var polygons = PolygonParser.Parse(File.ReadAllText(gridPath));
-        var grid = Polygooner.GenerateGrid(0.1, polygons);
+        var stationPositions = AllStations.Values.Select(s => s.Position);
+        var grid = Polygooner.GenerateGrid(0.1, polygons, [], []);
         return new SpatialGrid(grid, stations ?? []);
     }
 
@@ -147,6 +155,8 @@ public static class EngineTestData
         {
             // No-op for testing
         }
+
+        public Time ExpectedWaitTime(ushort stationId, Time simNow, Time arrival) => -0;
     }
 
     private static Dictionary<ushort, Station> CreateAllStations()
