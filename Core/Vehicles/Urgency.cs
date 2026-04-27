@@ -1,8 +1,4 @@
-using Core.Shared;
-
 namespace Core.Vehicles;
-
-using Core.Shared;
 
 /// <summary>
 /// Provides a method to calculate the urgency of charging based on the state of charge (SoC) of the battery.
@@ -19,15 +15,14 @@ public static class Urgency
     /// and a minimum acceptable charge level.
     /// </summary>
     /// <param name="ev">The EV for which to calculate urgency.</param>
-    /// <param name="durationToStation">The estimated duration to reach the station, used to estimate SoC at arrival.</param>
+    /// <param name="distanceToStation">The estimated distance to reach the station, used to estimate SoC at arrival.</param>
     /// <returns>
     /// The urgency of charging as a value between 0 and 1, where a higher value indicates a more urgent need for charging.
     /// </returns>
-    public static double CalculateChargeUrgency(ref EV ev, Time durationToStation)
+    public static double CalculateChargeUrgency(ref EV ev, float distanceToStation)
     {
         const double upperChargeLimit = 0.80;
 
-        var distanceToStation = ev.DistanceEVCanDrive(durationToStation);
         var soc = (ev.Battery.CurrentChargeKWh - ev.EnergyForDistanceKWh(distanceToStation)) / ev.Battery.MaxCapacityKWh;
 
         if (soc <= 0)
