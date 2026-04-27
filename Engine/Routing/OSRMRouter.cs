@@ -13,7 +13,18 @@ public record RoutingLeg(float[] Durations, float[] Distances);
 
 public record RoutingLegsResult(RoutingLeg ToStation, RoutingLeg ToDest)
 {
+    /// <summary>
+    /// Calculates the total duration from the source to the station and then to the destination for a given index, by summing the corresponding durations from the ToStation and ToDest legs.
+    /// </summary>
+    /// <param name="i">The EV-Station route leg index.</param>
+    /// <returns>Returns the total duration for the specified station index.</returns>
     public float TotalDuration(int i) => ToStation.Durations[i] + ToDest.Durations[i];
+
+    /// <summary>
+    /// Calculates the total distance from the source to the station and then to the destination for a given index, by summing the corresponding distances from the ToStation and ToDest legs.
+    /// </summary>
+    /// <param name="i">The EV-Station route leg index.</param>
+    /// <returns>Returns the total distance for the specified station index.</returns>
     public float TotalDistance(int i) => ToStation.Distances[i] + ToDest.Distances[i];
 }
 
@@ -149,10 +160,13 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
 
         for (var i = 0; i < indices.Length; i++)
         {
-            toStationDurations[i] = results[i].SrcToStation.Durations * Time.MillisecondsPerSecond;
-            toStationDistances[i] = results[i].SrcToStation.Distances;
-            toDestDurations[i] = results[i].StationToDest.Durations * Time.MillisecondsPerSecond;
-            toDestDistances[i] = results[i].StationToDest.Distances;
+            var srcToStation = results[i].SrcToStation;
+            var stationToDest = results[i].StationToDest;
+
+            toStationDurations[i] = srcToStation.Durations == 0 ? throw new ArgumentException($"Invalid duration between EV ({evLon}, {evLat}) and station {indices[i]}") : srcToStation.Durations * Time.MillisecondsPerSecond;
+            toStationDistances[i] = srcToStation.Distances == 0 ? throw new ArgumentException($"Invalid distance between EV ({evLon}, {evLat}) and station {indices[i]}") : srcToStation.Distances;
+            toDestDurations[i] = stationToDest.Durations == 0 ? throw new ArgumentException($"Invalid duration between station {indices[i]} and destination ({destLon}, {destLat})") : stationToDest.Durations * Time.MillisecondsPerSecond;
+            toDestDistances[i] = stationToDest.Distances == 0 ? throw new ArgumentException($"Invalid distance between station {indices[i]} and destination ({destLon}, {destLat})") : stationToDest.Distances;
         }
 
         return new RoutingLegsResult(
@@ -175,13 +189,16 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
             destLat);
 
         if (resultPtr == IntPtr.Zero)
-            return new RouteSegment(-1, -1, string.Empty);
+            throw new ArgumentException($"OSRM failed to compute a route: Returned 0 with route from ({evLon}, {evLat}) to ({destLon}, {destLat}).");
 
         var result = Marshal.PtrToStructure<RouteResult>(resultPtr);
         var polylineStr = Marshal.PtrToStringAnsi(result.Polyline)!;
 
         FreeMemory(result.Polyline);
         FreeMemory(resultPtr);
+
+        if (string.IsNullOrEmpty(polylineStr))
+            throw new ArgumentException($"OSRM returned a result with an empty polyline from ({evLon}, {evLat}) to ({destLon}, {destLat}).");
 
         return new RouteSegment(result.Duration * Time.MillisecondsPerSecond, result.Distance, polylineStr);
     }
@@ -200,13 +217,16 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
             index);
 
         if (resultPtr == IntPtr.Zero)
-            return new RouteSegment(-1, -1, string.Empty);
+            throw new ArgumentException($"OSRM failed to compute a route: Returned 0 with route from ({evLon}, {evLat}) via ({stationLon}, {stationLat}) to ({destLon}, {destLat}).");
 
         var result = Marshal.PtrToStructure<RouteResult>(resultPtr);
         var polylineStr = Marshal.PtrToStringAnsi(result.Polyline)!;
 
         FreeMemory(result.Polyline);
         FreeMemory(resultPtr);
+
+        if (string.IsNullOrEmpty(polylineStr))
+            throw new ArgumentException($"OSRM returned a result with an empty polyline from ({evLon}, {evLat}) via ({stationLon}, {stationLat}) to ({destLon}, {destLat}).");
 
         return new RouteSegment(result.Duration * Time.MillisecondsPerSecond, result.Distance, polylineStr);
     }
@@ -230,7 +250,10 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
         }
 
         for (var i = 0; i < durations.Length; i++)
-            durations[i] *= Time.MillisecondsPerSecond;
+        {
+            durations[i] = durations[i] == 0 ? throw new ArgumentException($"Invalid duration between source ({srcCoords[i * 2]}, {srcCoords[i * 2 + 1]}) and destination ({dstCoords[i * 2]}, {dstCoords[i * 2 + 1]})") : durations[i] * Time.MillisecondsPerSecond;
+            distances[i] = distances[i] == 0 ? throw new ArgumentException($"Invalid distance between source ({srcCoords[i * 2]}, {srcCoords[i * 2 + 1]}) and destination ({dstCoords[i * 2]}, {dstCoords[i * 2 + 1]})") : distances[i];
+        }
 
         return new RoutingResult(durations, distances);
     }
