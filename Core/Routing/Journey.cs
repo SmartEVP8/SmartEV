@@ -79,7 +79,7 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
     public Time RemainingCurrentRoute(Time currentTime) => Current.Eta - currentTime;
 
     /// <summary>
-    /// Calculates the EV's remaing distance to destination.
+    /// Calculates the EV's remaining distance to destination.
     /// </summary>
     /// <param name="currentTime">The current time.</param>
     /// <returns>The remaining distance to destination in kilometers..</returns>
@@ -92,7 +92,7 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
     /// <param name="currentTime">The current time.</param>
     /// <returns>The position of the car.</returns>
     /// <exception cref="ArgumentException">Thrown when the current time is before the journey starts or after it has completed.</exception>
-    public Position CurrentPosition(Time currentTime) => GetRemainingDistanceAndCurrentPosition(currentTime).Item2;
+    public Position GetCurrentPosition(Time currentTime) => GetRemainingDistanceAndCurrentPosition(currentTime).Item2;
 
     private (float, Position) GetRemainingDistanceAndCurrentPosition(Time currentTime)
     {
@@ -414,13 +414,11 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
     {
         var closest = FindClosestWaypoint(waypoints, requestedNextStop);
 
-        throw Log.Error(
-            0,
-            0,
+        return
             new InvalidOperationException(
                 "Requested next stop is not part of the supplied route. " +
                 $"RequestedNextStop={requestedNextStop}, ClosestWaypoint={closest}, " +
-                $"First={waypoints[0]}, Last={waypoints[^1]}, WaypointCount={waypoints.Count}."));
+                $"First={waypoints[0]}, Last={waypoints[^1]}, WaypointCount={waypoints.Count}.");
     }
 
     private static object? ValidateWaypoints(List<Position> waypoints) => waypoints.Count == 0 ? throw Log.Error(0, 0, new InvalidOperationException("Waypoints list cannot be empty.")) : null;

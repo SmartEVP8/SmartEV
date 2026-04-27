@@ -209,13 +209,6 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     public readonly float DistanceOnCurrentChargeKm() => Battery.CurrentChargeKWh / (ConsumptionWhPerKm / 1000f);
 
     /// <summary>
-    /// Calculates how far an EV can drive in a given time based on its current route's average speed.
-    /// </summary>
-    /// <param name="time">The amount of time an EV has to drive.</param>
-    /// <returns>Returns the distance an EV can drive in a time period.</returns>
-    public readonly float DistanceEVCanDrive(Time time) => journey.Current.DistanceKm / journey.Current.Duration.Milliseconds * time.Milliseconds;
-
-    /// <summary>
     /// Calculates the next time to check for candidate stations, which is the minimum of:
     /// 1) The time it takes to reach halfway to the next stop, and
     /// 2) The time it takes to reach half of the remaining battery.

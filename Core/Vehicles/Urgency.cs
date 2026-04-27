@@ -15,15 +15,15 @@ public static class Urgency
     /// and a minimum acceptable charge level.
     /// </summary>
     /// <param name="ev">The EV for which to calculate urgency.</param>
-    /// <param name="distanceToStation">The estimated distance to reach the station, used to estimate SoC at arrival.</param>
+    /// <param name="distanceToStationMeter">The estimated distance to reach the station, used to estimate SoC at arrival.</param>
     /// <returns>
     /// The urgency of charging as a value between 0 and 1, where a higher value indicates a more urgent need for charging.
     /// </returns>
-    public static double CalculateChargeUrgency(ref EV ev, float distanceToStation)
+    public static double CalculateChargeUrgency(ref EV ev, float distanceToStationMeter)
     {
         const double upperChargeLimit = 0.80;
 
-        var soc = (ev.Battery.CurrentChargeKWh - ev.EnergyForDistanceKWh(distanceToStation)) / ev.Battery.MaxCapacityKWh;
+        var soc = (ev.Battery.CurrentChargeKWh - ev.EnergyForDistanceKWh(distanceToStationMeter / 1000f)) / ev.Battery.MaxCapacityKWh;
 
         if (soc <= 0)
             return 1 - float.MaxValue;

@@ -321,34 +321,6 @@ public class EVTests
     }
 
     [Fact]
-    public void DistanceEVCanDriveInTime()
-    {
-        var waypoints = new List<Position> { new(0, 0), new(10, 0) };
-        var journey = new Journey(departure: 0, duration: 3600, distanceMeters: 10000, waypoints);
-        var battery = new Battery(100, 100, 1f);
-        var preferences = new Preferences(1f, 0.1f, 10.0f);
-        var ev = new EV(battery, preferences, journey, 200);
-
-        var distanceInTime = ev.DistanceEVCanDrive(1800000);
-
-        Assert.Equal(5000f, distanceInTime);
-    }
-
-    [Fact]
-    public void DistanceEVCanDriveInTime_ZeroDuration_ReturnsZero()
-    {
-        var waypoints = new List<Position> { new(0, 0), new(10, 0) };
-        var journey = new Journey(departure: 0, duration: 3600, distanceMeters: 10000, waypoints);
-        var battery = new Battery(100, 100, 1f);
-        var preferences = new Preferences(1f, 0.1f, 10.0f);
-        var ev = new EV(battery, preferences, journey, 200);
-
-        var distanceInTime = ev.DistanceEVCanDrive(0);
-
-        Assert.Equal(0f, distanceInTime);
-    }
-
-    [Fact]
     public void SoCUsedAfterADistance_ReturnsExpectedValue()
     {
         var waypoints = new List<Position> { new(0, 0), new(10, 0) };
