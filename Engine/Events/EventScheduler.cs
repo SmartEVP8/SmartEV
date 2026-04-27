@@ -8,7 +8,7 @@ using Core.Helper;
 /// </summary>
 public class EventScheduler() : IEventScheduler
 {
-    private readonly PriorityQueue<Event, (Time, uint)> _eventPriorityQueue = new();
+    private readonly PriorityQueue<Event, (Time currentTime, uint eventSequeenceId)> _eventPriorityQueue = new();
 
     /// <summary>
     /// Optional event handlers that can perform actions on scheduleEvent.
@@ -58,11 +58,11 @@ public class EventScheduler() : IEventScheduler
             return null;
 
         _eventPriorityQueue.TryDequeue(out var e, out var priority);
-        _currentTime = priority.Item1;
+        _currentTime = priority.currentTime;
 
-        if (_canceledEvents.Contains(priority.Item2))
+        if (_canceledEvents.Contains(priority.eventSequeenceId))
         {
-            _canceledEvents.Remove(priority.Item2);
+            _canceledEvents.Remove(priority.eventSequeenceId);
             return GetNextEvent();
         }
 
