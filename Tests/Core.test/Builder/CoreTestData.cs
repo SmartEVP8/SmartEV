@@ -1,7 +1,6 @@
 namespace Core.test.Builders;
 
 using Core.Charging;
-using Core.Charging.ChargingModel;
 using Core.Helper;
 using Core.Routing;
 using Core.Shared;
@@ -81,9 +80,11 @@ public static class CoreTestData
         ushort efficiency = 150,
         uint originalDuration = 100000u,
         Time departureTime = default,
-        float distanceMeter = 100)
+        float distanceMeter = 100,
+        int id = 1)
     {
         return new(
+            id,
             battery ?? Battery(),
             preferences ?? Preferences(),
             Journey(waypoints, originalDuration: originalDuration, departure: departureTime, distanceMeter: distanceMeter),

@@ -3,6 +3,7 @@ namespace Engine.test.Services;
 using Core.Charging;
 using Core.Charging.ChargingModel;
 using Core.Shared;
+using Core.Vehicles;
 using Engine.Services.StationServiceHelpers;
 using Engine.test.Builders;
 using Xunit;
@@ -14,7 +15,7 @@ public class ProjectedWaitTimeTest
     {
         var integrator = new ChargingIntegrator(1000);
         var charger = new SingleCharger(1, 100, CreateConnectors());
-        var chargerHandler = new SingleChargerHandler(charger, integrator, new Engine.Events.EventScheduler(), EngineTestData.MetricsService());
+        var chargerHandler = new SingleChargerHandler(charger, integrator, new Engine.Events.EventScheduler(), EngineTestData.MetricsService(), new Dictionary<int, EV>());
         var (availableAt, _) = chargerHandler.EstimateWaitTime(new Time(10));
 
         Assert.Equal(new Time(0), availableAt);
@@ -25,7 +26,7 @@ public class ProjectedWaitTimeTest
     {
         var integrator = new ChargingIntegrator(1000);
         var charger = new DualCharger(3, 200, CreateConnectors(200));
-        var chargerHandler = new DualChargerHandler(charger, integrator, new Engine.Events.EventScheduler(), EngineTestData.MetricsService());
+        var chargerHandler = new DualChargerHandler(charger, integrator, new Engine.Events.EventScheduler(), EngineTestData.MetricsService(), new Dictionary<int, EV>());
         var (availableAt, _) = chargerHandler.EstimateWaitTime(new Time(10));
 
         Assert.Equal(new Time(0), availableAt);
@@ -43,7 +44,7 @@ public class ProjectedWaitTimeTest
             capacityKWh: 60,
             maxChargeRateKW: 100,
             arrivalTime: new Time(0)));
-        var chargerHandler = new SingleChargerHandler(charger, integrator, new Engine.Events.EventScheduler(), EngineTestData.MetricsService());
+        var chargerHandler = new SingleChargerHandler(charger, integrator, new Engine.Events.EventScheduler(), EngineTestData.MetricsService(), new Dictionary<int, EV>());
         var (availableAt, _) = chargerHandler.EstimateWaitTime(new Time(10));
 
         Assert.True(availableAt > new Time(0));
@@ -57,7 +58,7 @@ public class ProjectedWaitTimeTest
         charger.Queue.Enqueue(CreateEv(evId: 1, currentSoC: 0.20, targetSoC: 0.80, capacityKWh: 60, maxChargeRateKW: 100, arrivalTime: new Time(0)));
         charger.Queue.Enqueue(CreateEv(evId: 2, currentSoC: 0.25, targetSoC: 0.80, capacityKWh: 60, maxChargeRateKW: 100, arrivalTime: new Time(0)));
         charger.Queue.Enqueue(CreateEv(evId: 3, currentSoC: 0.10, targetSoC: 0.80, capacityKWh: 60, maxChargeRateKW: 100, arrivalTime: new Time(0)));
-        var chargerHandler = new DualChargerHandler(charger, integrator, new Engine.Events.EventScheduler(), EngineTestData.MetricsService());
+        var chargerHandler = new DualChargerHandler(charger, integrator, new Engine.Events.EventScheduler(), EngineTestData.MetricsService(), new Dictionary<int, EV>());
         var (availableAt, _) = chargerHandler.EstimateWaitTime(new Time(10));
 
         Assert.True(availableAt > new Time(0));
@@ -75,7 +76,7 @@ public class ProjectedWaitTimeTest
             capacityKWh: 60,
             maxChargeRateKW: 100,
             arrivalTime: new Time(0)));
-        var chargerHandler = new DualChargerHandler(charger, integrator, new Engine.Events.EventScheduler(), EngineTestData.MetricsService());
+        var chargerHandler = new DualChargerHandler(charger, integrator, new Engine.Events.EventScheduler(), EngineTestData.MetricsService(), new Dictionary<int, EV>());
         var (availableAt, _) = chargerHandler.EstimateWaitTime(new Time(0));
 
         Assert.Equal(new Time(0), availableAt);
@@ -105,7 +106,7 @@ public class ProjectedWaitTimeTest
         charger.Queue.Enqueue(ev1);
         charger.Queue.Enqueue(ev2);
         charger.Queue.Enqueue(ev3);
-        var chargerHandler = new SingleChargerHandler(charger, integrator, new Engine.Events.EventScheduler(), EngineTestData.MetricsService());
+        var chargerHandler = new SingleChargerHandler(charger, integrator, new Engine.Events.EventScheduler(), EngineTestData.MetricsService(), new Dictionary<int, EV>());
         var (estimateAvailableAt, _) = chargerHandler.EstimateWaitTime(simNow);
 
         Assert.Equal(expectedWaitTime, estimateAvailableAt);
@@ -129,7 +130,7 @@ public class ProjectedWaitTimeTest
 
         charger.Queue.Enqueue(ev1);
         charger.Queue.Enqueue(ev2);
-        var chargerHandler = new DualChargerHandler(charger, integrator, new Engine.Events.EventScheduler(), EngineTestData.MetricsService());
+        var chargerHandler = new DualChargerHandler(charger, integrator, new Engine.Events.EventScheduler(), EngineTestData.MetricsService(), new Dictionary<int, EV>());
         var (availableAt, _) = chargerHandler.EstimateWaitTime(simNow);
 
         Assert.Equal(expectedWaitTime, availableAt);
@@ -171,7 +172,7 @@ public class ProjectedWaitTimeTest
         charger.Queue.Enqueue(ev1);
         charger.Queue.Enqueue(ev2);
         charger.Queue.Enqueue(ev3);
-        var chargerHandler = new DualChargerHandler(charger, integrator, new Engine.Events.EventScheduler(), EngineTestData.MetricsService());
+        var chargerHandler = new DualChargerHandler(charger, integrator, new Engine.Events.EventScheduler(), EngineTestData.MetricsService(), new Dictionary<int, EV>());
         var (availableAt, _) = chargerHandler.EstimateWaitTime(simNow);
 
         Assert.Equal(expectedWaitTime, availableAt);
@@ -196,7 +197,7 @@ public class ProjectedWaitTimeTest
         charger.Queue.Enqueue(ev1);
         charger.Queue.Enqueue(ev2);
 
-        var chargerHandler = new SingleChargerHandler(charger, integrator, new Engine.Events.EventScheduler(), EngineTestData.MetricsService());
+        var chargerHandler = new SingleChargerHandler(charger, integrator, new Engine.Events.EventScheduler(), EngineTestData.MetricsService(), new Dictionary<int, EV>());
         var (_, schedule) = chargerHandler.EstimateWaitTime(simNow);
 
         Assert.Equal(2, schedule.Count);
@@ -214,7 +215,6 @@ public class ProjectedWaitTimeTest
         var charger = new DualCharger(3, 200, CreateConnectors(100));
         var simNow = new Time(10);
 
-        // Identical batteries, staggered starting SoCs to guarantee completion order.
         var ev1 = CreateEv(1, currentSoC: 0.80, targetSoC: 1.00, capacityKWh: 100, maxChargeRateKW: 100, arrivalTime: new Time(0));
         var ev2 = CreateEv(2, currentSoC: 0.50, targetSoC: 1.00, capacityKWh: 100, maxChargeRateKW: 100, arrivalTime: new Time(0));
         var ev3 = CreateEv(3, currentSoC: 0.10, targetSoC: 1.00, capacityKWh: 100, maxChargeRateKW: 100, arrivalTime: new Time(0));
@@ -237,7 +237,7 @@ public class ProjectedWaitTimeTest
         charger.Queue.Enqueue(ev2);
         charger.Queue.Enqueue(ev3);
 
-        var chargerHandler = new DualChargerHandler(charger, integrator, new Engine.Events.EventScheduler(), EngineTestData.MetricsService());
+        var chargerHandler = new DualChargerHandler(charger, integrator, new Engine.Events.EventScheduler(), EngineTestData.MetricsService(), new Dictionary<int, EV>());
         var (_, schedule) = chargerHandler.EstimateWaitTime(simNow);
 
         Assert.Equal(3, schedule.Count);

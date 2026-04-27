@@ -25,6 +25,7 @@ public class ComputeCostTest
         });
         var computeCost = new CostFunction(costStore, stationService, energyPrices);
         var ev = new EV(
+            1,
             CoreTestData.Battery(stateOfCharge: 100),
             CoreTestData.Preferences(PriceSensitivity: 0.0f, MinAcceptableCharge: 0f),
             new Journey(new Time(0), new Time(500000), 100, new List<Position>([new(0, 0), new(1, 1)])),
@@ -55,6 +56,7 @@ public class ComputeCostTest
         });
         var computeCost = new CostFunction(costStore, stationService, energyPrices);
         var ev = new EV(
+            1,
             CoreTestData.Battery(stateOfCharge: 100),
             CoreTestData.Preferences(PriceSensitivity: 0.0f, MinAcceptableCharge: 0f),
             new Journey(new Time(0), new Time(500000), 100, new List<Position>([new(0, 0), new(1, 1)])),
@@ -86,6 +88,7 @@ public class ComputeCostTest
         });
         var computeCost = new CostFunction(costStore, stationService, energyPrices);
         var ev = new EV(
+            1,
             CoreTestData.Battery(stateOfCharge: 50),
             CoreTestData.Preferences(PriceSensitivity: 1.0f, MinAcceptableCharge: 20f),
             new Journey(new Time(0), new Time(500000), 100, new List<Position>([new(0, 0), new(1, 1)])),
@@ -113,6 +116,7 @@ public class ComputeCostTest
         var energyPrices = new EngineTestData.FixedEnergyPrices(2.0f);
         var computeCost = new CostFunction(costStore, stationService, energyPrices);
         var ev = new EV(
+            1,
             CoreTestData.Battery(stateOfCharge: 100),
             CoreTestData.Preferences(PriceSensitivity: 0.0f, MinAcceptableCharge: 0f),
             new Journey(new Time(0), new Time(500000), 100, new List<Position>([new(0, 0), new(1, 1)])),

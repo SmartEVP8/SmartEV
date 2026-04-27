@@ -10,7 +10,6 @@ using Engine.Utils;
 using Engine.StationFactory;
 using Engine.Cost;
 using Engine.Metrics;
-using Engine.Vehicles;
 using Engine.Events;
 using Engine.Services;
 using Engine.Spawning;
@@ -112,7 +111,7 @@ public static class EngineTestData
     public static StationService StationService(
         Dictionary<ushort, Station> stations,
         EventScheduler scheduler,
-        EVStore evStore,
+        Dictionary<int, EV> evStore,
         ChargingIntegrator? integrator = null)
     {
         var metrics = MetricsService();
@@ -121,8 +120,8 @@ public static class EngineTestData
             stations: [.. stations.Values],
             integrator: actualIntegrator,
             scheduler: scheduler,
-            evStore: evStore,
-            metrics: metrics);
+            metrics: metrics,
+            evs: evStore);
     }
 
     internal sealed class StubCostStore(CostWeights weights) : ICostStore

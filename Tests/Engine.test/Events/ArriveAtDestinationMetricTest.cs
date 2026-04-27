@@ -13,7 +13,7 @@ public class ArriveAtDestinationMetricTest
         var departure = 100000U;
         var originalDuration = 50000U;
         var deviation = 12000;
-        var simNow = (Time)(departure + originalDuration + deviation);
+        var simNow = (Time)(uint)(departure + originalDuration + deviation);
 
         var battery = CoreTestData.Battery();
         var preferences = CoreTestData.Preferences();
@@ -38,9 +38,9 @@ public class ArriveAtDestinationMetricTest
             duration: 62000U,
             newDistanceKm: 10);
 
-        var ev = new EV(battery, preferences, journey, 150);
+        var ev = new EV(1, battery, preferences, journey, 150);
 
-        var metric = ArrivalAtDestinationMetric.Collect(ref ev, simNow);
+        var metric = ArrivalAtDestinationMetric.Collect(ev, simNow);
 
         Assert.Equal(originalDuration, metric.ExpectedArrivalTime);
         Assert.Equal(deviation, metric.PathDeviation);
@@ -68,9 +68,9 @@ public class ArriveAtDestinationMetricTest
             departure: departure,
             originalDuration: originalDuration);
 
-        var ev = new EV(battery, preferences, journey, 150);
+        var ev = new EV(1, battery, preferences, journey, 150);
 
-        var metric = ArrivalAtDestinationMetric.Collect(ref ev, simNow);
+        var metric = ArrivalAtDestinationMetric.Collect(ev, simNow);
 
         Assert.True(metric.MissedDeadline);
         Assert.True(metric.DeltaArrivalTime > 0);
