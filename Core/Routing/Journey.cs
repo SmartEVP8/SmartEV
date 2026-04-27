@@ -84,7 +84,7 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
     /// <param name="currentTime">The current time.</param>
     /// <returns>The remaining distance to destination in kilometers..</returns>
     /// <exception cref="ArgumentException">Thrown when the current time is before the journey starts or after it has completed.</exception>
-    public float RemainingDistanceToDestination(Time currentTime) => GetRemainingDistanceAndCurrentPosition(currentTime).Item1;
+    public float RemainingDistanceToDestination(Time currentTime) => GetRemainingDistanceAndCurrentPosition(currentTime).distanceKm;
 
     /// <summary>
     /// Calculates the EV's current position without mutating the live route.
@@ -92,9 +92,9 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
     /// <param name="currentTime">The current time.</param>
     /// <returns>The position of the car.</returns>
     /// <exception cref="ArgumentException">Thrown when the current time is before the journey starts or after it has completed.</exception>
-    public Position GetCurrentPosition(Time currentTime) => GetRemainingDistanceAndCurrentPosition(currentTime).Item2;
+    public Position GetCurrentPosition(Time currentTime) => GetRemainingDistanceAndCurrentPosition(currentTime).currentPosition;
 
-    private (float, Position) GetRemainingDistanceAndCurrentPosition(Time currentTime)
+    private (float distanceKm, Position currentPosition) GetRemainingDistanceAndCurrentPosition(Time currentTime)
     {
         CheckTime(currentTime, checkBeforeDeparture: true, checkAfterCompletion: true, checkAfterEtaToNextStop: false);
         var (snapshot, currentPos) = DeriveRouteSnapshot(currentTime);
