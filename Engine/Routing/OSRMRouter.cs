@@ -13,7 +13,18 @@ public record RoutingLeg(float[] Durations, float[] Distances);
 
 public record RoutingLegsResult(RoutingLeg ToStation, RoutingLeg ToDest)
 {
+    /// <summary>
+    /// Calculates the total duration from the source to the station and then to the destination for a given index, by summing the corresponding durations from the ToStation and ToDest legs.
+    /// </summary>
+    /// <param name="i">The EV-Station route leg index.</param>
+    /// <returns>Returns the total duration for the specified station index.</returns>
     public float TotalDuration(int i) => ToStation.Durations[i] + ToDest.Durations[i];
+
+    /// <summary>
+    /// Calculates the total distance from the source to the station and then to the destination for a given index, by summing the corresponding distances from the ToStation and ToDest legs.
+    /// </summary>
+    /// <param name="i">The EV-Station route leg index.</param>
+    /// <returns>Returns the total distance for the specified station index.</returns>
     public float TotalDistance(int i) => ToStation.Distances[i] + ToDest.Distances[i];
 }
 
@@ -152,10 +163,10 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
             var srcToStation = results[i].SrcToStation;
             var stationToDest = results[i].StationToDest;
 
-            toStationDurations[i] = float.IsNaN(srcToStation.Durations) ? throw new ArgumentException("Invalid duration") : srcToStation.Durations * Time.MillisecondsPerSecond;
-            toStationDistances[i] = float.IsNaN(srcToStation.Distances) ? throw new ArgumentException("Invalid distance") : srcToStation.Distances;
-            toDestDurations[i] = float.IsNaN(stationToDest.Durations) ? throw new ArgumentException("Invalid duration") : stationToDest.Durations * Time.MillisecondsPerSecond;
-            toDestDistances[i] = float.IsNaN(stationToDest.Distances) ? throw new ArgumentException("Invalid distance") : stationToDest.Distances;
+            toStationDurations[i] = srcToStation.Durations == 0 ? throw new ArgumentException($"Invalid duration between EV ({evLon}, {evLat}) and station {indices[i]}") : srcToStation.Durations * Time.MillisecondsPerSecond;
+            toStationDistances[i] = srcToStation.Distances == 0 ? throw new ArgumentException($"Invalid distance between EV ({evLon}, {evLat}) and station {indices[i]}") : srcToStation.Distances;
+            toDestDurations[i] = stationToDest.Durations == 0 ? throw new ArgumentException($"Invalid duration between station {indices[i]} and destination ({destLon}, {destLat})") : stationToDest.Durations * Time.MillisecondsPerSecond;
+            toDestDistances[i] = stationToDest.Distances == 0 ? throw new ArgumentException($"Invalid distance between station {indices[i]} and destination ({destLon}, {destLat})") : stationToDest.Distances;
         }
 
         return new RoutingLegsResult(

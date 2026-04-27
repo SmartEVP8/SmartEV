@@ -15,7 +15,7 @@ public static class Polygooner
     /// <param name="size">The size in degrees of each grid cell.</param>
     /// <param name="polygons">Land polygons where spawning is allowed.</param>
     /// <param name="wetPolygons">Wet polygons (lakes/sea/etc.) where spawning is disallowed.</param>
-    /// <param name="stationPositions">The positions of electric stations.</param>
+    /// <param name="stationPositions">The positions of charging stations.</param>
     /// <returns>A 2D grid with 1 or 0.</returns>
     public static SpawnGrid GenerateGrid(double size, List<List<Position>> polygons, List<List<Position>> wetPolygons, IEnumerable<Position> stationPositions)
     {
@@ -35,7 +35,7 @@ public static class Polygooner
 
         var spawnBounded = PrecomputeBounds(polygons);
         var wetBounded = PrecomputeBounds(wetPolygons);
-        var electricBounded = ComputeStationExclusionBounds(stationPositions);
+        var stationsBounded = ComputeStationExclusionBounds(stationPositions);
 
         var gridCells = new List<List<GridCell>>(latSteps);
         for (var i = 0; i < latSteps; i++)
@@ -49,8 +49,8 @@ public static class Polygooner
 
                 var inSpawnPolygon = IntersectsAnyPolygon(spawnBounded, centerLon, centerLat, halfLon, halfLat);
                 var inWetPolygon = IntersectsAnyPolygon(wetBounded, centerLon, centerLat, halfLon, halfLat);
-                var inElectricPolygon = IntersectsAnyPolygon(electricBounded, centerLon, centerLat, halfLon, halfLat);
-                var spawnable = inSpawnPolygon && !inWetPolygon && !inElectricPolygon;
+                var inStationsPolygon = IntersectsAnyPolygon(stationsBounded, centerLon, centerLat, halfLon, halfLat);
+                var spawnable = inSpawnPolygon && !inWetPolygon && !inStationsPolygon;
 
                 row.Add(new GridCell(spawnable, centerPos));
             }

@@ -34,22 +34,6 @@ public class OSRMRouterTests
     }
 
     [Fact]
-    public void QueryStationsWithDest_SamePointForAll_ReturnZero()
-    {
-        using var router = CreateRouter(new Position(_evPosition[0], _evPosition[1]));
-
-        var result = router.QueryStationsWithDest(
-            _evPosition[0],
-            _evPosition[1],
-            _evPosition[0],
-            _evPosition[1],
-            [0]);
-
-        Assert.True(result.TotalDuration(0) < 1f, $"Expected ~0s, got {result.TotalDuration(0):F1}s");
-        Assert.True(result.TotalDistance(0) < 1f, $"Expected ~0m, got {result.TotalDistance(0):F1}m");
-    }
-
-    [Fact]
     public void QueryStationsWithDest_NearbyStationHasLowerDurationThanFarStation()
     {
         using var router = CreateRouter(_stationNearPosition, _stationFarPosition);
@@ -298,12 +282,11 @@ public class OSRMRouterTests
 
         for (var i = 0; i < numTasks; i++)
         {
-            var offset = i * 0.001;
+            var offset = 0.005 + (i * 0.0001);
             var targetLon = _destPosition[0] + offset;
             var targetLat = _destPosition[1] + offset;
 
             var seqResult = router.QuerySingleDestination(_evPosition[0], _evPosition[1], targetLon, targetLat);
-
             queries[i] = (_evPosition[0], _evPosition[1], targetLon, targetLat, seqResult.Duration);
         }
 
@@ -378,5 +361,41 @@ public class OSRMRouterTests
 
         for (var i = 0; i < numTasks; i++)
             Assert.Equal(queries[i].expectedDuration, parallelResults[i], 0.1f);
+    }
+
+    public static TheoryData<Position> PositionTestData =>
+    [
+        new Position(8.689944, 56.965194), // Thisted
+        new Position(12.548306, 55.679861), // Copenhagen
+        new Position(11.144139, 54.834917), // Lolland
+    ];
+
+    [Theory]
+    [MemberData(nameof(PositionTestData))]
+    public void QueryStationsWithDest_AllStationsReturnAValue(Position position)
+    {
+        var stations = EngineTestData.AllStations;
+        using var router = EngineTestData.OSRMRouter;
+
+        var stationIds = stations.Keys.ToArray();
+        var tableResult = router.QueryStationsWithDest(
+            position.Longitude, position.Latitude,
+            _destPosition[0], _destPosition[1],
+            stationIds);
+
+        for (var i = 0; i < stations.Count; i++)
+        {
+            var stationId = stationIds[i];
+
+            var srcDuration = tableResult.ToStation.Durations[i];
+            var srcDistance = tableResult.ToStation.Distances[i];
+            var destDuration = tableResult.ToDest.Durations[i];
+            var destDistance = tableResult.ToDest.Distances[i];
+
+            Assert.True(srcDuration > 0f, $"Station {stationId} unroutable: srcDuration={srcDuration}");
+            Assert.True(srcDistance > 0f, $"Station {stationId} unroutable: srcDistance={srcDistance}");
+            Assert.True(destDuration > 0f, $"Station {stationId} unroutable: destDuration={destDuration}");
+            Assert.True(destDistance > 0f, $"Station {stationId} unroutable: destDistance={destDistance}");
+        }
     }
 }
