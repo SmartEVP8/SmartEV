@@ -3,7 +3,6 @@ namespace Core.Vehicles;
 using Core.Routing;
 using Core.Shared;
 using Core.Helper;
-using Parquet.Meta;
 
 /// <summary>
 /// Defines the possible states of an EV.
