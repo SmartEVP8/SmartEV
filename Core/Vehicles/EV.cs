@@ -3,7 +3,6 @@ namespace Core.Vehicles;
 using Core.Routing;
 using Core.Shared;
 using Core.Helper;
-using Parquet.Meta;
 
 /// <summary>
 /// Defines the possible states of an EV.
@@ -108,10 +107,7 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     /// <param name="distanceToStationKm">Distance from the current position to the station in km.</param>
     /// <param name="minAcceptableCharge">Minimum SoC required on arrival. Defaults to 0.1.</param>
     /// <returns>True if the station leg is reachable with the specified reserve; otherwise, false.</returns>
-    public readonly bool CanReachToStation(float distanceToStationKm, float minAcceptableCharge = 0.1f)
-    {
-        return CanReach(distanceToStationKm, minAcceptableCharge);
-    }
+    public readonly bool CanReachToStation(float distanceToStationKm, float minAcceptableCharge = 0.1f) => CanReach(distanceToStationKm, minAcceptableCharge);
 
     /// <summary>
     /// Calculates how much an EV needs to charge to reach its
@@ -211,13 +207,6 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     /// </summary>
     /// <returns>Distance in km that a EV can drive.</returns>
     public readonly float DistanceOnCurrentChargeKm() => Battery.CurrentChargeKWh / (ConsumptionWhPerKm / 1000f);
-
-    /// <summary>
-    /// Calculates how far an EV can drive in a given time based on its current route's average speed.
-    /// </summary>
-    /// <param name="time">The amount of time an EV has to drive.</param>
-    /// <returns>Returns the distance an EV can drive in a time period.</returns>
-    public readonly float DistanceEVCanDrive(Time time) => journey.Current.DistanceKm / journey.Current.Duration.Milliseconds * time.Milliseconds;
 
     /// <summary>
     /// Calculates the next time to check for candidate stations, which is the minimum of:

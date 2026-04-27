@@ -1,7 +1,6 @@
 namespace Engine.test.Spawning;
 
 using Core.Vehicles;
-using Engine.test.Builders;
 using Core.test.Builders;
 using Engine.Vehicles;
 
