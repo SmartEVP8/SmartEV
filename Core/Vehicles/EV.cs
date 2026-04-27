@@ -107,10 +107,7 @@ public struct EV(Battery battery, Preferences preferences, Journey journey, usho
     /// <param name="distanceToStationKm">Distance from the current position to the station in km.</param>
     /// <param name="minAcceptableCharge">Minimum SoC required on arrival. Defaults to 0.1.</param>
     /// <returns>True if the station leg is reachable with the specified reserve; otherwise, false.</returns>
-    public readonly bool CanReachToStation(float distanceToStationKm, float minAcceptableCharge = 0.1f)
-    {
-        return CanReach(distanceToStationKm, minAcceptableCharge);
-    }
+    public readonly bool CanReachToStation(float distanceToStationKm, float minAcceptableCharge = 0.1f) => CanReach(distanceToStationKm, minAcceptableCharge);
 
     /// <summary>
     /// Calculates how much an EV needs to charge to reach its
