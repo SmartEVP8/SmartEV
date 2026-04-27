@@ -170,10 +170,6 @@ public class FindCandidateStationService : IFindCandidateStationService
             for (var i = 0; i < reachableStationIds.Length; i++)
             {
                 var stationId = reachableStationIds[i];
-                var detourDistanceMeters = detourResult.TotalDistance(i);
-                if (detourDistanceMeters < 0 || float.IsNaN(detourDistanceMeters))
-                    continue;
-
                 var toStation = (detourResult.ToStation.Durations[i], detourResult.ToStation.Distances[i]);
                 var toDestination = (detourResult.ToDest.Durations[i], detourResult.ToDest.Distances[i]);
                 if (!ev.CanReachToStation(toStation.Item2 / 1000f, ev.Preferences.MinAcceptableCharge))

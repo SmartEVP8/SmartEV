@@ -189,13 +189,16 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
             destLat);
 
         if (resultPtr == IntPtr.Zero)
-            throw new ArgumentException("OSRM query failed to compute a route.");
+            throw new ArgumentException($"OSRM failed to compute a route: Returned 0 with route from ({evLon}, {evLat}) to ({destLon}, {destLat}).");
 
         var result = Marshal.PtrToStructure<RouteResult>(resultPtr);
         var polylineStr = Marshal.PtrToStringAnsi(result.Polyline)!;
 
         FreeMemory(result.Polyline);
         FreeMemory(resultPtr);
+
+        if (string.IsNullOrEmpty(polylineStr))
+            throw new ArgumentException($"OSRM returned a result with an empty polyline from ({evLon}, {evLat}) to ({destLon}, {destLat}).");
 
         return new RouteSegment(result.Duration * Time.MillisecondsPerSecond, result.Distance, polylineStr);
     }
@@ -214,13 +217,16 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
             index);
 
         if (resultPtr == IntPtr.Zero)
-            throw new ArgumentException("OSRM query failed to compute a route.");
+            throw new ArgumentException($"OSRM failed to compute a route: Returned 0 with route from ({evLon}, {evLat}) via ({stationLon}, {stationLat}) to ({destLon}, {destLat}).");
 
         var result = Marshal.PtrToStructure<RouteResult>(resultPtr);
         var polylineStr = Marshal.PtrToStringAnsi(result.Polyline)!;
 
         FreeMemory(result.Polyline);
         FreeMemory(resultPtr);
+
+        if (string.IsNullOrEmpty(polylineStr))
+            throw new ArgumentException($"OSRM returned a result with an empty polyline from ({evLon}, {evLat}) via ({stationLon}, {stationLat}) to ({destLon}, {destLat}).");
 
         return new RouteSegment(result.Duration * Time.MillisecondsPerSecond, result.Distance, polylineStr);
     }
@@ -245,8 +251,8 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
 
         for (var i = 0; i < durations.Length; i++)
         {
-            durations[i] = float.IsNaN(durations[i]) ? -1f : durations[i] * Time.MillisecondsPerSecond;
-            distances[i] = float.IsNaN(distances[i]) ? -1f : distances[i];
+            durations[i] = durations[i] == 0 ? throw new ArgumentException($"Invalid duration between source ({srcCoords[i * 2]}, {srcCoords[i * 2 + 1]}) and destination ({dstCoords[i * 2]}, {dstCoords[i * 2 + 1]})") : durations[i] * Time.MillisecondsPerSecond;
+            distances[i] = distances[i] == 0 ? throw new ArgumentException($"Invalid distance between source ({srcCoords[i * 2]}, {srcCoords[i * 2 + 1]}) and destination ({dstCoords[i * 2]}, {dstCoords[i * 2 + 1]})") : distances[i];
         }
 
         return new RoutingResult(durations, distances);
