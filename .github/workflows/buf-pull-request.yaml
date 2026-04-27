@@ -18,6 +18,7 @@ jobs:
       - uses: bufbuild/buf-action@v1
         with:
           token: ${{ secrets.BUF_TOKEN }}
-          breaking: true 
+          breaking: |
+            ${{ !contains(github.event.pull_request.labels.*.name, 'buf skip breaking') }}
           lint: true
           push: false

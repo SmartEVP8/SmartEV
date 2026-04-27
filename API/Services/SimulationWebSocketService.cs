@@ -92,7 +92,7 @@ public class SimulationWebSocketService(
         }
     }
 
-    private async Task ProcessConnectionAsync(WebSocket webSocket, CancellationToken cancelToken)
+    private static async Task ProcessConnectionAsync(WebSocket webSocket, CancellationToken cancelToken)
     {
         var buffer = new byte[_bufferSize];
 

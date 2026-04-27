@@ -69,7 +69,6 @@ public class SnapshotHandler(
         var charger = chargerHandler.Charger;
         var schedule = chargerHandler.EstimateWaitTime(eventScheduler.CurrentTime).Schedule;
 
-
         var chargerState = new ChargerState
         {
             IsActive = !charger.IsFree,
