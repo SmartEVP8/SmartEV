@@ -8,6 +8,7 @@ using Engine.Metrics;
 using Engine.Metrics.Events;
 using Engine.Utils;
 using Core.Helper;
+using Core.Vehicles;
 
 /// <summary>
 /// Handles the session lifecycle for a <see cref="SingleCharger"/>,
@@ -17,11 +18,13 @@ using Core.Helper;
 /// <param name="integrator">The charging integrator used to simulate the session.</param>
 /// <param name="scheduler">The event scheduler used to schedule end charging events.</param>
 /// <param name="metrics">The metrics service used to record wait times.</param>
+/// <param name="evs">The EV store</param>
 public class SingleChargerHandler(
     SingleCharger charger,
     ChargingIntegrator integrator,
     EventScheduler scheduler,
-    MetricsService metrics)
+    MetricsService metrics,
+    IReadOnlyDictionary<int, EV> evs)
     : IChargerHandler
 {
     /// <inheritdoc/>
@@ -36,12 +39,12 @@ public class SingleChargerHandler(
     /// Does nothing if a session is already active or the queue is empty.
     /// </summary>
     /// <param name="simNow">The current simulation time.</param>
-    /// <param name="stationId">The stations id.</param>
+    /// <param name="station">The stations id.</param>
     /// <exception cref="SkillissueException">
     /// Thrown if the connector reports as occupied when it should be free,
     /// indicating a logic error in session tracking.
     /// </exception>
-    public void StartNext(Time simNow, ushort stationId)
+    public void StartNext(Time simNow, Station station)
     {
         if (charger.Session is not null) return;
         if (!charger.Queue.TryPeek(out var next)) return;
@@ -50,7 +53,7 @@ public class SingleChargerHandler(
         {
             throw Log.Error(0, simNow, new SkillissueException(
                 $"Logic Error: EV {next.EVId} reached Charger {charger.Id} but TryConnect failed."),
-                ((string Key, object Value))("StationId", stationId),
+                ((string Key, object Value))("StationId", station.Id),
                 ((string Key, object Value))("Charger", charger),
                 ((string Key, object Value))("NextEV", next));
         }
@@ -60,7 +63,7 @@ public class SingleChargerHandler(
         metrics.RecordWaitTime(new WaitTimeInQueueMetric
         {
             EVId = next.EVId,
-            StationId = stationId,
+            StationId = station.Id,
             ArrivalAtStationTime = next.ArrivalTime,
             StartChargingTime = simNow,
         });
@@ -73,8 +76,8 @@ public class SingleChargerHandler(
 
         if (result.CarA.FinishTime is { } finishTime)
         {
-            Log.Info(charger.Session.EVId, finishTime, $"Scheduling EndCharging event for EV {charger.Session.EVId} on charger {charger.Id} at station {stationId} with finish time {finishTime}.");
-            var token = scheduler.ScheduleEvent(new EndCharging(next.EVId, charger.Id, stationId, finishTime));
+            Log.Info(charger.Session.EVId, finishTime, $"Scheduling EndCharging event for EV {charger.Session.EVId} on charger {charger.Id} at station {station.Id} with finish time {finishTime}.");
+            var token = scheduler.ScheduleEvent(new EndCharging(evs[next.EVId], charger, station, finishTime));
             charger.Session = charger.Session with { CancellationToken = token };
         }
     }

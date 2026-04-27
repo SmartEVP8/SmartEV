@@ -8,7 +8,6 @@ using Core.Helper;
 using Engine.Events;
 using Engine.Metrics;
 using Engine.Utils;
-using Engine.Vehicles;
 
 /// <summary>
 /// Manages all charger state and charging logic for a single station.
@@ -20,7 +19,7 @@ public class StationHandler
     private readonly Dictionary<int, (ChargerBase State, IChargerHandler Handler)> _chargerIndex = [];
     private readonly Dictionary<int, uint> _arrivalTimes = [];
     private readonly Station _station;
-    private readonly EVStore _evStore;
+    private readonly IReadOnlyDictionary<int, EV> _evs;
     private readonly EventScheduler _scheduler;
 
     /// <summary>
@@ -50,25 +49,25 @@ public class StationHandler
     /// <param name="station">The station entity containing chargers and reservations.</param>
     /// <param name="integrator">The charging integrator for power calculations.</param>
     /// <param name="scheduler">The event scheduler for simulation events.</param>
-    /// <param name="evStore">The store containing all EV state data.</param>
+    /// <param name="evs">The store containing all EV state data.</param>
     /// <param name="metrics">The service for recording simulation metrics.</param>
     public StationHandler(
         Station station,
         ChargingIntegrator integrator,
         EventScheduler scheduler,
-        EVStore evStore,
+        IReadOnlyDictionary<int, EV> evs,
         MetricsService metrics)
     {
         _station = station;
-        _evStore = evStore;
+        _evs = evs;
         _scheduler = scheduler;
 
         foreach (var charger in station.Chargers)
         {
             IChargerHandler handler = charger switch
             {
-                SingleCharger s => new SingleChargerHandler(s, integrator, scheduler, metrics),
-                DualCharger d => new DualChargerHandler(d, integrator, scheduler, metrics),
+                SingleCharger s => new SingleChargerHandler(s, integrator, scheduler, metrics, evs),
+                DualCharger d => new DualChargerHandler(d, integrator, scheduler, metrics, evs),
                 _ => throw Log.Error(0, 0,
                     new InvalidOperationException($"Unknown charger type: {charger.GetType()}"),
                     ((string Key, object Value))("Charger", charger))
@@ -106,15 +105,15 @@ public class StationHandler
     {
         InvalidatePlan();
 
-        ref var evRef = ref _evStore.Get(e.EVId);
-        evRef.Advance(e.Time);
-        Log.Verbose(e.EVId, e.Time, $"Handling ArrivalAtStation for EV {e.EVId} at time {e.Time}. Current EV data: {evRef}. SoC: {evRef.Battery.StateOfCharge}. Wants to charge to {e.TargetSoC}");
+        var ev = e.EV;
+        ev.Advance(e.Time);
+        Log.Verbose(ev.Id, e.Time, $"Handling ArrivalAtStation for EV {ev.Id} at time {e.Time}. Current EV data: {ev}. SoC: {ev.Battery.StateOfCharge}. Wants to charge to {e.TargetSoC}");
 
-        if (evRef.Battery.StateOfCharge >= e.TargetSoC)
+        if (ev.Battery.StateOfCharge >= e.TargetSoC)
         {
-            throw Log.Error(e.EVId, e.Time,
-                new SkillissueException($"EV wants to charge to a SoC: {e.TargetSoC}, which is lower than its current SoC: {evRef.Battery.StateOfCharge}."),
-                ((string Key, object Value))("EV", evRef),
+            throw Log.Error(ev.Id, e.Time,
+                new SkillissueException($"EV wants to charge to a SoC: {e.TargetSoC}, which is lower than its current SoC: {ev.Battery.StateOfCharge}."),
+                ((string Key, object Value))("EV", ev),
                 ((string Key, object Value))("TargetSoC", e.TargetSoC));
         }
 
@@ -122,21 +121,21 @@ public class StationHandler
             .OrderBy(cs => cs.IsFree ? 0 : 1)
             .ThenBy(cs => cs.Queue.Count)
             .FirstOrDefault()
-            ?? throw Log.Error(e.EVId, e.Time,
-                new SkillissueException($"Logic Error: Station {e.StationId} has no chargers."),
-                ((string Key, object Value))("StationId", e.StationId));
+            ?? throw Log.Error(ev.Id, e.Time,
+                new SkillissueException($"Logic Error: Station {e.Station.Id} has no chargers."),
+                ((string Key, object Value))("StationId", e.Station.Id));
 
         var connectedEV = new ConnectedEV(
-            EVId: e.EVId,
-            CurrentSoC: evRef.Battery.StateOfCharge,
+            ev.Id,
+            CurrentSoC: ev.Battery.StateOfCharge,
             TargetSoC: e.TargetSoC,
-            CapacityKWh: evRef.Battery.MaxCapacityKWh,
-            MaxChargeRateKW: evRef.Battery.MaxChargeRateKW,
+            CapacityKWh: ev.Battery.MaxCapacityKWh,
+            MaxChargeRateKW: ev.Battery.MaxChargeRateKW,
             ArrivalTime: e.Time);
 
-        _arrivalTimes[e.EVId] = e.Time;
+        _arrivalTimes[ev.Id] = e.Time;
         target.Queue.Enqueue(connectedEV);
-        _evStore.Get(e.EVId).EVState = EVState.Queueing;
+        ev.EVState = EVState.Queueing;
         target.UpdateWindowStats();
 
         if (target.IsFree)
@@ -152,38 +151,38 @@ public class StationHandler
     {
         InvalidatePlan();
 
-        if (!_chargerIndex.TryGetValue(e.ChargerId, out var entry))
+        if (!_chargerIndex.TryGetValue(e.Charger.Id, out var entry))
             return;
 
         var (charger, handler) = entry;
         charger.AccumulateEnergy(e.Time);
 
-        var finalSoC = handler.EndSession(e.EVId, e.Time);
+        var ev = e.EV;
+        var finalSoC = handler.EndSession(ev.Id, e.Time);
 
-        ref var ev = ref _evStore.Get(e.EVId);
 
         if (finalSoC is { } soc)
             ev.Battery.StateOfCharge = (float)Math.Clamp(soc, 0d, 1d);
 
-        if (!_arrivalTimes.TryGetValue(e.EVId, out var arrivalTime))
+        if (!_arrivalTimes.TryGetValue(ev.Id, out var arrivalTime))
         {
-            throw Log.Error(e.EVId, e.Time,
-                new SkillissueException($"Logic Error: Missing arrival time for EV {e.EVId} at EndCharging."));
+            throw Log.Error(ev.Id, e.Time,
+                new SkillissueException($"Logic Error: Missing arrival time for EV {ev.Id} at EndCharging."));
         }
 
-        _arrivalTimes.Remove(e.EVId);
+        _arrivalTimes.Remove(ev.Id);
         var timeAtStation = e.Time - arrivalTime;
         ev.EVState = EVState.Driving;
 
         if (ev.CanCompleteJourney(timeAtStation, ev.Preferences.MinAcceptableCharge))
         {
-            Log.Info(e.EVId, e.Time, $"EV {e.EVId} has completed its charging and can continue to its destination with SoC {ev.Battery.StateOfCharge}. Scheduling arrival at destination.");
-            _scheduler.ScheduleEvent(new ArriveAtDestination(e.EVId, e.Time));
+            Log.Info(ev.Id, e.Time, $"EV {ev.Id} has completed its charging and can continue to its destination with SoC {ev.Battery.StateOfCharge}. Scheduling arrival at destination.");
+            _scheduler.ScheduleEvent(new ArriveAtDestination(ev, e.Time));
         }
         else
         {
-            Log.Info(e.EVId, e.Time, $"EV {e.EVId} has completed its charging but cannot continue to its destination with SoC {ev.Battery.StateOfCharge}. Scheduling search for candidate stations.");
-            _scheduler.ScheduleEvent(new FindCandidateStations(e.EVId, ev.TimeAtNextFindCandidateCheck(e.Time)));
+            Log.Info(ev.Id, e.Time, $"EV {ev.Id} has completed its charging but cannot continue to its destination with SoC {ev.Battery.StateOfCharge}. Scheduling search for candidate stations.");
+            _scheduler.ScheduleEvent(new FindCandidateStations(ev, ev.TimeAtNextFindCandidateCheck(e.Time)));
         }
 
         StartChargingNextCar(charger, e.Time);
@@ -252,7 +251,7 @@ public class StationHandler
         {
             waitTimes.TryDequeue(out var chargerId, out var currentAvailableAt);
 
-            var battery = _evStore.Get(reservation.EVId).Battery;
+            var battery = _evs[reservation.EVId].Battery;
             var connectedEV = new ConnectedEV(
                 EVId: reservation.EVId,
                 CurrentSoC: reservation.SoCAtArrival,
@@ -286,8 +285,8 @@ public class StationHandler
 
         Log.Verbose(top.EVId, simNow, $"Starting next charge on charger {charger.Id} at station {_station.Id} at time {simNow}. Next EV in queue: {top.EVId}");
         charger.AccumulateEnergy(simNow);
-        _chargerIndex[charger.Id].Handler.StartNext(simNow, _station.Id);
-        _evStore.Get(top.EVId).EVState = EVState.Charging;
+        _chargerIndex[charger.Id].Handler.StartNext(simNow, _station);
+        _evs[top.EVId].EVState = EVState.Charging;
         charger.UpdateWindowStats();
     }
 }

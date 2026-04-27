@@ -19,8 +19,8 @@ using Core.Helper;
 public class EVFactory(Random random, IJourneySamplerProvider samplersProvider, IPointToPointRouter pointToPointRouter, EVOptions EVOptions)
 {
     private readonly AliasSampler _sampler = new([.. EVModels.Models.Select(m => m.SpawnChance)]);
-
     private readonly EVOptions _options = EVOptions;
+    private int _nextId = 0;
 
     /// <summary>
     /// Creates a single EV. For batch creation use <see cref="SampleParams"/> and <see cref="Create(SampledEVParams, Time)"/>.
@@ -38,6 +38,7 @@ public class EVFactory(Random random, IJourneySamplerProvider samplersProvider, 
     /// <see cref="Create(SampledEVParams, Time)"/> to be called without any further random sampling.
     /// </summary>
     public record SampledEVParams(
+        int Id,
         EVConfig Config,
         float CurrCharge,
         float PriceSensPref,
@@ -84,7 +85,7 @@ public class EVFactory(Random random, IJourneySamplerProvider samplersProvider, 
         var battery = new Battery(batteryConfig.MaxCapacityKWh, batteryConfig.ChargeRateKW, p.CurrCharge);
         var preferences = new Preferences(p.PriceSensPref, p.MinAcceptableCharge, p.MaxPathDeviation);
         var journey = CreateJourney(departure, p.SourceDest) ?? throw Log.Error(0, 0, new InvalidOperationException($"Failed to create journey for EV with source {p.SourceDest.Source} and destination {p.SourceDest.Destination}. This should not happen."), ("SampledData", p));
-        return new EV(battery, preferences, journey, p.Config.Efficiency);
+        return new EV(p.Id, battery, preferences, journey, p.Config.Efficiency);
     }
 
     /// <summary>
@@ -99,6 +100,7 @@ public class EVFactory(Random random, IJourneySamplerProvider samplersProvider, 
         for (var i = 0; i < amount; i++)
         {
             parameters[i] = new SampledEVParams(
+                Id: _nextId++,
                 Config: EVModels.Models[_sampler.Sample(random)],
                 CurrCharge: GetRandomStartingSoC(),
                 PriceSensPref: random.NextSingle(),
@@ -106,7 +108,6 @@ public class EVFactory(Random random, IJourneySamplerProvider samplersProvider, 
                 MaxPathDeviation: NextFloatInRange(5.0f, 30.0f),
                 SourceDest: samplersProvider.Current.SampleSourceToDest(random));
         }
-
         return parameters;
     }
 

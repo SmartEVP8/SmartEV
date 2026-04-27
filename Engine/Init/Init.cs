@@ -17,6 +17,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Engine.Events.Middleware;
 using Engine.Metrics.Snapshots;
 using Engine.Utils;
+using Core.Vehicles;
 
 /// <summary>
 /// Initializes the Engine by setting up all necessary services and configurations.
@@ -34,6 +35,11 @@ public static class Init
             services.AddSingleton(new PerformanceMetrics());
 
         services.AddSingleton(_ => new EventScheduler());
+        services.AddSingleton(sp =>
+        {
+            var settings = sp.GetRequiredService<EngineSettings>();
+            return new Dictionary<int, EV>(settings.CurrentAmountOfEVsInDenmark);
+        });
 
         services.AddSingleton(sp =>
         {
@@ -54,12 +60,6 @@ public static class Init
             var settings = sp.GetRequiredService<EngineSettings>();
             var steps = settings.ChargingStepSeconds;
             return new ChargingIntegrator(steps);
-        });
-
-        services.AddSingleton(sp =>
-        {
-            var settings = sp.GetRequiredService<EngineSettings>();
-            return new EVStore(settings.CurrentAmountOfEVsInDenmark);
         });
 
         services.AddSingleton(sp => new Dictionary<ushort, Station>(sp.GetRequiredService<List<Station>>().ToDictionary(s => s.Id)));
@@ -123,10 +123,10 @@ public static class Init
             var stations = sp.GetRequiredService<Dictionary<ushort, Station>>();
             var integrator = sp.GetRequiredService<ChargingIntegrator>();
             var scheduler = sp.GetRequiredService<EventScheduler>();
-            var evStore = sp.GetRequiredService<EVStore>();
+            var evs = sp.GetRequiredService<Dictionary<int, EV>>();
             var metrics = sp.GetRequiredService<MetricsService>();
             var settings = sp.GetRequiredService<EngineSettings>();
-            return new StationService(stations.Values, integrator, scheduler, evStore, metrics);
+            return new StationService(stations.Values, integrator, scheduler, evs, metrics);
         });
 
         services.AddSingleton(sp =>
@@ -135,10 +135,9 @@ public static class Init
             var router = sp.GetRequiredService<IOSRMRouter>();
             var stations = sp.GetRequiredService<Dictionary<ushort, Station>>();
             var grid = sp.GetRequiredService<SpatialGrid>();
-            var evStore = sp.GetRequiredService<EVStore>();
             var stationService = sp.GetRequiredService<StationService>();
             var chargerBufferPercent = settings.ChargeBufferPercent;
-            return new FindCandidateStationService(router, stations, grid, evStore, stationService, chargerBufferPercent, Environment.ProcessorCount);
+            return new FindCandidateStationService(router, stations, grid, stationService, chargerBufferPercent, Environment.ProcessorCount);
         });
 
         services.AddSingleton(sp =>
@@ -150,9 +149,9 @@ public static class Init
         services.AddSingleton(sp =>
         {
             var evFactory = sp.GetRequiredService<EVFactory>();
-            var evStore = sp.GetRequiredService<EVStore>();
+            var evs = sp.GetRequiredService<Dictionary<int, EV>>();
             var eventScheduler = sp.GetRequiredService<EventScheduler>();
-            return new EVPopulator(evFactory, evStore, eventScheduler);
+            return new EVPopulator(evFactory, evs, eventScheduler);
         });
 
         services.AddSingleton(sp =>
@@ -179,8 +178,8 @@ public static class Init
         services.AddSingleton(sp =>
         {
             var metrics = sp.GetRequiredService<MetricsService>();
-            var evstore = sp.GetRequiredService<EVStore>();
-            return new DestinationArrivalHandler(metrics, evstore);
+            var evs = sp.GetRequiredService<Dictionary<int, EV>>();
+            return new DestinationArrivalHandler(metrics, evs);
         });
 
         services.AddSingleton(sp =>
@@ -196,11 +195,10 @@ public static class Init
             var findCandidateStationService = sp.GetRequiredService<FindCandidateStationService>();
             var computeCost = sp.GetRequiredService<CostFunction>();
             var scheduler = sp.GetRequiredService<EventScheduler>();
-            var evStore = sp.GetRequiredService<EVStore>();
             var applyNewPath = sp.GetRequiredService<EVDetourPlanner>();
             var stationService = sp.GetRequiredService<StationService>();
             var metrics = sp.GetService<PerformanceMetrics>();
-            return new FindCandidateStationsHandler(findCandidateStationService, computeCost, scheduler, evStore, applyNewPath, stationService, metrics);
+            return new FindCandidateStationsHandler(findCandidateStationService, computeCost, scheduler, applyNewPath, stationService, metrics);
         });
 
         services.AddSingleton(sp =>
