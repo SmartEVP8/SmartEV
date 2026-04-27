@@ -170,18 +170,18 @@ public class FindCandidateStationService : IFindCandidateStationService
             for (var i = 0; i < reachableStationIds.Length; i++)
             {
                 var stationId = reachableStationIds[i];
-                var toStation = (detourResult.ToStation.Durations[i], detourResult.ToStation.Distances[i]);
-                var toDestination = (detourResult.ToDest.Durations[i], detourResult.ToDest.Distances[i]);
-                if (!ev.CanReachToStation(toStation.Item2 / 1000f, ev.Preferences.MinAcceptableCharge))
+                (var toStationDuration, var toStationDistance) = (detourResult.ToStation.Durations[i], detourResult.ToStation.Distances[i]);
+                (var toDestinationDuration, var toDestinationDistance) = (detourResult.ToDest.Durations[i], detourResult.ToDest.Distances[i]);
+                if (!ev.CanReachToStation(toStationDistance / 1000f, ev.Preferences.MinAcceptableCharge))
                     continue;
 
-                if (ev.SoCUsedAfterADistance(toStation.Item2 / 1000) <= 0)
+                if (ev.SoCUsedAfterADistance(toStationDistance / 1000) <= 0)
                     continue;
 
-                if (ev.CheckIfTargetSoCIsLowerThanCurrentSoC(toStation.Item2, toDestination.Item2, _chargerBufferPercent))
+                if (ev.CheckIfTargetSoCIsLowerThanCurrentSoC(toStationDistance, toDestinationDistance, _chargerBufferPercent))
                     continue;
 
-                refinedCandidateDurations[stationId] = new DurToStationAndDest(toStation.Item1, toDestination.Item1, toDestination.Item2, toStation.Item2);
+                refinedCandidateDurations[stationId] = new DurToStationAndDest(toStationDuration, toDestinationDuration, toDestinationDistance, toStationDistance);
             }
 
             if (refinedCandidateDurations.Count == 0 && _stationService.GetReservationStationId(e.EVId) is ushort && ev.DistanceOnCurrentChargeKm() > pathDeviationMultiplied)

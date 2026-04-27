@@ -2,7 +2,6 @@ namespace Engine.test.Vehicles;
 
 using Core.Shared;
 using Engine.Events;
-using Engine.Spawning;
 using Engine.test.Builders;
 using Engine.Vehicles;
 

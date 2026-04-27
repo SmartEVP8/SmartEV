@@ -8,6 +8,8 @@ using Core.Shared;
 /// </summary>
 public static class Polygooner
 {
+    private const double _boundingBoxRadiusKm = 0.05;
+
     /// <summary>
     /// Generates a grid of the specified size and marks cells as spawnable when they intersect
     /// included polygons and do not intersect excluded polygons.
@@ -143,8 +145,7 @@ public static class Polygooner
     private static List<PolygonWithBounds> ComputeStationExclusionBounds(
     IEnumerable<Position> stationPositions)
     {
-        const double RadiusKm = 0.05;
-        var latOffset = RadiusKm / GeoMath.KmPerLatitudeDegree;
+        var latOffset = _boundingBoxRadiusKm / GeoMath.KmPerLatitudeDegree;
 
         return [.. stationPositions.Select(station =>
         {

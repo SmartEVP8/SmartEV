@@ -11,7 +11,6 @@ using Core.Charging;
 using Serilog;
 using Serilog.Events;
 using Serilog.Templates;
-using Core.Helper;
 
 /// <summary>
 /// Entry point for the SmartEV API application.
