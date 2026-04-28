@@ -17,6 +17,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Engine.Events.Middleware;
 using Engine.Metrics.Snapshots;
 using Engine.Utils;
+using System.Globalization;
 
 /// <summary>
 /// Initializes the Engine by setting up all necessary services and configurations.
@@ -30,6 +31,7 @@ public static class Init
     public static void InitEngine(IServiceCollection services)
     {
         var settings = services.BuildServiceProvider().GetRequiredService<EngineSettings>();
+        Console.WriteLine($"[INIT] EngineSettings.ProcessorCount: {settings.ProcessorCount}");
         if (settings.EnablePerformanceMetrics)
             services.AddSingleton(new PerformanceMetrics());
 
@@ -138,7 +140,14 @@ public static class Init
             var evStore = sp.GetRequiredService<EVStore>();
             var stationService = sp.GetRequiredService<StationService>();
             var chargerBufferPercent = settings.ChargeBufferPercent;
-            return new FindCandidateStationService(router, stations, grid, evStore, stationService, chargerBufferPercent, Environment.ProcessorCount);
+            return new FindCandidateStationService(
+                router,
+                stations,
+                grid,
+                evStore,
+                stationService,
+                chargerBufferPercent,
+                settings.ProcessorCount);
         });
 
         services.AddSingleton(sp =>
@@ -218,25 +227,18 @@ public static class Init
         services.AddSingleton(sp =>
         {
             var scheduler = sp.GetRequiredService<EventScheduler>();
-            var dispatcher = sp.GetRequiredService<EventDispatcher>();
-            var settings = sp.GetRequiredService<EngineSettings>();
-            var startTime = settings.SimulationStartTime;
-            var endTime = settings.SimulationEndTime;
-            return new Simulation(dispatcher, scheduler, startTime, endTime);
-        });
-
-        services.AddSingleton(sp =>
-        {
-            var scheduler = sp.GetRequiredService<EventScheduler>();
             var findCandidateStationService = sp.GetRequiredService<FindCandidateStationService>();
 
             scheduler.RegisterPreProcessor<FindCandidateStations>(
                 findCandidateStationService.PreComputeCandidateStation());
 
+            var settings = sp.GetRequiredService<EngineSettings>();
+
             return new Simulation(
                 sp.GetRequiredService<EventDispatcher>(),
                 scheduler,
-                sp.GetRequiredService<EngineSettings>().SimulationEndTime);
+                settings.SimulationStartTime,
+                settings.SimulationEndTime);
         });
     }
 
@@ -253,8 +255,8 @@ public static class Init
         {
             var parts = line.Split(',');
             var name = parts[0];
-            var longitude = double.Parse(parts[2]);
-            var latitude = double.Parse(parts[3]);
+            var longitude = double.Parse(parts[2], CultureInfo.InvariantCulture);
+            var latitude = double.Parse(parts[3], CultureInfo.InvariantCulture);
             var population = int.Parse(parts[1]);
             return new City(name, new Position(longitude, latitude), population);
         })];

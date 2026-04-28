@@ -59,6 +59,16 @@ public class EngineManager
 
     private static EngineSettings MergeSettings(EngineInitConfigDTO configDTO, EngineSettings defaultSettings)
     {
+
+        var finalProcessorCount = Math.Clamp(
+        configDTO.ProcessorCount,
+        1,
+        Environment.ProcessorCount
+        );
+
+        Console.WriteLine($"[CONFIG] ProcessorCount (input): {configDTO.ProcessorCount}");
+        Console.WriteLine($"[CONFIG] ProcessorCount (final): {finalProcessorCount}");
+        Console.WriteLine($"[CONFIG] Machine ProcessorCount: {Environment.ProcessorCount}");
         return defaultSettings with
         {
             CurrentAmountOfEVsInDenmark = configDTO.MaximumEVs,
@@ -68,6 +78,7 @@ public class EngineManager
                 DualChargingPointProbability = configDTO.DualChargerProbability,
                 TotalChargers = configDTO.NumberOfChargers
             },
+            ProcessorCount = finalProcessorCount,
             CostConfig = configDTO.CostWeights.ToDomain(defaultSettings.CostConfig),
             SimulationStartTime = configDTO.StartTime,
             SimulationEndTime = configDTO.EndTime

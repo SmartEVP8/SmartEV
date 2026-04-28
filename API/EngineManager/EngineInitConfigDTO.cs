@@ -10,5 +10,6 @@ public record EngineInitConfigDTO(
     List<CostWeightDTO> CostWeights,
     double DualChargerProbability,
     int NumberOfChargers,
+    int ProcessorCount,
     uint StartTime = Time.MillisecondsPerDay,
     uint EndTime = Time.MillisecondsPerDay * 7);
