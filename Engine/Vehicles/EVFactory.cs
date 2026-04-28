@@ -104,7 +104,7 @@ public class EVFactory(Random random, IJourneySamplerProvider samplersProvider, 
                 Config: EVModels.Models[_sampler.Sample(random)],
                 CurrCharge: GetRandomStartingSoC(),
                 PriceSensPref: random.NextSingle(),
-                MinAcceptableCharge: NextFloatInRange(0.05f, 0.2f),
+                MinAcceptableCharge: NextFloatInRange(0.05f, 0.19f),
                 MaxPathDeviation: NextFloatInRange(5.0f, 30.0f),
                 SourceDest: samplersProvider.Current.SampleSourceToDest(random));
         }
