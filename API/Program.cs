@@ -11,6 +11,7 @@ using Core.Charging;
 using Serilog;
 using Serilog.Events;
 using Serilog.Templates;
+using Core.Vehicles;
 
 /// <summary>
 /// Entry point for the SmartEV API application.
@@ -75,6 +76,7 @@ public static class Program
             {
                 services.AddSingleton(_ => app.Services.GetRequiredService<ILoggerFactory>());
                 services.AddLogging();
+                services.AddSingleton<IReadOnlyDictionary<int, EV>>(sp => sp.GetRequiredService<Dictionary<int, EV>>());
                 services.AddSingleton<IEngineEventSubscriber, EngineEventSubscriber>();
                 services.AddSingleton<SnapshotHandler>();
                 services.AddSingleton<SimulationWebSocketService>();
