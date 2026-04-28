@@ -95,9 +95,8 @@ public class StationMetricsCollector(List<Station> stations)
                     targetEVDemandKWh += (float)Math.Max(0, (c.SessionB.EV.TargetSoC - c.SessionB.GetCurrentSoC(simNow)) * c.SessionB.EV.CapacityKWh);
                 return targetEVDemandKWh;
             default:
-                var ex = new SkillissueException("Do we have a third type of charger? :O");
-                Log.Error(ex, "Unknown charger type {ChargerType} for charger {ChargerId} at time {@Time}", charger.GetType().Name, charger.Id, simNow);
-                throw ex;
+                Log.Error("Unknown charger type {ChargerType} for charger {ChargerId} at time {@Time}", charger.GetType().Name, charger.Id, simNow);
+                throw new SkillissueException("Do we have a third type of charger? :O");
         }
     }
 }

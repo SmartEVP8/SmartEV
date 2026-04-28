@@ -280,16 +280,14 @@ public sealed class ChargingIntegrator(uint stepSeconds)
     {
         if (!double.IsFinite(ev.CurrentSoC) || ev.CurrentSoC is < 0 or > 1)
         {
-            var ex = new ArgumentOutOfRangeException(nameof(ev), $"EV {ev.EVId} has invalid CurrentSoC={ev.CurrentSoC}. Expected finite value in [0,1].");
-            Log.Error(ex, "Invalid CurrentSoC for EV {@EVId}", ev.EVId, ("EV", ev));
-            throw ex;
+            Log.Error("Invalid CurrentSoC for EV {@EVId}", ev.EVId, ("EV", ev));
+            throw new ArgumentOutOfRangeException(nameof(ev), $"EV {ev.EVId} has invalid CurrentSoC={ev.CurrentSoC}. Expected finite value in [0,1].");
         }
 
         if (!double.IsFinite(ev.TargetSoC) || ev.TargetSoC is < 0 or > 1)
         {
-            var ex = new ArgumentOutOfRangeException(nameof(ev), $"EV {ev.EVId} has invalid TargetSoC={ev.TargetSoC}. Expected finite value in [0,1].");
-            Log.Error(ex, "Invalid TargetSoC for EV {@EVId}", ev.EVId, ("EV", ev));
-            throw ex;
+            Log.Error("Invalid TargetSoC for EV {@EVId}", ev.EVId, ("EV", ev));
+            throw new ArgumentOutOfRangeException(nameof(ev), $"EV {ev.EVId} has invalid TargetSoC={ev.TargetSoC}. Expected finite value in [0,1].");
         }
     }
 }

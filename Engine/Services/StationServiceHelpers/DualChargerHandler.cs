@@ -54,9 +54,8 @@ public class DualChargerHandler(
 
         if (charger.SessionA is null && charger.SessionB is null)
         {
-            var ex = new InvalidOperationException($"Logic Error: DualCharger {charger.Id} has no active sessions after attempting to connect queued vehicles, but should have at least one if this method was called.");
-            Log.Error(ex, "Logic Error: DualCharger {ChargerId} has no active sessions after attempting to connect queued vehicles, but should have at least one if this method was called.", charger.Id);
-            throw ex;
+            Log.Error("Logic Error: DualCharger {ChargerId} has no active sessions after attempting to connect queued vehicles, but should have at least one if this method was called.", charger.Id);
+            throw new InvalidOperationException($"Logic Error: DualCharger {charger.Id} has no active sessions after attempting to connect queued vehicles, but should have at least one if this method was called.");
         }
 
         CancelStaleEventsIfPairingChanged((wasAloneA, wasAloneB));
@@ -175,9 +174,8 @@ public class DualChargerHandler(
     {
         if (charger.SessionA is null && charger.SessionB is null)
         {
-            var ex = new InvalidOperationException($"Should never call IntegrateDual with no active sessions on DualCharger {charger.Id}.");
-            Log.Error(ex, "Should never call IntegrateDual with no active sessions on DualCharger {ChargerId}.", charger.Id);
-            throw ex;
+            Log.Error("Should never call IntegrateDual with no active sessions on DualCharger {ChargerId}.", charger.Id);
+            throw new InvalidOperationException($"Should never call IntegrateDual with no active sessions on DualCharger {charger.Id}.");
         }
 
         var carA = charger.SessionA?.EV

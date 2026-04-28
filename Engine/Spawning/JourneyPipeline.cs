@@ -106,9 +106,8 @@ public class JourneyPipeline
 
         if (!newGrid.Any(row => row.Count > 0))
         {
-            var ex = new InvalidOperationException("No spawnable cells with city info. Check if the spawn grid is configured correctly and if the cities are within the bounds of the grid.");
-            Log.Error(ex, "No spawnable cells with city info. Check if the spawn grid is configured correctly and if the cities are within the bounds of the grid.");
-            throw ex;
+            Log.Error("No spawnable cells with city info. Check if the spawn grid is configured correctly and if the cities are within the bounds of the grid.");
+            throw new InvalidOperationException("No spawnable cells with city info. Check if the spawn grid is configured correctly and if the cities are within the bounds of the grid.");
         }
 
         var cityCenters = cities.Select(c => c.Position).ToArray();

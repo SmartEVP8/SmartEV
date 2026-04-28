@@ -24,9 +24,8 @@ public class EVPopulator(EVFactory evFactory, Dictionary<int, EV> evs, IEventSch
     {
         if (amount < 0)
         {
-            var ex = new ArgumentException($"Amount of EVs to create cannot be negative (amount={amount}).", nameof(amount));
-            Log.Error(ex, "Amount of EVs to create cannot be negative (amount={Amount}).", amount);
-            throw ex;
+            Log.Error("Amount of EVs to create cannot be negative (amount={Amount}).", amount);
+            throw new ArgumentException($"Amount of EVs to create cannot be negative (amount={amount}).", nameof(amount));
         }
         else if (amount == 0)
         {

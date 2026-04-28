@@ -84,9 +84,8 @@ public class EngineManager
     {
         if (_engineProvider is null)
         {
-            var ex = new InvalidOperationException("Engine not initialized. Call /init-engine before using engine-scoped services.");
-            Log.Error(ex, "Attempted to resolve engine service {ServiceType} before engine initialization.", typeof(T).Name);
-            throw ex;
+            Log.Error("Attempted to resolve engine service {ServiceType} before engine initialization.", typeof(T).Name);
+            throw new InvalidOperationException("Engine not initialized. Call /init-engine before using engine-scoped services.");
         }
 
         return _engineProvider.GetRequiredService<T>();

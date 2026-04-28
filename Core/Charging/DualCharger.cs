@@ -47,9 +47,8 @@ public sealed class DualCharger(int id, int maxPowerKW, Connectors connectors)
     {
         if (maxKW <= 0)
         {
-            var ex = new ArgumentOutOfRangeException(nameof(maxKW), $"maxKW must be positive. Received {maxKW}.");
-            Log.Error(ex, "Invalid maxKW: {maxKW}", maxKW, ("ChargerId", Id));
-            throw ex;
+            Log.Error("Invalid maxKW: {maxKW}", maxKW, ("ChargerId", Id));
+            throw new ArgumentOutOfRangeException(nameof(maxKW), $"maxKW must be positive. Received {maxKW}.");
         }
 
         var nominal = maxKW / 2.0;

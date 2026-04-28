@@ -120,9 +120,8 @@ public class FindCandidateStationService : IFindCandidateStationService
         {
             if (fcse is not FindCandidateStations e)
             {
-                var ex = new SkillissueException($"Expected event of type FindCandidateStations, but got {fcse.GetType().Name}.");
-                Log.Error(ex, "Expected event of type FindCandidateStations, but got {EventType}.", fcse.GetType().Name);
-                throw ex;
+                Log.Error("Expected event of type FindCandidateStations, but got {EventType}.", fcse.GetType().Name);
+                throw new SkillissueException($"Expected event of type FindCandidateStations, but got {fcse.GetType().Name}.");
             }
 
             var tcs = new TaskCompletionSource<Dictionary<ushort, DurToStationAndDest>>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -145,9 +144,8 @@ public class FindCandidateStationService : IFindCandidateStationService
 
         if (pos is null)
         {
-            var ex = new SkillissueException($"EV {ev.Id} has no position at time {e.Time} after advancing. This should not happen.");
-            Log.Error(ex, "EV {@EVId} has no position at time {@Time} after advancing. This should not happen.", ev.Id, e.Time);
-            throw ex;
+            Log.Error("EV {@EVId} has no position at time {@Time} after advancing. This should not happen.", ev.Id, e.Time);
+            throw new SkillissueException($"EV {ev.Id} has no position at time {e.Time} after advancing. This should not happen.");
         }
 
         var pathDeviationMultiplied = ev.Preferences.MaxPathDeviation * PathdeviationMultiplier;
@@ -198,10 +196,6 @@ public class FindCandidateStationService : IFindCandidateStationService
             {
                 Log.Warning("No candidate stations found for EV {@EVId} at time {@Time}. Even after expanding search radius, no stations were found along the polyline. Returning empty candidate set.", ev.Id, e.Time, ("EV", ev));
             }
-            else
-            {
-                Log.Verbose("Found {CandidateCount} candidate stations for EV {@EVId} at time {@Time}.", refinedCandidateDurations.Count, ev.Id, e.Time, ("EV", ev));
-            }
 
             return refinedCandidateDurations;
         }
@@ -223,9 +217,8 @@ public class FindCandidateStationService : IFindCandidateStationService
     {
         if (!_evStationPaths.TryRemove(evId, out var query))
         {
-            var ex = new SkillissueException($"No pre-computed station query found for EV {evId}. Ensure PreComputeCandidateStation is called first.");
-            Log.Error(ex, "No pre-computed station query found for EV {@EVId}. Ensure PreComputeCandidateStation is called first.", evId);
-            throw ex;
+            Log.Error("No pre-computed station query found for EV {@EVId}. Ensure PreComputeCandidateStation is called first.", evId);
+            throw new SkillissueException($"No pre-computed station query found for EV {evId}. Ensure PreComputeCandidateStation is called first.");
         }
 
         return await query.Task;

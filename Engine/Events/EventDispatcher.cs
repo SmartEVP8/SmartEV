@@ -77,9 +77,8 @@ public class EventDispatcher(
                 evService.Handle(ev);
                 break;
             default:
-                var ex = new SkillissueException($"No handler registered for event type {e.GetType().Name}. This should never happen.");
-                Log.Error(ex, "No handler registered for event type {EventType}. This should never happen.", e.GetType().Name);
-                throw ex;
+                Log.Error("No handler registered for event type {EventType}. This should never happen.", e.GetType().Name);
+                throw new SkillissueException($"No handler registered for event type {e.GetType().Name}. This should never happen.");
         }
     }
 }

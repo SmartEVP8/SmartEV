@@ -103,9 +103,8 @@ public class StationService : IStationService
 
         if (!_evReservations.Remove(e.EV.Id, out var oldStationId))
         {
-            var ex = new SkillissueException($"Logic Error: EV {e.EV.Id} ended charging at station {stationId} but had no reservation.");
-            Log.Error(ex, "Logic Error: EV {@EVId} ended charging at station {@StationId} but had no reservation.", e.EV.Id, stationId);
-            throw ex;
+            Log.Error("Logic Error: EV {@EVId} ended charging at station {@StationId} but had no reservation.", e.EV.Id, stationId);
+            throw new SkillissueException($"Logic Error: EV {e.EV.Id} ended charging at station {stationId} but had no reservation.");
         }
 
         GetStation(oldStationId).Reservations.Remove(e.EV.Id);

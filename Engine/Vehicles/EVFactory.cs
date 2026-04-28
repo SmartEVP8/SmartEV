@@ -52,9 +52,8 @@ public class EVFactory(Random random, IJourneySamplerProvider samplersProvider, 
         var startSocDistribution = _options.StartSoCDistribution;
         if (startSocDistribution.Values.Sum() is not (>= 0.99 and <= 1.01))
         {
-            var ex = new ArgumentException($"StartSoCDistribution probabilities must sum to 1 (current sum={startSocDistribution.Values.Sum()}).", nameof(_options.StartSoCDistribution));
-            Log.Error(ex, "StartSoCDistribution probabilities must sum to 1 (current sum={StartSoCDistributionSum}).", startSocDistribution.Values.Sum());
-            throw ex;
+            Log.Error("StartSoCDistribution probabilities must sum to 1 (current sum={StartSoCDistributionSum}).", startSocDistribution.Values.Sum());
+            throw new ArgumentException($"StartSoCDistribution probabilities must sum to 1 (current sum={startSocDistribution.Values.Sum()}).", nameof(_options.StartSoCDistribution));
         }
 
         var randomValue = random.NextDouble();
@@ -89,9 +88,8 @@ public class EVFactory(Random random, IJourneySamplerProvider samplersProvider, 
         var journey = CreateJourney(departure, p.SourceDest);
         if (journey is null)
         {
-            var ex = new InvalidOperationException($"Failed to create journey for EV with source {p.SourceDest.Source} and destination {p.SourceDest.Destination}. This should not happen.");
-            Log.Error(ex, "Failed to create journey for EV with source {Source} and destination {Destination}.", p.SourceDest.Source, p.SourceDest.Destination);
-            throw ex;
+            Log.Error("Failed to create journey for EV with source {Source} and destination {Destination}.", p.SourceDest.Source, p.SourceDest.Destination);
+            throw new InvalidOperationException($"Failed to create journey for EV with source {p.SourceDest.Source} and destination {p.SourceDest.Destination}. This should not happen.");
         }
 
         return new EV(p.Id, battery, preferences, journey, p.Config.Efficiency);

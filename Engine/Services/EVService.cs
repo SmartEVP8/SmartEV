@@ -30,9 +30,8 @@ public class EVService(
         var amount = _carsInPeriod.GetCarsInPeriod(e.Time);
         if (amount <= 0)
         {
-            var ex = new SkillissueException($"EVService was scheduled to spawn EVs at time {e.Time}, but the amount to spawn was {amount}.");
-            Log.Error(ex, "EVService was scheduled to spawn EVs at time {@Time}, but the amount to spawn was {Amount}.", e.Time, amount);
-            throw ex;
+            Log.Error("EVService was scheduled to spawn EVs at time {@Time}, but the amount to spawn was {Amount}.", e.Time, amount);
+            throw new SkillissueException($"EVService was scheduled to spawn EVs at time {e.Time}, but the amount to spawn was {amount}.");
         }
 
         evPopulator.CreateEVs(amount, distributionWindow);

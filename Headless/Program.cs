@@ -45,23 +45,11 @@ public static class Program
         var formatter = new ExpressionTemplate("[{@l:u3}] {@m}\n{@x}");
 
         Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Verbose()
+            .MinimumLevel.Information()
             .WriteTo.File(
                 formatter,
-                "logs/Headless-verbose-" + DateTime.Now.ToString("yyyy-MM-dd-HH-mm") + ".jsonl",
-                restrictedToMinimumLevel: LogEventLevel.Verbose)
-            .WriteTo.File(
-                formatter,
-                "logs/Headless-information-" + DateTime.Now.ToString("yyyy-MM-dd-HH-mm") + ".jsonl",
+                "logs/Headless-Logs-" + DateTime.Now.ToString("yyyy-MM-dd-HH-mm") + ".jsonl",
                 restrictedToMinimumLevel: LogEventLevel.Information)
-            .WriteTo.File(
-                formatter,
-                "logs/Headless-warning-" + DateTime.Now.ToString("yyyy-MM-dd-HH-mm") + ".jsonl",
-                restrictedToMinimumLevel: LogEventLevel.Warning)
-            .WriteTo.File(
-                formatter,
-                "logs/Headless-error-" + DateTime.Now.ToString("yyyy-MM-dd-HH-mm") + ".jsonl",
-                restrictedToMinimumLevel: LogEventLevel.Error)
             .CreateLogger();
         await coordinator.Run();
     }

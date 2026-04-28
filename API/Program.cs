@@ -38,23 +38,11 @@ public static class Program
           "[{@l:u3}] {@m}\n{@x}");
 
         Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Verbose()
+            .MinimumLevel.Information()
             .WriteTo.File(
                 formatter,
-                "logs/Headless-verbose-" + DateTime.Now.ToString("yyyy-MM-dd-HH-mm") + ".jsonl",
-                restrictedToMinimumLevel: LogEventLevel.Verbose)
-            .WriteTo.File(
-                formatter,
-                "logs/Headless-information-" + DateTime.Now.ToString("yyyy-MM-dd-HH-mm") + ".jsonl",
+                "logs/API-Logs-" + DateTime.Now.ToString("yyyy-MM-dd-HH-mm") + ".jsonl",
                 restrictedToMinimumLevel: LogEventLevel.Information)
-            .WriteTo.File(
-                formatter,
-                "logs/Headless-warning-" + DateTime.Now.ToString("yyyy-MM-dd-HH-mm") + ".jsonl",
-                restrictedToMinimumLevel: LogEventLevel.Warning)
-            .WriteTo.File(
-                formatter,
-                "logs/Headless-error-" + DateTime.Now.ToString("yyyy-MM-dd-HH-mm") + ".jsonl",
-                restrictedToMinimumLevel: LogEventLevel.Error)
             .CreateLogger();
 
         var app = builder.Build();
@@ -196,8 +184,8 @@ public static class Program
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error handling WebSocket connection");
-                throw;
+                Log.Error("Error handling WebSocket connection");
+                throw ex;
             }
             finally
             {

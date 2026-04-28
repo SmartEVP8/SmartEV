@@ -51,7 +51,7 @@ public class SimulationWebSocketService(
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "Error in snapshot loop");
+                    Log.Error("Error in snapshot loop");
                     throw ex;
                 }
             }
@@ -84,12 +84,10 @@ public class SimulationWebSocketService(
                 WebSocketMessageType.Binary,
                 true,
                 cancelToken);
-
-            Log.Verbose("Sent envelope: {envelope}", envelope.PayloadCase);
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Failed to send message over WebSocket");
+            Log.Error("Failed to send message over WebSocket");
             throw ex;
         }
     }
@@ -128,7 +126,7 @@ public class SimulationWebSocketService(
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error processing WebSocket connection");
+            Log.Error("Error processing WebSocket connection");
             throw ex;
         }
     }
@@ -142,7 +140,6 @@ public class SimulationWebSocketService(
             {
                 var envelope = snapshotHandler.BuildSimulationSnapshot();
                 await SendAsync(envelope, cancelToken);
-                Log.Verbose("Broadcast simulation snapshot");
             }
         }
         catch (OperationCanceledException)
@@ -151,7 +148,8 @@ public class SimulationWebSocketService(
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error in snapshot loop");
+            Log.Error("Error in snapshot loop");
+            throw ex;
         }
     }
 }

@@ -46,16 +46,14 @@ public static class GeoMath
         // the distance represented by a degree of longitude varies with latitude.
         if (Math.Cos(wp1.Latitude + wp2.Latitude) == 0)
         {
-            var ex = new ArgumentException("Waypoints cannot be at the poles where cosine of latitude is zero.", nameof(wp1));
-            Log.Error(ex, "Invalid waypoints at poles: {@Waypoint1}, {@Waypoint2}", wp1, wp2);
-            throw ex;
+            Log.Error("Invalid waypoints at poles: {@Waypoint1}, {@Waypoint2}", wp1, wp2);
+            throw new ArgumentException("Waypoints cannot be at the poles where cosine of latitude is zero.", nameof(wp1));
         }
 
         if (radius <= 0)
         {
-            var ex = new ArgumentOutOfRangeException(nameof(radius), $"Radius must be positive. Received {radius}.");
-            Log.Error(ex, "Invalid radius: {Radius}", radius, ("Waypoint1", wp1), ("Waypoint2", wp2));
-            throw ex;
+            Log.Error("Invalid radius: {Radius}", radius, ("Waypoint1", wp1), ("Waypoint2", wp2));
+            throw new ArgumentOutOfRangeException(nameof(radius), $"Radius must be positive. Received {radius}.");
         }
 
         var cosLat = Math.Cos((wp1.Latitude + wp2.Latitude) / 2.0 * Math.PI / 180.0);
@@ -90,9 +88,8 @@ public static class GeoMath
     {
         if (radius <= 0)
         {
-            var ex = new ArgumentOutOfRangeException(nameof(radius), $"Radius must be positive. Received {radius}.");
-            Log.Error(ex, "Invalid radius: {Radius}", radius, ("Waypoints", waypoints), ("Position", position));
-            throw ex;
+            Log.Error("Invalid radius: {Radius}", radius, ("Waypoints", waypoints), ("Position", position));
+            throw new ArgumentOutOfRangeException(nameof(radius), $"Radius must be positive. Received {radius}.");
         }
 
         var matchIndex = -1;
@@ -144,9 +141,8 @@ public static class GeoMath
 
         if (Math.Cos((lat1 + lat2) / 2) == 0)
         {
-            var ex = new ArgumentException("Positions cannot be at the poles where cosine of latitude is zero.", nameof(a));
-            Log.Error(ex, "Invalid positions at poles: {@PositionA}, {@PositionB}", a, b);
-            throw ex;
+            Log.Error("Invalid positions at poles: {@PositionA}, {@PositionB}", a, b);
+            throw new ArgumentException("Positions cannot be at the poles where cosine of latitude is zero.", nameof(a));
         }
 
         var x = dLon * Math.Cos((lat1 + lat2) / 2);

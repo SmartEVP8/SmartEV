@@ -73,9 +73,8 @@ public static class PolygonParser
             });
         if (geo is null)
         {
-            var ex = new Exception("Failed to deserialize GeoJSON.");
-            Log.Error(ex, "Failed to deserialize GeoJSON from string: {@Json}", json);
-            throw ex;
+            Log.Error("Failed to deserialize GeoJSON from string: {@Json}", json);
+            throw new Exception("Failed to deserialize GeoJSON.");
         }
 
         var polygons = new List<List<Position>>();

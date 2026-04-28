@@ -51,9 +51,8 @@ public class SingleChargerHandler(
 
         if (!charger.TryConnect())
         {
-            var ex = new InvalidOperationException($"Logic Error: EV {next.EVId} reached Charger {charger.Id} but TryConnect failed, indicating a mismatch between the charger's session state and its connector state.");
-            Log.Error(ex, "Logic Error: EV {@EVId} reached Charger {ChargerId} but TryConnect failed, indicating a mismatch between the charger's session state and its connector state.", next.EVId, charger.Id);
-            throw ex;
+            Log.Error("Logic Error: EV {@EVId} reached Charger {ChargerId} but TryConnect failed, indicating a mismatch between the charger's session state and its connector state.", next.EVId, charger.Id);
+            throw new InvalidOperationException($"Logic Error: EV {next.EVId} reached Charger {charger.Id} but TryConnect failed, indicating a mismatch between the charger's session state and its connector state.");
         }
 
         charger.Queue.Dequeue();

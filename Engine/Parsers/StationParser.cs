@@ -25,9 +25,8 @@ public static class StationParser
 
         if (stations == null)
         {
-            var ex = new Exception("Failed to deserialize station JSON.");
-            Log.Error(ex, "Failed to deserialize station JSON from string: {@Json}", json);
-            throw ex;
+            Log.Error("Failed to deserialize station JSON from string: {@Json}", json);
+            throw new Exception("Failed to deserialize station JSON.");
         }
 
         return [.. stations.Select(s => new Position(s.Longitude, s.Latitude))];

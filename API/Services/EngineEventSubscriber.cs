@@ -20,7 +20,7 @@ public sealed class EngineEventSubscriber(
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Failed to send station snapshot for station {@StationId}", station.Id);
+            Log.Error("Failed to send station snapshot for station {@StationId}", station.Id);
             throw ex;
         }
     }

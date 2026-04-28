@@ -34,16 +34,14 @@ public class StationFactory
 
         if (options.TotalChargers <= 0)
         {
-            var ex = new ArgumentOutOfRangeException(nameof(options.TotalChargers), "TotalChargers must be greater than zero.");
-            Log.Error(ex, "TotalChargers must be greater than zero. Provided value: {TotalChargers}.", options.TotalChargers);
-            throw ex;
+            Log.Error("TotalChargers must be greater than zero. Provided value: {TotalChargers}.", options.TotalChargers);
+            throw new ArgumentOutOfRangeException(nameof(options.TotalChargers), "TotalChargers must be greater than zero.");
         }
 
         if (options.DualChargingPointProbability < 0 || options.DualChargingPointProbability > 1)
         {
-            var ex = new ArgumentOutOfRangeException(nameof(options.DualChargingPointProbability), "DualChargingPointProbability must be between 0 and 1.");
-            Log.Error(ex, "DualChargingPointProbability must be between 0 and 1. Provided value: {DualChargingPointProbability}.", options.DualChargingPointProbability);
-            throw ex;
+            Log.Error("DualChargingPointProbability must be between 0 and 1. Provided value: {DualChargingPointProbability}.", options.DualChargingPointProbability);
+            throw new ArgumentOutOfRangeException(nameof(options.DualChargingPointProbability), "DualChargingPointProbability must be between 0 and 1.");
         }
 
         _options = options;
@@ -70,9 +68,8 @@ public class StationFactory
 
         if (locations.Count == 0)
         {
-            var ex = new InvalidOperationException("Station locations JSON file was empty.");
-            Log.Error(ex, "Station locations JSON file was empty.");
-            throw ex;
+            Log.Error("Station locations JSON file was empty.");
+            throw new InvalidOperationException("Station locations JSON file was empty.");
         }
 
         var chargerCountsPerStation = DistributeChargersAcrossStations(locations.Count, _options.TotalChargers) ?? throw new InvalidOperationException("Failed to distribute chargers across stations.");
@@ -158,16 +155,14 @@ public class StationFactory
     {
         if (stationCount <= 0)
         {
-            var ex = new ArgumentException("Station count must be greater than zero.", nameof(stationCount));
-            Log.Error(ex, "Station count must be greater than zero. Provided value: {StationCount}.", stationCount);
-            throw ex;
+            Log.Error("Station count must be greater than zero. Provided value: {StationCount}.", stationCount);
+            throw new ArgumentException("Station count must be greater than zero.", nameof(stationCount));
         }
 
         if (totalChargers < stationCount)
         {
-            var ex = new InvalidOperationException("Not enough chargers to give at least one to each station.");
-            Log.Error(ex, "Not enough chargers to give at least one to each station. StationCount: {StationCount}, TotalChargers: {TotalChargers}.", stationCount, totalChargers);
-            throw ex;
+            Log.Error("Not enough chargers to give at least one to each station. StationCount: {StationCount}, TotalChargers: {TotalChargers}.", stationCount, totalChargers);
+            throw new InvalidOperationException("Not enough chargers to give at least one to each station.");
         }
 
         var result = Enumerable.Repeat(1, stationCount).ToList();

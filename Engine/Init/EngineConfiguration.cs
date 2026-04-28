@@ -99,8 +99,7 @@ public static class EngineConfiguration
             searchDir = searchDir.Parent;
         }
 
-        var ex = new DirectoryNotFoundException("Could not find 'data' directory in project hierarchy. Searched from " + Directory.GetCurrentDirectory());
-        Log.Error(ex, "Could not find 'data' directory in project hierarchy. Searched from {@CurrentDirectory}", Directory.GetCurrentDirectory());
-        throw ex;
+        Log.Error("Could not find 'data' directory in project hierarchy. Searched from {@CurrentDirectory}", Directory.GetCurrentDirectory());
+        throw new DirectoryNotFoundException("Could not find 'data' directory in project hierarchy. Searched from " + Directory.GetCurrentDirectory());
     }
 }

@@ -16,9 +16,8 @@ public static class EVModels
 
         if (MathF.Abs(total - 100f) > 0.01f)
         {
-            var ex = new InvalidOperationException($"SpawnChance values must sum to 100, but sum is {total:F3}");
-            Log.Error(ex, "Invalid EV model configuration: SpawnChance values must sum to 100, but sum is {Total:F3}", total);
-            throw ex;
+            Log.Error("Invalid EV model configuration: SpawnChance values must sum to 100, but sum is {Total:F3}", total);
+            throw new InvalidOperationException($"SpawnChance values must sum to 100, but sum is {total:F3}");
         }
     }
 

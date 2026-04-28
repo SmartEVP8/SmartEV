@@ -43,15 +43,13 @@ public class EnergyPrices(FileInfo csvPath, Random random)
     {
         if (!Enum.IsDefined(day))
         {
-            var ex = new ArgumentOutOfRangeException(nameof(day), $"Invalid day of week: {day}");
-            Log.Error(ex, "Invalid day of week: {Day}", day);
-            throw ex;
+            Log.Error("Invalid day of week: {Day}", day);
+            throw new ArgumentOutOfRangeException(nameof(day), $"Invalid day of week: {day}");
         }
         else if (hour < 0 || hour > 23)
         {
-            var ex = new ArgumentOutOfRangeException(nameof(hour), $"Hour must be between 0 and 23. Received {hour}.");
-            Log.Error(ex, "Invalid hour: {Hour}", hour);
-            throw ex;
+            Log.Error("Invalid hour: {Hour}", hour);
+            throw new ArgumentOutOfRangeException(nameof(hour), $"Hour must be between 0 and 23. Received {hour}.");
         }
 
         return _energyPriceTable.First(x => x.Day == day && x.Hour == hour).Price;

@@ -39,9 +39,8 @@ public class EventScheduler() : IEventScheduler
         var timestamp = e.Time;
         if (timestamp < _currentTime)
         {
-            var ex = new ArgumentOutOfRangeException($"Event timestamp {timestamp} is in the past (current time: {_currentTime}). Cannot schedule event.");
-            Log.Error(ex, "Event timestamp {@EventTimestamp} is in the past (current time: {@CurrentTime}). Cannot schedule event. Event: {@Event}", timestamp, _currentTime, e);
-            throw ex;
+            Log.Error("Event timestamp {@EventTimestamp} is in the past (current time: {@CurrentTime}). Cannot schedule event. Event: {@Event}", timestamp, _currentTime, e);
+            throw new ArgumentOutOfRangeException($"Event timestamp {timestamp} is in the past (current time: {_currentTime}). Cannot schedule event.");
         }
 
         if (e is IMiddlewareEvent me && _preProcessors.TryGetValue(me.GetType(), out var handler))
