@@ -52,7 +52,8 @@ public static class EngineTestData
                     ?? throw new InvalidOperationException("GridPath not set in project.");
 
         var polygons = PolygonParser.Parse(File.ReadAllText(polygonPath));
-        var spawnGrid = Polygooner.GenerateGrid(size: 0.1, polygons, []);
+        var stationPositions = AllStations.Values.Select(s => s.Position).ToList();
+        var spawnGrid = Polygooner.GenerateGrid(size: 0.1, polygons, [], []);
 
         var cityPath = AppContext.GetData("CityDataPath") as string
                             ?? throw new InvalidOperationException("GridPath not set in project.");
@@ -86,7 +87,8 @@ public static class EngineTestData
         var gridPath = AppContext.GetData("GridPath") as string
             ?? throw new InvalidOperationException("GridPath not set.");
         var polygons = PolygonParser.Parse(File.ReadAllText(gridPath));
-        var grid = Polygooner.GenerateGrid(0.1, polygons, []);
+        var stationPositions = AllStations.Values.Select(s => s.Position);
+        var grid = Polygooner.GenerateGrid(0.1, polygons, [], []);
         return new SpatialGrid(grid, stations ?? []);
     }
 

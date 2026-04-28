@@ -79,16 +79,12 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
     public Time RemainingCurrentRoute(Time currentTime) => Current.Eta - currentTime;
 
     /// <summary>
-    /// Calculates the remaining distance to destination at <paramref name="currentTime"/> without mutating the live journey.
+    /// Calculates the EV's remaining distance to destination.
     /// </summary>
     /// <param name="currentTime">The current time.</param>
-    /// <returns>The remaining distance to destination in kilometers.</returns>
-    public float RemainingDistanceToDestination(Time currentTime)
-    {
-        CheckTime(currentTime, checkBeforeDeparture: true, checkAfterCompletion: true, checkAfterEtaToNextStop: false);
-        var (snapshot, _) = DeriveRouteSnapshot(currentTime);
-        return Math.Max(0f, snapshot.DistanceKm);
-    }
+    /// <returns>The remaining distance to destination in kilometers..</returns>
+    /// <exception cref="ArgumentException">Thrown when the current time is before the journey starts or after it has completed.</exception>
+    public float RemainingDistanceToDestination(Time currentTime) => GetRemainingDistanceAndCurrentPosition(currentTime).distanceKm;
 
     /// <summary>
     /// Calculates the EV's current position without mutating the live route.
@@ -96,11 +92,13 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
     /// <param name="currentTime">The current time.</param>
     /// <returns>The position of the car.</returns>
     /// <exception cref="ArgumentException">Thrown when the current time is before the journey starts or after it has completed.</exception>
-    public Position GetCurrentPosition(Time currentTime)
+    public Position GetCurrentPosition(Time currentTime) => GetRemainingDistanceAndCurrentPosition(currentTime).currentPosition;
+
+    private (float distanceKm, Position currentPosition) GetRemainingDistanceAndCurrentPosition(Time currentTime)
     {
         CheckTime(currentTime, checkBeforeDeparture: true, checkAfterCompletion: true, checkAfterEtaToNextStop: false);
-        var (_, currentPos) = DeriveRouteSnapshot(currentTime);
-        return currentPos;
+        var (snapshot, currentPos) = DeriveRouteSnapshot(currentTime);
+        return (Math.Max(0f, snapshot.DistanceKm), currentPos);
     }
 
     /// <summary>
@@ -173,14 +171,14 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
     /// <summary>
     /// Finds the time it would take to drive a given distance based on the original average speed of the journey.
     /// </summary>
-    /// <param name="distance">The distance an EV has to drive.</param>
+    /// <param name="distanceKm">The distance an EV has to drive.</param>
     /// <returns>Returns how long it takes to drive a distance in seconds.</returns>
-    public Time TimeToDriveDistance(float distance)
+    public Time TimeToDriveDistance(float distanceKm)
     {
-        if (distance < 0)
-            throw Log.Error(0, 0, new ArgumentOutOfRangeException(nameof(distance), $"Distance cannot be negative. Received {distance}."), ("Distance", distance));
+        if (distanceKm < 0)
+            throw Log.Error(0, 0, new ArgumentOutOfRangeException(nameof(distanceKm), $"Distance cannot be negative. Received {distanceKm}."), ("Distance", distanceKm));
         var speedKmh = Original.DistanceKm / (Original.Duration / (float)Time.MillisecondsPerHour);
-        var timeHours = distance / speedKmh;
+        var timeHours = distanceKm / speedKmh;
         return (uint)Math.Ceiling(timeHours * Time.MillisecondsPerHour);
     }
 
@@ -218,14 +216,7 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
         return true;
     }
 
-    private float PercentageCompleted(Time currentTime)
-    {
-        if (Current.Duration == 0)
-            return 1f;
-
-        var progress = (currentTime - Current.Departure) / (float)Current.Duration;
-        return Math.Clamp(progress, 0f, 1f);
-    }
+    private float PercentageCompleted(Time currentTime) => Current.Duration == 0 ? 1f : Math.Clamp((currentTime - Current.Departure) / (float)Current.Duration, 0f, 1f);
 
     /// <summary>
     /// Derives a new journey snapshot at <paramref name="currentTime"/> by trimming elapsed route and
@@ -306,10 +297,12 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
             var ratio = length <= 0 ? 0 : remainingDistance / length;
             var latitude = first.Latitude + (ratio * (second.Latitude - first.Latitude));
             var longitude = first.Longitude + (ratio * (second.Longitude - first.Longitude));
-            var currentPos = new Position(Longitude: longitude, Latitude: latitude);
 
             var nextStopIndex = FindNextStopIndex(Current.Waypoints, Current.NextStop);
             var interpolationPassedNextStop = secondIndex > nextStopIndex;
+
+            var nextStopPos = new Position(Longitude: longitude, Latitude: latitude);
+            var remainingWaypoints = Current.Waypoints.Skip(secondIndex).ToList();
 
             if (interpolationPassedNextStop)
             {
@@ -323,14 +316,11 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
                             $"nextStopIndex={nextStopIndex}, segmentIndex={secondIndex}, NextStop={Current.NextStop}."));
                 }
 
-                var nextStopPos = Current.Waypoints[nextStopIndex];
-                var remainingWaypoints = Current.Waypoints.Skip(nextStopIndex + 1).ToList();
-                return [nextStopPos, .. remainingWaypoints];
+                nextStopPos = Current.Waypoints[nextStopIndex];
+                remainingWaypoints = [.. Current.Waypoints.Skip(nextStopIndex + 1)];
             }
 
-            var remainingWaypoints2 = Current.Waypoints.Skip(secondIndex).ToList();
-
-            return [currentPos, .. remainingWaypoints2];
+            return [nextStopPos, .. remainingWaypoints];
         }
 
         var last = Current.Waypoints[^1];
@@ -381,15 +371,7 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
         if (FindNextStopIndex(waypoints, requestedNextStop) >= 0)
             return requestedNextStop;
 
-        var closest = FindClosestWaypoint(waypoints, requestedNextStop);
-
-        throw Log.Error(
-            0,
-            0,
-            new InvalidOperationException(
-                $"Invalid route update: requested next stop is not part of the supplied route. " +
-                $"RequestedNextStop={requestedNextStop}, ClosestWaypoint={closest}, " +
-                $"First={waypoints[0]}, Last={waypoints[^1]}, WaypointCount={waypoints.Count}."));
+        throw ThrowClosestWaypoint(waypoints, requestedNextStop);
     }
 
     private Position ResolveNextStopAfterDerivation(List<Position> derivedWaypoints)
@@ -402,15 +384,7 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
         if (Current.NextStop == Current.Waypoints[^1])
             return derivedWaypoints[^1];
 
-        var closest = FindClosestWaypoint(derivedWaypoints, Current.NextStop);
-
-        throw Log.Error(
-            0,
-            0,
-            new InvalidOperationException(
-                $"Invalid derived journey: current NextStop is no longer part of the derived route. " +
-                $"NextStop={Current.NextStop}, ClosestDerivedWaypoint={closest}, " +
-                $"First={derivedWaypoints[0]}, Last={derivedWaypoints[^1]}, WaypointCount={derivedWaypoints.Count}."));
+        throw ThrowClosestWaypoint(derivedWaypoints, Current.NextStop);
     }
 
     private void ValidateCurrentJourney()
@@ -420,19 +394,10 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
         var nextStopIndex = FindNextStopIndex(Current.Waypoints, Current.NextStop);
 
         if (nextStopIndex < 0)
-        {
-            throw Log.Error(
-                0,
-                0,
-                new InvalidOperationException(
-                    $"Invalid journey: NextStop is not in Waypoints. " +
-                    $"NextStop={Current.NextStop}, First={Current.Waypoints[0]}, " +
-                    $"Last={Current.Waypoints[^1]}, Closest={FindClosestWaypoint(Current.Waypoints, Current.NextStop)}, " +
-                    $"WaypointCount={Current.Waypoints.Count}."));
-        }
+            throw ThrowClosestWaypoint(Current.Waypoints, Current.NextStop);
 
         if (Current.DurationToNextStop == Current.Duration &&
-    GeoMath.EquirectangularDistance(Current.NextStop, Current.Waypoints[^1]) > NextStopMatchToleranceKm)
+    GeoMath.EquirectangularDistance(Current.NextStop, Current.Waypoints[^1]) > _nextStopMatchToleranceKm)
         {
             throw Log.Error(
                 0,
@@ -441,26 +406,26 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
                     $"Invalid journey: DurationToNextStop equals full Duration, but NextStop is not close to final waypoint. " +
                     $"NextStop={Current.NextStop}, Final={Current.Waypoints[^1]}, " +
                     $"DistanceKm={GeoMath.EquirectangularDistance(Current.NextStop, Current.Waypoints[^1]):F3}, " +
-                    $"ToleranceKm={NextStopMatchToleranceKm:F3}."));
+                    $"ToleranceKm={_nextStopMatchToleranceKm:F3}."));
         }
     }
 
-    private static void ValidateWaypoints(List<Position> waypoints)
+    private static Exception ThrowClosestWaypoint(List<Position> waypoints, Position requestedNextStop)
     {
-        if (waypoints.Count == 0)
-            throw Log.Error(0, 0, new InvalidOperationException("Journey route has no waypoints."));
+        var closest = FindClosestWaypoint(waypoints, requestedNextStop);
+
+        return
+            new InvalidOperationException(
+                "Requested next stop is not part of the supplied route. " +
+                $"RequestedNextStop={requestedNextStop}, ClosestWaypoint={closest}, " +
+                $"First={waypoints[0]}, Last={waypoints[^1]}, WaypointCount={waypoints.Count}.");
     }
 
-    private static Position FindClosestWaypoint(List<Position> waypoints, Position target)
-    {
-        ValidateWaypoints(waypoints);
+    private static object? ValidateWaypoints(List<Position> waypoints) => waypoints.Count == 0 ? throw Log.Error(0, 0, new InvalidOperationException("Waypoints list cannot be empty.")) : null;
 
-        return waypoints
-            .OrderBy(waypoint => GeoMath.EquirectangularDistance(waypoint, target))
-            .First();
-    }
+    private static Position FindClosestWaypoint(List<Position> waypoints, Position target) => waypoints.OrderBy(waypoint => GeoMath.EquirectangularDistance(waypoint, target)).First();
 
-    private const double NextStopMatchToleranceKm = 0.5;
+    private const double _nextStopMatchToleranceKm = 0.5;
 
     /// <summary>
     /// Resolves the effective next-stop waypoint index on a route.
@@ -477,7 +442,7 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
                 Index = index,
                 DistanceKm = GeoMath.EquirectangularDistance(waypoint, nextStop),
             })
-            .Where(x => x.DistanceKm <= NextStopMatchToleranceKm)
+            .Where(x => x.DistanceKm <= _nextStopMatchToleranceKm)
             .OrderBy(x => x.DistanceKm)
             .FirstOrDefault();
 

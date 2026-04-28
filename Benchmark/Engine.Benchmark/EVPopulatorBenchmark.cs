@@ -34,7 +34,7 @@ public class EVPopulatorBenchMark
         var router = new OSRMRouter(new FileInfo(osrmPath), new List<Station>());
         var cities = CityParser.Parse(new FileInfo(cityPath));
         var polygons = PolygonParser.Parse(File.ReadAllText(polygonPath));
-        var grid = Polygooner.GenerateGrid(0.1, polygons, []);
+        var grid = Polygooner.GenerateGrid(0.1, polygons, [], []);
         var jp = new JourneyPipeline(grid, cities, router);
         var distanceScalar = 1.7f;
         var populationScalar = 0.7f;

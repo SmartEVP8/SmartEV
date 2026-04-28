@@ -36,7 +36,7 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
             var station = stationService.GetStation(stationId);
 
             var pathDeviationCost = CalculatePathDeviationCost(ref ev, durations.DurToDest + durations.DurToStation, weights, time);
-            var urgencyCost = Urgency.CalculateChargeUrgency(ref ev, (uint)durations.DurToDest);
+            var urgencyCost = Urgency.CalculateChargeUrgency(ref ev, durations.DistToStationMeters);
             var priceCost = CalculatePriceCost(ref ev, station, weights, time, lowestPrice);
             var effectiveWaitTimeCost = CalculateEffectiveWaitTimeCost(weights, time, durations.DurToStation, stationId);
             var cost = (1 - urgencyCost) * (pathDeviationCost + priceCost + effectiveWaitTimeCost);

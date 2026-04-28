@@ -93,7 +93,7 @@ public static class Init
         {
             var settings = sp.GetRequiredService<EngineSettings>();
             var router = sp.GetRequiredService<IOSRMRouter>();
-            var spawnGrid = InitSpawnGrid(settings.PolygonPath, settings.WetPolygonPath, settings.GridSize);
+            var spawnGrid = InitSpawnGrid(settings.PolygonPath, settings.WetPolygonPath, settings.StationsPath, settings.GridSize);
             var cities = InitCities(settings.CitiesPath);
             var wetPolygons = PolygonParser.Parse(File.ReadAllText(settings.WetPolygonPath.ToString()));
             var journeyPipeline = new JourneyPipeline(spawnGrid, cities, router);
@@ -114,7 +114,7 @@ public static class Init
         {
             var settings = sp.GetRequiredService<EngineSettings>();
             var stations = sp.GetRequiredService<Dictionary<ushort, Station>>();
-            var spawnGrid = InitSpawnGrid(settings.PolygonPath, settings.WetPolygonPath, settings.GridSize);
+            var spawnGrid = InitSpawnGrid(settings.PolygonPath, settings.WetPolygonPath, settings.StationsPath, settings.GridSize);
             return new SpatialGrid(spawnGrid, stations);
         });
 
@@ -238,11 +238,13 @@ public static class Init
         });
     }
 
-    private static SpawnGrid InitSpawnGrid(FileInfo polygonPath, FileInfo wetPolygonPath, double size)
+    private static SpawnGrid InitSpawnGrid(FileInfo polygonPath, FileInfo wetPolygonPath, FileInfo stationsPath, double size)
     {
         var polygons = PolygonParser.Parse(File.ReadAllText(polygonPath.ToString()));
         var wetPolygons = PolygonParser.Parse(File.ReadAllText(wetPolygonPath.ToString()));
-        return Polygooner.GenerateGrid(size, polygons, wetPolygons);
+        var stations = StationParser.Parse(File.ReadAllText(stationsPath.ToString()));
+
+        return Polygooner.GenerateGrid(size, polygons, wetPolygons, stations);
     }
 
     private static List<City> InitCities(FileInfo citiesPath)
