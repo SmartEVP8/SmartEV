@@ -3,7 +3,7 @@ namespace Engine.StationFactory;
 using System.Text.Json;
 using Core.Charging;
 using Core.Shared;
-using Core.Helper;
+using Serilog;
 
 /// <summary>
 /// Factory for creating stations from a JSON file containing charging location data.
@@ -34,23 +34,22 @@ public class StationFactory
 
         if (options.TotalChargers <= 0)
         {
-            throw Log.Error(0, 0, new ArgumentOutOfRangeException(
-                nameof(options.TotalChargers),
-                "TotalChargers must be greater than zero."),
-                ("TotalChargers", options.TotalChargers));
+            var ex = new ArgumentOutOfRangeException(nameof(options.TotalChargers), "TotalChargers must be greater than zero.");
+            Log.Error(ex, "TotalChargers must be greater than zero. Provided value: {TotalChargers}.", options.TotalChargers);
+            throw ex;
         }
 
         if (options.DualChargingPointProbability < 0 || options.DualChargingPointProbability > 1)
         {
-            throw Log.Error(0, 0, new ArgumentOutOfRangeException(
-                nameof(options.DualChargingPointProbability),
-                "DualChargingPointProbability must be between 0 and 1."));
+            var ex = new ArgumentOutOfRangeException(nameof(options.DualChargingPointProbability), "DualChargingPointProbability must be between 0 and 1.");
+            Log.Error(ex, "DualChargingPointProbability must be between 0 and 1. Provided value: {DualChargingPointProbability}.", options.DualChargingPointProbability);
+            throw ex;
         }
 
         _options = options;
         _random = random;
         _energyPrices = energyPrices;
-        _stationsFile = stationsFile ?? throw Log.Error(0, 0, new ArgumentNullException(nameof(stationsFile), "Stations file cannot be null."));
+        _stationsFile = stationsFile ?? throw new ArgumentNullException(nameof(stationsFile), "Stations file cannot be null.");
     }
 
     /// <summary>
@@ -67,12 +66,16 @@ public class StationFactory
         var locations = JsonSerializer.Deserialize<List<StationLocationDTO>>(json, new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true,
-        }) ?? throw Log.Error(0, 0, new InvalidOperationException("JSON file was empty or null."));
+        }) ?? throw new InvalidOperationException("Station JSON file was empty or null.");
 
         if (locations.Count == 0)
-            throw Log.Error(0, 0, new InvalidOperationException("Station locations JSON file was empty."));
+        {
+            var ex = new InvalidOperationException("Station locations JSON file was empty.");
+            Log.Error(ex, "Station locations JSON file was empty.");
+            throw ex;
+        }
 
-        var chargerCountsPerStation = DistributeChargersAcrossStations(locations.Count, _options.TotalChargers) ?? throw Log.Error(0, 0, new InvalidOperationException("Failed to distribute chargers across stations."));
+        var chargerCountsPerStation = DistributeChargersAcrossStations(locations.Count, _options.TotalChargers) ?? throw new InvalidOperationException("Failed to distribute chargers across stations.");
 
         var stations = new List<Station>(locations.Count);
         ushort nextStationId = 0;
@@ -91,7 +94,7 @@ public class StationFactory
             stations.Add(CreateStation(nextStationId++, locations[i], chargers));
         }
 
-        Log.Info(0, 0, $"Created {stations.Count} stations with a total of {chargerId - 1} chargers.");
+        Log.Information("Created {StationCount} stations with a total of {ChargerCount} chargers.", stations.Count, chargerId - 1);
         return stations;
     }
 
@@ -154,10 +157,18 @@ public class StationFactory
     private List<int> DistributeChargersAcrossStations(int stationCount, int totalChargers)
     {
         if (stationCount <= 0)
-            throw Log.Error(0, 0, new ArgumentException("Station count must be greater than zero."), ("StationCount", stationCount));
+        {
+            var ex = new ArgumentException("Station count must be greater than zero.", nameof(stationCount));
+            Log.Error(ex, "Station count must be greater than zero. Provided value: {StationCount}.", stationCount);
+            throw ex;
+        }
 
         if (totalChargers < stationCount)
-            throw Log.Error(0, 0, new InvalidOperationException("Not enough chargers to give at least one to each station."), ("StationCount", stationCount), ("TotalChargers", totalChargers));
+        {
+            var ex = new InvalidOperationException("Not enough chargers to give at least one to each station.");
+            Log.Error(ex, "Not enough chargers to give at least one to each station. StationCount: {StationCount}, TotalChargers: {TotalChargers}.", stationCount, totalChargers);
+            throw ex;
+        }
 
         var result = Enumerable.Repeat(1, stationCount).ToList();
         var remaining = totalChargers - stationCount;

@@ -6,8 +6,7 @@ using Core.Shared;
 using Engine.Events;
 using Engine.Metrics;
 using Engine.Metrics.Events;
-using Core.Helper;
-using Engine.Utils;
+using Serilog;
 using Core.Vehicles;
 
 /// <summary>
@@ -55,10 +54,9 @@ public class DualChargerHandler(
 
         if (charger.SessionA is null && charger.SessionB is null)
         {
-            throw Log.Error(0, simNow, new InvalidOperationException(
-                $"Logic Error: DualCharger {charger.Id} is empty but failed to connect EV {charger.Queue.Peek().EVId}."),
-                ((string Key, object Value))("StationId", station.Id),
-                ((string Key, object Value))("Charger", charger));
+            var ex = new InvalidOperationException($"Logic Error: DualCharger {charger.Id} has no active sessions after attempting to connect queued vehicles, but should have at least one if this method was called.");
+            Log.Error(ex, "Logic Error: DualCharger {ChargerId} has no active sessions after attempting to connect queued vehicles, but should have at least one if this method was called.", charger.Id);
+            throw ex;
         }
 
         CancelStaleEventsIfPairingChanged((wasAloneA, wasAloneB));
@@ -176,7 +174,12 @@ public class DualChargerHandler(
     private IntegrationResult? IntegrateDual(Time simNow)
     {
         if (charger.SessionA is null && charger.SessionB is null)
-            throw Log.Error(0, simNow, new SkillissueException("Should never call IntegrateDual with no sessions"));
+        {
+            var ex = new InvalidOperationException($"Should never call IntegrateDual with no active sessions on DualCharger {charger.Id}.");
+            Log.Error(ex, "Should never call IntegrateDual with no active sessions on DualCharger {ChargerId}.", charger.Id);
+            throw ex;
+        }
+
         var carA = charger.SessionA?.EV
             ?? charger.SessionB!.EV with { CurrentSoC = charger.SessionB.EV.TargetSoC };
         var carB = charger.SessionB?.EV

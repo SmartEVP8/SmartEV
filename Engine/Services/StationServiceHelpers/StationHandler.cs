@@ -4,7 +4,7 @@ using Core.Charging;
 using Core.Charging.ChargingModel;
 using Core.Shared;
 using Core.Vehicles;
-using Core.Helper;
+using Serilog;
 using Engine.Events;
 using Engine.Metrics;
 using Engine.Utils;
@@ -68,9 +68,8 @@ public class StationHandler
             {
                 SingleCharger s => new SingleChargerHandler(s, integrator, scheduler, metrics, evs),
                 DualCharger d => new DualChargerHandler(d, integrator, scheduler, metrics, evs),
-                _ => throw Log.Error(0, 0,
-                    new InvalidOperationException($"Unknown charger type: {charger.GetType()}"),
-                    ((string Key, object Value))("Charger", charger))
+                _ => throw
+                    new InvalidOperationException($"Unknown charger type: {charger.GetType()}")
             };
             _chargerIndex[charger.Id] = (charger, handler);
         }
@@ -107,23 +106,22 @@ public class StationHandler
 
         var ev = e.EV;
         ev.Advance(e.Time);
-        Log.Verbose(ev.Id, e.Time, $"Handling ArrivalAtStation for EV {ev.Id} at time {e.Time}. Current EV data: {ev}. SoC: {ev.Battery.StateOfCharge}. Wants to charge to {e.TargetSoC}");
+        Log.Verbose(
+            "Handling ArrivalAtStation for EV {EVId} at time {Time}. Current EV data: {EVData}. SoC: {SoC}. Wants to charge to {TargetSoC}",
+            ev.Id, e.Time, ev, ev.Battery.StateOfCharge, e.TargetSoC);
 
         if (ev.Battery.StateOfCharge >= e.TargetSoC)
         {
-            throw Log.Error(ev.Id, e.Time,
-                new SkillissueException($"EV wants to charge to a SoC: {e.TargetSoC}, which is lower than its current SoC: {ev.Battery.StateOfCharge}."),
-                ((string Key, object Value))("EV", ev),
-                ((string Key, object Value))("TargetSoC", e.TargetSoC));
+            var ex = new SkillissueException($"EV wants to charge to a SoC: {e.TargetSoC}, which is lower than its current SoC: {ev.Battery.StateOfCharge}.");
+            Log.Error(ex, "EV {EVId} wants to charge to a SoC: {TargetSoC}, which is lower than its current SoC: {CurrentSoC}.", ev.Id, e.TargetSoC, ev.Battery.StateOfCharge);
+            throw ex;
         }
 
         var target = _station.Chargers
             .OrderBy(cs => cs.IsFree ? 0 : 1)
             .ThenBy(cs => cs.Queue.Count)
             .FirstOrDefault()
-            ?? throw Log.Error(ev.Id, e.Time,
-                new SkillissueException($"Logic Error: Station {e.Station.Id} has no chargers."),
-                ((string Key, object Value))("StationId", e.Station.Id));
+            ?? throw new SkillissueException($"Logic Error: Station {e.Station.Id} has no chargers.");
 
         var connectedEV = new ConnectedEV(
             ev.Id,
@@ -166,8 +164,9 @@ public class StationHandler
 
         if (!_arrivalTimes.TryGetValue(ev.Id, out var arrivalTime))
         {
-            throw Log.Error(ev.Id, e.Time,
-                new SkillissueException($"Logic Error: Missing arrival time for EV {ev.Id} at EndCharging."));
+            var ex = new SkillissueException($"Logic Error: Missing arrival time for EV {ev.Id} at EndCharging.");
+            Log.Error(ex, "Logic Error: Missing arrival time for EV {EVId} at EndCharging.", ev.Id);
+            throw ex;
         }
 
         _arrivalTimes.Remove(ev.Id);
@@ -176,12 +175,12 @@ public class StationHandler
 
         if (ev.CanCompleteJourney(timeAtStation, ev.Preferences.MinAcceptableCharge))
         {
-            Log.Info(ev.Id, e.Time, $"EV {ev.Id} has completed its charging and can continue to its destination with SoC {ev.Battery.StateOfCharge}. Scheduling arrival at destination.");
+            Log.Information("Scheduling arrival at destination for EV {EVId} with final SoC {FinalSoC}.", ev.Id, ev.Battery.StateOfCharge);
             _scheduler.ScheduleEvent(new ArriveAtDestination(ev, e.Time));
         }
         else
         {
-            Log.Info(ev.Id, e.Time, $"EV {ev.Id} has completed its charging but cannot continue to its destination with SoC {ev.Battery.StateOfCharge}. Scheduling search for candidate stations.");
+            Log.Information("EV {EVId} has completed its charging but cannot continue to its destination with SoC {FinalSoC}. Scheduling search for candidate stations.", ev.Id, ev.Battery.StateOfCharge);
             _scheduler.ScheduleEvent(new FindCandidateStations(ev, ev.TimeAtNextFindCandidateCheck(e.Time)));
         }
 
@@ -283,7 +282,9 @@ public class StationHandler
         if (!charger.Queue.TryPeek(out var top))
             return;
 
-        Log.Verbose(top.EVId, simNow, $"Starting next charge on charger {charger.Id} at station {_station.Id} at time {simNow}. Next EV in queue: {top.EVId}");
+        Log.Verbose(
+            "Starting next charge on charger {ChargerId} at station {StationId} at time {Time}. Next EV in queue: {EVId}",
+            charger.Id, _station.Id, simNow, top.EVId);
         charger.AccumulateEnergy(simNow);
         _chargerIndex[charger.Id].Handler.StartNext(simNow, _station);
         _evs[top.EVId].EVState = EVState.Charging;

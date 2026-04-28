@@ -2,7 +2,7 @@ namespace Engine.Events;
 
 using Engine.Services;
 using Engine.Utils;
-using Core.Helper;
+using Serilog;
 
 /// <summary>
 /// The EventDispatcher is responsible for dispatching events to the correct handlers.
@@ -77,7 +77,9 @@ public class EventDispatcher(
                 evService.Handle(ev);
                 break;
             default:
-                throw Log.Error(0, e.Time, new SkillissueException("This should never happen, add a handler"), ("Event", e));
+                var ex = new SkillissueException($"No handler registered for event type {e.GetType().Name}. This should never happen.");
+                Log.Error(ex, "No handler registered for event type {EventType}. This should never happen.", e.GetType().Name);
+                throw ex;
         }
     }
 }

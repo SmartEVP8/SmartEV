@@ -7,7 +7,7 @@ using Core.Vehicles.Configs;
 using Engine.Routing;
 using Engine.Spawning;
 using Engine.Utils;
-using Core.Helper;
+using Serilog;
 
 /// <summary>
 /// Factory for creating EVs, supporting single or batch creation.
@@ -52,7 +52,9 @@ public class EVFactory(Random random, IJourneySamplerProvider samplersProvider, 
         var startSocDistribution = _options.StartSoCDistribution;
         if (startSocDistribution.Values.Sum() is not (>= 0.99 and <= 1.01))
         {
-            throw Log.Error(0, 0, new ArgumentException($"StartSoCDistribution probabilities must sum to 1 (current sum={startSocDistribution.Values.Sum()})."));
+            var ex = new ArgumentException($"StartSoCDistribution probabilities must sum to 1 (current sum={startSocDistribution.Values.Sum()}).", nameof(_options.StartSoCDistribution));
+            Log.Error(ex, "StartSoCDistribution probabilities must sum to 1 (current sum={StartSoCDistributionSum}).", startSocDistribution.Values.Sum());
+            throw ex;
         }
 
         var randomValue = random.NextDouble();
@@ -84,7 +86,14 @@ public class EVFactory(Random random, IJourneySamplerProvider samplersProvider, 
         var batteryConfig = p.Config.BatteryConfig;
         var battery = new Battery(batteryConfig.MaxCapacityKWh, batteryConfig.ChargeRateKW, p.CurrCharge);
         var preferences = new Preferences(p.PriceSensPref, p.MinAcceptableCharge, p.MaxPathDeviation);
-        var journey = CreateJourney(departure, p.SourceDest) ?? throw Log.Error(0, 0, new InvalidOperationException($"Failed to create journey for EV with source {p.SourceDest.Source} and destination {p.SourceDest.Destination}. This should not happen."), ("SampledData", p));
+        var journey = CreateJourney(departure, p.SourceDest);
+        if (journey is null)
+        {
+            var ex = new InvalidOperationException($"Failed to create journey for EV with source {p.SourceDest.Source} and destination {p.SourceDest.Destination}. This should not happen.");
+            Log.Error(ex, "Failed to create journey for EV with source {Source} and destination {Destination}.", p.SourceDest.Source, p.SourceDest.Destination);
+            throw ex;
+        }
+
         return new EV(p.Id, battery, preferences, journey, p.Config.Efficiency);
     }
 

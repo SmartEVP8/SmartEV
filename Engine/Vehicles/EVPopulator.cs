@@ -2,7 +2,7 @@ namespace Engine.Vehicles;
 
 using Core.Shared;
 using Engine.Events;
-using Core.Helper;
+using Serilog;
 using Core.Vehicles;
 
 /// <summary>
@@ -23,9 +23,15 @@ public class EVPopulator(EVFactory evFactory, Dictionary<int, EV> evs, IEventSch
     public void CreateEVs(int amount, Time distributionWindow)
     {
         if (amount < 0)
-            throw Log.Error(0, 0, new ArgumentException($"Amount of EVs to create cannot be negative (amount={amount})."));
+        {
+            var ex = new ArgumentException($"Amount of EVs to create cannot be negative (amount={amount}).", nameof(amount));
+            Log.Error(ex, "Amount of EVs to create cannot be negative (amount={Amount}).", amount);
+            throw ex;
+        }
         else if (amount == 0)
+        {
             return;
+        }
 
         var currentTime = eventScheduler.CurrentTime;
         var interval = (double)distributionWindow / amount;

@@ -3,6 +3,7 @@ namespace Engine.Events;
 using Engine.Metrics.Events;
 using Engine.Metrics;
 using Core.Vehicles;
+using Serilog;
 
 /// <summary>
 /// Handles the <see cref="ArriveAtDestination"/> event by collecting a <see cref="ArrivalAtDestinationMetric"/> for the EV that arrived at its destination,
@@ -24,7 +25,9 @@ public class DestinationArrivalHandler(
         metrics.RecordArrival(metric);
         if (!evs.Remove(e.EV.Id))
         {
-            throw new KeyNotFoundException($"Key {e.EV} not found.");
+            var ex = new KeyNotFoundException($"EV with ID {e.EV.Id} not found in EV store when handling arrival at destination.");
+            Log.Error(ex, "EV with ID {EVId} not found in EV store when handling arrival at destination.", e.EV.Id);
+            throw ex;
         }
     }
 }

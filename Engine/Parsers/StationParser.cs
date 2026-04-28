@@ -2,6 +2,7 @@ namespace Engine.Parsers;
 
 using System.Text.Json;
 using Core.Shared;
+using Serilog;
 
 /// <summary>
 /// JSON parser for extracting station coordinates and converting them to lists of Position objects.
@@ -20,8 +21,14 @@ public static class StationParser
     {
         var stations = JsonSerializer.Deserialize<List<StationEntry>>(
             json,
-            new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
-            ?? throw new Exception("Invalid station JSON");
+            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+        if (stations == null)
+        {
+            var ex = new Exception("Failed to deserialize station JSON.");
+            Log.Error(ex, "Failed to deserialize station JSON from string: {Json}", json);
+            throw ex;
+        }
 
         return [.. stations.Select(s => new Position(s.Longitude, s.Latitude))];
     }

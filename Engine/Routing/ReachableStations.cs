@@ -4,7 +4,7 @@ using Core.Shared;
 using Core.Vehicles;
 using Core.Charging;
 using Core.GeoMath;
-using Core.Helper;
+using Serilog;
 
 /// <summary>
 /// Provides functionality to find reachable stations for an EV based on its current charge and the distance to nearby stations along a given path.
@@ -24,7 +24,11 @@ public class ReachableStations
     {
         var evBattery = ev.Battery;
         if (evBattery.StateOfCharge <= 0)
-            throw Log.Error(0, 0, new InvalidOperationException($"EV {ev} has no charge left, but is trying to find reachable stations. This should not happen."), ("EV", ev));
+        {
+            var ex = new InvalidOperationException($"EV {ev} has no charge left, but is trying to find reachable stations. This should not happen.");
+            Log.Error(ex, "EV {EV} has no charge left, but is trying to find reachable stations. This should not happen.", ev);
+            throw ex;
+        }
 
         var reach = evBattery.StateOfCharge * evBattery.MaxCapacityKWh / ((double)ev.ConsumptionWhPerKm / 1000);
         return [.. nearbyStations.Where(id =>
