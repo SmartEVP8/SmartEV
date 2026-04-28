@@ -34,22 +34,28 @@ public static class Program
                       .AllowAnyMethod()
                       .AllowAnyHeader());
         });
+        var formatter = new ExpressionTemplate(
+          "[{@l:u3}] {@m}\n{@x}");
 
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Verbose()
             .WriteTo.File(
+                formatter,
                 "logs/Headless-verbose-.jsonl",
                 restrictedToMinimumLevel: LogEventLevel.Verbose,
                 rollingInterval: RollingInterval.Minute)
             .WriteTo.File(
+                formatter,
                 "logs/Headless-information-.jsonl",
                 restrictedToMinimumLevel: LogEventLevel.Information,
                 rollingInterval: RollingInterval.Minute)
             .WriteTo.File(
+                formatter,
                 "logs/Headless-warning-.jsonl",
                 restrictedToMinimumLevel: LogEventLevel.Warning,
                 rollingInterval: RollingInterval.Minute)
             .WriteTo.File(
+                formatter,
                 "logs/Headless-error-.jsonl",
                 restrictedToMinimumLevel: LogEventLevel.Error,
                 rollingInterval: RollingInterval.Minute)

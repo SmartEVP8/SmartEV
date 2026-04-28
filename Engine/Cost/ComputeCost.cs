@@ -30,7 +30,7 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
         var weights = costStore.GetWeights();
         if (weights is null)
         {
-            var ex = new NoNullAllowedException("Cost weights not found in store.");
+            var ex = new ArgumentNullException("Cost weights not found in store.");
             Log.Error(ex, "Cost weights not found in store. Cannot compute cost for EV {EV}", ev);
             throw ex;
         }
@@ -65,7 +65,7 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
 
         if (bestStation is null)
         {
-            var ex = new NoNullAllowedException("No suitable station found.");
+            var ex = new ArgumentNullException("No suitable station found.");
             Log.Error(ex, "No suitable station found for EV {EV} with station durations: {StationDurations}", ev, stationDurations);
             throw ex;
         }
