@@ -59,7 +59,7 @@ public static class EngineConfiguration
             SnapshotInterval = 1000 * 20 * 60,
             EnablePerformanceMetrics = true,
             EVDistributionWindowsSize = 30 * 60 * 1000,
-            EVSpawnFraction = 0.1f,
+            EVSpawnFraction = 0.3,
             PopulationScaler = 0.7f,
             ChargeBufferPercent = 0.9f,
             DistanceScaler = 1.7f,
