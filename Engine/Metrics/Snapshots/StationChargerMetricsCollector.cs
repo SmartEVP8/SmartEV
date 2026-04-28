@@ -96,7 +96,7 @@ public class StationMetricsCollector(List<Station> stations)
                 return targetEVDemandKWh;
             default:
                 var ex = new SkillissueException("Do we have a third type of charger? :O");
-                Log.Error(ex, "Unknown charger type {ChargerType} for charger {ChargerId} at time {Time}", charger.GetType().Name, charger.Id, simNow);
+                Log.Error(ex, "Unknown charger type {ChargerType} for charger {ChargerId} at time {@Time}", charger.GetType().Name, charger.Id, simNow);
                 throw ex;
         }
     }

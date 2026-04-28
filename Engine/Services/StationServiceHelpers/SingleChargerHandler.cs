@@ -52,7 +52,7 @@ public class SingleChargerHandler(
         if (!charger.TryConnect())
         {
             var ex = new InvalidOperationException($"Logic Error: EV {next.EVId} reached Charger {charger.Id} but TryConnect failed, indicating a mismatch between the charger's session state and its connector state.");
-            Log.Error(ex, "Logic Error: EV {EVId} reached Charger {ChargerId} but TryConnect failed, indicating a mismatch between the charger's session state and its connector state.", next.EVId, charger.Id);
+            Log.Error(ex, "Logic Error: EV {@EVId} reached Charger {ChargerId} but TryConnect failed, indicating a mismatch between the charger's session state and its connector state.", next.EVId, charger.Id);
             throw ex;
         }
 
@@ -74,7 +74,7 @@ public class SingleChargerHandler(
 
         if (result.CarA.FinishTime is { } finishTime)
         {
-            Log.Information("Scheduling EndCharging event for EV {EVId} on charger {ChargerId} at station {StationId} with finish time {FinishTime}.", next.EVId, charger.Id, station.Id, finishTime);
+            Log.Information("Scheduling EndCharging event for EV {@EVId} on charger {ChargerId} at station {@StationId} with finish time {FinishTime}.", next.EVId, charger.Id, station.Id, finishTime);
             var token = scheduler.ScheduleEvent(new EndCharging(evs[next.EVId], charger, station, finishTime));
             charger.Session = charger.Session with { CancellationToken = token };
         }

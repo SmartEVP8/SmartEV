@@ -47,7 +47,7 @@ public static class GeoMath
         if (Math.Cos(wp1.Latitude + wp2.Latitude) == 0)
         {
             var ex = new ArgumentException("Waypoints cannot be at the poles where cosine of latitude is zero.", nameof(wp1));
-            Log.Error(ex, "Invalid waypoints at poles: {Waypoint1}, {Waypoint2}", wp1, wp2);
+            Log.Error(ex, "Invalid waypoints at poles: {@Waypoint1}, {@Waypoint2}", wp1, wp2);
             throw ex;
         }
 
@@ -145,7 +145,7 @@ public static class GeoMath
         if (Math.Cos((lat1 + lat2) / 2) == 0)
         {
             var ex = new ArgumentException("Positions cannot be at the poles where cosine of latitude is zero.", nameof(a));
-            Log.Error(ex, "Invalid positions at poles: {PositionA}, {PositionB}", a, b);
+            Log.Error(ex, "Invalid positions at poles: {@PositionA}, {@PositionB}", a, b);
             throw ex;
         }
 

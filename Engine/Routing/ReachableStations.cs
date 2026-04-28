@@ -26,7 +26,7 @@ public class ReachableStations
         if (evBattery.StateOfCharge <= 0)
         {
             var ex = new InvalidOperationException($"EV {ev} has no charge left, but is trying to find reachable stations. This should not happen.");
-            Log.Error(ex, "EV {EV} has no charge left, but is trying to find reachable stations. This should not happen.", ev);
+            Log.Error(ex, "EV {@EV} has no charge left, but is trying to find reachable stations. This should not happen.", ev);
             throw ex;
         }
 

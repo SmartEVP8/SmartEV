@@ -26,7 +26,7 @@ public class DestinationArrivalHandler(
         if (!evs.Remove(e.EV.Id))
         {
             var ex = new KeyNotFoundException($"EV with ID {e.EV.Id} not found in EV store when handling arrival at destination.");
-            Log.Error(ex, "EV with ID {EVId} not found in EV store when handling arrival at destination.", e.EV.Id);
+            Log.Error(ex, "EV with ID {@EVId} not found in EV store when handling arrival at destination.", e.EV.Id);
             throw ex;
         }
     }

@@ -42,8 +42,8 @@ public static class Program
         provider.GetRequiredService<StationService>();
 
         var coordinator = provider.GetRequiredService<Simulation>() ?? throw new InvalidOperationException("Failed to resolve Simulation from service provider. This should not happen.");
-        var formatter = new ExpressionTemplate(
-            "[{@l:u3}] {@m}\n{@x}");
+        var formatter = new ExpressionTemplate("[{@l:u3}] {@m}\n{@x}");
+
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Verbose()
             .WriteTo.File(

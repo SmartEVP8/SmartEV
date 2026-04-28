@@ -304,7 +304,7 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
         if (!ok)
         {
             var ex = new InvalidOperationException("Failed to snap one or more stations to the road network.");
-            Log.Error(ex, "Failed to snap one or more stations to the road network with station coordinates: {StationCoords}", coords);
+            Log.Error(ex, "Failed to snap one or more stations to the road network with station coordinates: {@StationCoords}", coords);
             throw ex;
         }
 

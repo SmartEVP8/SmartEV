@@ -31,7 +31,7 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
         if (weights is null)
         {
             var ex = new ArgumentNullException("Cost weights not found in store.");
-            Log.Error(ex, "Cost weights not found in store. Cannot compute cost for EV {EV}", ev);
+            Log.Error(ex, "Cost weights not found in store. Cannot compute cost for EV {@EV}", ev);
             throw ex;
         }
 
@@ -66,7 +66,7 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
         if (bestStation is null)
         {
             var ex = new ArgumentNullException("No suitable station found.");
-            Log.Error(ex, "No suitable station found for EV {EV} with station durations: {StationDurations}", ev, stationDurations);
+            Log.Error(ex, "No suitable station found for EV {@EV} with station durations: {StationDurations}", ev, stationDurations);
             throw ex;
         }
 
@@ -85,7 +85,7 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
         if (remainingCurrentRoute <= 0)
         {
             var ex = new InvalidOperationException($"EV {ev} has no remaining route duration, cannot calculate path deviation cost.");
-            Log.Error(ex, "EV {EV} has no remaining route duration at time {Time}, cannot calculate path deviation cost.", ev, time);
+            Log.Error(ex, "EV {@EV} has no remaining route duration at time {@Time}, cannot calculate path deviation cost.", ev, time);
             throw ex;
         }
 

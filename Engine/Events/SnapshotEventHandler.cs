@@ -26,7 +26,7 @@ public class SnapshotEventHandler(
     /// scheduler, and power delivery.</param>
     public void Handle(SnapshotEvent e)
     {
-        Log.Information("Handling SnapshotEvent at time {Time}. Collecting metrics for all stations and chargers.", e.Time);
+        Log.Information("Handling SnapshotEvent at time {@Time}. Collecting metrics for all stations and chargers.", e.Time);
         var (chargerMetrics, stationMetrics) = stationMetricsCollector.Collect(rescheduleTime, e.Time);
 
         foreach (var stationMetric in stationMetrics)

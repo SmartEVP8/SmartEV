@@ -74,7 +74,7 @@ public static class PolygonParser
         if (geo is null)
         {
             var ex = new Exception("Failed to deserialize GeoJSON.");
-            Log.Error(ex, "Failed to deserialize GeoJSON from string: {Json}", json);
+            Log.Error(ex, "Failed to deserialize GeoJSON from string: {@Json}", json);
             throw ex;
         }
 
