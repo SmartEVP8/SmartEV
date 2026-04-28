@@ -3,7 +3,7 @@ namespace Core.Charging;
 using System.Collections.Immutable;
 using System;
 using System.Globalization;
-using Core.Helper;
+using Serilog;
 
 /// <summary>
 /// Provides estimated EV charging prices in DKK/kWh for each hour of the day (0–23).
@@ -42,9 +42,17 @@ public class EnergyPrices(FileInfo csvPath, Random random)
     public float GetHourPrice(DayOfWeek day, int hour)
     {
         if (!Enum.IsDefined(day))
-            throw Log.Error(0, 0, new ArgumentOutOfRangeException(nameof(day), "Invalid day of week."), ("Day", day), ("Hour", hour));
+        {
+            var ex = new ArgumentOutOfRangeException(nameof(day), $"Invalid day of week: {day}");
+            Log.Error(ex, "Invalid day of week: {Day}", day);
+            throw ex;
+        }
         else if (hour < 0 || hour > 23)
-            throw Log.Error(0, 0, new ArgumentOutOfRangeException(nameof(hour), "Hour must be between 0 and 23."), ("Day", day), ("Hour", hour));
+        {
+            var ex = new ArgumentOutOfRangeException(nameof(hour), $"Hour must be between 0 and 23. Received {hour}.");
+            Log.Error(ex, "Invalid hour: {Hour}", hour);
+            throw ex;
+        }
 
         return _energyPriceTable.First(x => x.Day == day && x.Hour == hour).Price;
     }

@@ -2,7 +2,7 @@ namespace Core.Vehicles;
 
 using Core.Routing;
 using Core.Shared;
-using Core.Helper;
+using Serilog;
 
 /// <summary>
 /// Defines the possible states of an EV.
@@ -68,7 +68,12 @@ public class EV(int id, Battery battery, Preferences preferences, Journey journe
     public Position Advance(Time currentTime)
     {
         if (currentTime < Journey.Current.Departure)
-            throw Log.Error(0, currentTime, new InvalidOperationException($"Cannot advance EV to a time before the current journey's departure (currentTime={currentTime}, departure={Journey.Current.Departure}, {this})"));
+        {
+            var ex = new InvalidOperationException($"Cannot advance EV to a time before the current journey's departure (currentTime={currentTime}, departure={Journey.Current.Departure}, {this})");
+            Log.Error(ex, "Invalid advance time: {CurrentTime} is before journey departure: {Departure}. {EV}", currentTime, Journey.Current.Departure, this);
+            throw ex;
+        }
+
         var previousJourney = Journey.Current;
         var currentPosition = Journey.AdvanceTo(currentTime);
         ConsumeEnergy(previousJourney, currentTime);
@@ -126,15 +131,24 @@ public class EV(int id, Battery battery, Preferences preferences, Journey journe
     public float CalcDesiredSoC(Time arrivalAtStation)
     {
         if (Battery.MaxCapacityKWh == 0)
-            throw Log.Error(0, arrivalAtStation, new InvalidOperationException($"Battery capacity must be greater than zero when calculating desired SoC (arrivalAtStation={arrivalAtStation}, {this})"));
+        {
+            var ex2 = new InvalidOperationException($"Battery capacity must be greater than zero when calculating desired SoC (arrivalAtStation={arrivalAtStation}, {this})");
+            Log.Error(ex2, "Battery capacity must be greater than zero when calculating desired SoC. ArrivalAtStation={ArrivalAtStation}, {EV}", arrivalAtStation, this);
+            throw ex2;
+        }
         var remainingDistanceKm = Journey.RemainingDistanceToDestination(arrivalAtStation);
         var energyToDest = EnergyForDistanceKWh(remainingDistanceKm);
         var percentNeededToDestination = energyToDest / Battery.MaxCapacityKWh;
         var chargeToPercent = percentNeededToDestination + Preferences.MinAcceptableCharge;
         var desiredSoC = chargeToPercent > 1f ? 0.8f : chargeToPercent;
-        return float.IsFinite(desiredSoC)
-            ? Math.Clamp(desiredSoC + 0.01f, 0f, 1f)
-            : throw Log.Error(0, arrivalAtStation, new InvalidOperationException($"Calculated desired SoC is not finite (desiredSoC={desiredSoC}, energyToDest={energyToDest}, remainingDistanceKm={remainingDistanceKm}, arrivalAtStation={arrivalAtStation}, {this})"));
+
+        if (float.IsFinite(desiredSoC))
+            return Math.Clamp(desiredSoC + 0.01f, 0f, 1f);
+
+        var ex = new InvalidOperationException($"Calculated desired SoC is not finite (desiredSoC={desiredSoC}, energyToDest={energyToDest}, remainingDistanceKm={remainingDistanceKm}, arrivalAtStation={arrivalAtStation}, {this})");
+        Log.Error(ex, "Calculated desired SoC is not finite. DesiredSoC={DesiredSoC}, EnergyToDestinationKWh={EnergyToDest}, RemainingDistanceKm={RemainingDistanceKm}, ArrivalAtStation={ArrivalAtStation}, {EV}",
+            desiredSoC, energyToDest, remainingDistanceKm, arrivalAtStation, this);
+        throw ex;
     }
 
     /// <summary>
@@ -145,16 +159,26 @@ public class EV(int id, Battery battery, Preferences preferences, Journey journe
     public float PreCalculatedTargetSoC(float distanceKM)
     {
         if (Battery.MaxCapacityKWh <= 0)
-            throw Log.Error(0, 0, new InvalidOperationException($"Battery capacity must be greater than zero ({this})"));
+        {
+            var ex2 = new InvalidOperationException($"Battery capacity must be greater than zero when calculating pre-calculated target SoC (distanceKM={distanceKM}, {this})");
+            Log.Error(ex2, "Battery capacity must be greater than zero when calculating pre-calculated target SoC. DistanceKM={DistanceKM}, {EV}", distanceKM, this);
+            throw ex2;
+        }
+
         var energyToDestinationKWh = EnergyForDistanceKWh(distanceKM);
 
         var energyNeededToDestKWh = (Preferences.MinAcceptableCharge * Battery.MaxCapacityKWh) + energyToDestinationKWh;
 
         var chargeToPercent = energyNeededToDestKWh / Battery.MaxCapacityKWh;
         var desiredSoC = chargeToPercent > 1f ? 0.8f : chargeToPercent;
-        return float.IsFinite(desiredSoC)
-            ? Math.Clamp(desiredSoC + 0.01f, 0f, 1f)
-            : throw Log.Error(0, 0, new InvalidOperationException($"Calculated desired SoC is not finite (desiredSoC={desiredSoC}"));
+
+        if (float.IsFinite(desiredSoC))
+            return Math.Clamp(desiredSoC + 0.01f, 0f, 1f);
+
+        var ex = new InvalidOperationException($"Calculated desired SoC is not finite (desiredSoC={desiredSoC}, energyToDestinationKWh={energyToDestinationKWh}, distanceKM={distanceKM}, {this})");
+        Log.Error(ex, "Calculated desired SoC is not finite. DesiredSoC={DesiredSoC}, EnergyToDestinationKWh={EnergyToDestinationKWh}, DistanceKM={DistanceKM}, {EV}",
+            desiredSoC, energyToDestinationKWh, distanceKM, this);
+        throw ex;
     }
 
     /// <summary>
@@ -165,7 +189,11 @@ public class EV(int id, Battery battery, Preferences preferences, Journey journe
     public float EstimateSoCAfterADuration(Time duration)
     {
         if (Battery.MaxCapacityKWh <= 0)
-            throw new InvalidOperationException($"Battery capacity must be greater than zero ({this})");
+        {
+            var ex = new InvalidOperationException($"Battery capacity must be greater than zero when estimating SoC after a duration (duration={duration}, {this})");
+            Log.Error(ex, "Battery capacity must be greater than zero when estimating SoC after a duration. Duration={Duration}, {EV}", duration, this);
+            throw ex;
+        }
 
         var journey = Journey.Original;
 
@@ -181,7 +209,11 @@ public class EV(int id, Battery battery, Preferences preferences, Journey journe
     public float EstimateSoCAtNextStop()
     {
         if (Battery.MaxCapacityKWh <= 0)
-            throw Log.Error(0, 0, new InvalidOperationException($"Battery capacity must be greater than zero ({this})"));
+        {
+            var ex = new InvalidOperationException($"Battery capacity must be greater than zero when estimating SoC at next stop (Journey.Current={Journey.Current}, {this})");
+            Log.Error(ex, "Battery capacity must be greater than zero when estimating SoC at next stop. JourneyCurrent={JourneyCurrent}, {EV}", Journey.Current, this);
+            throw ex;
+        }
 
         var journey = Journey.Current;
 
@@ -196,16 +228,25 @@ public class EV(int id, Battery battery, Preferences preferences, Journey journe
     public float CalcPreDesiredComputedSoC(float distanceToDestination)
     {
         if (Battery.MaxCapacityKWh <= 0)
-            throw Log.Error(0, 0, new InvalidOperationException($"Battery capacity must be greater than zero ({this})"));
+        {
+            var ex2 = new InvalidOperationException($"Battery capacity must be greater than zero when calculating pre-desired computed SoC (distanceToDestination={distanceToDestination}, {this})");
+            Log.Error(ex2, "Battery capacity must be greater than zero when calculating pre-desired computed SoC. DistanceToDestination={DistanceToDestination}, {EV}", distanceToDestination, this);
+            throw ex2;
+        }
         var energyToDestinationKWh = EnergyForDistanceKWh(distanceToDestination);
 
         var energyNeededToDest = (Preferences.MinAcceptableCharge * Battery.MaxCapacityKWh) + energyToDestinationKWh;
 
         var chargeToPercent = energyNeededToDest / Battery.MaxCapacityKWh;
         var desiredSoC = chargeToPercent > 1f ? 0.8f : chargeToPercent;
-        return float.IsFinite(desiredSoC)
-            ? Math.Clamp(desiredSoC + 0.01f, 0f, 1f)
-            : throw Log.Error(0, 0, new InvalidOperationException($"Calculated desired SoC is not finite (desiredSoC={desiredSoC}"));
+
+        if (float.IsFinite(desiredSoC))
+            return Math.Clamp(desiredSoC + 0.01f, 0f, 1f);
+
+        var ex = new InvalidOperationException($"Calculated desired SoC is not finite (desiredSoC={desiredSoC}, energyNeededToDest={energyNeededToDest}, distanceToDestination={distanceToDestination}, {this})");
+        Log.Error(ex, "Calculated desired SoC is not finite. DesiredSoC={DesiredSoC}, EnergyNeededToDestinationKWh={EnergyNeededToDest}, DistanceToDestination={DistanceToDestination}, {EV}",
+            desiredSoC, energyNeededToDest, distanceToDestination, this);
+        throw ex;
     }
 
     /// <summary>
@@ -235,7 +276,12 @@ public class EV(int id, Battery battery, Preferences preferences, Journey journe
         if (Preferences.MinAcceptableCharge >= Battery.StateOfCharge)
         {
             if (currentTime < Journey.Current.Departure)
-                throw Log.Error(0, 0, new InvalidOperationException($"Current time is before the departure of the current journey (currentTime={currentTime}, departure={Journey.Current.Departure}, {this})"));
+            {
+                var ex = new InvalidOperationException($"Current time is before the departure of the current journey (currentTime={currentTime}, departure={Journey.Current.Departure}, {this})");
+                Log.Error(ex, "Invalid time for battery check: {CurrentTime} is before journey departure: {Departure}. {EV}", currentTime, Journey.Current.Departure, this);
+                throw ex;
+            }
+
             return Journey.Current.Departure + 1;
         }
 
