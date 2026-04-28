@@ -1,7 +1,7 @@
 namespace API.EngineManager;
 
 using Engine.Init;
-using Core.Helper;
+using Serilog;
 
 /// <summary>
 /// Manages the lifecycle and configuration of the simulation engine.
@@ -84,8 +84,9 @@ public class EngineManager
     {
         if (_engineProvider is null)
         {
-            throw Log.Error(0, 0, new InvalidOperationException(
-                "Engine not initialized. Call /init-engine before using engine-scoped services."));
+            var ex = new InvalidOperationException("Engine not initialized. Call /init-engine before using engine-scoped services.");
+            Log.Error(ex, "Attempted to resolve engine service {ServiceType} before engine initialization.", typeof(T).Name);
+            throw ex;
         }
 
         return _engineProvider.GetRequiredService<T>();

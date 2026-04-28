@@ -4,7 +4,7 @@ using Services;
 using Engine.Events;
 using Engine.Cost;
 using API.EngineManager;
-using API.Protocol;
+using Protocol;
 using Google.Protobuf;
 using Microsoft.Extensions.Logging;
 using Core.Charging;
@@ -199,7 +199,7 @@ public static class Program
             }
             catch (Exception ex)
             {
-                Core.Helper.Log.Error(0, 0, ex);
+                Log.Error(ex, "Error handling WebSocket connection");
                 throw;
             }
             finally
@@ -209,7 +209,7 @@ public static class Program
             }
         });
 
-        Core.Helper.Log.Info(0, 0, "API started.");
+        Log.Information("API started.");
         app.Run();
     }
 }
