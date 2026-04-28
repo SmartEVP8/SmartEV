@@ -5,7 +5,7 @@ using Engine.Events;
 using Engine.Services;
 using Engine.Services.StationServiceHelpers;
 using Engine.Vehicles;
-using Protocol;
+using API.Protocol;
 using Core.Helper;
 
 /// <summary>
@@ -68,7 +68,6 @@ public class SnapshotHandler(
         var (sessionA, sessionB) = chargerHandler.GetSessions();
         var charger = chargerHandler.Charger;
         var schedule = chargerHandler.EstimateWaitTime(eventScheduler.CurrentTime).Schedule;
-
 
         var chargerState = new ChargerState
         {

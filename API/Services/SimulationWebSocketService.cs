@@ -2,7 +2,7 @@ namespace API.Services;
 
 using System.Net.WebSockets;
 using Google.Protobuf;
-using Protocol;
+using API.Protocol;
 using Core.Helper;
 
 /// <summary>
@@ -92,7 +92,7 @@ public class SimulationWebSocketService(
         }
     }
 
-    private async Task ProcessConnectionAsync(WebSocket webSocket, CancellationToken cancelToken)
+    private static async Task ProcessConnectionAsync(WebSocket webSocket, CancellationToken cancelToken)
     {
         var buffer = new byte[_bufferSize];
 
