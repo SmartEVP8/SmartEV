@@ -34,30 +34,25 @@ public static class Program
                       .AllowAnyMethod()
                       .AllowAnyHeader());
         });
-        var formatter = new ExpressionTemplate("{ {evId: @p['evId'], Time: @p['Time'], Level: @l, Message: @m, Exception: @x, ..@p} }\n");
 
-        Serilog.Log.Logger = new LoggerConfiguration()
+        Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Verbose()
             .WriteTo.File(
-                formatter,
                 "logs/Headless-verbose-.jsonl",
                 restrictedToMinimumLevel: LogEventLevel.Verbose,
-                rollingInterval: RollingInterval.Day)
+                rollingInterval: RollingInterval.Minute)
             .WriteTo.File(
-                formatter,
                 "logs/Headless-information-.jsonl",
                 restrictedToMinimumLevel: LogEventLevel.Information,
-                rollingInterval: RollingInterval.Day)
+                rollingInterval: RollingInterval.Minute)
             .WriteTo.File(
-                formatter,
                 "logs/Headless-warning-.jsonl",
                 restrictedToMinimumLevel: LogEventLevel.Warning,
-                rollingInterval: RollingInterval.Day)
+                rollingInterval: RollingInterval.Minute)
             .WriteTo.File(
-                formatter,
                 "logs/Headless-error-.jsonl",
                 restrictedToMinimumLevel: LogEventLevel.Error,
-                rollingInterval: RollingInterval.Day)
+                rollingInterval: RollingInterval.Minute)
             .CreateLogger();
 
         var app = builder.Build();
