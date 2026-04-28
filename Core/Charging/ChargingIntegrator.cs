@@ -154,7 +154,7 @@ public sealed class ChargingIntegrator(uint stepSeconds)
             t += step;
         }
 
-        Log.Verbose("IntegrateSingle: simNow={simNow}, maxKW={maxKW}, evId={ev.EVId}, stepSeconds={_stepSeconds}, duration={t}, energyDelivered={energy}, wastedEnergy={wastedEnergy}, finalSoc={soc}", simNow, maxKW, ev.EVId, _stepSeconds, t, energy, wastedEnergy, soc, ("EV", ev));
+        //Log.Verbose("IntegrateSingle: simNow={simNow}, maxKW={maxKW}, evId={ev.EVId}, stepSeconds={_stepSeconds}, duration={t}, energyDelivered={energy}, wastedEnergy={wastedEnergy}, finalSoc={soc}", simNow, maxKW, ev.EVId, _stepSeconds, t, energy, wastedEnergy, soc, ("EV", ev));
         var carAResult = new VehicleIntegrationResult(
             Soc: soc,
             FinishTime: finishTime,
@@ -255,8 +255,8 @@ public sealed class ChargingIntegrator(uint stepSeconds)
             t += step;
         }
 
-        Log.Verbose("IntegrateDual: simNow={simNow}, maxKW={maxKW}, evAId={evA.EVId}, stepSeconds={_stepSeconds}, duration={t}, energyDeliveredA={energyA}, wastedEnergy={wastedEnergy}, finalSocA={socA}", simNow, maxKW, evA.EVId, _stepSeconds, t, energyA, wastedEnergy, socA, ("EV_A", evA));
-        Log.Verbose("IntegrateDual: simNow={simNow}, maxKW={maxKW}, evBId={evB.EVId}, stepSeconds={_stepSeconds}, duration={t}, energyDeliveredB={energyB}, wastedEnergy={wastedEnergy}, finalSocB={socB}", simNow, maxKW, evB.EVId, _stepSeconds, t, energyB, wastedEnergy, socB, ("EV_B", evB));
+        //Log.Verbose("IntegrateDual: simNow={simNow}, maxKW={maxKW}, evAId={evA.EVId}, stepSeconds={_stepSeconds}, duration={t}, energyDeliveredA={energyA}, wastedEnergy={wastedEnergy}, finalSocA={socA}", simNow, maxKW, evA.EVId, _stepSeconds, t, energyA, wastedEnergy, socA, ("EV_A", evA));
+        //Log.Verbose("IntegrateDual: simNow={simNow}, maxKW={maxKW}, evBId={evB.EVId}, stepSeconds={_stepSeconds}, duration={t}, energyDeliveredB={energyB}, wastedEnergy={wastedEnergy}, finalSocB={socB}", simNow, maxKW, evB.EVId, _stepSeconds, t, energyB, wastedEnergy, socB, ("EV_B", evB));
         var carAResult = new VehicleIntegrationResult(
             Soc: socA,
             FinishTime: finishA,
