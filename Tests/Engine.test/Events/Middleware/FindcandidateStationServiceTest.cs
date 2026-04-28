@@ -8,16 +8,15 @@ namespace Engine.Test.Events.Middleware
     using Engine.Init;
     using Engine.Routing;
     using Engine.test.Builders;
-    using Engine.Vehicles;
 
     public class FindCandidateStationServiceTest
     {
         private readonly IFindCandidateStationService _service;
-        private readonly EVStore _evStore;
+        private readonly Dictionary<int, EV> _evStore;
 
         public FindCandidateStationServiceTest()
         {
-            _evStore = new EVStore(10);
+            _evStore = [];
             var stations = CoreTestData.Stations(
                 [
                     (0, 10.2039, 56.1629),
@@ -36,8 +35,8 @@ namespace Engine.Test.Events.Middleware
                 stubRouter,
                 stations,
                 spatialGrid,
-                _evStore,
-                EngineTestData.StationService(stations, new EventScheduler(), _evStore), EngineConfiguration.CreateDefaultSettings().ChargeBufferPercent);
+                EngineTestData.StationService(stations, new EventScheduler(), _evStore),
+                EngineConfiguration.CreateDefaultSettings().ChargeBufferPercent);
         }
 
         [Fact]
@@ -61,13 +60,13 @@ namespace Engine.Test.Events.Middleware
                 battery,
                 preferences,
                 distanceMeter: 300_000f);
-            _evStore.TryAllocate((int _, ref EV e) => { e = ev; }, out var evId);
+            _evStore[ev.Id] = ev;
 
             var action = _service.PreComputeCandidateStation();
-            var e = new FindCandidateStations(evId, 0);
+            var e = new FindCandidateStations(ev, 0);
 
             action(e);
-            var candidates = await _service.GetCandidateStationFromCache(evId);
+            var candidates = await _service.GetCandidateStationFromCache(ev.Id);
 
             var expected = new Dictionary<ushort, DurToStationAndDest>
             {
@@ -78,6 +77,7 @@ namespace Engine.Test.Events.Middleware
             Assert.Equal(expected, candidates);
         }
 
+        // StubRouter unchanged
         private class StubRouter(float[] durations, float[] distances) : IOSRMRouter
         {
             private readonly float[] _durations = durations;

@@ -11,7 +11,6 @@ using Engine.Grid;
 using Engine.Routing;
 using Engine.Services;
 using Engine.Utils;
-using Engine.Vehicles;
 using Core.Helper;
 
 /// <summary>
@@ -44,7 +43,6 @@ public class FindCandidateStationService : IFindCandidateStationService
     private readonly IOSRMRouter _router;
     private readonly Dictionary<ushort, Station> _stations;
     private readonly ISpatialGrid _spatialGrid;
-    private readonly EVStore _evStore;
     private readonly StationService _stationService;
     private readonly float _chargerBufferPercent;
 
@@ -58,7 +56,6 @@ public class FindCandidateStationService : IFindCandidateStationService
     /// <param name="router">Router used to compute paths from the EV's position to candidate stations and the destination.</param>
     /// <param name="stations">Stations to choose from.</param>
     /// <param name="spatialGrid">Used for pruning of <paramref name="stations"/>.</param>
-    /// <param name="evStore">Gives access to EV's.</param>
     /// <param name="stationService">Service for accessing station reservations.</param>
     /// <param name="chargerBufferPercent">Scalar for SoC difference.</param>
     /// <param name="maxConcurrency">The max amount of cores to use.</param>
@@ -66,7 +63,6 @@ public class FindCandidateStationService : IFindCandidateStationService
         IOSRMRouter router,
         Dictionary<ushort, Station> stations,
         ISpatialGrid spatialGrid,
-        EVStore evStore,
         StationService stationService,
         float chargerBufferPercent,
         int maxConcurrency = 4)
@@ -74,7 +70,6 @@ public class FindCandidateStationService : IFindCandidateStationService
         _router = router;
         _stations = stations;
         _spatialGrid = spatialGrid;
-        _evStore = evStore;
         _stationService = stationService;
         _chargerBufferPercent = chargerBufferPercent;
         _osrmConcurrencyLimit = new SemaphoreSlim(maxConcurrency, maxConcurrency);
@@ -128,7 +123,7 @@ public class FindCandidateStationService : IFindCandidateStationService
 
             var tcs = new TaskCompletionSource<Dictionary<ushort, DurToStationAndDest>>(TaskCreationOptions.RunContinuationsAsynchronously);
 
-            _evStationPaths[e.EVId] = new StationQuery(tcs.Task);
+            _evStationPaths[e.EV.Id] = new StationQuery(tcs.Task);
 
             lock (_queueLock)
             {
@@ -141,8 +136,8 @@ public class FindCandidateStationService : IFindCandidateStationService
 
     private Dictionary<ushort, DurToStationAndDest> ComputeCandidates(FindCandidateStations e, double PathdeviationMultiplier = 1.0)
     {
-        ref var ev = ref _evStore.Get(e.EVId);
-        var pos = ev.Advance(e.Time) ?? throw Log.Error(e.EVId, e.Time, new SkillissueException($"EV {e.EVId} has no position at time {e.Time} after advancing. This should not happen."));
+        var ev = e.EV;
+        var pos = ev.Advance(e.Time) ?? throw Log.Error(ev.Id, e.Time, new SkillissueException($"EV {ev.Id} has no position at time {e.Time} after advancing. This should not happen."));
 
         var pathDeviationMultiplied = ev.Preferences.MaxPathDeviation * PathdeviationMultiplier;
 
@@ -184,28 +179,28 @@ public class FindCandidateStationService : IFindCandidateStationService
                 refinedCandidateDurations[stationId] = new DurToStationAndDest(toStationDuration, toDestinationDuration, toDestinationDistance, toStationDistance);
             }
 
-            if (refinedCandidateDurations.Count == 0 && _stationService.GetReservationStationId(e.EVId) is ushort && ev.DistanceOnCurrentChargeKm() > pathDeviationMultiplied)
+            if (refinedCandidateDurations.Count == 0 && _stationService.GetReservationStationId(ev.Id) is ushort && ev.DistanceOnCurrentChargeKm() > pathDeviationMultiplied)
             {
                 refinedCandidateDurations = ComputeCandidates(e, PathdeviationMultiplier * 1.25);
             }
             else if (refinedCandidateDurations.Count == 0)
             {
-                Log.Warn(e.EVId, e.Time, $"No candidate stations found for EV {e.EVId} at time {e.Time}.");
+                Log.Warn(ev.Id, e.Time, $"No candidate stations found for EV {ev.Id} at time {e.Time}.");
             }
             else
             {
-                Log.Verbose(e.EVId, e.Time, $"Computed candidate stations for EV {e.EVId}: amount of stations: {refinedCandidateDurations.Count} at time {e.Time}.");
+                Log.Verbose(ev.Id, e.Time, $"Computed candidate stations for EV {ev.Id}: amount of stations: {refinedCandidateDurations.Count} at time {e.Time}.");
             }
 
             return refinedCandidateDurations;
         }
 
-        if (_stationService.GetReservationStationId(e.EVId) is ushort && ev.DistanceOnCurrentChargeKm() > pathDeviationMultiplied)
+        if (_stationService.GetReservationStationId(ev.Id) is ushort && ev.DistanceOnCurrentChargeKm() > pathDeviationMultiplied)
         {
             return ComputeCandidates(e, PathdeviationMultiplier * 1.25);
         }
 
-        Log.Warn(e.EVId, e.Time, $"No candidate stations found for EV {e.EVId}. Could not find any stations along polyline, even after expanding search radius. Returning empty candidate set.  at time {e.Time}");
+        Log.Warn(ev.Id, e.Time, $"No candidate stations found for EV {ev.Id}. Could not find any stations along polyline, even after expanding search radius. Returning empty candidate set.  at time {e.Time}");
         return [];
     }
 

@@ -7,6 +7,7 @@ using Engine.Services.StationServiceHelpers;
 using Engine.Vehicles;
 using API.Protocol;
 using Core.Helper;
+using Core.Vehicles;
 
 /// <summary>
 /// Handles snapshot requests from the client by querying the engine.
@@ -15,7 +16,7 @@ using Core.Helper;
 /// <param name="stationService">The service for managing charging stations.</param>
 /// <param name="eventScheduler">The event scheduler for getting the current simulation time.</param>
 public class SnapshotHandler(
-    EVStore evStore,
+    IReadOnlyDictionary<int, EV> evStore,
     StationService stationService,
     EventScheduler eventScheduler)
 {
@@ -27,8 +28,8 @@ public class SnapshotHandler(
     {
         var snapshot = new SimulationSnapshot
         {
-            TotalEvs = evStore.GetTotalEVsInSimulation(),
-            TotalCharging = evStore.GetChargingEVCount(),
+            TotalEvs = (uint)evStore.Count,
+            TotalCharging = (uint)evStore.Count(ev => ev.Value.EVState == EVState.Charging),
             SimulationTimeMs = eventScheduler.CurrentTime,
         };
 
@@ -38,18 +39,11 @@ public class SnapshotHandler(
     /// <summary>
     /// Builds a station snapshot response by querying the engine for the current state of the specified station.
     /// </summary>
-    /// <param name="stationId">The ID of the station for which to build the snapshot.</param>
+    /// <param name="station">The station for which to build the snapshot.</param>
     /// <returns>The envelope containing the station snapshot response.</returns>
-    public Envelope BuildStationSnapshot(ushort stationId)
+    public Envelope BuildStationSnapshot(Station station)
     {
-        var stationState = new StationState { StationId = stationId };
-
-        var station = stationService.GetStation(stationId);
-        if (station == null)
-        {
-            Log.Warn(0, 0, $"Station with ID {stationId} not found", ("StationId", stationId));
-            return new Envelope { StationStateResponse = stationState };
-        }
+        var stationState = new StationState { StationId = station.Id };
 
         foreach (var charger in station.Chargers)
         {
@@ -147,7 +141,7 @@ public class SnapshotHandler(
         var result = new List<EVOnRoute>();
         foreach (var evId in evsOnRoute)
         {
-            var ev = evStore.Get(evId);
+            var ev = evStore[evId];
             var evOnRoute = new EVOnRoute { EvId = evId };
 
             foreach (var waypoint in ev.Journey.Current.Waypoints)

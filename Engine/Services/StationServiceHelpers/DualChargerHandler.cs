@@ -8,6 +8,7 @@ using Engine.Metrics;
 using Engine.Metrics.Events;
 using Core.Helper;
 using Engine.Utils;
+using Core.Vehicles;
 
 /// <summary>
 /// Handles the session lifecycle for a <see cref="DualCharger"/>,
@@ -18,16 +19,17 @@ using Engine.Utils;
 /// <param name="integrator">The charging integrator used to simulate sessions.</param>
 /// <param name="scheduler">The event scheduler used to schedule end charging events.</param>
 /// <param name="metrics">The metrics service used to record wait times.</param>
+/// <param name="evs">The EV store</param>
 public class DualChargerHandler(
     DualCharger charger,
     ChargingIntegrator integrator,
     EventScheduler scheduler,
-    MetricsService metrics)
+    MetricsService metrics,
+    IReadOnlyDictionary<int, EV> evs)
     : IChargerHandler
 {
     /// <inheritdoc/>
     public ChargerBase Charger => charger;
-
 
     /// <inheritdoc/>
     public (ActiveSession? A, ActiveSession? B) GetSessions()
@@ -39,23 +41,23 @@ public class DualChargerHandler(
     /// Does nothing if both sides are occupied and the queue is empty.
     /// </summary>
     /// <param name="simNow">The current simulation time.</param>
-    /// <param name="stationId">The ID of the station.</param>
+    /// <param name="station">The station.</param>
     /// <exception cref="InvalidOperationException">
     /// Thrown if the charger has no active sessions after attempting to connect queued vehicles,
     /// indicating a logic error in connection tracking.
     /// </exception>
-    public void StartNext(Time simNow, ushort stationId)
+    public void StartNext(Time simNow, Station station)
     {
         var wasAloneA = charger.SessionA is not null && charger.SessionB is null;
         var wasAloneB = charger.SessionB is not null && charger.SessionA is null;
 
-        ConnectQueuedVehicles(simNow, stationId);
+        ConnectQueuedVehicles(simNow, station.Id);
 
         if (charger.SessionA is null && charger.SessionB is null)
         {
             throw Log.Error(0, simNow, new InvalidOperationException(
                 $"Logic Error: DualCharger {charger.Id} is empty but failed to connect EV {charger.Queue.Peek().EVId}."),
-                ((string Key, object Value))("StationId", stationId),
+                ((string Key, object Value))("StationId", station.Id),
                 ((string Key, object Value))("Charger", charger));
         }
 
@@ -68,7 +70,7 @@ public class DualChargerHandler(
         if (charger.SessionB is not null)
             charger.SessionB = charger.SessionB with { Plan = result };
 
-        ScheduleEndEvents(result, stationId);
+        ScheduleEndEvents(result, station);
     }
 
     /// <summary>
@@ -187,8 +189,8 @@ public class DualChargerHandler(
     /// Schedules end charging events for any active sessions that have a known finish time in the integration result.
     /// </summary>
     /// <param name="result">The integration result containing finish times for each side.</param>
-    /// <param name="stationId">The ID of the station.</param>
-    private void ScheduleEndEvents(IntegrationResult? result, ushort stationId)
+    /// <param name="station">The station.</param>
+    private void ScheduleEndEvents(IntegrationResult? result, Station station)
     {
         if (result is null) return;
 
@@ -199,7 +201,7 @@ public class DualChargerHandler(
         {
             if (session is null || vehicleResult?.FinishTime is not { } finish) return session;
 
-            var token = scheduler.ScheduleEvent(new EndCharging(session.EVId, charger.Id, stationId, finish));
+            var token = scheduler.ScheduleEvent(new EndCharging(evs[session.EVId], charger, station, finish));
             return session with { CancellationToken = token };
         }
     }

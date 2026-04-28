@@ -18,7 +18,7 @@ public class EVTests
             new(10, 0),
         };
         var journey = new Journey(departure: 0, duration: 100000, distanceMeters: 10_000, waypoints);
-        var ev = new EV(battery, preferences, journey, 100);
+        var ev = new EV(0, battery, preferences, journey, 100);
 
         var currentPosition = ev.Advance(50000);
 
@@ -39,7 +39,7 @@ public class EVTests
             new(10, 0),
         };
         var journey = new Journey(departure: 0, duration: 100000, distanceMeters: 10_000, waypoints);
-        var ev = new EV(battery, preferences, journey, 100);
+        var ev = new EV(1, battery, preferences, journey, 100);
 
         ev.Advance(50000);
 
@@ -67,8 +67,8 @@ public class EVTests
     };
         var journey1 = new Journey(departure: 0, duration: 100000, distanceMeters: 10_000, waypoints);
         var journey2 = new Journey(departure: 0, duration: 100000, distanceMeters: 10_000, waypoints);
-        var ev1 = new EV(battery1, preferences, journey1, 100);
-        var ev2 = new EV(battery2, preferences, journey2, 100);
+        var ev1 = new EV(1, battery1, preferences, journey1, 100);
+        var ev2 = new EV(2, battery2, preferences, journey2, 100);
 
         // Estimate SoC at next stop for ev1 (without advancing)
         var estimatedSoC = ev1.EstimateSoCAtNextStop();
@@ -93,7 +93,7 @@ public class EVTests
         };
         var journey = new Journey(departure: 0, duration: 25200000, distanceMeters: 400000, waypoints);
         journey.UpdateRoute(waypoints, waypoints[1], departure: 0, duration: 25200000, newDistanceKm: 400);
-        var ev = new EV(battery, preferences, journey, 100);
+        var ev = new EV(1, battery, preferences, journey, 100);
 
         var desiredSoC = ev.CalcDesiredSoC(12600000);
 
@@ -111,7 +111,7 @@ public class EVTests
             new(1, 0),
         };
         var journey = new Journey(departure: 0, duration: 100000, distanceMeters: 1_000, waypoints);
-        var ev = new EV(battery, preferences, journey, 150);
+        var ev = new EV(1, battery, preferences, journey, 150);
 
         var ex = Assert.Throws<InvalidOperationException>(() => ev.CalcDesiredSoC(arrivalAtStation: 10000));
         Assert.Contains("Battery capacity", ex.Message);
@@ -126,7 +126,7 @@ public class EVTests
         journey.UpdateRoute(waypoints, waypoints[^1], 0, 25200000, 2000f);
         var battery = new Battery(50, 100, 0.5f);
         var preferences = new Preferences(1f, 0.1f, 10.0f);
-        var ev = new EV(battery, preferences, journey, 200);
+        var ev = new EV(1, battery, preferences, journey, 200);
 
         var desiredSoC = ev.CalcDesiredSoC(0);
 
@@ -140,7 +140,7 @@ public class EVTests
         var journey = new Journey(departure: 0, duration: 100000, distanceMeters: 1000, waypoints);
         var battery = new Battery(100, 100, 0.5f);
         var preferences = new Preferences(1f, 0.15f, 10.0f);
-        var ev = new EV(battery, preferences, journey, 150);
+        var ev = new EV(1, battery, preferences, journey, 150);
 
         var desiredSoC = ev.CalcDesiredSoC(100000);
 
@@ -156,7 +156,7 @@ public class EVTests
         var journey = new Journey(departure: 0, duration: 100000, distanceMeters: 10_000, waypoints);
         ushort efficiency = 200; // 200 Wh/km
 
-        var ev = new EV(battery, preferences, journey, efficiency);
+        var ev = new EV(1, battery, preferences, journey, efficiency);
 
         ev.Advance(100000);
 
@@ -285,7 +285,7 @@ public class EVTests
         var journey = new Journey(departure: 0, duration: 5400, distanceMeters: 90, waypoints);
         var battery = new Battery(75, 150, 0.5f);
         var preferences = new Preferences(1f, 0.15f, 10.0f);
-        var ev = new EV(battery, preferences, journey, 180);
+        var ev = new EV(1, battery, preferences, journey, 180);
 
         var distanceToDestinationKm = 45f;
         var preComputedDesiredSoC = ev.PreCalculatedTargetSoC(distanceToDestinationKm);
@@ -300,7 +300,7 @@ public class EVTests
         var journey = new Journey(departure: 0, duration: 3600, distanceMeters: 10000, waypoints);
         var battery = new Battery(100, 100, 1f);
         var preferences = new Preferences(1f, 0.1f, 10.0f);
-        var ev = new EV(battery, preferences, journey, 200);
+        var ev = new EV(1, battery, preferences, journey, 200);
 
         var estimatedSoC = ev.EstimateSoCAfterADuration(1800000);
 
@@ -314,7 +314,7 @@ public class EVTests
         var journey = new Journey(departure: 0, duration: 3600, distanceMeters: 10000, waypoints);
         var battery = new Battery(100, 100, 0.5f);
         var preferences = new Preferences(1f, 0.1f, 10.0f);
-        var ev = new EV(battery, preferences, journey, 200);
+        var ev = new EV(1, battery, preferences, journey, 200);
 
         var estimatedSoC = ev.EstimateSoCAfterADuration(0);
         Assert.InRange(estimatedSoC, 0.499f, 0.501f);
@@ -327,7 +327,7 @@ public class EVTests
         var journey = new Journey(departure: 0, duration: 3600, distanceMeters: 10000, waypoints);
         var battery = new Battery(100, 100, 1f);
         var preferences = new Preferences(1f, 0.1f, 10.0f);
-        var ev = new EV(battery, preferences, journey, 200);
+        var ev = new EV(1, battery, preferences, journey, 200);
 
         var socUsed = ev.SoCUsedAfterADistance(300);
 
