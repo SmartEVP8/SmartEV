@@ -4,7 +4,7 @@ using Services;
 using Engine.Events;
 using Engine.Cost;
 using API.EngineManager;
-using Protocol;
+using API.Protocol;
 using Google.Protobuf;
 using Microsoft.Extensions.Logging;
 using Core.Charging;
@@ -41,24 +41,20 @@ public static class Program
             .MinimumLevel.Verbose()
             .WriteTo.File(
                 formatter,
-                "logs/Headless-verbose-.jsonl",
-                restrictedToMinimumLevel: LogEventLevel.Verbose,
-                rollingInterval: RollingInterval.Minute)
+                "logs/Headless-verbose-" + DateTime.Now.ToString("yyyy-MM-dd-HH-mm") + ".jsonl",
+                restrictedToMinimumLevel: LogEventLevel.Verbose)
             .WriteTo.File(
                 formatter,
-                "logs/Headless-information-.jsonl",
-                restrictedToMinimumLevel: LogEventLevel.Information,
-                rollingInterval: RollingInterval.Minute)
+                "logs/Headless-information-" + DateTime.Now.ToString("yyyy-MM-dd-HH-mm") + ".jsonl",
+                restrictedToMinimumLevel: LogEventLevel.Information)
             .WriteTo.File(
                 formatter,
-                "logs/Headless-warning-.jsonl",
-                restrictedToMinimumLevel: LogEventLevel.Warning,
-                rollingInterval: RollingInterval.Minute)
+                "logs/Headless-warning-" + DateTime.Now.ToString("yyyy-MM-dd-HH-mm") + ".jsonl",
+                restrictedToMinimumLevel: LogEventLevel.Warning)
             .WriteTo.File(
                 formatter,
-                "logs/Headless-error-.jsonl",
-                restrictedToMinimumLevel: LogEventLevel.Error,
-                rollingInterval: RollingInterval.Minute)
+                "logs/Headless-error-" + DateTime.Now.ToString("yyyy-MM-dd-HH-mm") + ".jsonl",
+                restrictedToMinimumLevel: LogEventLevel.Error)
             .CreateLogger();
 
         var app = builder.Build();

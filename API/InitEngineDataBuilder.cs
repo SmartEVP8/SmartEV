@@ -1,7 +1,7 @@
 namespace API;
 
 using Core.Charging;
-using Protocol;
+using API.Protocol;
 
 /// <summary>
 /// Provides a method to build the initial engine data by querying the station service for the current state of all stations and chargers.
