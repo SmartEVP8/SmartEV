@@ -4,7 +4,6 @@ using Core.Shared;
 using Core.Charging;
 using Core.Vehicles;
 using Engine.Utils;
-using Core.Helper;
 
 /// <summary>
 /// Calculates detour deviations by querying OSRM routes.

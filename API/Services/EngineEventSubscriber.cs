@@ -1,8 +1,8 @@
 namespace API.Services;
 
 using Engine.Events;
-using Core.Helper;
 using Core.Charging;
+using Serilog;
 
 /// <summary>
 /// Bridges engine events to protocol events and sends them to the connected client.
@@ -20,7 +20,8 @@ public sealed class EngineEventSubscriber(
         }
         catch (Exception ex)
         {
-            Log.Error(0, 0, ex, ("StationId", station));
+            Log.Error("Failed to send station snapshot for station {@StationId}", station.Id);
+            throw ex;
         }
     }
 

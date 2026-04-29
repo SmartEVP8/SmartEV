@@ -1,7 +1,6 @@
 namespace Core.test.Builders;
 
 using Core.Charging;
-using Core.Helper;
 using Core.Routing;
 using Core.Shared;
 using Core.Vehicles;
@@ -11,7 +10,7 @@ public static class CoreTestData
 {
     public static readonly EnergyPrices EnergyPrices =
           new(new FileInfo(AppContext.GetData("EnergyPricesPath") as string
-              ?? throw Log.Error(0, 0, new InvalidDataException("EnergyPricesPath not set."))), new Random(1));
+              ?? throw new InvalidDataException("EnergyPricesPath not set.")), new Random(1));
 
     public static Station Station(
         ushort id,
