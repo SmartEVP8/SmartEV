@@ -3,7 +3,12 @@ namespace Engine.Vehicles;
 public record EVOptions
 {
     /// <summary>
-    /// GetsDistribution of starting state of charge (SoC) for created EVs. Keys are the discrete SoC values, and values are the probabilities of each SoC being sampled.
+    /// Gets the minimum distance an EV should be able to travel when spawned, in km.
+    /// </summary>
+    public int MinInitialRangeKm { get; } = 30;
+
+    /// <summary>
+    /// Gets the distribution of starting state of charge (SoC) for created EVs. Keys are the discrete SoC values, and values are the probabilities of each SoC being sampled.
     /// </summary>
     public IReadOnlyDictionary<float, double> StartSoCDistribution { get; init; }
         = new Dictionary<float, double>

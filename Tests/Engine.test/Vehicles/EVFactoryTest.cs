@@ -16,7 +16,7 @@ public class EVFactoryTest
     /// </summary>
     /// <param name="seed">The seed used to create EVs.</param>
     /// <returns>An EVFactory.</returns>
-    private static EVFactory MakeFactory(int seed = 42) => new(new Random(seed), new FakeJourneySamplerProvider(), new FakeRouter(), new EVOptions());
+    private static EVFactory MakeFactory(int seed = 42, EVOptions? options = null) => new(new Random(seed), new FakeJourneySamplerProvider(), new FakeRouter(), options ?? new EVOptions());
 
     private class FakeJourneySamplerProvider : IJourneySamplerProvider
     {
@@ -50,5 +50,20 @@ public class EVFactoryTest
             var ev = factory.Create(0);
             Assert.InRange(ev.Preferences.PriceSensitivity, 0f, 1f);
         }
+    }
+
+    [Fact]
+    public void SampleParams_AllEVsMeetMinimumRangeRequirement()
+    {
+        var options = new EVOptions();
+        var factory = MakeFactory(42, options);
+
+        var result = factory.SampleParams(10000);
+
+        Assert.All(result, p =>
+        {
+            var rangeKm = p.CurrCharge * p.Config.BatteryConfig.MaxCapacityKWh * 1000f / p.Config.Efficiency;
+            Assert.True(rangeKm >= options.MinInitialRangeKm);
+        });
     }
 }
