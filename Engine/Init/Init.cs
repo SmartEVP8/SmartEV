@@ -31,7 +31,6 @@ public static class Init
     public static void InitEngine(IServiceCollection services)
     {
         var settings = services.BuildServiceProvider().GetRequiredService<EngineSettings>();
-        Console.WriteLine($"[INIT] EngineSettings.ProcessorCount: {settings.ProcessorCount}");
         if (settings.EnablePerformanceMetrics)
             services.AddSingleton(new PerformanceMetrics());
 
@@ -138,14 +137,7 @@ public static class Init
             var grid = sp.GetRequiredService<SpatialGrid>();
             var stationService = sp.GetRequiredService<StationService>();
             var chargerBufferPercent = settings.ChargeBufferPercent;
-            return new FindCandidateStationService(
-                router,
-                stations,
-                grid,
-                evStore,
-                stationService,
-                chargerBufferPercent,
-                settings.ProcessorCount);
+            return new FindCandidateStationService(router, stations, grid, stationService, chargerBufferPercent, settings.ProcessorCount);
         });
 
         services.AddSingleton(sp =>
