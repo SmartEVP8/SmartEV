@@ -20,7 +20,6 @@ public record ActiveSession(
     /// </summary>
     public double FinalSoC => VehicleResult?.Soc ?? EV.CurrentSoC;
 
-
     /// <summary>
     /// Gets the SoC of the car that was connected with this car duing the session.
     /// </summary>

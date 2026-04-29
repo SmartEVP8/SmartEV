@@ -3,7 +3,7 @@ namespace Engine.Spawning;
 using Core.Shared;
 using Engine.Grid;
 using Engine.Routing;
-using Core.Helper;
+using Serilog;
 
 /// <summary>
 /// JourneyPipeline computes the sampling distributions for source and destination points
@@ -106,7 +106,8 @@ public class JourneyPipeline
 
         if (!newGrid.Any(row => row.Count > 0))
         {
-            throw Log.Error(0, 0, new InvalidOperationException("No spawnable cells with city info"));
+            Log.Error("No spawnable cells with city info. Check if the spawn grid is configured correctly and if the cities are within the bounds of the grid.");
+            throw new InvalidOperationException("No spawnable cells with city info. Check if the spawn grid is configured correctly and if the cities are within the bounds of the grid.");
         }
 
         var cityCenters = cities.Select(c => c.Position).ToArray();

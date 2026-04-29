@@ -5,7 +5,7 @@ using Core.Charging;
 using Core.Shared;
 using Core.Vehicles;
 using Engine.Services;
-using Core.Helper;
+using Serilog;
 using Engine.Events.Middleware;
 
 /// <summary>
@@ -27,7 +27,13 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
     public Station Compute(ref EV ev, Dictionary<ushort, DurToStationAndDest> stationDurations, Time time)
     {
         var bestCost = double.MaxValue;
-        var weights = costStore.GetWeights() ?? throw Log.Error(0, time, new NoNullAllowedException("Cost weights not found in store."), ("EV", ev));
+        var weights = costStore.GetWeights();
+        if (weights is null)
+        {
+            Log.Error("Cost weights not found in store. Cannot compute cost for EV {@EV}", ev);
+            throw new ArgumentNullException("Cost weights not found in store.");
+        }
+
         Station? bestStation = null;
         var lowestPrice = energyPrices.GetLowestPrice();
 
@@ -43,10 +49,10 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
 
             if (double.IsNaN(cost))
             {
-                throw Log.Error(0, time, new InvalidOperationException(
-                    $"Invalid cost calculated for station {stationId}: {cost}. " +
-                    $"PathDev={pathDeviationCost}, " +
-                    $"Urgency={urgencyCost}, Price={priceCost}, Wait={effectiveWaitTimeCost}"));
+                Log.Error(
+                    "Calculated cost is NaN for station {StationId}. PathDeviationCost={PathDeviationCost}, UrgencyCost={UrgencyCost}, PriceCost={PriceCost}, EffectiveWaitTimeCost={EffectiveWaitTimeCost}",
+                    stationId, pathDeviationCost, urgencyCost, priceCost, effectiveWaitTimeCost);
+                throw new InvalidOperationException($"Calculated cost is NaN for station {stationId}. PathDev={pathDeviationCost}, Urgency={urgencyCost}, Price={priceCost}, Wait={effectiveWaitTimeCost}");
             }
 
             if (cost < bestCost)
@@ -58,7 +64,8 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
 
         if (bestStation is null)
         {
-            throw Log.Error(0, time, new ArgumentNullException("No suitable station found."), ("EV", ev));
+            Log.Error("No suitable station found for EV {@EV} with station durations: {StationDurations}", ev, stationDurations);
+            throw new ArgumentNullException("No suitable station found.");
         }
 
         return bestStation;
@@ -74,7 +81,10 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
     {
         var remainingCurrentRoute = ev.Journey.RemainingCurrentRoute(time);
         if (remainingCurrentRoute <= 0)
-            throw Log.Error(0, time, new InvalidOperationException($"EV {ev} has no remaining route duration, cannot calculate path deviation cost."), ("EV", ev));
+        {
+            Log.Error("EV {@EV} has no remaining route duration at time {@Time}, cannot calculate path deviation cost.", ev, time);
+            throw new InvalidOperationException($"EV {ev} has no remaining route duration, cannot calculate path deviation cost.");
+        }
 
         var extraTimeCostMilliseconds = detourDuration - remainingCurrentRoute;
         if (extraTimeCostMilliseconds <= 0)

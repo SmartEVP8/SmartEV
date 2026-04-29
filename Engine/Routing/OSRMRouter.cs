@@ -3,7 +3,7 @@ namespace Engine.Routing;
 using System.Runtime.InteropServices;
 using Core.Charging;
 using Core.Shared;
-using Core.Helper;
+using Serilog;
 
 public record RoutingResult(float[] Durations, float[] Distances);
 
@@ -128,7 +128,11 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
     {
         _osrm = InitializeOSRM(mapPath.ToString());
         if (_osrm == IntPtr.Zero)
-            throw Log.Error(0, 0, new Exception("OSRM initialization failed."));
+        {
+            Log.Error("OSRM initialization failed with map path: {MapPath}", mapPath);
+            throw new InvalidOperationException("OSRM initialization failed.");
+        }
+
         InitStations(stations);
     }
 
@@ -189,7 +193,10 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
             destLat);
 
         if (resultPtr == IntPtr.Zero)
+        {
+            Log.Error("OSRM failed to compute a route: Returned 0 with route from ({EvLon}, {EvLat}) to ({DestLon}, {DestLat}).", evLon, evLat, destLon, destLat);
             throw new ArgumentException($"OSRM failed to compute a route: Returned 0 with route from ({evLon}, {evLat}) to ({destLon}, {destLat}).");
+        }
 
         var result = Marshal.PtrToStructure<RouteResult>(resultPtr);
         var polylineStr = Marshal.PtrToStringAnsi(result.Polyline);
@@ -198,7 +205,10 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
         FreeMemory(resultPtr);
 
         if (string.IsNullOrEmpty(polylineStr))
+        {
+            Log.Error("OSRM returned a result with an empty polyline from ({EvLon}, {EvLat}) to ({DestLon}, {DestLat}).", evLon, evLat, destLon, destLat);
             throw new ArgumentException($"OSRM returned a result with an empty polyline from ({evLon}, {evLat}) to ({destLon}, {destLat}).");
+        }
 
         return new RouteSegment(result.Duration * Time.MillisecondsPerSecond, result.Distance, polylineStr);
     }
@@ -217,7 +227,10 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
             index);
 
         if (resultPtr == IntPtr.Zero)
+        {
+            Log.Error("OSRM failed to compute a route: Returned 0 with route from ({EvLon}, {EvLat}) via ({StationLon}, {StationLat}) to ({DestLon}, {DestLat}).", evLon, evLat, stationLon, stationLat, destLon, destLat);
             throw new ArgumentException($"OSRM failed to compute a route: Returned 0 with route from ({evLon}, {evLat}) via ({stationLon}, {stationLat}) to ({destLon}, {destLat}).");
+        }
 
         var result = Marshal.PtrToStructure<RouteResult>(resultPtr);
         var polylineStr = Marshal.PtrToStringAnsi(result.Polyline);
@@ -226,7 +239,10 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
         FreeMemory(resultPtr);
 
         if (string.IsNullOrEmpty(polylineStr))
+        {
+            Log.Error("OSRM returned a result with an empty polyline from ({EvLon}, {EvLat}) via ({StationLon}, {StationLat}) to ({DestLon}, {DestLat}).", evLon, evLat, stationLon, stationLat, destLon, destLat);
             throw new ArgumentException($"OSRM returned a result with an empty polyline from ({evLon}, {evLat}) via ({stationLon}, {stationLat}) to ({destLon}, {destLat}).");
+        }
 
         return new RouteSegment(result.Duration * Time.MillisecondsPerSecond, result.Distance, polylineStr);
     }
@@ -281,7 +297,10 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
         var ok = RegisterStations(_osrm, coords, stations.Count, snappedCoords);
 
         if (!ok)
-            throw Log.Error(0, 0, new InvalidOperationException("Failed to snap one or more stations to the road network."));
+        {
+            Log.Error("Failed to snap one or more stations to the road network with station coordinates: {@StationCoords}", coords);
+            throw new InvalidOperationException("Failed to snap one or more stations to the road network.");
+        }
 
         for (var i = 0; i < stations.Count; i++)
         {

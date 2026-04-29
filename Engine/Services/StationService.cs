@@ -7,7 +7,7 @@ using Engine.Events;
 using Engine.Metrics;
 using Engine.Utils;
 using Engine.Services.StationServiceHelpers;
-using Core.Helper;
+using Serilog;
 using Core.Vehicles;
 
 /// <summary>
@@ -48,7 +48,7 @@ public class StationService : IStationService
     public Station GetStation(ushort stationId)
         => _stationHandlers.TryGetValue(stationId, out var handler)
             ? handler.Station
-            : throw Log.Error(0, 0, new SkillissueException($"Trying to get station {stationId} which does not exist."), ((string Key, object Value))("StationId", stationId));
+            : throw new SkillissueException($"Trying to get station {stationId} which does not exist.");
 
     /// <summary>Gets the charger handler with the given chargerId.</summary>
     /// <param name="chargerId">The charger id.</param>
@@ -102,7 +102,10 @@ public class StationService : IStationService
         _stationHandlers[stationId].HandleEndCharging(e);
 
         if (!_evReservations.Remove(e.EV.Id, out var oldStationId))
-            throw Log.Error(e.EV.Id, e.Time, new SkillissueException("Should have a reservation at this point"));
+        {
+            Log.Error("Logic Error: EV {@EVId} ended charging at station {@StationId} but had no reservation.", e.EV.Id, stationId);
+            throw new SkillissueException($"Logic Error: EV {e.EV.Id} ended charging at station {stationId} but had no reservation.");
+        }
 
         GetStation(oldStationId).Reservations.Remove(e.EV.Id);
     }
@@ -114,7 +117,5 @@ public class StationService : IStationService
     private StationHandler GetStationHandler(ushort stationId)
         => _stationHandlers.TryGetValue(stationId, out var handler)
             ? handler
-            : throw Log.Error(0, 0,
-                new SkillissueException($"Trying to get station handler {stationId} which does not exist."),
-                ((string Key, object Value))("StationId", stationId));
+            : throw new SkillissueException($"Trying to get station handler {stationId} which does not exist.");
 }

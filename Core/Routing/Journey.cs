@@ -2,7 +2,7 @@ namespace Core.Routing;
 
 using Core.Shared;
 using Core.GeoMath;
-using Core.Helper;
+using Serilog;
 
 /// <summary>
 /// The immutable baseline of the journey as originally planned.
@@ -57,7 +57,7 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
     /// <summary>Gets the original baseline of the journey.</summary>
     public OriginalJourney Original { get; } = new(
         departure,
-        duration > 0 ? duration : throw Log.Error(0, 0, new ArgumentOutOfRangeException("Duration can't be zero")),
+        duration > 0 ? duration : throw new ArgumentOutOfRangeException(nameof(duration), $"Duration must be positive. Received {duration}."),
         distanceMeters / 1000);
 
     /// <summary>Gets the live state of the journey.</summary>
@@ -176,7 +176,15 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
     public Time TimeToDriveDistance(float distanceKm)
     {
         if (distanceKm < 0)
-            throw Log.Error(0, 0, new ArgumentOutOfRangeException(nameof(distanceKm), $"Distance cannot be negative. Received {distanceKm}."), ("Distance", distanceKm));
+        {
+            Log.Error("Invalid distance: {Distance}", distanceKm);
+            throw new ArgumentOutOfRangeException(nameof(distanceKm), $"Distance cannot be negative. Received {distanceKm}.");
+        }
+        else if (distanceKm == 0)
+        {
+            return 0;
+        }
+
         var speedKmh = Original.DistanceKm / (Original.Duration / (float)Time.MillisecondsPerHour);
         var timeHours = distanceKm / speedKmh;
         return (uint)Math.Ceiling(timeHours * Time.MillisecondsPerHour);
@@ -308,12 +316,12 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
             {
                 if (currentTime != Current.EtaToNextStop)
                 {
-                    throw Log.Error(
-                        0,
-                        currentTime,
-                        new ArgumentException(
-                            $"Illegal context: interpolation moved beyond next stop at currentTime={currentTime}. " +
-                            $"nextStopIndex={nextStopIndex}, segmentIndex={secondIndex}, NextStop={Current.NextStop}."));
+                    Log.Error(
+                        "Invalid interpolation beyond next stop: {@}, {NextStopIndex}, {SegmentIndex}, {@NextStop}",
+                        currentTime, nextStopIndex, secondIndex, Current.NextStop);
+                    throw new ArgumentException(
+                        $"Illegal context: interpolation moved beyond next stop at currentTime={currentTime}. " +
+                        $"nextStopIndex={nextStopIndex}, segmentIndex={secondIndex}, NextStop={Current.NextStop}.");
                 }
 
                 nextStopPos = Current.Waypoints[nextStopIndex];
@@ -342,14 +350,10 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
         var nextStopIndex = FindNextStopIndex(waypoints, nextStop);
         if (nextStopIndex < 0)
         {
-            throw Log.Error(
-                0,
-                0,
-                new InvalidOperationException(
-                    $"NextStop was not found in waypoints. NextStop={nextStop}. " +
-                    $"First={waypoints[0]}, Last={waypoints[^1]}, " +
-                    $"Closest={FindClosestWaypoint(waypoints, nextStop)}, " +
-                    $"WaypointCount={waypoints.Count}."));
+            Log.Error(
+                "Next stop not found in waypoints: {@NextStop}, {@First}, {@Last}, {WaypointCount}",
+                nextStop, waypoints[0], waypoints[^1], waypoints.Count);
+            throw new ArgumentException($"Next stop not found in waypoints. NextStop={nextStop}, First={waypoints[0]}, Last={waypoints[^1]}, WaypointCount={waypoints.Count}.");
         }
 
         if (nextStopIndex == 0)
@@ -399,29 +403,30 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
         if (Current.DurationToNextStop == Current.Duration &&
     GeoMath.EquirectangularDistance(Current.NextStop, Current.Waypoints[^1]) > _nextStopMatchToleranceKm)
         {
-            throw Log.Error(
-                0,
-                0,
-                new InvalidOperationException(
-                    $"Invalid journey: DurationToNextStop equals full Duration, but NextStop is not close to final waypoint. " +
-                    $"NextStop={Current.NextStop}, Final={Current.Waypoints[^1]}, " +
-                    $"DistanceKm={GeoMath.EquirectangularDistance(Current.NextStop, Current.Waypoints[^1]):F3}, " +
-                    $"ToleranceKm={_nextStopMatchToleranceKm:F3}."));
+            Log.Error(
+                "Invalid journey: DurationToNextStop equals full Duration, but NextStop is not close to final waypoint. NextStop={@Current.NextStop}, Final={@Current.Waypoints[^1]}, DistanceKm={GeoMath.EquirectangularDistance(Current.NextStop, Current.Waypoints[^1]):F3}, ToleranceKm={ToleranceKm:F3}",
+                Current.NextStop, Current.Waypoints[^1], GeoMath.EquirectangularDistance(Current.NextStop, Current.Waypoints[^1]), _nextStopMatchToleranceKm);
+            throw new InvalidOperationException(
+                $"Invalid journey: DurationToNextStop equals full Duration, but NextStop is not close to final waypoint. " +
+                $"NextStop={Current.NextStop}, Final={Current.Waypoints[^1]}, " +
+                $"DistanceKm={GeoMath.EquirectangularDistance(Current.NextStop, Current.Waypoints[^1]):F3}, " +
+                $"ToleranceKm={_nextStopMatchToleranceKm:F3}.");
         }
     }
 
     private static Exception ThrowClosestWaypoint(List<Position> waypoints, Position requestedNextStop)
     {
         var closest = FindClosestWaypoint(waypoints, requestedNextStop);
-
-        return
-            new InvalidOperationException(
-                "Requested next stop is not part of the supplied route. " +
-                $"RequestedNextStop={requestedNextStop}, ClosestWaypoint={closest}, " +
-                $"First={waypoints[0]}, Last={waypoints[^1]}, WaypointCount={waypoints.Count}.");
+        Log.Error(
+            "Requested next stop is not part of the supplied route. RequestedNextStop={@RequestedNextStop}, ClosestWaypoint={@ClosestWaypoint}, First={@First}, Last={@Last}, WaypointCount={WaypointCount}",
+            requestedNextStop, closest, waypoints[0], waypoints[^1], waypoints.Count);
+        return new InvalidOperationException(
+            "Requested next stop is not part of the supplied route. " +
+            $"RequestedNextStop={requestedNextStop}, ClosestWaypoint={closest}, " +
+            $"First={waypoints[0]}, Last={waypoints[^1]}, WaypointCount={waypoints.Count}.");
     }
 
-    private static object? ValidateWaypoints(List<Position> waypoints) => waypoints.Count == 0 ? throw Log.Error(0, 0, new InvalidOperationException("Waypoints list cannot be empty.")) : null;
+    private static object? ValidateWaypoints(List<Position> waypoints) => waypoints.Count == 0 ? new InvalidOperationException("Waypoints list cannot be empty.") : null;
 
     private static Position FindClosestWaypoint(List<Position> waypoints, Position target) => waypoints.OrderBy(waypoint => GeoMath.EquirectangularDistance(waypoint, target)).First();
 
@@ -446,12 +451,17 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
             .OrderBy(x => x.DistanceKm)
             .FirstOrDefault();
 
-        return bestMatch?.Index ?? throw Log.Error(
-            0,
-            0,
-            new InvalidOperationException(
-                $"Next stop not found in waypoints within tolerance. NextStop={nextStop}, " +
-                $"First={waypoints[0]}, Last={waypoints[^1]}, WaypointCount={waypoints.Count}."));
+        if (bestMatch != null)
+        {
+            return bestMatch.Index;
+        }
+
+        Log.Error(
+            "Next stop not found in waypoints within tolerance. NextStop={@NextStop}, First={@First}, Last={@Last}, WaypointCount={WaypointCount}",
+            nextStop, waypoints[0], waypoints[^1], waypoints.Count);
+        throw new InvalidOperationException(
+            $"Next stop not found in waypoints within tolerance. NextStop={nextStop}, " +
+            $"First={waypoints[0]}, Last={waypoints[^1]}, WaypointCount={waypoints.Count}.");
     }
 
     /// <summary>
@@ -479,12 +489,21 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
         var completedTime = Current.Departure + Current.Duration;
 
         if (checkBeforeDeparture && time < Current.Departure)
-            throw Log.Error(0, time, new ArgumentException($"Current time: {time} is before the current journey has started: {Current.Departure}."));
+        {
+            Log.Error("Current time is before the current journey has started. CurrentTime={@CurrentTime}, JourneyDeparture={JourneyDeparture}", time, Current.Departure);
+            throw new ArgumentException($"Current time: {time} is before the current journey has started: {Current.Departure}.");
+        }
 
         if (checkAfterEtaToNextStop && time > Current.EtaToNextStop)
-            throw Log.Error(0, time, new ArgumentException($"Current time: {time} is after ETA to next stop: {Current.EtaToNextStop}. Overshoot: {time - Current.EtaToNextStop}s."));
+        {
+            Log.Error("Current time is after ETA to next stop. CurrentTime={@CurrentTime}, EtaToNextStop={EtaToNextStop}, OvershootSeconds={OvershootSeconds}", time, Current.EtaToNextStop, time - Current.EtaToNextStop);
+            throw new ArgumentException($"Current time: {time} is after ETA to next stop: {Current.EtaToNextStop}. Overshoot: {time - Current.EtaToNextStop}s.");
+        }
 
         if (checkAfterCompletion && time > completedTime)
-            throw Log.Error(0, time, new ArgumentException($"Current time: {time} is after the journey has completed: {completedTime}. Overshoot: {time - completedTime}s."));
+        {
+            Log.Error("Current time is after the journey has completed. CurrentTime={@CurrentTime}, JourneyCompleted={JourneyCompleted}, OvershootSeconds={OvershootSeconds}", time, completedTime, time - completedTime);
+            throw new ArgumentException($"Current time: {time} is after the journey has completed: {completedTime}. Overshoot: {time - completedTime}s.");
+        }
     }
 }
