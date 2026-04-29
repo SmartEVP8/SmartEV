@@ -176,6 +176,11 @@ public class FindCandidateStationService : IFindCandidateStationService
                 var stationId = reachableStationIds[i];
                 (var toStationDuration, var toStationDistance) = (detourResult.ToStation.Durations[i], detourResult.ToStation.Distances[i]);
                 (var toDestinationDuration, var toDestinationDistance) = (detourResult.ToDest.Durations[i], detourResult.ToDest.Distances[i]);
+                if (detourResult.TotalDistance(i) == 0 || detourResult.TotalDuration(i) == 0)
+                {
+                    Serilog.Log.Warning("Skipped {stationId}", stationId);
+                    continue;
+                }
                 if (!ev.CanReachToStation(toStationDistance / 1000f, ev.Preferences.MinAcceptableCharge))
                     continue;
 

@@ -167,10 +167,10 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
             var srcToStation = results[i].SrcToStation;
             var stationToDest = results[i].StationToDest;
 
-            toStationDurations[i] = srcToStation.Durations == 0 ? throw new ArgumentException($"Invalid duration between EV ({evLon}, {evLat}) and station {indices[i]}") : srcToStation.Durations * Time.MillisecondsPerSecond;
-            toStationDistances[i] = srcToStation.Distances == 0 ? throw new ArgumentException($"Invalid distance between EV ({evLon}, {evLat}) and station {indices[i]}") : srcToStation.Distances;
-            toDestDurations[i] = stationToDest.Durations == 0 ? throw new ArgumentException($"Invalid duration between station {indices[i]} and destination ({destLon}, {destLat})") : stationToDest.Durations * Time.MillisecondsPerSecond;
-            toDestDistances[i] = stationToDest.Distances == 0 ? throw new ArgumentException($"Invalid distance between station {indices[i]} and destination ({destLon}, {destLat})") : stationToDest.Distances;
+            toStationDurations[i] = srcToStation.Durations * Time.MillisecondsPerSecond;
+            toStationDistances[i] = srcToStation.Distances;
+            toDestDurations[i] = stationToDest.Durations * Time.MillisecondsPerSecond;
+            toDestDistances[i] = stationToDest.Distances;
         }
 
         return new RoutingLegsResult(
@@ -199,7 +199,7 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
         }
 
         var result = Marshal.PtrToStructure<RouteResult>(resultPtr);
-        var polylineStr = Marshal.PtrToStringAnsi(result.Polyline)!;
+        var polylineStr = Marshal.PtrToStringAnsi(result.Polyline);
 
         FreeMemory(result.Polyline);
         FreeMemory(resultPtr);
@@ -233,7 +233,7 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
         }
 
         var result = Marshal.PtrToStructure<RouteResult>(resultPtr);
-        var polylineStr = Marshal.PtrToStringAnsi(result.Polyline)!;
+        var polylineStr = Marshal.PtrToStringAnsi(result.Polyline);
 
         FreeMemory(result.Polyline);
         FreeMemory(resultPtr);
