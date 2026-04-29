@@ -68,6 +68,10 @@ public class EngineManager
                 DualChargingPointProbability = configDTO.DualChargerProbability,
                 TotalChargers = configDTO.NumberOfChargers
             },
+            ProcessorCount = Math.Clamp(
+            configDTO.ProcessorCount,
+            1,
+            Environment.ProcessorCount),
             CostConfig = configDTO.CostWeights.ToDomain(defaultSettings.CostConfig),
             SimulationStartTime = configDTO.StartTime,
             SimulationEndTime = configDTO.EndTime

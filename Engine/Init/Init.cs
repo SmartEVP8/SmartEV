@@ -137,7 +137,7 @@ public static class Init
             var grid = sp.GetRequiredService<SpatialGrid>();
             var stationService = sp.GetRequiredService<StationService>();
             var chargerBufferPercent = settings.ChargeBufferPercent;
-            return new FindCandidateStationService(router, stations, grid, stationService, chargerBufferPercent, Environment.ProcessorCount);
+            return new FindCandidateStationService(router, stations, grid, stationService, chargerBufferPercent, settings.ProcessorCount);
         });
 
         services.AddSingleton(sp =>
@@ -216,25 +216,18 @@ public static class Init
         services.AddSingleton(sp =>
         {
             var scheduler = sp.GetRequiredService<EventScheduler>();
-            var dispatcher = sp.GetRequiredService<EventDispatcher>();
-            var settings = sp.GetRequiredService<EngineSettings>();
-            var startTime = settings.SimulationStartTime;
-            var endTime = settings.SimulationEndTime;
-            return new Simulation(dispatcher, scheduler, startTime, endTime);
-        });
-
-        services.AddSingleton(sp =>
-        {
-            var scheduler = sp.GetRequiredService<EventScheduler>();
             var findCandidateStationService = sp.GetRequiredService<FindCandidateStationService>();
 
             scheduler.RegisterPreProcessor<FindCandidateStations>(
                 findCandidateStationService.PreComputeCandidateStation());
 
+            var settings = sp.GetRequiredService<EngineSettings>();
+
             return new Simulation(
                 sp.GetRequiredService<EventDispatcher>(),
                 scheduler,
-                sp.GetRequiredService<EngineSettings>().SimulationEndTime);
+                settings.SimulationStartTime,
+                settings.SimulationEndTime);
         });
     }
 

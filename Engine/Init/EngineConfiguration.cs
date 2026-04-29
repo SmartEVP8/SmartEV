@@ -30,6 +30,7 @@ public static class EngineConfiguration
         return new EngineSettings
         {
             Seed = new Random(42),
+            ProcessorCount = Environment.ProcessorCount,
             CostConfig = new CostWeights
             {
                 PathDeviation = ReadWeightFromEnvironment(_pathDeviationEnvVar, 0.8f, 0f, 1f),
