@@ -11,8 +11,7 @@ using Engine.Grid;
 using Engine.Routing;
 using Engine.Services;
 using Engine.Utils;
-using Engine.Vehicles;
-using Core.Helper;
+using Serilog;
 
 /// <summary>
 /// Represents travel durations from an EV position to a candidate station and then to the destination.
@@ -44,7 +43,6 @@ public class FindCandidateStationService : IFindCandidateStationService
     private readonly IOSRMRouter _router;
     private readonly Dictionary<ushort, Station> _stations;
     private readonly ISpatialGrid _spatialGrid;
-    private readonly EVStore _evStore;
     private readonly StationService _stationService;
     private readonly float _chargerBufferPercent;
 
@@ -58,7 +56,6 @@ public class FindCandidateStationService : IFindCandidateStationService
     /// <param name="router">Router used to compute paths from the EV's position to candidate stations and the destination.</param>
     /// <param name="stations">Stations to choose from.</param>
     /// <param name="spatialGrid">Used for pruning of <paramref name="stations"/>.</param>
-    /// <param name="evStore">Gives access to EV's.</param>
     /// <param name="stationService">Service for accessing station reservations.</param>
     /// <param name="chargerBufferPercent">Scalar for SoC difference.</param>
     /// <param name="maxConcurrency">The max amount of cores to use.</param>
@@ -66,7 +63,6 @@ public class FindCandidateStationService : IFindCandidateStationService
         IOSRMRouter router,
         Dictionary<ushort, Station> stations,
         ISpatialGrid spatialGrid,
-        EVStore evStore,
         StationService stationService,
         float chargerBufferPercent,
         int maxConcurrency = 4)
@@ -74,7 +70,6 @@ public class FindCandidateStationService : IFindCandidateStationService
         _router = router;
         _stations = stations;
         _spatialGrid = spatialGrid;
-        _evStore = evStore;
         _stationService = stationService;
         _chargerBufferPercent = chargerBufferPercent;
         _osrmConcurrencyLimit = new SemaphoreSlim(maxConcurrency, maxConcurrency);
@@ -124,11 +119,14 @@ public class FindCandidateStationService : IFindCandidateStationService
         return fcse =>
         {
             if (fcse is not FindCandidateStations e)
-                throw Log.Error(0, 0, new SkillissueException("Not the correct event type"), ("Event", fcse));
+            {
+                Log.Error("Expected event of type FindCandidateStations, but got {EventType}.", fcse.GetType().Name);
+                throw new SkillissueException($"Expected event of type FindCandidateStations, but got {fcse.GetType().Name}.");
+            }
 
             var tcs = new TaskCompletionSource<Dictionary<ushort, DurToStationAndDest>>(TaskCreationOptions.RunContinuationsAsynchronously);
 
-            _evStationPaths[e.EVId] = new StationQuery(tcs.Task);
+            _evStationPaths[e.EV.Id] = new StationQuery(tcs.Task);
 
             lock (_queueLock)
             {
@@ -141,8 +139,14 @@ public class FindCandidateStationService : IFindCandidateStationService
 
     private Dictionary<ushort, DurToStationAndDest> ComputeCandidates(FindCandidateStations e, double PathdeviationMultiplier = 1.0)
     {
-        ref var ev = ref _evStore.Get(e.EVId);
-        var pos = ev.Advance(e.Time) ?? throw Log.Error(e.EVId, e.Time, new SkillissueException($"EV {e.EVId} has no position at time {e.Time} after advancing. This should not happen."));
+        var ev = e.EV;
+        var pos = ev.Advance(e.Time);
+
+        if (pos is null)
+        {
+            Log.Error("EV {@EVId} has no position at time {@Time} after advancing. This should not happen.", ev.Id, e.Time);
+            throw new SkillissueException($"EV {ev.Id} has no position at time {e.Time} after advancing. This should not happen.");
+        }
 
         var pathDeviationMultiplied = ev.Preferences.MaxPathDeviation * PathdeviationMultiplier;
 
@@ -170,46 +174,43 @@ public class FindCandidateStationService : IFindCandidateStationService
             for (var i = 0; i < reachableStationIds.Length; i++)
             {
                 var stationId = reachableStationIds[i];
-                var detourDistanceMeters = detourResult.TotalDistance(i);
-                if (detourDistanceMeters < 0 || float.IsNaN(detourDistanceMeters))
+                (var toStationDuration, var toStationDistance) = (detourResult.ToStation.Durations[i], detourResult.ToStation.Distances[i]);
+                (var toDestinationDuration, var toDestinationDistance) = (detourResult.ToDest.Durations[i], detourResult.ToDest.Distances[i]);
+                if (detourResult.TotalDistance(i) == 0 || detourResult.TotalDuration(i) == 0)
+                {
+                    Serilog.Log.Warning("Skipped {stationId}", stationId);
+                    continue;
+                }
+                if (!ev.CanReachToStation(toStationDistance / 1000f, ev.Preferences.MinAcceptableCharge))
                     continue;
 
-                var toStation = (detourResult.ToStation.Durations[i], detourResult.ToStation.Distances[i]);
-                var toDestination = (detourResult.ToDest.Durations[i], detourResult.ToDest.Distances[i]);
-                if (!ev.CanReachToStation(toStation.Item2 / 1000f, ev.Preferences.MinAcceptableCharge))
+                if (ev.SoCUsedAfterADistance(toStationDistance / 1000) <= 0)
                     continue;
 
-                if (ev.SoCUsedAfterADistance(toStation.Item2 / 1000) <= 0)
+                if (ev.CheckIfTargetSoCIsLowerThanCurrentSoC(toStationDistance, toDestinationDistance, _chargerBufferPercent))
                     continue;
 
-                if (ev.CheckIfTargetSoCIsLowerThanCurrentSoC(toStation.Item2, toDestination.Item2, _chargerBufferPercent))
-                    continue;
-
-                refinedCandidateDurations[stationId] = new DurToStationAndDest(toStation.Item1, toDestination.Item1, toDestination.Item2, toStation.Item2);
+                refinedCandidateDurations[stationId] = new DurToStationAndDest(toStationDuration, toDestinationDuration, toDestinationDistance, toStationDistance);
             }
 
-            if (refinedCandidateDurations.Count == 0 && _stationService.GetReservationStationId(e.EVId) is ushort && ev.DistanceOnCurrentChargeKm() > pathDeviationMultiplied)
+            if (refinedCandidateDurations.Count == 0 && _stationService.GetReservationStationId(ev.Id) is ushort && ev.DistanceOnCurrentChargeKm() > pathDeviationMultiplied)
             {
                 refinedCandidateDurations = ComputeCandidates(e, PathdeviationMultiplier * 1.25);
             }
             else if (refinedCandidateDurations.Count == 0)
             {
-                Log.Warn(e.EVId, e.Time, $"No candidate stations found for EV {e.EVId} at time {e.Time}.");
-            }
-            else
-            {
-                Log.Verbose(e.EVId, e.Time, $"Computed candidate stations for EV {e.EVId}: amount of stations: {refinedCandidateDurations.Count} at time {e.Time}.");
+                Log.Warning("No candidate stations found for EV {@EVId} at time {@Time}. Even after expanding search radius, no stations were found along the polyline. Returning empty candidate set.", ev.Id, e.Time, ("EV", ev));
             }
 
             return refinedCandidateDurations;
         }
 
-        if (_stationService.GetReservationStationId(e.EVId) is ushort && ev.DistanceOnCurrentChargeKm() > pathDeviationMultiplied)
+        if (_stationService.GetReservationStationId(ev.Id) is ushort && ev.DistanceOnCurrentChargeKm() > pathDeviationMultiplied)
         {
             return ComputeCandidates(e, PathdeviationMultiplier * 1.25);
         }
 
-        Log.Warn(e.EVId, e.Time, $"No candidate stations found for EV {e.EVId}. Could not find any stations along polyline, even after expanding search radius. Returning empty candidate set.  at time {e.Time}");
+        Log.Warning("No candidate stations found for EV {@EVId} at time {@Time}. No stations were found along the polyline. Returning empty candidate set.", ev.Id, e.Time, ("EV", ev));
         return [];
     }
 
@@ -220,7 +221,11 @@ public class FindCandidateStationService : IFindCandidateStationService
     public async Task<Dictionary<ushort, DurToStationAndDest>> GetCandidateStationFromCache(int evId)
     {
         if (!_evStationPaths.TryRemove(evId, out var query))
-            throw Log.Error(evId, 0, new SkillissueException($"No pre-computed station query found for EV {evId}. Ensure PreComputeCandidateStation is called first."));
+        {
+            Log.Error("No pre-computed station query found for EV {@EVId}. Ensure PreComputeCandidateStation is called first.", evId);
+            throw new SkillissueException($"No pre-computed station query found for EV {evId}. Ensure PreComputeCandidateStation is called first.");
+        }
+
         return await query.Task;
     }
 }

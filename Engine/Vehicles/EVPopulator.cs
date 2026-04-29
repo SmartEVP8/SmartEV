@@ -2,16 +2,16 @@ namespace Engine.Vehicles;
 
 using Core.Shared;
 using Engine.Events;
-using System.Buffers;
-using Core.Helper;
+using Serilog;
+using Core.Vehicles;
 
 /// <summary>
 /// The EVPopulator class is responsible for creating and scheduling the spawning of EVs.
 /// </summary>
 /// <param name="evFactory">The factory used to create new EV instances.</param>
-/// <param name="evStore">The store used to allocate and manage EV instances.</param>
+/// <param name="evs">The dictionary mapping EV IDs to EV instances.</param>
 /// <param name="eventScheduler">The scheduler used to manage and execute events.</param>
-public class EVPopulator(EVFactory evFactory, EVStore evStore, IEventScheduler eventScheduler)
+public class EVPopulator(EVFactory evFactory, Dictionary<int, EV> evs, IEventScheduler eventScheduler)
 {
     /// <summary>
     /// Creates a specified number of EVs and schedules their spawning events over a given distribution window.
@@ -23,45 +23,41 @@ public class EVPopulator(EVFactory evFactory, EVStore evStore, IEventScheduler e
     public void CreateEVs(int amount, Time distributionWindow)
     {
         if (amount < 0)
-            throw Log.Error(0, 0, new ArgumentException($"Amount of EVs to create cannot be negative (amount={amount})."));
+        {
+            Log.Error("Amount of EVs to create cannot be negative (amount={Amount}).", amount);
+            throw new ArgumentException($"Amount of EVs to create cannot be negative (amount={amount}).", nameof(amount));
+        }
         else if (amount == 0)
+        {
             return;
+        }
 
         var currentTime = eventScheduler.CurrentTime;
         var interval = (double)distributionWindow / amount;
-        var indexes = ArrayPool<int>.Shared.Rent(amount);
-        try
+        var sampledParams = evFactory.SampleParams(amount);
+
+        var created = new EV[amount];
+        Parallel.For(0, amount, i =>
         {
-            if (evStore.TryAllocateParallel(amount, indexes))
+            var departure = (uint)(currentTime + (i * interval));
+            created[i] = evFactory.Create(sampledParams[i], departure);
+        });
+
+        for (var i = 0; i < amount; i++)
+        {
+            var ev = created[i];
+            evs.Add(ev.Id, ev);
+
+            if (ev.CanCompleteJourney(minAcceptableCharge: ev.Preferences.MinAcceptableCharge))
             {
-                var sampledParams = evFactory.SampleParams(amount);
-                Parallel.For(0, amount, i =>
-                {
-                    var departure = (uint)(currentTime + (i * interval));
-                    evStore.Get(indexes[i]) = evFactory.Create(sampledParams[i], departure);
-                });
-
-                for (var i = 0; i < amount; i++)
-                {
-                    var evId = indexes[i];
-                    ref var ev = ref evStore.Get(evId);
-
-                    if (ev.CanCompleteJourney(minAcceptableCharge: ev.Preferences.MinAcceptableCharge))
-                    {
-                        ev.DriveDirectlyToDestination = true;
-                        var arrivalTime = ev.Journey.Original.Departure + ev.Journey.Current.Duration;
-                        eventScheduler.ScheduleEvent(new ArriveAtDestination(evId, arrivalTime));
-                    }
-                    else
-                    {
-                        eventScheduler.ScheduleEvent(new FindCandidateStations(evId, ev.Journey.Original.Departure));
-                    }
-                }
+                ev.DriveDirectlyToDestination = true;
+                var arrivalTime = ev.Journey.Original.Departure + ev.Journey.Current.Duration;
+                eventScheduler.ScheduleEvent(new ArriveAtDestination(ev, arrivalTime));
             }
-        }
-        finally
-        {
-            ArrayPool<int>.Shared.Return(indexes);
+            else
+            {
+                eventScheduler.ScheduleEvent(new FindCandidateStations(ev, ev.Journey.Original.Departure));
+            }
         }
     }
 }

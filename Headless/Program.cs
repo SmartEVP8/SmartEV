@@ -42,30 +42,14 @@ public static class Program
         provider.GetRequiredService<StationService>();
 
         var coordinator = provider.GetRequiredService<Simulation>() ?? throw new InvalidOperationException("Failed to resolve Simulation from service provider. This should not happen.");
-        var formatter = new ExpressionTemplate("{ {evId: @p['evId'], Time: @p['Time'], Level: @l, Message: @m, Exception: @x, ..@p} }\n");
+        var formatter = new ExpressionTemplate("[{@l:u3}] {@m}\n{@x}");
 
         Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Verbose()
+            .MinimumLevel.Information()
             .WriteTo.File(
                 formatter,
-                "logs/Headless-verbose-.jsonl",
-                restrictedToMinimumLevel: LogEventLevel.Verbose,
-                rollingInterval: RollingInterval.Day)
-            .WriteTo.File(
-                formatter,
-                "logs/Headless-information-.jsonl",
-                restrictedToMinimumLevel: LogEventLevel.Information,
-                rollingInterval: RollingInterval.Day)
-            .WriteTo.File(
-                formatter,
-                "logs/Headless-warning-.jsonl",
-                restrictedToMinimumLevel: LogEventLevel.Warning,
-                rollingInterval: RollingInterval.Day)
-            .WriteTo.File(
-                formatter,
-                "logs/Headless-error-.jsonl",
-                restrictedToMinimumLevel: LogEventLevel.Error,
-                rollingInterval: RollingInterval.Day)
+                "logs/Headless-Logs-" + DateTime.Now.ToString("yyyy-MM-dd-HH-mm") + ".jsonl",
+                restrictedToMinimumLevel: LogEventLevel.Information)
             .CreateLogger();
         await coordinator.Run();
     }

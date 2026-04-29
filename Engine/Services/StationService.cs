@@ -6,10 +6,9 @@ using Core.Shared;
 using Engine.Events;
 using Engine.Metrics;
 using Engine.Utils;
-using Engine.Vehicles;
 using Engine.Services.StationServiceHelpers;
+using Serilog;
 using Core.Vehicles;
-using Core.Helper;
 
 /// <summary>
 /// Coordinates station handlers and manages cross-station state (reservations, charger routing).
@@ -26,18 +25,18 @@ public class StationService : IStationService
     /// <param name="stations">The collection of stations to manage.</param>
     /// <param name="integrator">The charging integrator to use for simulating charging sessions.</param>
     /// <param name="scheduler">The event scheduler to use for scheduling future events.</param>
-    /// <param name="evStore">The storage of current EVs.</param>
+    /// <param name="evs">The storage of current EVs.</param>
     /// <param name="metrics">The metrics service to use for recording metrics.</param>
     public StationService(
         ICollection<Station> stations,
         ChargingIntegrator integrator,
         EventScheduler scheduler,
-        EVStore evStore,
+        IReadOnlyDictionary<int, EV> evs,
         MetricsService metrics)
     {
         foreach (var station in stations)
         {
-            var handler = new StationHandler(station, integrator, scheduler, evStore, metrics);
+            var handler = new StationHandler(station, integrator, scheduler, evs, metrics);
             _stationHandlers[station.Id] = handler;
 
             foreach (var chargerId in handler.ChargerIds)
@@ -49,8 +48,12 @@ public class StationService : IStationService
     public Station GetStation(ushort stationId)
         => _stationHandlers.TryGetValue(stationId, out var handler)
             ? handler.Station
-            : throw Log.Error(0, 0, new SkillissueException($"Trying to get station {stationId} which does not exist."), ((string Key, object Value))("StationId", stationId));
+            : throw new SkillissueException($"Trying to get station {stationId} which does not exist.");
 
+    /// <summary>Gets the charger handler with the given chargerId.</summary>
+    /// <param name="chargerId">The charger id.</param>
+    /// <returns>The chargerhandler.</returns>
+    /// <exception cref="SkillissueException">If the charger handler isn't present.</exception>
     public IChargerHandler GetChargerHandler(int chargerId)
         => _chargerToStation.TryGetValue(chargerId, out var stationId)
             ? _stationHandlers[stationId].GetChargerHandler(chargerId)
@@ -69,17 +72,13 @@ public class StationService : IStationService
     /// <param name="stationId">The station that recieves the reservation.</param>
     public void HandleReservation(Reservation reservation, ushort stationId)
     {
-        CancelReservation(reservation.EVId);
+        if (_evReservations.TryGetValue(reservation.EVId, out var oldStationId))
+        {
+            GetStation(oldStationId).Reservations.Cancel(reservation.EVId);
+        }
+
         _evReservations[reservation.EVId] = stationId;
         GetStation(stationId).Reservations.Reserve(reservation);
-    }
-
-    private void CancelReservation(int evId)
-    {
-        if (_evReservations.TryGetValue(evId, out var oldStationId))
-        {
-            GetStation(oldStationId).Reservations.Cancel(evId);
-        }
     }
 
     /// <summary>
@@ -88,7 +87,7 @@ public class StationService : IStationService
     /// </summary>
     /// <param name="e">The arrival event.</param>
     public void HandleArrivalAtStation(ArriveAtStation e)
-        => GetStationHandler(e.StationId).HandleArrivalAtStation(e);
+        => GetStationHandler(e.Station.Id).HandleArrivalAtStation(e);
 
     /// <summary>
     /// Called when a charging session ends for a specific EV.
@@ -97,15 +96,18 @@ public class StationService : IStationService
     /// <param name="e">The EndCharging event containing the EVId, ChargerId, and Time of the event.</param>
     public void HandleEndCharging(EndCharging e)
     {
-        if (!_chargerToStation.TryGetValue(e.ChargerId, out var stationId))
+        if (!_chargerToStation.TryGetValue(e.Charger.Id, out var stationId))
             return;
 
         _stationHandlers[stationId].HandleEndCharging(e);
 
-        if (!_evReservations.ContainsKey(e.EVId))
-            throw Log.Error(e.EVId, e.Time, new SkillissueException("Should have a reservation at this point"));
+        if (!_evReservations.Remove(e.EV.Id, out var oldStationId))
+        {
+            Log.Error("Logic Error: EV {@EVId} ended charging at station {@StationId} but had no reservation.", e.EV.Id, stationId);
+            throw new SkillissueException($"Logic Error: EV {e.EV.Id} ended charging at station {stationId} but had no reservation.");
+        }
 
-        CancelReservation(e.EVId);
+        GetStation(oldStationId).Reservations.Remove(e.EV.Id);
     }
 
     /// <inheritdoc/>
@@ -115,7 +117,5 @@ public class StationService : IStationService
     private StationHandler GetStationHandler(ushort stationId)
         => _stationHandlers.TryGetValue(stationId, out var handler)
             ? handler
-            : throw Log.Error(0, 0,
-                new SkillissueException($"Trying to get station handler {stationId} which does not exist."),
-                ((string Key, object Value))("StationId", stationId));
+            : throw new SkillissueException($"Trying to get station handler {stationId} which does not exist.");
 }

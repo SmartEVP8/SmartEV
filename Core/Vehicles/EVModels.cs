@@ -1,6 +1,6 @@
 namespace Core.Vehicles;
 
-using Core.Helper;
+using Serilog;
 using Core.Vehicles.Configs;
 
 /// <summary>
@@ -15,7 +15,10 @@ public static class EVModels
             total += model.SpawnChance;
 
         if (MathF.Abs(total - 100f) > 0.01f)
-            throw Log.Error(0, 0, new InvalidOperationException($"SpawnChance values must sum to 100, but sum is {total:F3}."));
+        {
+            Log.Error("Invalid EV model configuration: SpawnChance values must sum to 100, but sum is {Total:F3}", total);
+            throw new InvalidOperationException($"SpawnChance values must sum to 100, but sum is {total:F3}");
+        }
     }
 
     /// <summary>

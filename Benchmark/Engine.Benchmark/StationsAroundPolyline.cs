@@ -47,7 +47,7 @@ public class StationsAroundPolyline
         _waypoints = Polyline6ToPoints.DecodePolyline(polyline);
         var journey = new Journey(0, 0, 0, _waypoints);
 
-        _ev = new EV(new Battery(100, 100, 15), new Preferences(1f, 0.1f, 10.0f), journey, 150);
+        _ev = new EV(1, new Battery(100, 100, 15), new Preferences(1f, 0.1f, 10.0f), journey, 150);
 
         _stations = [];
         var rand = new Random(321);
@@ -59,7 +59,7 @@ public class StationsAroundPolyline
         }
 
         var polygons = PolygonParser.Parse(File.ReadAllText(gridPath));
-        var grid = Polygooner.GenerateGrid(0.1, polygons, []);
+        var grid = Polygooner.GenerateGrid(0.1, polygons, [], []);
         _spatialGrid = new SpatialGrid(grid, _stations);
     }
 

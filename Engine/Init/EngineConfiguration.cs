@@ -5,7 +5,7 @@ using Engine.Metrics;
 using Engine.StationFactory;
 using System.Globalization;
 using System.Reflection;
-using Core.Helper;
+using Serilog;
 using Core.Shared;
 
 /// <summary>
@@ -60,7 +60,7 @@ public static class EngineConfiguration
             SnapshotInterval = 1000 * 20 * 60,
             EnablePerformanceMetrics = true,
             EVDistributionWindowsSize = 30 * 60 * 1000,
-            EVSpawnFraction = 0.1f,
+            EVSpawnFraction = 0.3,
             PopulationScaler = 0.7f,
             ChargeBufferPercent = 0.9f,
             DistanceScaler = 1.7f,
@@ -100,6 +100,7 @@ public static class EngineConfiguration
             searchDir = searchDir.Parent;
         }
 
-        throw Log.Error(0, 0, new DirectoryNotFoundException("Could not find 'data' directory in project hierarchy"));
+        Log.Error("Could not find 'data' directory in project hierarchy. Searched from {@CurrentDirectory}", Directory.GetCurrentDirectory());
+        throw new DirectoryNotFoundException("Could not find 'data' directory in project hierarchy. Searched from " + Directory.GetCurrentDirectory());
     }
 }

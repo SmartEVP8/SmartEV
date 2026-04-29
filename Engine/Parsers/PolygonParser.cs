@@ -2,7 +2,7 @@ namespace Engine.Parsers;
 
 using System.Text.Json;
 using Core.Shared;
-using Core.Helper;
+using Serilog;
 
 /// <summary>
 /// GeoJSON parser for extracting polygon coordinates and converting them to lists of Position objects.
@@ -70,8 +70,12 @@ public static class PolygonParser
             new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true,
-            })
-            ?? throw Log.Error(0, 0, new Exception("Invalid GeoJSON"));
+            });
+        if (geo is null)
+        {
+            Log.Error("Failed to deserialize GeoJSON from string: {@Json}", json);
+            throw new Exception("Failed to deserialize GeoJSON.");
+        }
 
         var polygons = new List<List<Position>>();
 

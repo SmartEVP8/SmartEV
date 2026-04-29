@@ -1,14 +1,14 @@
 namespace Engine.Events;
 
 using Core.Shared;
-using Core.Helper;
+using Serilog;
 
 /// <summary>
 /// The EventScheduler is responsible for managing and scheduling events in the system.
 /// </summary>
 public class EventScheduler() : IEventScheduler
 {
-    private readonly PriorityQueue<Event, (Time, uint)> _eventPriorityQueue = new();
+    private readonly PriorityQueue<Event, (Time currentTime, uint eventSequeenceId)> _eventPriorityQueue = new();
 
     /// <summary>
     /// Optional event handlers that can perform actions on scheduleEvent.
@@ -38,7 +38,10 @@ public class EventScheduler() : IEventScheduler
     {
         var timestamp = e.Time;
         if (timestamp < _currentTime)
-            throw Log.Error(0, e.Time, new ArgumentOutOfRangeException($"Event timestamp {timestamp} is in the past (current time: {_currentTime})"), ("Event", e));
+        {
+            Log.Error("Event timestamp {@EventTimestamp} is in the past (current time: {@CurrentTime}). Cannot schedule event. Event: {@Event}", timestamp, _currentTime, e);
+            throw new ArgumentOutOfRangeException($"Event timestamp {timestamp} is in the past (current time: {_currentTime}). Cannot schedule event.");
+        }
 
         if (e is IMiddlewareEvent me && _preProcessors.TryGetValue(me.GetType(), out var handler))
             handler.Invoke(me);
@@ -58,11 +61,11 @@ public class EventScheduler() : IEventScheduler
             return null;
 
         _eventPriorityQueue.TryDequeue(out var e, out var priority);
-        _currentTime = priority.Item1;
+        _currentTime = priority.currentTime;
 
-        if (_canceledEvents.Contains(priority.Item2))
+        if (_canceledEvents.Contains(priority.eventSequeenceId))
         {
-            _canceledEvents.Remove(priority.Item2);
+            _canceledEvents.Remove(priority.eventSequeenceId);
             return GetNextEvent();
         }
 

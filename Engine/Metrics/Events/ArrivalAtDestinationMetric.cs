@@ -44,7 +44,7 @@ public readonly struct ArrivalAtDestinationMetric
     /// <param name="ev">The EV for which to collect metrics.</param>
     /// <param name="simNow">The current simulation time, used to calculate actual arrival time.</param>
     /// <returns>The collected arrival metric.</returns>
-    public static ArrivalAtDestinationMetric Collect(ref EV ev, Time simNow)
+    public static ArrivalAtDestinationMetric Collect(EV ev, Time simNow)
     {
         var expectedArrivalTime = ev.Journey.Original.Duration;
         var actualArrivalTime = simNow - ev.Journey.Original.Departure;

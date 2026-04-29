@@ -2,8 +2,8 @@ namespace API.Services;
 
 using System.Net.WebSockets;
 using Google.Protobuf;
-using Protocol;
-using Core.Helper;
+using Serilog;
+using API.Protocol;
 
 /// <summary>
 /// Manages WebSocket connections and message processing for the simulation protocol.
@@ -47,11 +47,12 @@ public class SimulationWebSocketService(
                 }
                 catch (OperationCanceledException)
                 {
-                    // Expected during shutdown.
+                    Log.Information("Snapshot loop cancelled");
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(0, 0, ex);
+                    Log.Error("Error in snapshot loop");
+                    throw ex;
                 }
             }
 
@@ -71,7 +72,7 @@ public class SimulationWebSocketService(
     {
         if (_client?.State != WebSocketState.Open)
         {
-            Log.Warn(0, 0, "No open WebSocket client to send message");
+            Log.Warning("No open WebSocket client to send message");
             return;
         }
 
@@ -83,16 +84,15 @@ public class SimulationWebSocketService(
                 WebSocketMessageType.Binary,
                 true,
                 cancelToken);
-
-            Log.Verbose(0, 0, $"Sent envelope: {envelope.PayloadCase}");
         }
         catch (Exception ex)
         {
-            Log.Error(0, 0, ex);
+            Log.Error("Failed to send message over WebSocket");
+            throw ex;
         }
     }
 
-    private async Task ProcessConnectionAsync(WebSocket webSocket, CancellationToken cancelToken)
+    private static async Task ProcessConnectionAsync(WebSocket webSocket, CancellationToken cancelToken)
     {
         var buffer = new byte[_bufferSize];
 
@@ -122,11 +122,12 @@ public class SimulationWebSocketService(
         }
         catch (OperationCanceledException)
         {
-            Log.Info(0, 0, "WebSocket connection cancelled");
+            Log.Information("WebSocket connection cancelled");
         }
         catch (Exception ex)
         {
-            Log.Error(0, 0, ex);
+            Log.Error("Error processing WebSocket connection");
+            throw ex;
         }
     }
 
@@ -139,16 +140,16 @@ public class SimulationWebSocketService(
             {
                 var envelope = snapshotHandler.BuildSimulationSnapshot();
                 await SendAsync(envelope, cancelToken);
-                Log.Verbose(0, 0, "Broadcast simulation snapshot");
             }
         }
         catch (OperationCanceledException)
         {
-            // Expected during shutdown.
+            Log.Information("Snapshot loop cancelled");
         }
         catch (Exception ex)
         {
-            Log.Error(0, 0, ex);
+            Log.Error("Error in snapshot loop");
+            throw ex;
         }
     }
 }

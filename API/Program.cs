@@ -4,14 +4,14 @@ using Services;
 using Engine.Events;
 using Engine.Cost;
 using API.EngineManager;
-using Protocol;
+using API.Protocol;
 using Google.Protobuf;
 using Microsoft.Extensions.Logging;
 using Core.Charging;
 using Serilog;
 using Serilog.Events;
 using Serilog.Templates;
-using Core.Helper;
+using Core.Vehicles;
 
 /// <summary>
 /// Entry point for the SmartEV API application.
@@ -34,30 +34,15 @@ public static class Program
                       .AllowAnyMethod()
                       .AllowAnyHeader());
         });
-        var formatter = new ExpressionTemplate("{ {evId: @p['evId'], Time: @p['Time'], Level: @l, Message: @m, Exception: @x, ..@p} }\n");
+        var formatter = new ExpressionTemplate(
+          "[{@l:u3}] {@m}\n{@x}");
 
-        Serilog.Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Verbose()
+        Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Information()
             .WriteTo.File(
                 formatter,
-                "logs/Headless-verbose-.jsonl",
-                restrictedToMinimumLevel: LogEventLevel.Verbose,
-                rollingInterval: RollingInterval.Day)
-            .WriteTo.File(
-                formatter,
-                "logs/Headless-information-.jsonl",
-                restrictedToMinimumLevel: LogEventLevel.Information,
-                rollingInterval: RollingInterval.Day)
-            .WriteTo.File(
-                formatter,
-                "logs/Headless-warning-.jsonl",
-                restrictedToMinimumLevel: LogEventLevel.Warning,
-                rollingInterval: RollingInterval.Day)
-            .WriteTo.File(
-                formatter,
-                "logs/Headless-error-.jsonl",
-                restrictedToMinimumLevel: LogEventLevel.Error,
-                rollingInterval: RollingInterval.Day)
+                "logs/API-Logs-" + DateTime.Now.ToString("yyyy-MM-dd-HH-mm") + ".jsonl",
+                restrictedToMinimumLevel: LogEventLevel.Information)
             .CreateLogger();
 
         var app = builder.Build();
@@ -76,6 +61,7 @@ public static class Program
             {
                 services.AddSingleton(_ => app.Services.GetRequiredService<ILoggerFactory>());
                 services.AddLogging();
+                services.AddSingleton<IReadOnlyDictionary<int, EV>>(sp => sp.GetRequiredService<Dictionary<int, EV>>());
                 services.AddSingleton<IEngineEventSubscriber, EngineEventSubscriber>();
                 services.AddSingleton<SnapshotHandler>();
                 services.AddSingleton<SimulationWebSocketService>();
@@ -198,8 +184,8 @@ public static class Program
             }
             catch (Exception ex)
             {
-                Core.Helper.Log.Error(0, 0, ex);
-                throw;
+                Log.Error("Error handling WebSocket connection");
+                throw ex;
             }
             finally
             {
@@ -208,7 +194,7 @@ public static class Program
             }
         });
 
-        Core.Helper.Log.Info(0, 0, "API started.");
+        Log.Information("API started.");
         app.Run();
     }
 }
