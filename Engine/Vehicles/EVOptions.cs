@@ -6,8 +6,8 @@ public record EVOptions
     /// GetsDistribution of starting state of charge (SoC) for created EVs. Keys are the discrete SoC values, and values are the probabilities of each SoC being sampled.
     /// </summary>
     public IReadOnlyDictionary<float, double> StartSoCDistribution { get; init; }
-            = new Dictionary<float, double>
-            {
+        = new Dictionary<float, double>
+        {
             { 0.0f, 0.0 },
             { 0.10f, 0.0 },
             { 0.20f, 0.0 },
@@ -19,5 +19,5 @@ public record EVOptions
             { 0.80f, 0.23 },
             { 0.90f, 0.02 },
             { 1.00f, 0.01 },
-            };
+        };
 }

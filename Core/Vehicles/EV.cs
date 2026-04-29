@@ -40,6 +40,12 @@ public class EV(int id, Battery battery, Preferences preferences, Journey journe
     public Battery Battery { get; } = battery;
 
     /// <summary>
+    /// Gets the EV state-of-charge at spawn time.
+    /// This remains immutable and is used for deadline estimation.
+    /// </summary>
+    public float SpawnStateOfCharge { get; } = battery.StateOfCharge;
+
+    /// <summary>
     /// Gets the energy consumption of this model in Wh/km.
     /// </summary>
     public ushort ConsumptionWhPerKm { get; } = efficiency;
