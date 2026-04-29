@@ -46,15 +46,21 @@ public readonly struct ArrivalAtDestinationMetric
     /// <returns>The collected arrival metric.</returns>
     public static ArrivalAtDestinationMetric Collect(EV ev, Time simNow)
     {
-        var expectedArrivalTime = ev.Journey.Original.Duration;
-        var actualArrivalTime = simNow - ev.Journey.Original.Departure;
+        var baselineEnergyDemand = ev.EnergyForDistanceKWh(ev.Journey.Original.DistanceKm);
+        var deadline = DeadlineCalculator.Calculate(
+            ev.Journey,
+            ev.SpawnStateOfCharge,
+            ev.Preferences.MinAcceptableCharge,
+            (float)ev.Preferences.MaxPathDeviation,
+            ev.Battery.MaxCapacityKWh,
+            baselineEnergyDemand);
 
         return new ArrivalAtDestinationMetric
         {
-            ExpectedArrivalTime = expectedArrivalTime,
-            ActualArrivalTime = actualArrivalTime,
+            ExpectedArrivalTime = ev.Journey.Original.Eta,
+            ActualArrivalTime = simNow,
             PathDeviation = ev.Journey.Current.PathDeviation,
-            MissedDeadline = actualArrivalTime > expectedArrivalTime,
+            MissedDeadline = simNow > deadline,
             DriveDirectlyToDestination = ev.DriveDirectlyToDestination,
         };
     }
