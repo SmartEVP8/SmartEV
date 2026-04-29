@@ -1,18 +1,19 @@
 namespace Engine.Events;
 
 using Engine.Metrics.Events;
-using Engine.Vehicles;
 using Engine.Metrics;
+using Core.Vehicles;
+using Serilog;
 
 /// <summary>
 /// Handles the <see cref="ArriveAtDestination"/> event by collecting a <see cref="ArrivalAtDestinationMetric"/> for the EV that arrived at its destination,
-/// recording it via the <see cref="MetricsService"/>, and freeing the EV from the <see cref="EVStore"/>.
+/// recording it via the <see cref="MetricsService"/>.
 /// </summary>
 /// <param name="metrics">Metrics service.</param>
-/// <param name="evStore">EV store.</param>
+/// <param name="evs">EV store.</param>
 public class DestinationArrivalHandler(
     MetricsService metrics,
-    EVStore evStore)
+    Dictionary<int, EV> evs)
 {
     /// <summary>
     /// Handles the <see cref="ArriveAtDestination"/> event.
@@ -20,10 +21,12 @@ public class DestinationArrivalHandler(
     /// <param name="e">The event.</param>
     public void Handle(ArriveAtDestination e)
     {
-        ref var ev = ref evStore.Get(e.EVId);
-
-        var metric = ArrivalAtDestinationMetric.Collect(ref ev, e.Time);
+        var metric = ArrivalAtDestinationMetric.Collect(e.EV, e.Time);
         metrics.RecordArrival(metric);
-        evStore.Free(e.EVId);
+        if (!evs.Remove(e.EV.Id))
+        {
+            Log.Error("EV with ID {@EVId} not found in EV store when handling arrival at destination.", e.EV.Id);
+            throw new KeyNotFoundException($"EV with ID {e.EV.Id} not found in EV store when handling arrival at destination.");
+        }
     }
 }

@@ -1,6 +1,7 @@
 namespace Engine.test.Vehicles;
 
 using Core.Shared;
+using Core.Vehicles;
 using Engine.Events;
 using Engine.test.Builders;
 using Engine.Vehicles;
@@ -13,8 +14,8 @@ public class EVPopulatorTests
         var journeySamplerProvider = EngineTestData.JourneySamplerProvider();
         var fakeScheduler = new FakeScheduler();
         var evOptions = new EVOptions();
-        var evStore1 = new EVStore(100);
-        var evStore2 = new EVStore(100);
+        var evStore1 = new Dictionary<int, EV>();
+        var evStore2 = new Dictionary<int, EV>();
 
         var evPopulator1 = new EVPopulator(new EVFactory(new Random(1), journeySamplerProvider, EngineTestData.OSRMRouter, evOptions), evStore1, fakeScheduler);
         var evPopulator2 = new EVPopulator(new EVFactory(new Random(1), journeySamplerProvider, EngineTestData.OSRMRouter, evOptions), evStore2, fakeScheduler);
@@ -22,9 +23,11 @@ public class EVPopulatorTests
         evPopulator1.CreateEVs(100, 3600);
         evPopulator2.CreateEVs(100, 3600);
 
-        for (var i = 0; i < 100; i++)
+        var keys = evStore1.Keys.Order().ToList();
+        Assert.Equal(100, keys.Count);
+        foreach (var key in keys)
         {
-            Assert.Equal(evStore1.Get(i).ToString(), evStore2.Get(i).ToString());
+            Assert.Equal(evStore1[key].ToString(), evStore2[key].ToString());
         }
     }
 

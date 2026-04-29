@@ -1,8 +1,7 @@
 namespace API.Services;
 
-using Core.Helper;
-
 using Engine;
+using Serilog;
 
 /// <summary>
 /// Represents the current execution state of the simulation.
@@ -108,11 +107,12 @@ public sealed class SimulationRunner(
         }
         catch (OperationCanceledException)
         {
-            Log.Info(0, 0, "SimulationRunner stopped");
+            Log.Information("SimulationRunner stopped");
         }
         catch (Exception ex)
         {
-            Log.Error(0, 0, ex, ("message", "Error in SimulationRunner"));
+            Log.Error("Error in SimulationRunner");
+            throw ex;
         }
         finally
         {

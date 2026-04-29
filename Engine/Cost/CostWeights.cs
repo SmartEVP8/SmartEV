@@ -1,7 +1,5 @@
 namespace Engine.Cost;
 
-using Core.Helper;
-
 /// <summary>
 /// Enum for the different cost weight fields.
 /// </summary>
@@ -28,7 +26,7 @@ public static class CostWeightFieldExtensions
         CostWeightField.PriceSensitivity => "Price Sensitivity",
         CostWeightField.PathDeviation => "Path Deviation",
         CostWeightField.ExpectedWaitTime => "Expected Wait Time",
-        _ => throw Log.Error(0, 0, new ArgumentOutOfRangeException(nameof(field)))
+        _ => throw new ArgumentOutOfRangeException(nameof(field))
     };
 }
 
