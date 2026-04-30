@@ -80,6 +80,7 @@ public static class EngineConfiguration
             StationsPath = new FileInfo(Path.Combine(dataPath.FullName, "denmark_charging_locations.json")),
             PolygonPath = new FileInfo(Path.Combine(dataPath.FullName, "denmark_polygon.json")),
             WetPolygonPath = new FileInfo(Path.Combine(dataPath.FullName, "denmark_wet_polygon.json")),
+            HighwayPolylinesPath = new FileInfo(Path.Combine(dataPath.FullName, "highway_polylines.json")),
         };
     }
 

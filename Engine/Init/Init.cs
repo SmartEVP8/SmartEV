@@ -75,10 +75,11 @@ public static class Init
         services.AddSingleton(sp =>
         {
             var settings = sp.GetRequiredService<EngineSettings>();
+            var highwayPolylines = HighwayFinder.GetHighwayNodes(settings.HighwayPolylinesPath);
             var energyPrices = sp.GetRequiredService<EnergyPrices>();
             var stationSeed = settings.StationSeed;
             var stationPath = settings.StationsPath;
-            var stationFactory = new StationFactory(settings.StationFactoryOptions, stationSeed, energyPrices, stationPath);
+            var stationFactory = new StationFactory(settings.StationFactoryOptions, stationSeed, energyPrices, stationPath, highwayPolylines);
             return stationFactory.CreateStations();
         });
 

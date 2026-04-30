@@ -2,6 +2,7 @@ namespace Engine.StationFactory;
 
 using System.Text.Json;
 using Core.Charging;
+using Core.GeoMath;
 using Core.Shared;
 using Serilog;
 
@@ -15,8 +16,10 @@ public class StationFactory
     private readonly StationFactoryOptions _options;
     private readonly Random _stationRandom;
     private readonly Random _chargerRandom;
+    private readonly StationDistribution _distribution;
     private readonly EnergyPrices _energyPrices;
     private readonly FileInfo _stationsFile;
+    private readonly List<List<Position>> _highwayPolylines;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="StationFactory"/> class with the specified options and random seed.
@@ -29,7 +32,7 @@ public class StationFactory
     /// <exception cref="ArgumentOutOfRangeException">Thrown if TotalChargers is not greater than zero, or if probabilities are not between 0 and 1.</exception>
     /// <exception cref="ArgumentException">Thrown if SocketProbabilities is empty, contains negative probabilities, or does not sum to approximately 1.</exception>
     /// <exception cref="InvalidOperationException">Thrown if there are not enough chargers to assign at least one to each station.</exception>
-    public StationFactory(StationFactoryOptions options, Random random, EnergyPrices energyPrices, FileInfo stationsFile)
+    public StationFactory(StationFactoryOptions options, Random random, EnergyPrices energyPrices, FileInfo stationsFile, List<List<Position>> HighwayPolylines)
     {
         ArgumentNullException.ThrowIfNull(options);
 
@@ -48,8 +51,10 @@ public class StationFactory
         _options = options;
         _stationRandom = random;
         _chargerRandom = options.ChargerSeed;
+        _distribution = new StationDistribution(_stationRandom);
         _energyPrices = energyPrices;
         _stationsFile = stationsFile ?? throw new ArgumentNullException(nameof(stationsFile), "Stations file cannot be null.");
+        _highwayPolylines = HighwayPolylines;
     }
 
     /// <summary>
@@ -82,15 +87,29 @@ public class StationFactory
 
         for (var i = 0; i < locations.Count; i++)
         {
+            var location = locations[i];
+            var position = new Position(location.Longitude, location.Latitude);
+
+            const double highwayRadiusKM = 0.5;
+            var isCloseToHighway = IsNearHighway(position, highwayRadiusKM);
+
+            var stationPowerKW = isCloseToHighway
+                ? _distribution.NextHigh
+                : _distribution.NextMedium;
+
             var chargerCount = chargerCountsPerStation[i];
             var chargers = new List<ChargerBase>(chargerCount);
 
+            var shouldForceAllDualAtStation = isCloseToHighway && ShouldCreateDualChargingPoint();
+
             for (var j = 0; j < chargerCount; j++)
             {
-                chargers.Add(CreateCharger(chargerId++));
+                var isDualCharger = shouldForceAllDualAtStation || ShouldCreateDualChargingPoint();
+
+                chargers.Add(CreateCharger(chargerId++, stationPowerKW, isDualCharger));
             }
 
-            stations.Add(CreateStation(nextStationId++, locations[i], chargers));
+            stations.Add(CreateStation(nextStationId++, location, chargers));
         }
 
         Log.Information("Created {StationCount} stations with a total of {ChargerCount} chargers.", stations.Count, chargerId - 1);
@@ -124,23 +143,26 @@ public class StationFactory
     /// <param name="chargerId">
     /// The charger identifier within the station.
     /// </param>
+    /// <param name="stationPowerKW">
+    /// The power rating of the charger.
+    /// </param>
     /// <returns>
     /// The created charger.
     /// </returns>
-    private ChargerBase CreateCharger(int chargerId)
+    private ChargerBase CreateCharger(int chargerId, ushort stationPowerKW, bool isDualStation)
     {
-        var connectors = CreateConnectorSet();
+        var connectors = CreateConnectorSet(stationPowerKW);
 
-        if (ShouldCreateDualChargingPoint())
+        if (isDualStation)
         {
-            return new DualCharger(chargerId, _options.MaxPowerKW, connectors);
+            return new DualCharger(chargerId, stationPowerKW, connectors);
         }
 
-        return new SingleCharger(chargerId, _options.MaxPowerKW, connectors);
+        return new SingleCharger(chargerId, stationPowerKW, connectors);
     }
 
-    private Connectors CreateConnectorSet()
-        => new((new Connector(_options.MaxPowerKW), new Connector(_options.MaxPowerKW)));
+    private static Connectors CreateConnectorSet(ushort stationPowerKW)
+    => new((new Connector(stationPowerKW), new Connector(stationPowerKW)));
 
     private bool ShouldCreateDualChargingPoint()
         => _chargerRandom.NextDouble() < _options.DualChargingPointProbability;
@@ -177,5 +199,20 @@ public class StationFactory
         }
 
         return result;
+    }
+
+    private bool IsNearHighway(Position position, double radius) =>
+        _highwayPolylines.Any(polyline =>
+                 polyline.Zip(polyline.Skip(1))
+                         .Any(segment => GeoMath.IsInRadius(position, segment.First, segment.Second, radius)));
+
+    private class StationDistribution(Random random)
+    {
+        private static readonly IReadOnlyList<ushort> _medium = [50, 75, 100, 125, 150];
+        private static readonly IReadOnlyList<ushort> _high = [150, 200, 250, 300];
+
+        public ushort NextMedium => _medium[random.Next(_medium.Count)];
+
+        public ushort NextHigh => _high[random.Next(_high.Count)];
     }
 }
