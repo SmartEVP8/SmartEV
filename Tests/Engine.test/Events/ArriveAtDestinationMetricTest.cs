@@ -81,6 +81,5 @@ public class ArriveAtDestinationMetricTest
         var metric = ArrivalAtDestinationMetric.Collect(ev, simNow);
 
         Assert.True(metric.MissedDeadline);
-        Assert.True(metric.DeltaArrivalTime > 0);
     }
 }

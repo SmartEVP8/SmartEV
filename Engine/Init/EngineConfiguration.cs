@@ -33,9 +33,9 @@ public static class EngineConfiguration
             ProcessorCount = Environment.ProcessorCount,
             CostConfig = new CostWeights
             {
-                PathDeviation = ReadWeightFromEnvironment(_pathDeviationEnvVar, 0.8f, 0f, 1f),
+                PathDeviation = ReadWeightFromEnvironment(_pathDeviationEnvVar, 0.4f, 0f, 1f),
                 PriceSensitivity = ReadWeightFromEnvironment(_priceSensitivityEnvVar, 0.4f, 0f, 1f),
-                ExpectedWaitTime = ReadWeightFromEnvironment(_expectedWaitTimeEnvVar, 1f, 0f, 1f),
+                ExpectedWaitTime = ReadWeightFromEnvironment(_expectedWaitTimeEnvVar, 0.4f, 0f, 1f),
             },
             RunId = Guid.NewGuid(),
             MetricsConfig = new MetricsConfig

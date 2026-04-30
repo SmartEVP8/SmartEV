@@ -129,7 +129,7 @@ public class Journey(Time departure, Time duration, float distanceMeters, List<P
         ValidateWaypoints(waypoints);
 
         var resolvedNextStop = ResolveNextStop(waypoints, nextStop);
-        var deviation = Current.PathDeviation + (departure + duration) - Current.Eta;
+        var deviation = Math.Max(0, Current.PathDeviation + departure + duration - Current.Eta);
         var durationToNextStop = DurationToNextStop(duration, waypoints, resolvedNextStop);
 
         Current = new CurrentJourney(
