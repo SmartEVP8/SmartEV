@@ -2,6 +2,7 @@ namespace Engine.Spawning;
 
 using Engine.Grid;
 using Core.Shared;
+using Serilog;
 
 /// <summary>
 /// A shared store of the currently computed samplers.
@@ -12,6 +13,7 @@ public class JourneySamplerProvider : IJourneySamplerProvider
     private readonly float _populationScalar;
     private readonly float _distanceScalar;
     private readonly List<List<Position>> _wetPolygons;
+    private Dictionary<uint, IJourneySampler> _cachedSamplers = new();
 
     private uint _lastJourneySamplerUpdateHour = 0;
 
@@ -28,7 +30,13 @@ public class JourneySamplerProvider : IJourneySamplerProvider
         _populationScalar = populationScalar;
         _distanceScalar = distanceScalar;
         _wetPolygons = wetPolygons;
-        Current = _pipeline.Compute(_populationScalar, _distanceScalar, _wetPolygons);
+        for (uint hour = 0; hour < 24; hour++)
+        {
+            var (popScalar, distScalar) = GetScalers(hour);
+            _cachedSamplers[hour] = _pipeline.Compute(popScalar, distScalar, wetPolygons);
+        }
+
+        Current = _cachedSamplers[0];
     }
 
     /// <inheritdoc/>
@@ -41,10 +49,14 @@ public class JourneySamplerProvider : IJourneySamplerProvider
             return Current;
 
         _lastJourneySamplerUpdateHour = time.Hours;
-        var (populationScalar, distanceScalar) = GetScalers(time);
+        if (_cachedSamplers.TryGetValue(time.Hours, out var cachedSampler))
+        {
+            Current = cachedSampler;
+            return Current;
+        }
 
-        Current = _pipeline.Compute(populationScalar, distanceScalar, _wetPolygons);
-        return Current;
+        Log.Error("No cached sampler found for hour {Hour}. This should not happen.", time.Hours);
+        throw new InvalidOperationException($"No cached sampler found for hour {time.Hours}. This should not happen.");
     }
 
     private (float populationScaler, float distanceScaler) GetScalers(Time time)
