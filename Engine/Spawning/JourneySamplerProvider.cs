@@ -13,6 +13,8 @@ public class JourneySamplerProvider : IJourneySamplerProvider
     private readonly float _distanceScalar;
     private readonly List<List<Position>> _wetPolygons;
 
+    private uint _lastJourneySamplerUpdateHour = 0;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="JourneySamplerProvider"/> class.
     /// </summary>
@@ -33,9 +35,28 @@ public class JourneySamplerProvider : IJourneySamplerProvider
     public IJourneySampler Current { get; private set; }
 
     /// <inheritdoc/>
-    public IJourneySampler Recompute(float populationScalar, float distanceScalar)
+    public IJourneySampler Recompute(Time time)
     {
+        if (time.Hours == _lastJourneySamplerUpdateHour)
+            return Current;
+
+        _lastJourneySamplerUpdateHour = time.Hours;
+        var (populationScalar, distanceScalar) = GetScalers(time);
+
         Current = _pipeline.Compute(populationScalar, distanceScalar, _wetPolygons);
         return Current;
+    }
+
+    private (float populationScaler, float distanceScaler) GetScalers(Time time)
+    {
+        const float baseScaler = 1f;
+        const float maxVariance = 0.6f;
+
+        var dailyFluctuation = (float)(maxVariance * Math.Sin((Math.PI * time.Hours) / 12));
+
+        var populationScaler = baseScaler + dailyFluctuation;
+        var distanceScaler = baseScaler - dailyFluctuation;
+
+        return (populationScaler, distanceScaler);
     }
 }

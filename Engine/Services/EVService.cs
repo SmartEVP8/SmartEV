@@ -2,6 +2,8 @@ namespace Engine.Services;
 
 using Core.Shared;
 using Engine.Events;
+using Engine.Grid;
+using Engine.Spawning;
 using Engine.Utils;
 using Engine.Vehicles;
 using Serilog;
@@ -17,6 +19,7 @@ public class EVService(
     EVPopulator evPopulator,
     EventScheduler scheduler,
     Time distributionWindow,
+    IJourneySamplerProvider journeySampler,
     double spawnFraction)
 {
     private readonly CarsInPeriod _carsInPeriod = new(distributionWindow, spawnFraction);
@@ -28,6 +31,7 @@ public class EVService(
     public void Handle(SpawnEVS e)
     {
         var amount = _carsInPeriod.GetCarsInPeriod(e.Time);
+        journeySampler.Recompute(e.Time);
         if (amount <= 0)
         {
             Log.Error("EVService was scheduled to spawn EVs at time {@Time}, but the amount to spawn was {Amount}.", e.Time, amount);

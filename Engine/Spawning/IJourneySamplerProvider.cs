@@ -1,5 +1,6 @@
 namespace Engine.Spawning;
 
+using Core.Shared;
 using Engine.Grid;
 
 /// <summary>
@@ -22,5 +23,5 @@ public interface IJourneySamplerProvider
     /// A higher scalar increases the weight of larger cities, while a lower scalar reduces it.
     /// </param>
     /// <returns>The computed samplers. Equivelant to calling Current after Recomputation.</returns>
-    IJourneySampler Recompute(float distanceScalar, float populationScalar);
+    IJourneySampler Recompute(Time time);
 }
