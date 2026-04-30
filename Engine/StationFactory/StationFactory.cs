@@ -178,4 +178,14 @@ public class StationFactory
 
         return result;
     }
+
+    private class StationDistribution(Random random)
+    {
+        private static readonly IReadOnlyList<int> _medium = [50, 75, 100, 125, 150];
+        private static readonly IReadOnlyList<int> _high = [150, 200, 250, 300];
+
+        public int NextMedium => _medium[random.Next(_medium.Count)];
+        public int NextHigh => _high[random.Next(_high.Count)];
+    }
 }
+
