@@ -26,4 +26,8 @@ public record StationFactoryOptions
     /// Gets the maximum power in kilowatts that a charger can deliver, which affects how quickly EVs can charge and how long they spend at charging stations.
     /// </summary>
     public ushort MaxPowerKW { get; init; } = 400;
+
+    /// <summary> Gets the random seed for charger generation, which ensures reproducibility of charger placement across simulation runs when using
+    public Random ChargerSeed { get; init; } = new Random(44);
+
 }

@@ -31,6 +31,11 @@ public record EngineSettings
     required public Random Seed { get; init; }
 
     /// <summary>
+    /// Gets the random seed for station generation, which ensures reproducibility of station placement across simulation runs when using the same seed.
+    /// </summary>
+    required public Random StationSeed { get; init; }
+
+    /// <summary>
     /// Gets the number of processors/worker threads the engine should use for parallel work.
     /// </summary>
     required public int ProcessorCount { get; init; } = Environment.ProcessorCount;

@@ -13,7 +13,8 @@ using Serilog;
 public class StationFactory
 {
     private readonly StationFactoryOptions _options;
-    private readonly Random _random;
+    private readonly Random _stationRandom;
+    private readonly Random _chargerRandom;
     private readonly EnergyPrices _energyPrices;
     private readonly FileInfo _stationsFile;
 
@@ -45,7 +46,8 @@ public class StationFactory
         }
 
         _options = options;
-        _random = random;
+        _stationRandom = random;
+        _chargerRandom = options.ChargerSeed;
         _energyPrices = energyPrices;
         _stationsFile = stationsFile ?? throw new ArgumentNullException(nameof(stationsFile), "Stations file cannot be null.");
     }
@@ -141,7 +143,7 @@ public class StationFactory
         => new((new Connector(_options.MaxPowerKW), new Connector(_options.MaxPowerKW)));
 
     private bool ShouldCreateDualChargingPoint()
-        => _random.NextDouble() < _options.DualChargingPointProbability;
+        => _chargerRandom.NextDouble() < _options.DualChargingPointProbability;
 
     /// <summary>
     /// Distributes the total number of chargers across the available stations.
@@ -170,7 +172,7 @@ public class StationFactory
 
         while (remaining > 0)
         {
-            result[_random.Next(stationCount)]++;
+            result[_stationRandom.Next(stationCount)]++;
             remaining--;
         }
 
