@@ -83,7 +83,7 @@ public static class DeadlineCalculator
         if (deficitKWh <= 0)
             return 0.0;
 
-        var usablePerSessionKWh = (1.0 - socMin) * batteryCapacityKWh;
+        var usablePerSessionKWh = (0.8 - socMin) * batteryCapacityKWh;
         var stops = Math.Ceiling(deficitKWh / usablePerSessionKWh);
         var chargeTimeMs = deficitKWh / _averageChargerPowerKw * Time.MillisecondsPerHour;
         var stopOverheadMs = stops * _stopOverheadMs;

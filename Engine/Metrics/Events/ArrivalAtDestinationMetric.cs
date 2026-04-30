@@ -29,11 +29,6 @@ public readonly struct ArrivalAtDestinationMetric
     required public bool DriveDirectlyToDestination { get; init; }
 
     /// <summary>
-    /// Gets the difference between actual and expected arrival time.
-    /// </summary>
-    public int DeltaArrivalTime => (int)ActualArrivalTime - (int)ExpectedArrivalTime;
-
-    /// <summary>
     /// Gets a value indicating whether the expected arrival time was missed.
     /// </summary>
     required public bool MissedDeadline { get; init; }
