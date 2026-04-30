@@ -2,6 +2,7 @@ namespace Engine.StationFactory;
 
 using System.Text.Json;
 using Core.Charging;
+using Core.GeoMath;
 using Core.Shared;
 using Serilog;
 
@@ -17,6 +18,7 @@ public class StationFactory
     private readonly Random _chargerRandom;
     private readonly EnergyPrices _energyPrices;
     private readonly FileInfo _stationsFile;
+    private readonly List<List<Position>> _highwayPolylines;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="StationFactory"/> class with the specified options and random seed.
@@ -29,7 +31,7 @@ public class StationFactory
     /// <exception cref="ArgumentOutOfRangeException">Thrown if TotalChargers is not greater than zero, or if probabilities are not between 0 and 1.</exception>
     /// <exception cref="ArgumentException">Thrown if SocketProbabilities is empty, contains negative probabilities, or does not sum to approximately 1.</exception>
     /// <exception cref="InvalidOperationException">Thrown if there are not enough chargers to assign at least one to each station.</exception>
-    public StationFactory(StationFactoryOptions options, Random random, EnergyPrices energyPrices, FileInfo stationsFile)
+    public StationFactory(StationFactoryOptions options, Random random, EnergyPrices energyPrices, FileInfo stationsFile, List<List<Position>> HighwayPolylines)
     {
         ArgumentNullException.ThrowIfNull(options);
 
@@ -50,6 +52,7 @@ public class StationFactory
         _chargerRandom = options.ChargerSeed;
         _energyPrices = energyPrices;
         _stationsFile = stationsFile ?? throw new ArgumentNullException(nameof(stationsFile), "Stations file cannot be null.");
+        _highwayPolylines = HighwayPolylines;
     }
 
     /// <summary>
@@ -178,6 +181,11 @@ public class StationFactory
 
         return result;
     }
+
+    private bool IsNearHighway(Position position, double radius) =>
+        _highwayPolylines.Any(polyline =>
+                 polyline.Zip(polyline.Skip(1))
+                         .Any(segment => GeoMath.IsInRadius(position, segment.First, segment.Second, radius)));
 
     private class StationDistribution(Random random)
     {
