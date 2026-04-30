@@ -141,4 +141,9 @@ public record EngineSettings
     /// Gets the file path for WetPolygon data required by the engine, which is used for determining where EVs cannot be spawned.
     /// </summary>
     required public FileInfo WetPolygonPath { get; init; }
+
+    /// <summary>
+    /// Gets the file path for motorway nodes required by the engine, which is used for station generation, ensuring that stations around motorways have higher throughput than stations further away from motorways.
+    /// </summary>
+    required public FileInfo HighwayPolylinesPath { get; init; }
 }
