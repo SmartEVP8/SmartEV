@@ -76,9 +76,9 @@ public static class Init
         {
             var settings = sp.GetRequiredService<EngineSettings>();
             var energyPrices = sp.GetRequiredService<EnergyPrices>();
-            var seed = settings.Seed;
+            var stationSeed = settings.StationSeed;
             var stationPath = settings.StationsPath;
-            var stationFactory = new StationFactory(settings.StationFactoryOptions, seed, energyPrices, stationPath);
+            var stationFactory = new StationFactory(settings.StationFactoryOptions, stationSeed, energyPrices, stationPath);
             return stationFactory.CreateStations();
         });
 
