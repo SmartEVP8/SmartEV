@@ -40,9 +40,18 @@ public class ArriveAtDestinationMetricTest
 
         var ev = new EV(1, battery, preferences, journey, 150);
 
+        var baselineEnergyDemand = ev.EnergyForDistanceKWh(ev.Journey.Original.DistanceKm);
+        var deadline = DeadlineCalculator.Calculate(
+            ev.Journey,
+            ev.SpawnStateOfCharge,
+            ev.Preferences.MinAcceptableCharge,
+            (float)ev.Preferences.MaxPathDeviation,
+            ev.Battery.MaxCapacityKWh,
+            baselineEnergyDemand);
+
         var metric = ArrivalAtDestinationMetric.Collect(ev, simNow);
 
-        Assert.Equal(departure + originalDuration, metric.ExpectedArrivalTime);
+        Assert.Equal((uint)deadline, metric.ExpectedArrivalTime);
         Assert.Equal(deviation, metric.PathDeviation);
     }
 

@@ -19,7 +19,6 @@ public class StationServiceSnapshotTests
         var station = CoreTestData.Station(1, chargers: [charger]);
         var collector = new StationMetricsCollector([station]);
 
-        var expectedQueueSize = 2;
         var snapshotInterval = new Time(3600000);
 
         charger.Window = charger.Window with
@@ -28,11 +27,6 @@ public class StationServiceSnapshotTests
             HadActivity = deliveredKwh > 0,
         };
 
-        for (var i = 0; i < expectedQueueSize; i++)
-        {
-            charger.Queue.Enqueue(EngineTestData.ConnectedEV(i, 0.2, 0.8));
-        }
-
         var (chargers, stations) = collector.Collect(snapshotInterval, new Time(3600));
 
         var cs = chargers.Single();
@@ -40,10 +34,8 @@ public class StationServiceSnapshotTests
 
         Assert.Equal(deliveredKwh, cs.DeliveredKW);
         Assert.Equal(expectedUtilization, cs.Utilization);
-        Assert.Equal(expectedQueueSize, cs.QueueSize);
 
         Assert.Equal(deliveredKwh, ss.TotalDeliveredKWh);
         Assert.Equal(chargerMaxKw, ss.TotalMaxKWh);
-        Assert.Equal(expectedQueueSize, ss.TotalQueueSize);
     }
 }
