@@ -2,13 +2,14 @@ namespace Engine.Metrics.Snapshots;
 
 using Core.Charging;
 using Core.Shared;
+using Engine.Services;
 using Engine.Utils;
 using Serilog;
 
 /// <summary>
 /// Dedicated service for generating point-in-time metrics snapshots from current station states.
 /// </summary>
-public class StationMetricsCollector(List<Station> stations)
+public class StationMetricsCollector(List<Station> stations, StationService stationService)
 {
     /// <summary>
     /// Collects charger and station snapshot metrics for the given simulation time and station states.
@@ -57,6 +58,14 @@ public class StationMetricsCollector(List<Station> stations)
 
             var (reservations, cancellations) = station.Reservations.SnapshotAndResetCounters();
 
+            var expectedWaitTimeResult = stationService.ExpectedWaitTime(station.Id, simNow, simNow);
+            var expectedWaitTime = 0U;
+
+            if (expectedWaitTimeResult >= simNow)
+            {
+                expectedWaitTime = (uint)(expectedWaitTimeResult - simNow);
+            }
+
             stationMetrics.Add(new StationSnapshotMetric
             {
                 SimTime = simNow,
@@ -67,6 +76,7 @@ public class StationMetricsCollector(List<Station> stations)
                 TotalChargers = station.Chargers.Count,
                 Reservations = reservations,
                 Cancellations = cancellations,
+                ExpectedWaitTimeMiliseconds = expectedWaitTime,
             });
         }
 
