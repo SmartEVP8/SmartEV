@@ -45,4 +45,9 @@ public record StationSnapshotMetric
     /// Gets the number of cancellations made to this station since the last snapshot.
     /// </summary>
     required public uint Cancellations { get; init; }
+
+    /// <summary>
+    /// Gets the expected wait time in milliseconds for an EV arriving at this station at snapshot time, based on current reservations and charger availability.
+    /// </summary>
+    required public uint ExpectedWaitTimeMiliseconds { get; init; }
 }

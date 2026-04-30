@@ -170,7 +170,8 @@ public static class Init
             var snapshotInterval = settings.SnapshotInterval;
             var metrics = sp.GetRequiredService<MetricsService>();
             var stations = sp.GetRequiredService<List<Station>>();
-            var stationMetricsCollector = new StationMetricsCollector(stations);
+            var stationService = sp.GetRequiredService<StationService>();
+            var stationMetricsCollector = new StationMetricsCollector(stations, stationService);
             var scheduler = sp.GetRequiredService<EventScheduler>();
             return new SnapshotEventHandler(snapshotInterval, metrics, stationMetricsCollector, scheduler);
         });

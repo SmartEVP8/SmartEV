@@ -4,6 +4,8 @@ using Core.Shared;
 using Engine.test.Builders;
 using Core.test.Builders;
 using Engine.Metrics.Snapshots;
+using Core.Charging;
+
 public class StationServiceSnapshotTests
 {
     [Theory]
@@ -17,7 +19,9 @@ public class StationServiceSnapshotTests
     {
         var charger = CoreTestData.SingleCharger(1, maxPowerKW: chargerMaxKw);
         var station = CoreTestData.Station(1, chargers: [charger]);
-        var collector = new StationMetricsCollector([station]);
+        var stationDic = new Dictionary<ushort, Station> { [station.Id] = station };
+        var stationService = EngineTestData.StationService(stationDic, new(), new());
+        var collector = new StationMetricsCollector([station], stationService);
 
         var snapshotInterval = new Time(3600000);
 
