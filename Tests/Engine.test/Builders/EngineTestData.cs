@@ -164,7 +164,9 @@ public static class EngineTestData
             new StationFactoryOptions(),
             _random,
             CoreTestData.EnergyPrices,
-            new FileInfo(AppContext.GetData("ChargersPath") as string ?? throw new SkillissueException()));
+            new FileInfo(AppContext.GetData("ChargersPath") as string ?? throw new SkillissueException()),
+            new List<List<Position>>());
+
         return stationFactory.CreateStations().ToDictionary(s => s.Id, s => s);
     }
 

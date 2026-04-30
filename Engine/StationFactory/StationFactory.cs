@@ -90,8 +90,8 @@ public class StationFactory
             var location = locations[i];
             var position = new Position(location.Longitude, location.Latitude);
 
-            const double highwayRadiusMeters = 500;
-            var isCloseToHighway = IsNearHighway(position, highwayRadiusMeters);
+            const double highwayRadiusKM = 0.5;
+            var isCloseToHighway = IsNearHighway(position, highwayRadiusKM);
 
             var stationPowerKW = isCloseToHighway
                 ? _distribution.NextHigh
@@ -100,11 +100,13 @@ public class StationFactory
             var chargerCount = chargerCountsPerStation[i];
             var chargers = new List<ChargerBase>(chargerCount);
 
-            var isDualStation = isCloseToHighway && ShouldCreateDualChargingPoint();
+            var shouldForceAllDualAtStation = isCloseToHighway && ShouldCreateDualChargingPoint();
 
             for (var j = 0; j < chargerCount; j++)
             {
-                chargers.Add(CreateCharger(chargerId++, stationPowerKW, isDualStation));
+                var isDualCharger = shouldForceAllDualAtStation || ShouldCreateDualChargingPoint();
+
+                chargers.Add(CreateCharger(chargerId++, stationPowerKW, isDualCharger));
             }
 
             stations.Add(CreateStation(nextStationId++, location, chargers));
