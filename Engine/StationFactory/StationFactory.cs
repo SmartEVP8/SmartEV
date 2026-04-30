@@ -16,6 +16,7 @@ public class StationFactory
     private readonly StationFactoryOptions _options;
     private readonly Random _stationRandom;
     private readonly Random _chargerRandom;
+    private readonly StationDistribution _distribution;
     private readonly EnergyPrices _energyPrices;
     private readonly FileInfo _stationsFile;
     private readonly List<List<Position>> _highwayPolylines;
@@ -50,6 +51,7 @@ public class StationFactory
         _options = options;
         _stationRandom = random;
         _chargerRandom = options.ChargerSeed;
+        _distribution = new StationDistribution(_stationRandom);
         _energyPrices = energyPrices;
         _stationsFile = stationsFile ?? throw new ArgumentNullException(nameof(stationsFile), "Stations file cannot be null.");
         _highwayPolylines = HighwayPolylines;
@@ -85,15 +87,27 @@ public class StationFactory
 
         for (var i = 0; i < locations.Count; i++)
         {
+            var location = locations[i];
+            var position = new Position(location.Longitude, location.Latitude);
+
+            const double highwayRadiusMeters = 500;
+            var isCloseToHighway = IsNearHighway(position, highwayRadiusMeters);
+
+            var stationPowerKW = isCloseToHighway
+                ? _distribution.NextHigh
+                : _distribution.NextMedium;
+
             var chargerCount = chargerCountsPerStation[i];
             var chargers = new List<ChargerBase>(chargerCount);
 
+            var isDualStation = isCloseToHighway && ShouldCreateDualChargingPoint();
+
             for (var j = 0; j < chargerCount; j++)
             {
-                chargers.Add(CreateCharger(chargerId++));
+                chargers.Add(CreateCharger(chargerId++, stationPowerKW, isDualStation));
             }
 
-            stations.Add(CreateStation(nextStationId++, locations[i], chargers));
+            stations.Add(CreateStation(nextStationId++, location, chargers));
         }
 
         Log.Information("Created {StationCount} stations with a total of {ChargerCount} chargers.", stations.Count, chargerId - 1);
@@ -127,23 +141,26 @@ public class StationFactory
     /// <param name="chargerId">
     /// The charger identifier within the station.
     /// </param>
+    /// <param name="stationPowerKW">
+    /// The power rating of the charger.
+    /// </param>
     /// <returns>
     /// The created charger.
     /// </returns>
-    private ChargerBase CreateCharger(int chargerId)
+    private ChargerBase CreateCharger(int chargerId, ushort stationPowerKW, bool isDualStation)
     {
-        var connectors = CreateConnectorSet();
+        var connectors = CreateConnectorSet(stationPowerKW);
 
-        if (ShouldCreateDualChargingPoint())
+        if (isDualStation)
         {
-            return new DualCharger(chargerId, _options.MaxPowerKW, connectors);
+            return new DualCharger(chargerId, stationPowerKW, connectors);
         }
 
-        return new SingleCharger(chargerId, _options.MaxPowerKW, connectors);
+        return new SingleCharger(chargerId, stationPowerKW, connectors);
     }
 
-    private Connectors CreateConnectorSet()
-        => new((new Connector(_options.MaxPowerKW), new Connector(_options.MaxPowerKW)));
+    private static Connectors CreateConnectorSet(ushort stationPowerKW)
+    => new((new Connector(stationPowerKW), new Connector(stationPowerKW)));
 
     private bool ShouldCreateDualChargingPoint()
         => _chargerRandom.NextDouble() < _options.DualChargingPointProbability;
@@ -189,11 +206,11 @@ public class StationFactory
 
     private class StationDistribution(Random random)
     {
-        private static readonly IReadOnlyList<int> _medium = [50, 75, 100, 125, 150];
-        private static readonly IReadOnlyList<int> _high = [150, 200, 250, 300];
+        private static readonly IReadOnlyList<ushort> _medium = [50, 75, 100, 125, 150];
+        private static readonly IReadOnlyList<ushort> _high = [150, 200, 250, 300];
 
-        public int NextMedium => _medium[random.Next(_medium.Count)];
-        public int NextHigh => _high[random.Next(_high.Count)];
+        public ushort NextMedium => _medium[random.Next(_medium.Count)];
+
+        public ushort NextHigh => _high[random.Next(_high.Count)];
     }
 }
-
