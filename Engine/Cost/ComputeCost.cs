@@ -42,7 +42,7 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
             var station = stationService.GetStation(stationId);
 
             var pathDeviationCost = CalculatePathDeviationCost(ref ev, durations.DurToDest + durations.DurToStation, weights, time);
-            var urgencyCost = Urgency.CalculateChargeUrgency(ref ev, durations.DistToStationMeters);
+            var urgencyCost = CalculateChargeUrgency(ref ev, durations.DistToStationMeters);
             var priceCost = CalculatePriceCost(ref ev, station, weights, time, lowestPrice);
             var effectiveWaitTimeCost = CalculateEffectiveWaitTimeCost(weights, time, durations.DurToStation, stationId);
             var cost = (1 - urgencyCost) * (pathDeviationCost + priceCost + effectiveWaitTimeCost);
@@ -107,5 +107,35 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
         var wait = availableAt - expectedArrival;
         var waitMinutes = Math.Max(0, wait.Minutes);
         return weights.ExpectedWaitTime * waitMinutes;
+    }
+
+    /// <summary>
+    /// Calculates the urgency of charging based on the state of charge (SoC) of the battery at arrival at
+    /// and a minimum acceptable charge level.
+    /// </summary>
+    /// <param name="ev">The EV for which to calculate urgency.</param>
+    /// <param name="distanceToStationMeter">The estimated distance to reach the station, used to estimate SoC at arrival.</param>
+    /// <returns>
+    /// The urgency of charging as a value between 0 and 1, where a higher value indicates a more urgent need for charging.
+    /// </returns>
+    private static double CalculateChargeUrgency(ref EV ev, float distanceToStationMeter)
+    {
+        const double upperChargeLimit = 0.80;
+
+        var soc = (ev.Battery.CurrentChargeKWh - ev.EnergyForDistanceKWh(distanceToStationMeter / 1000f)) / ev.Battery.MaxCapacityKWh;
+
+        if (soc <= 0)
+            return 1 - float.MaxValue;
+
+        if (soc >= upperChargeLimit)
+            return 0.0;
+
+        if (soc <= ev.Preferences.MinAcceptableCharge)
+            return 0.9999;
+
+        // Examples:
+        // Soc = 0.79 => Urgency = 1 - (1 / 0.8^2 * 0.79^2) = 1 - (1 / 0.64 * 0.6241) = 1 - 0.97515625 = 0.02484375
+        // SoC = 0.2 => Urgency = 1 - (1 / 0.8^2 * 0.2^2) = 1 - (1 / 0.64 * 0.04) = 1 - 0.0625 = 0.9375
+        return 1 - (1 / Math.Pow(upperChargeLimit, 2) * Math.Pow(soc, 2));
     }
 }
