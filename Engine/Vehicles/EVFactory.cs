@@ -106,15 +106,25 @@ public class EVFactory(Random random, IJourneySamplerProvider samplersProvider, 
         var parameters = new SampledEVParams[amount];
         for (var i = 0; i < amount; i++)
         {
+            EVConfig config;
+            float currentSoC;
+            do
+            {
+                config = EVModels.Models[_sampler.Sample(random)];
+                currentSoC = GetRandomStartingSoC();
+            }
+            while (currentSoC * config.BatteryConfig.MaxCapacityKWh * 1000 / config.Efficiency < _options.MinInitialRangeKm);
+
             parameters[i] = new SampledEVParams(
                 Id: _nextId++,
-                Config: EVModels.Models[_sampler.Sample(random)],
-                CurrCharge: GetRandomStartingSoC(),
+                Config: config,
+                CurrCharge: currentSoC,
                 PriceSensPref: random.NextSingle(),
                 MinAcceptableCharge: NextFloatInRange(0.05f, 0.2f),
                 MaxPathDeviation: NextFloatInRange(5.0f, 30.0f),
                 SourceDest: samplersProvider.Current.SampleSourceToDest(random));
         }
+
         return parameters;
     }
 
