@@ -52,7 +52,7 @@ public readonly struct ArrivalAtDestinationMetric
 
         return new ArrivalAtDestinationMetric
         {
-            ExpectedArrivalTime = ev.Journey.Original.Eta,
+            ExpectedArrivalTime = deadline,
             ActualArrivalTime = simNow,
             PathDeviation = ev.Journey.Current.PathDeviation,
             MissedDeadline = simNow > deadline,

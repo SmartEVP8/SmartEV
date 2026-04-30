@@ -25,7 +25,6 @@ public class StationMetricsCollector(List<Station> stations)
         {
             var totalDeliveredKWh = 0f;
             var totalMaxKWh = 0f;
-            var totalQueueSize = 0;
 
             foreach (var charger in station.Chargers)
             {
@@ -44,14 +43,12 @@ public class StationMetricsCollector(List<Station> stations)
                     charger,
                     station.Id,
                     simNow,
-                    queueSizeInWindow,
                     utilizationInWindow,
                     deliveredKWhInWindow,
                     targetEVDemandKWh));
 
                 totalDeliveredKWh += deliveredKWhInWindow;
                 totalMaxKWh += charger.MaxPowerKW * snapshotDurationHours;
-                totalQueueSize += queueSizeInWindow;
 
                 var window = charger.Window;
                 window.Reset(charger.Queue.Count);
@@ -66,7 +63,6 @@ public class StationMetricsCollector(List<Station> stations)
                 StationId = station.Id,
                 TotalDeliveredKWh = totalDeliveredKWh,
                 TotalMaxKWh = totalMaxKWh,
-                TotalQueueSize = totalQueueSize,
                 Price = station.GetPrice(simNow),
                 TotalChargers = station.Chargers.Count,
                 Reservations = reservations,

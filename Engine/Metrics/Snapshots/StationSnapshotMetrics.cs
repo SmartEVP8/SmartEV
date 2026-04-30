@@ -27,11 +27,6 @@ public record StationSnapshotMetric
     required public float TotalMaxKWh { get; init; }
 
     /// <summary>
-    /// Gets the total number of EVs queued across all chargers at snapshot time.
-    /// </summary>
-    required public int TotalQueueSize { get; init; }
-
-    /// <summary>
     /// Gets the station's energy price in DKK/kWh at snapshot time.
     /// </summary>
     required public float Price { get; init; }
