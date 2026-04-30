@@ -14,9 +14,13 @@ using Core.Shared;
 /// </summary>
 public static class EngineConfiguration
 {
+    private const string _pythonModeEnvVar = "PYTHON_MODE";
     private const string _priceSensitivityEnvVar = "COST_WEIGHT_PRICE_SENSITIVITY";
     private const string _pathDeviationEnvVar = "COST_WEIGHT_PATH_DEVIATION";
     private const string _expectedWaitTimeEnvVar = "COST_WEIGHT_EXPECTED_WAIT_TIME";
+    private const string _seedEnvVar = "ENGINE_SEED";
+    private const string _simulationStartTimeEnvVar = "SIMULATION_START_TIME_MS";
+    private const string _simulationEndTimeEnvVar = "SIMULATION_END_TIME_MS";
 
     /// <summary>
     /// Creates default EngineSettings with the standard workspace configuration.
@@ -26,17 +30,19 @@ public static class EngineConfiguration
     {
         var dataPath = FindDataDirectory();
         var outputPath = new DirectoryInfo(Path.Combine(dataPath.Parent!.FullName, "Headless", "Perkuet"));
+        var isPythonMode = Environment.GetEnvironmentVariable(_pythonModeEnvVar)?.ToLower() == "true";
+        var seed = ReadIntFromEnvironment(_seedEnvVar, 42, isPythonMode);
 
         return new EngineSettings
         {
-            Seed = new Random(42),
+            Seed = new Random(seed),
             StationSeed = new Random(43),
             ProcessorCount = Environment.ProcessorCount,
             CostConfig = new CostWeights
             {
-                PathDeviation = ReadWeightFromEnvironment(_pathDeviationEnvVar, 0.4f, 0f, 1f),
-                PriceSensitivity = ReadWeightFromEnvironment(_priceSensitivityEnvVar, 0.4f, 0f, 1f),
-                ExpectedWaitTime = ReadWeightFromEnvironment(_expectedWaitTimeEnvVar, 0.4f, 0f, 1f),
+                PathDeviation = ReadWeightFromEnvironment(_pathDeviationEnvVar, 0.4f, 0f, 1f, isPythonMode),
+                PriceSensitivity = ReadWeightFromEnvironment(_priceSensitivityEnvVar, 0.4f, 0f, 1f, isPythonMode),
+                ExpectedWaitTime = ReadWeightFromEnvironment(_expectedWaitTimeEnvVar, 0.4f, 0f, 1f, isPythonMode),
             },
             RunId = Guid.NewGuid(),
             MetricsConfig = new MetricsConfig
@@ -55,10 +61,10 @@ public static class EngineConfiguration
                 TotalChargers = 10000,
                 ChargerSeed = new Random(44),
             },
-            CurrentAmountOfEVsInDenmark = 583320, // Based on the number of registered EVs in Denmark as of 2026-03-22 https://mobility.dk/nyheder/nu-koerer-hver-femte-personbil-i-danmark-paa-el/
+            CurrentAmountOfEVsInDenmark = 583320,
             ChargingStepSeconds = 60 * 1000,
-            SimulationStartTime = Time.MillisecondsPerDay,
-            SimulationEndTime = Time.MillisecondsPerDay * 7,
+            SimulationStartTime = (uint)ReadIntFromEnvironment(_simulationStartTimeEnvVar, (int)Time.MillisecondsPerDay, isPythonMode),
+            SimulationEndTime = (uint)ReadIntFromEnvironment(_simulationEndTimeEnvVar, (int)Time.MillisecondsPerDay * 7, isPythonMode),
             SnapshotInterval = 1000 * 20 * 60,
             EnablePerformanceMetrics = true,
             EVDistributionWindowsSize = 30 * 60 * 1000,
@@ -77,16 +83,57 @@ public static class EngineConfiguration
         };
     }
 
-    private static float ReadWeightFromEnvironment(string envVar, float defaultValue, float min, float max)
+    private static float ReadWeightFromEnvironment(string envVar, float defaultValue, float min, float max, bool isPythonMode)
     {
         var value = Environment.GetEnvironmentVariable(envVar);
+
         if (string.IsNullOrWhiteSpace(value))
-            return defaultValue;
+            return HandleError($"Required environment variable {envVar} is missing.", new ArgumentException(), defaultValue);
 
         if (!float.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed))
-            return defaultValue;
+            return HandleError($"Environment variable {envVar}='{value}' is not a valid float.", new FormatException(), defaultValue);
 
-        return Math.Clamp(parsed, min, max);
+        if (parsed < min || parsed > max)
+            return HandleError($"{envVar}='{value}' is out of bounds [{min}, {max}].", new ArgumentOutOfRangeException(), Math.Clamp(parsed, min, max));
+
+        return parsed;
+
+        float HandleError(string message, Exception ex, float fallback)
+        {
+            if (isPythonMode)
+            {
+                Log.Error($"[Python Mode] {message}");
+                throw ex;
+            }
+
+            Log.Information($"{message} Falling back to {fallback}.");
+            return fallback;
+        }
+    }
+
+    private static int ReadIntFromEnvironment(string envVar, int defaultValue, bool isPythonMode)
+    {
+        var value = Environment.GetEnvironmentVariable(envVar);
+
+        if (string.IsNullOrWhiteSpace(value))
+            return HandleError($"Required environment variable {envVar} is missing.", new ArgumentException(), defaultValue);
+
+        if (!int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed))
+            return HandleError($"Environment variable {envVar}='{value}' is not a valid int.", new FormatException(), defaultValue);
+
+        return parsed;
+
+        int HandleError(string message, Exception ex, int fallback)
+        {
+            if (isPythonMode)
+            {
+                Log.Error($"[Python Mode] {message}");
+                throw ex;
+            }
+
+            Log.Information($"{message} Falling back to {fallback}.");
+            return fallback;
+        }
     }
 
     private static DirectoryInfo FindDataDirectory()

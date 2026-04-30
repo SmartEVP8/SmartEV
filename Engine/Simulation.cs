@@ -2,6 +2,7 @@ namespace Engine;
 
 using Core.Shared;
 using Engine.Events;
+using Engine.Init;
 using Serilog;
 
 /// <summary>
@@ -50,6 +51,8 @@ public class Simulation(
         Func<Task>? waitWhilePausedAsync = null)
     {
         Log.Information("Simulation started.");
+        Log.Information("Cost weights configured values: {@CostConfig}", EngineConfiguration.CreateDefaultSettings().CostConfig);
+        Log.Information("Simulation started at {StartTime} and will run until {EndTime}.", _startFrom, _runUntil);
         Console.WriteLine("Starting Simulation");
 
         _scheduler.ScheduleEvent(new SpawnEVS(_startFrom));
