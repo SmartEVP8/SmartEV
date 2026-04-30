@@ -21,6 +21,7 @@ public class EVFactory(Random random, IJourneySamplerProvider samplersProvider, 
     private readonly AliasSampler _sampler = new([.. EVModels.Models.Select(m => m.SpawnChance)]);
     private readonly EVOptions _options = EVOptions;
     private int _nextId = 0;
+    private uint _lastJourneySamplerUpdateHour = 0;
 
     /// <summary>
     /// Creates a single EV. For batch creation use <see cref="SampleParams"/> and <see cref="Create(SampledEVParams, Time)"/>.
@@ -92,6 +93,7 @@ public class EVFactory(Random random, IJourneySamplerProvider samplersProvider, 
             throw new InvalidOperationException($"Failed to create journey for EV with source {p.SourceDest.Source} and destination {p.SourceDest.Destination}. This should not happen.");
         }
 
+        UpdateJourneySampler(departure);
         return new EV(p.Id, battery, preferences, journey, p.Config.Efficiency);
     }
 
@@ -126,6 +128,29 @@ public class EVFactory(Random random, IJourneySamplerProvider samplersProvider, 
         }
 
         return parameters;
+    }
+
+    private void UpdateJourneySampler(Time time)
+    {
+        if (time.Hours == _lastJourneySamplerUpdateHour)
+            return;
+
+        _lastJourneySamplerUpdateHour = time.Hours;
+        var (populationScalar, distanceScalar) = GetScalers(time);
+        samplersProvider.Recompute(populationScalar, distanceScalar);
+    }
+
+    private (float populationScaler, float distanceScaler) GetScalers(Time time)
+    {
+        const float baseScaler = 1f;
+        const float maxVariance = 0.6f;
+
+        var dailyFluctuation = (float)(maxVariance * Math.Sin((Math.PI * time.Hours) / 12));
+
+        var populationScaler = baseScaler + dailyFluctuation;
+        var distanceScaler = baseScaler - dailyFluctuation;
+
+        return (populationScaler, distanceScaler);
     }
 
     private Journey CreateJourney(Time departure, (Position Source, Position Destination) sourceDest)
