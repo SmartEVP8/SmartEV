@@ -42,16 +42,18 @@ public class JourneyPipeline
     List<List<Position>> wetPolygons)
     {
         var cells = _grid.Cells.SelectMany(g => g).ToList();
+        var count = cells.Count;
 
-        var perCellWeights = cells.Select(c =>
+        var sourceWeights = new float[count];
+        var destinationSamplers = new AliasSampler[count];
+
+        for (var i = 0; i < count; i++)
         {
-            return GravityWeights(populationScaler, distanceScaler, c);
-        }).ToList();
-
-        var sourceWeights = perCellWeights.Select(w => w.Sum()).ToArray();
-        var destinationSamplers = perCellWeights
-            .Select(w => new AliasSampler(w))
-            .ToArray();
+            var cell = cells[i];
+            sourceWeights[i] = SourceWeight(populationScaler, distanceScaler, cell);
+            destinationSamplers[i] = new AliasSampler(
+                GravityWeights(populationScaler, distanceScaler, cell));
+        }
 
         return new JourneySamplers(
             new AliasSampler(sourceWeights),
@@ -63,6 +65,28 @@ public class JourneyPipeline
             wetPolygons);
     }
 
+    // Unnormalised classic gravity sum — drives source cell selection.
+    // Populous, well-connected cells generate more trips.
+    private static float SourceWeight(
+        float populationScaler,
+        float distanceScaler,
+        GravityCell c)
+    {
+        var cities = c.CityInfo;
+        var sum = 0f;
+        for (var i = 0; i < cities.Count; i++)
+        {
+            var ci = cities[i];
+            var d = MathF.Max(ci.DistToCity, 1f);
+            sum += MathF.Pow(ci.Population, populationScaler)
+                 / MathF.Pow(d, distanceScaler);
+        }
+        return sum;
+    }
+
+    // Normalised gravity — drives destination choice within a cell.
+    // Population term is per-cell relative, so populationScaler acts as a bias
+    // without affecting average trip distance.
     private static float[] GravityWeights(
         float populationScaler,
         float distanceScaler,
@@ -72,7 +96,6 @@ public class JourneyPipeline
         var count = cities.Count;
         var weights = new float[count];
 
-        // First pass: compute population terms and their sum
         var popSum = 0f;
         for (var i = 0; i < count; i++)
         {
@@ -83,7 +106,6 @@ public class JourneyPipeline
 
         var invPopSum = popSum > 0f ? 1f / popSum : 1f;
 
-        // Second pass: normalise and apply distance kernel
         for (var i = 0; i < count; i++)
         {
             var d = MathF.Max(cities[i].DistToCity, 1f);

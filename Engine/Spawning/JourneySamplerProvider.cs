@@ -23,11 +23,12 @@ public class JourneySamplerProvider : IJourneySamplerProvider
     {
         _pipeline = pipeline;
         _wetPolygons = wetPolygons;
-        Parallel.For(0, 24, hour =>
+        for (uint hour = 0; hour < 24; hour++)
         {
-            var popScalar = GetScalers((uint)hour);
-            _cachedSamplers[(uint)hour] = _pipeline.Compute(popScalar, DistanceScalar, _wetPolygons);
-        });
+            var popScalar = GetScalers(hour);
+            _cachedSamplers[hour] = _pipeline.Compute(popScalar, DistanceScalar, _wetPolygons);
+        }
+
         Current = _cachedSamplers[0];
     }
 
