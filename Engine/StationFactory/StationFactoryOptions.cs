@@ -22,7 +22,7 @@ public record StationFactoryOptions
     /// </summary>
     public int TotalChargers { get; init; } = 10000;
 
-    /// <summary> Gets the random seed for charger generation, which ensures reproducibility of charger placement across simulation runs when using
+    /// <summary> Gets the random seed for charger generation, which ensures reproducibility of charger placement across simulation runs when using. </summary>
     public Random ChargerSeed { get; init; } = new Random(44);
 
 }

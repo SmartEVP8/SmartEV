@@ -28,22 +28,19 @@ public static class Init
     /// Initializes the Engine with the required services and configurations.
     /// </summary>
     /// <param name="services">The service collection to initialize.</param>
-    public static void InitEngine(IServiceCollection services)
+    public static void InitEngine(IServiceCollection services, EngineSettings settings)
     {
-        var settings = services.BuildServiceProvider().GetRequiredService<EngineSettings>();
         if (settings.EnablePerformanceMetrics)
             services.AddSingleton(new PerformanceMetrics());
 
         services.AddSingleton(_ => new EventScheduler());
         services.AddSingleton(sp =>
         {
-            var settings = sp.GetRequiredService<EngineSettings>();
             return new Dictionary<int, EV>(settings.CurrentAmountOfEVsInDenmark);
         });
 
         services.AddSingleton(sp =>
         {
-            var settings = sp.GetRequiredService<EngineSettings>();
             var path = settings.EnergyPricesPath;
             var random = settings.Seed;
             return new EnergyPrices(path, random);
@@ -51,13 +48,11 @@ public static class Init
 
         services.AddSingleton<ICostStore>(sp =>
         {
-            var settings = sp.GetRequiredService<EngineSettings>();
             return new CostStore(settings.CostConfig);
         });
 
         services.AddSingleton(sp =>
         {
-            var settings = sp.GetRequiredService<EngineSettings>();
             var steps = settings.ChargingStepSeconds;
             return new ChargingIntegrator(steps);
         });
@@ -66,7 +61,6 @@ public static class Init
 
         services.AddSingleton(sp =>
         {
-            var settings = sp.GetRequiredService<EngineSettings>();
             var metricsConfig = settings.MetricsConfig;
             var runId = settings.RunId;
             return new MetricsService(metricsConfig, runId);
@@ -74,7 +68,6 @@ public static class Init
 
         services.AddSingleton(sp =>
         {
-            var settings = sp.GetRequiredService<EngineSettings>();
             var highwayPolylines = HighwayFinder.GetHighwayNodes(settings.HighwayPolylinesPath);
             var energyPrices = sp.GetRequiredService<EnergyPrices>();
             var stationSeed = settings.StationSeed;
@@ -85,14 +78,12 @@ public static class Init
 
         services.AddSingleton<IOSRMRouter>(sp =>
         {
-            var settings = sp.GetRequiredService<EngineSettings>();
             var stations = sp.GetRequiredService<List<Station>>();
             return new OSRMRouter(settings.OsrmPath, stations);
         });
 
         services.AddSingleton<IJourneySamplerProvider>(sp =>
         {
-            var settings = sp.GetRequiredService<EngineSettings>();
             var router = sp.GetRequiredService<IOSRMRouter>();
             var spawnGrid = InitSpawnGrid(settings.PolygonPath, settings.WetPolygonPath, settings.StationsPath, settings.GridSize);
             var cities = InitCities(settings.CitiesPath);
@@ -103,7 +94,6 @@ public static class Init
 
         services.AddSingleton(sp =>
         {
-            var settings = sp.GetRequiredService<EngineSettings>();
             var journeySamplerProvider = sp.GetRequiredService<IJourneySamplerProvider>();
             var router = sp.GetRequiredService<IOSRMRouter>();
             var random = settings.Seed;
@@ -113,7 +103,6 @@ public static class Init
 
         services.AddSingleton(sp =>
         {
-            var settings = sp.GetRequiredService<EngineSettings>();
             var stations = sp.GetRequiredService<Dictionary<ushort, Station>>();
             var spawnGrid = InitSpawnGrid(settings.PolygonPath, settings.WetPolygonPath, settings.StationsPath, settings.GridSize);
             return new SpatialGrid(spawnGrid, stations);
@@ -126,13 +115,11 @@ public static class Init
             var scheduler = sp.GetRequiredService<EventScheduler>();
             var evs = sp.GetRequiredService<Dictionary<int, EV>>();
             var metrics = sp.GetRequiredService<MetricsService>();
-            var settings = sp.GetRequiredService<EngineSettings>();
             return new StationService(stations.Values, integrator, scheduler, evs, metrics);
         });
 
         services.AddSingleton(sp =>
         {
-            var settings = sp.GetRequiredService<EngineSettings>();
             var router = sp.GetRequiredService<IOSRMRouter>();
             var stations = sp.GetRequiredService<Dictionary<ushort, Station>>();
             var grid = sp.GetRequiredService<SpatialGrid>();
@@ -159,7 +146,6 @@ public static class Init
         {
             var evPopulator = sp.GetRequiredService<EVPopulator>();
             var scheduler = sp.GetRequiredService<EventScheduler>();
-            var settings = sp.GetRequiredService<EngineSettings>();
             var journeySampler = sp.GetRequiredService<IJourneySamplerProvider>();
             var distributionWindow = settings.EVDistributionWindowsSize;
             var spawnFraction = settings.EVSpawnFraction;
@@ -168,7 +154,6 @@ public static class Init
 
         services.AddSingleton(sp =>
         {
-            var settings = sp.GetRequiredService<EngineSettings>();
             var snapshotInterval = settings.SnapshotInterval;
             var metrics = sp.GetRequiredService<MetricsService>();
             var stations = sp.GetRequiredService<List<Station>>();
@@ -223,8 +208,6 @@ public static class Init
 
             scheduler.RegisterPreProcessor<FindCandidateStations>(
                 findCandidateStationService.PreComputeCandidateStation());
-
-            var settings = sp.GetRequiredService<EngineSettings>();
 
             return new Simulation(
                 sp.GetRequiredService<EventDispatcher>(),

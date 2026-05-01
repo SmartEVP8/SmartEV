@@ -45,14 +45,14 @@ public sealed class JourneySamplerProvider : IJourneySamplerProvider
         if (JourneySamplerCache.Exists(hour)) return;
 
         var popScalar = GetScalers(hour);
-        var dto = _pipeline.ComputeDto(popScalar, _distanceScalar, _wetPolygons);
+        var dto = _pipeline.ComputeDTO(popScalar, _distanceScalar, _wetPolygons);
         JourneySamplerCache.Write(hour, dto);
     }
 
     private JourneySamplers LoadHourFromDisk(uint hour)
     {
         var dto = JourneySamplerCache.Read(hour);
-        return JourneyPipeline.FromDto(dto);
+        return JourneyPipeline.FromDTO(dto);
     }
 
     private float GetScalers(Time time)

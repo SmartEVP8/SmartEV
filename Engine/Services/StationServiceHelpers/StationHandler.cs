@@ -154,7 +154,6 @@ public class StationHandler
         var ev = e.EV;
         var finalSoC = handler.EndSession(ev.Id, e.Time);
 
-
         if (finalSoC is { } soc)
             ev.Battery.StateOfCharge = (float)Math.Clamp(soc, 0d, 1d);
 

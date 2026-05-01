@@ -82,9 +82,9 @@ public class Simulation(
         }
         catch (Exception ex)
         {
-            Log.Error("Simulation crashed with an unexpected error.");
+            Log.Error(ex, "Simulation crashed with an unexpected error.");
             Console.WriteLine($"Simulation crashed: {ex}");
-            throw ex;
+            throw;
         }
         finally
         {

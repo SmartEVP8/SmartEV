@@ -36,7 +36,7 @@ internal static class JourneySamplerCache
     /// </summary>
     /// <param name="hour">The hour for which time the sampler was computed for.</param>
     /// <param name="dto">The sampler the should be written to file.</param>
-    public static void Write(uint hour, JourneySamplerDto dto)
+    public static void Write(uint hour, JourneySamplerDTO dto)
     {
         var json = JsonSerializer.Serialize(dto, _jsonOpts);
 
@@ -54,10 +54,10 @@ internal static class JourneySamplerCache
     /// </summary>
     /// <param name="hour">The hour for which sampler is needed.</param>
     /// <returns>Returns a JourneySamplerDTO.</returns>
-    public static JourneySamplerDto Read(uint hour)
+    public static JourneySamplerDTO Read(uint hour)
     {
         var json = File.ReadAllText(PathFor(hour));
-        return JsonSerializer.Deserialize<JourneySamplerDto>(json, _jsonOpts)
+        return JsonSerializer.Deserialize<JourneySamplerDTO>(json, _jsonOpts)
             ?? throw new InvalidOperationException(
                 $"Failed to deserialize sampler for hour {hour}.");
     }

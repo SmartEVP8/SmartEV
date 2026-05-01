@@ -34,12 +34,7 @@ public class StationServiceSnapshotTests
         var (chargers, stations) = collector.Collect(snapshotInterval, new Time(3600));
 
         var cs = chargers.Single();
-        var ss = stations.Single();
 
-        Assert.Equal(deliveredKwh, cs.DeliveredKW);
         Assert.Equal(expectedUtilization, cs.Utilization);
-
-        Assert.Equal(deliveredKwh, ss.TotalDeliveredKWh);
-        Assert.Equal(chargerMaxKw, ss.TotalMaxKWh);
     }
 }

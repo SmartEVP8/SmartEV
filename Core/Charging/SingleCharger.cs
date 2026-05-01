@@ -74,6 +74,11 @@ public sealed class SingleCharger(int id, int maxPowerKW, Connectors connectors)
         };
     }
 
+    /// <summary>
+    /// Creates a list of connected EVs for this charger.
+    /// </summary>
+    /// <param name="currentTime">The current simulation time.</param>
+    /// <returns>A list of connected EVs.</returns>
     public IReadOnlyList<ConnectedEV> CreateConnectedEVs(Time currentTime)
     {
         if (Session is null)

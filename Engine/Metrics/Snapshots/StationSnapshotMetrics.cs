@@ -17,16 +17,6 @@ public record StationSnapshotMetric
     required public ushort StationId { get; init; }
 
     /// <summary>
-    /// Gets the total power delivered across all chargers in kW.
-    /// </summary>
-    required public float TotalDeliveredKWh { get; init; }
-
-    /// <summary>
-    /// Gets the total maximum power capacity across all chargers in kW.
-    /// </summary>
-    required public float TotalMaxKWh { get; init; }
-
-    /// <summary>
     /// Gets the station's energy price in DKK/kWh at snapshot time.
     /// </summary>
     required public float Price { get; init; }

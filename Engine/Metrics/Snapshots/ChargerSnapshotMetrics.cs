@@ -36,31 +36,14 @@ public record ChargerSnapshotMetric
     required public float Utilization { get; init; }
 
     /// <summary>
-    /// Gets the maximum power delivered by this charger during the snapshot window in kW.
-    /// </summary>
-    required public float DeliveredKW { get; init; }
-
-    /// <summary>
-    /// Gets a value indicating whether this charger is dual or single.
-    /// </summary>
-    required public bool IsDual { get; init; }
-
-    /// <summary>
-    /// Gets the remaining energy required by all cars currently at this charger to hit their Target SoC.
-    /// </summary>
-    required public float TargetEVDemandKW { get; init; }
-
-    /// <summary>
     /// Collects a snapshot from a charger at the given simulation time.
     /// </summary>
     /// <param name="charger">The charger to snapshot.</param>
     /// <param name="stationId">The id of the station that owns the charger.</param>
     /// <param name="simTime">The simulation timestamp when this snapshot is taken.</param>
     /// <param name="utilization">The charger utilization in range [0, 1].</param>
-    /// <param name="deliveredKW">The maximum power delivered by this charger during the snapshot window in kW.</param>
-    /// <param name="targetEVDemandKW">The remaining energy required by all cars currently at this charger to hit their Target SoC.</param>
     /// <returns>A snapshot metric for the specified charger at the provided simulation time.</returns>
-    public static ChargerSnapshotMetric Collect(ChargerBase charger, ushort stationId, Time simTime, float utilization, float deliveredKW, float targetEVDemandKW) =>
+    public static ChargerSnapshotMetric Collect(ChargerBase charger, ushort stationId, Time simTime, float utilization) =>
         new()
         {
             SimTime = simTime,
@@ -68,8 +51,5 @@ public record ChargerSnapshotMetric
             ChargerId = charger.Id,
             MaxKWh = charger.MaxPowerKW,
             Utilization = utilization,
-            DeliveredKW = deliveredKW,
-            IsDual = charger is DualCharger,
-            TargetEVDemandKW = targetEVDemandKW,
         };
 }

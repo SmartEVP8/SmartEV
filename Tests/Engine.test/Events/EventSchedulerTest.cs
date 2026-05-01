@@ -5,7 +5,8 @@ using Engine.Events;
 
 public class EventSchedulerTest
 {
-    private EventScheduler _scheduler;
+    private readonly EventScheduler _scheduler;
+
     public EventSchedulerTest() => _scheduler = new EventScheduler();
 
     [Fact]

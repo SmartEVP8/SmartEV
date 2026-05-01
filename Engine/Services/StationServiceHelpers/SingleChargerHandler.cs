@@ -18,7 +18,7 @@ using Core.Vehicles;
 /// <param name="integrator">The charging integrator used to simulate the session.</param>
 /// <param name="scheduler">The event scheduler used to schedule end charging events.</param>
 /// <param name="metrics">The metrics service used to record wait times.</param>
-/// <param name="evs">The EV store</param>
+/// <param name="evs">The EV store.</param>
 public class SingleChargerHandler(
     SingleCharger charger,
     ChargingIntegrator integrator,

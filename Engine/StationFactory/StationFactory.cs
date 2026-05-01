@@ -19,7 +19,7 @@ public class StationFactory
     private readonly StationDistribution _distribution;
     private readonly EnergyPrices _energyPrices;
     private readonly FileInfo _stationsFile;
-    private readonly List<List<Position>> _highwayPolylines;
+    private readonly List<(Position A, Position B)> _highwaySegments;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="StationFactory"/> class with the specified options and random seed.
@@ -28,6 +28,7 @@ public class StationFactory
     /// <param name="random">The seed for random number generation to ensure deterministic output.</param>
     /// <param name="energyPrices">Dynamic energy prices based on time of day.</param>
     /// <param name="stationsFile">The file containing the station location data.</param>
+    /// <param name="HighwayPolylines">List of polylines representing highways, used to determine if a station is near a highway.</param>
     /// <exception cref="ArgumentNullException">Thrown if options is null.</exception>
     /// <exception cref="ArgumentOutOfRangeException">Thrown if TotalChargers is not greater than zero, or if probabilities are not between 0 and 1.</exception>
     /// <exception cref="ArgumentException">Thrown if SocketProbabilities is empty, contains negative probabilities, or does not sum to approximately 1.</exception>
@@ -54,7 +55,7 @@ public class StationFactory
         _distribution = new StationDistribution(_stationRandom);
         _energyPrices = energyPrices;
         _stationsFile = stationsFile ?? throw new ArgumentNullException(nameof(stationsFile), "Stations file cannot be null.");
-        _highwayPolylines = HighwayPolylines;
+        _highwaySegments = [.. HighwayPolylines.SelectMany(polyline => polyline.Zip(polyline.Skip(1), (a, b) => (a, b)))];
     }
 
     /// <summary>
@@ -137,18 +138,6 @@ public class StationFactory
         return station;
     }
 
-    /// <summary>
-    /// Creates a charger.
-    /// </summary>
-    /// <param name="chargerId">
-    /// The charger identifier within the station.
-    /// </param>
-    /// <param name="stationPowerKW">
-    /// The power rating of the charger.
-    /// </param>
-    /// <returns>
-    /// The created charger.
-    /// </returns>
     private ChargerBase CreateCharger(int chargerId, ushort stationPowerKW, bool isDualStation)
     {
         var connectors = CreateConnectorSet(stationPowerKW);
@@ -202,9 +191,7 @@ public class StationFactory
     }
 
     private bool IsNearHighway(Position position, double radius) =>
-        _highwayPolylines.Any(polyline =>
-                 polyline.Zip(polyline.Skip(1))
-                         .Any(segment => GeoMath.IsInRadius(position, segment.First, segment.Second, radius)));
+        _highwaySegments.Any(seg => GeoMath.IsInRadius(position, seg.A, seg.B, radius));
 
     private class StationDistribution(Random random)
     {
