@@ -29,7 +29,7 @@ public class EVFactory(Random random, IJourneySamplerProvider samplersProvider, 
     /// <returns>An EV conforming to the supplied configs.</returns>
     public EV Create(Time departure)
     {
-        var p = SampleParams(1)[0];
+        var p = SampleParams(1, departure)[0];
         return Create(p, departure);
     }
 
@@ -101,7 +101,7 @@ public class EVFactory(Random random, IJourneySamplerProvider samplersProvider, 
     /// </summary>
     /// <param name="amount">The number of EVs to sample parameters for.</param>
     /// <returns>An array of <see cref="SampledEVParams"/> ready to be passed to <see cref="Create(SampledEVParams, Time)"/> .</returns>
-    public SampledEVParams[] SampleParams(int amount)
+    public SampledEVParams[] SampleParams(int amount, Time departure)
     {
         var parameters = new SampledEVParams[amount];
         for (var i = 0; i < amount; i++)
@@ -122,7 +122,7 @@ public class EVFactory(Random random, IJourneySamplerProvider samplersProvider, 
                 PriceSensPref: random.NextSingle(),
                 MinAcceptableCharge: NextFloatInRange(0.05f, 0.2f),
                 MaxPathDeviation: NextFloatInRange(5.0f, 30.0f),
-                SourceDest: samplersProvider.Current.SampleSourceToDest(random));
+                SourceDest: samplersProvider.GetCurrent(departure).SampleSourceToDest(random));
         }
 
         return parameters;

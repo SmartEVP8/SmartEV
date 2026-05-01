@@ -9,19 +9,9 @@ using Engine.Grid;
 public interface IJourneySamplerProvider
 {
     /// <summary>
-    /// Gets the current samplers.
+    /// Gets the current journey sampler based on the provided simulation time.
     /// </summary>
-    IJourneySampler Current { get; }
-
-    /// <summary>
-    /// Recomputes the samplers and sets current to it.
-    /// </summary>
-    /// <param name="distanceScalar">Influence of distance on the gravity weight.
-    /// A higher scalar increases the weight of closer cities, while a lower scalar reduces it.
-    /// </param>
-    /// <param name="populationScalar">Influence of city population on the gravity weight.
-    /// A higher scalar increases the weight of larger cities, while a lower scalar reduces it.
-    /// </param>
-    /// <returns>The computed samplers. Equivelant to calling Current after Recomputation.</returns>
-    IJourneySampler Recompute(Time time);
+    /// <param name="time">The current simulation time used to determine which sampler to return.</param>
+    /// <returns>The journey sampler corresponding to the current simulation time.</returns>
+    IJourneySampler GetCurrent(Time time);
 }
