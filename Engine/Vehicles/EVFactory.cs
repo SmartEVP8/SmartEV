@@ -29,7 +29,7 @@ public class EVFactory(Random random, IJourneySamplerProvider samplersProvider, 
     /// <returns>An EV conforming to the supplied configs.</returns>
     public EV Create(Time departure)
     {
-        var p = SampleParams(1, departure)[0];
+        var p = SampleParams(1)[0];
         return Create(p, departure);
     }
 
@@ -101,7 +101,7 @@ public class EVFactory(Random random, IJourneySamplerProvider samplersProvider, 
     /// </summary>
     /// <param name="amount">The number of EVs to sample parameters for.</param>
     /// <returns>An array of <see cref="SampledEVParams"/> ready to be passed to <see cref="Create(SampledEVParams, Time)"/> .</returns>
-    public SampledEVParams[] SampleParams(int amount, Time departure)
+    public SampledEVParams[] SampleParams(int amount)
     {
         var parameters = new SampledEVParams[amount];
         for (var i = 0; i < amount; i++)

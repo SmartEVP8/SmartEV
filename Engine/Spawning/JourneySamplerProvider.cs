@@ -2,8 +2,6 @@ namespace Engine.Spawning;
 
 using Engine.Grid;
 using Core.Shared;
-using Serilog;
-using System.Text.Json;
 
 /// <summary>
 /// A shared store of the currently computed samplers.
@@ -14,11 +12,14 @@ public sealed class JourneySamplerProvider : IJourneySamplerProvider
     private readonly List<List<Position>> _wetPolygons;
     private readonly float _distanceScalar;
 
-    public IJourneySampler Current { get; private set; }
-
+    /// <summary>
+    /// Initializes a new instance of the <see cref="JourneySamplerProvider"/> class.
+    /// </summary>
+    /// <param name="pipeline">The journey pipeline used to compute sampler data.</param>
+    /// <param name="distanceScalar">The distance scaling factor.</param>
+    /// <param name="wetPolygons">The wet polygon definitions used during sampling.</param>
     public JourneySamplerProvider(
         JourneyPipeline pipeline,
-        float populationScalar,
         float distanceScalar,
         List<List<Position>> wetPolygons)
     {
@@ -33,6 +34,10 @@ public sealed class JourneySamplerProvider : IJourneySamplerProvider
         Current = LoadHourFromDisk(0);
     }
 
+    /// <inheritdoc/>
+    public IJourneySampler Current { get; private set; }
+
+    /// <inheritdoc/>
     public void SetCurrent(Time time) => Current = LoadHourFromDisk(time.Hours);
 
     private void EnsureSamplerOnDisk(uint hour)

@@ -34,7 +34,7 @@ public class EVPopulator(EVFactory evFactory, Dictionary<int, EV> evs, IEventSch
 
         var currentTime = eventScheduler.CurrentTime;
         var interval = (double)distributionWindow / amount;
-        var sampledParams = evFactory.SampleParams(amount, currentTime);
+        var sampledParams = evFactory.SampleParams(amount);
 
         var created = new EV[amount];
         Parallel.For(0, amount, i =>

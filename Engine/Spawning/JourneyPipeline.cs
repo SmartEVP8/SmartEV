@@ -73,6 +73,14 @@ public class JourneyPipeline
             wetPolygons);
     }
 
+    /// <summary>
+    /// Reconstructs JourneySamplers from a JourneySamplerDto. This is used to load samplers from disk, allowing us to cache expensive computations during development while still supporting dynamic sampling based on time of day.
+    /// The source and destination weights are used to create AliasSamplers, which are then used during the sampling of EV journeys.
+    /// The cell centers, city centers, and wet polygons are also included in the JourneySamplers for use during sampling.
+    /// If the DTO is malformed or contains invalid data, this method will throw an exception.
+    /// </summary>
+    /// <param name="dto">The journey sampler data transfer object containing weights and configuration.</param>
+    /// <returns>A new JourneySamplers instance populated from the DTO.</returns>
     public static JourneySamplers FromDto(JourneySamplerDto dto)
     {
         var destSamplers = new AliasSampler[dto.DestinationWeights.Length];
@@ -89,8 +97,6 @@ public class JourneyPipeline
             dto.WetPolygons);
     }
 
-    // Unnormalised classic gravity sum — drives source cell selection.
-    // Populous, well-connected cells generate more trips.
     private static float SourceWeight(
         float populationScaler,
         float distanceScaler,
@@ -105,12 +111,10 @@ public class JourneyPipeline
             sum += MathF.Pow(ci.Population, populationScaler)
                  / MathF.Pow(d, distanceScaler);
         }
+
         return sum;
     }
 
-    // Normalised gravity — drives destination choice within a cell.
-    // Population term is per-cell relative, so populationScaler acts as a bias
-    // without affecting average trip distance.
     private static float[] GravityWeights(
         float populationScaler,
         float distanceScaler,

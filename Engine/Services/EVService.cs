@@ -14,6 +14,7 @@ using Serilog;
 /// <param name="evPopulator">Creates EVs respecting <paramref name="distributionWindow"/>.</param>
 /// <param name="scheduler">Reschedules a SpawnEV event at each handle invocation at T + <paramref name="distributionWindow"/>.</param>
 /// <param name="distributionWindow">How frequently sampling is done.</param>
+/// <param name="journeySampler">Provides a journey sampler used to assign journeys to spawned EVs.</param>
 /// <param name="spawnFraction">A scaler controlling the total for configuration.</param>
 public class EVService(
     EVPopulator evPopulator,
