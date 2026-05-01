@@ -11,6 +11,9 @@ public sealed class JourneySamplerProvider : IJourneySamplerProvider
     private readonly JourneyPipeline _pipeline;
     private readonly List<List<Position>> _wetPolygons;
     private readonly float _distanceScalar;
+    private readonly JourneySamplers[] _hourlySamplers = new JourneySamplers[24];
+
+    private uint _currentHour = 0;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="JourneySamplerProvider"/> class.
@@ -31,14 +34,24 @@ public sealed class JourneySamplerProvider : IJourneySamplerProvider
 
         Parallel.For(0, 24, hour => EnsureSamplerOnDisk((uint)hour));
 
-        Current = LoadHourFromDisk(0);
+        // Keep hourly samplers in memory so SetCurrent avoids disk IO and JSON deserialization.
+        Parallel.For(0, 24, hour => _hourlySamplers[hour] = LoadHourFromDisk((uint)hour));
+
+        Current = _hourlySamplers[0];
     }
 
     /// <inheritdoc/>
     public IJourneySampler Current { get; private set; }
 
     /// <inheritdoc/>
-    public void SetCurrent(Time time) => Current = LoadHourFromDisk(time.Hours);
+    public void SetCurrent(Time time)
+    {
+        if (time.Hours != _currentHour)
+        {
+            _currentHour = time.Hours;
+            Current = _hourlySamplers[_currentHour];
+        }
+    }
 
     private void EnsureSamplerOnDisk(uint hour)
     {
