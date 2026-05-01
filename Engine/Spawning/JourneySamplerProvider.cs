@@ -35,8 +35,8 @@ public class JourneySamplerProvider : IJourneySamplerProvider
 
     private (float populationScaler, float distanceScaler) GetScalers(Time time, float PopulationScalar, float DistanceScalar)
     {
-        const float baseScaler = 1f;
-        const float maxVariance = 0.6f;
+        const float baseScaler = 7f;
+        const float maxVariance = 0.7f;
 
         var dailyFluctuation = (float)(maxVariance * Math.Sin((Math.PI * time.Hours) / 12));
 

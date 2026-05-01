@@ -36,19 +36,21 @@ public class JourneyPipeline
     /// </param>
     /// <param name="wetPolygons">List of wet polygons used to ensure that sampled positions do not fall within wet areas.</param>
     /// <returns>Simulation samplers for source and destinations. If no cells are spawnable returns null.</returns>
-    public JourneySamplers Compute(float populationScaler, float distanceScaler, List<List<Position>> wetPolygons)
+    public JourneySamplers Compute(
+    float populationScaler,
+    float distanceScaler,
+    List<List<Position>> wetPolygons)
     {
-        var cells = _grid.Cells
-            .SelectMany(g => g)
-            .ToList();
+        var cells = _grid.Cells.SelectMany(g => g).ToList();
 
-        var sourceWeights = cells
-            .Select(c => c.CityInfo.Sum(ci => GravityWeight(ci, populationScaler, distanceScaler)))
-            .ToArray();
+        var perCellWeights = cells.Select(c =>
+        {
+            return GravityWeights(populationScaler, distanceScaler, c);
+        }).ToList();
 
-        var destinationSamplers = cells
-            .Select(c => new AliasSampler(
-                [.. c.CityInfo.Select(ci => GravityWeight(ci, populationScaler, distanceScaler))]))
+        var sourceWeights = perCellWeights.Select(w => w.Sum()).ToArray();
+        var destinationSamplers = perCellWeights
+            .Select(w => new AliasSampler(w))
             .ToArray();
 
         return new JourneySamplers(
@@ -61,10 +63,17 @@ public class JourneyPipeline
             wetPolygons);
     }
 
-    private static float GravityWeight(CityInfo city, float populationScaler, float distanceScaler)
+    private static float[] GravityWeights(float populationScaler, float distanceScaler, GravityCell c)
     {
-        var distance = Math.Max(city.DistToCity, 1.0f);
-        return (float)(Math.Pow(city.Population, populationScaler) / Math.Pow(distance, distanceScaler));
+        var popPrefs = c.CityInfo.Select(ci => (float)Math.Pow(ci.Population, populationScaler)).ToArray();
+        var popSum = popPrefs.Sum();
+        if (popSum <= 0) popSum = 1f;
+
+        return [.. c.CityInfo.Select((ci, i) =>
+                        {
+                var d = Math.Max(ci.DistToCity, 1.0f);
+                return (float)(popPrefs[i] / popSum / Math.Pow(d, distanceScaler));
+                        })];
     }
 
     /// <summary>
