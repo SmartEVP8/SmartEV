@@ -98,11 +98,6 @@ public record EngineSettings
     required public double EVSpawnFraction { get; init; }
 
     /// <summary>
-    /// Gets the population scalar used in the gravity model for journey sampling, which controls how population size affects the probability of selecting a destination.
-    /// </summary>
-    required public double PopulationScaler { get; init; }
-
-    /// <summary>
     /// Gets the distance scalar used in the gravity model for journey sampling, which controls how distance affects the probability of selecting a destination.
     /// </summary>
     required public double DistanceScaler { get; init; }

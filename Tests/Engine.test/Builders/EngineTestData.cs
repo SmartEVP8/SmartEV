@@ -35,7 +35,6 @@ public static class EngineTestData
     public static readonly SpatialGrid SpatialGrid = BuildSpatialGrid(AllStations);
 
     public static JourneySamplerProvider JourneySamplerProvider(
-    float populationScalar = 1.0f,
     float distanceScalar = 1.0f,
     bool wetEnabled = false)
     {
@@ -43,7 +42,7 @@ public static class EngineTestData
             ?? throw new InvalidOperationException("WetPolygonPath not set in project.");
         var wetPolygons = PolygonParser.Parse(File.ReadAllText(wetPolygonPath));
         var journeySamplers = BuildJourneyPipeline();
-        return new(journeySamplers, populationScalar, distanceScalar, wetEnabled ? wetPolygons : []);
+        return new(journeySamplers, distanceScalar, wetEnabled ? wetPolygons : []);
     }
 
     private static JourneyPipeline BuildJourneyPipeline()

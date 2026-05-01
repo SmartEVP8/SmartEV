@@ -1,5 +1,6 @@
 namespace Engine.Spawning;
 
+using Core.Shared;
 using Engine.Grid;
 
 /// <summary>
@@ -8,19 +9,13 @@ using Engine.Grid;
 public interface IJourneySamplerProvider
 {
     /// <summary>
-    /// Gets the current samplers.
+    /// Sets the current journey sampler to the sampler mathing that hour.
     /// </summary>
-    IJourneySampler Current { get; }
+    /// <param name="time">The current simulation time used to determine which sampler to return.</param>
+    void SetCurrent(Time time);
 
     /// <summary>
-    /// Recomputes the samplers and sets current to it.
+    /// Gets the currently active journey sampler, which should match the current simulation time.
     /// </summary>
-    /// <param name="distanceScalar">Influence of distance on the gravity weight.
-    /// A higher scalar increases the weight of closer cities, while a lower scalar reduces it.
-    /// </param>
-    /// <param name="populationScalar">Influence of city population on the gravity weight.
-    /// A higher scalar increases the weight of larger cities, while a lower scalar reduces it.
-    /// </param>
-    /// <returns>The computed samplers. Equivelant to calling Current after Recomputation.</returns>
-    IJourneySampler Recompute(float distanceScalar, float populationScalar);
+    IJourneySampler Current { get; }
 }

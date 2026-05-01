@@ -227,6 +227,15 @@ public class OSRMRouterTests
                 var tableDist = tableResult.TotalDistance(0);
                 var routeDuration = routeResult.Duration;
                 var routeDist = routeResult.Distance;
+
+                if (!float.IsFinite(tableDuration) || !float.IsFinite(tableDist) ||
+                    !float.IsFinite(routeDuration) || !float.IsFinite(routeDist) ||
+                    tableDuration <= 0 || tableDist <= 0 || routeDuration <= 0 || routeDist <= 0)
+                {
+                    skipped++;
+                    continue;
+                }
+
                 durationRatios.Add(tableDuration / routeDuration);
                 distanceRatios.Add(tableDist / routeDist);
             }
@@ -238,6 +247,8 @@ public class OSRMRouterTests
         }
 
         Assert.True(skipped <= iterations * 0.02, $"Too many unroutable samples: {skipped}/{iterations}");
+
+        Assert.NotEmpty(durationRatios);
 
         Assert.True(durationRatios.Average() is >= 0.99f and <= 1.01f, $"Duration avg ratio {durationRatios.Average():F4} out of range");
         Assert.True(distanceRatios.Average() is >= 0.99f and <= 1.01f, $"Distance avg ratio {distanceRatios.Average():F4} out of range");

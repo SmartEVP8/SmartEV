@@ -69,7 +69,6 @@ public static class EngineConfiguration
             EnablePerformanceMetrics = true,
             EVDistributionWindowsSize = 30 * 60 * 1000,
             EVSpawnFraction = 0.3,
-            PopulationScaler = 0.7f,
             ChargeBufferPercent = 0.9f,
             DistanceScaler = 1.7f,
             GridSize = 0.025,

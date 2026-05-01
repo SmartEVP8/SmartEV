@@ -6,36 +6,64 @@ using Core.Shared;
 /// <summary>
 /// A shared store of the currently computed samplers.
 /// </summary>
-public class JourneySamplerProvider : IJourneySamplerProvider
+public sealed class JourneySamplerProvider : IJourneySamplerProvider
 {
     private readonly JourneyPipeline _pipeline;
-    private readonly float _populationScalar;
-    private readonly float _distanceScalar;
     private readonly List<List<Position>> _wetPolygons;
+    private readonly float _distanceScalar;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="JourneySamplerProvider"/> class.
     /// </summary>
-    /// <param name="pipeline">JourneyPipeline computes the sampling distributions for source and destination points.</param>
-    /// <param name="populationScalar">Influence of city population on the gravity weight.</param>
-    /// <param name="distanceScalar">Influence of distance on the gravity weight.</param>
-    /// <param name="wetPolygons">List of polygons representing wet areas where spawning is disallowed.</param>
-    public JourneySamplerProvider(JourneyPipeline pipeline, float populationScalar, float distanceScalar, List<List<Position>> wetPolygons)
+    /// <param name="pipeline">The journey pipeline used to compute sampler data.</param>
+    /// <param name="distanceScalar">The distance scaling factor.</param>
+    /// <param name="wetPolygons">The wet polygon definitions used during sampling.</param>
+    public JourneySamplerProvider(
+        JourneyPipeline pipeline,
+        float distanceScalar,
+        List<List<Position>> wetPolygons)
     {
         _pipeline = pipeline;
-        _populationScalar = populationScalar;
-        _distanceScalar = distanceScalar;
         _wetPolygons = wetPolygons;
-        Current = _pipeline.Compute(_populationScalar, _distanceScalar, _wetPolygons);
+        _distanceScalar = distanceScalar;
+
+        JourneySamplerCache.EnsureDirectory();
+
+        Parallel.For(0, 24, hour => EnsureSamplerOnDisk((uint)hour));
+
+        Current = LoadHourFromDisk(0);
     }
 
     /// <inheritdoc/>
     public IJourneySampler Current { get; private set; }
 
     /// <inheritdoc/>
-    public IJourneySampler Recompute(float populationScalar, float distanceScalar)
+    public void SetCurrent(Time time) => Current = LoadHourFromDisk(time.Hours);
+
+    private void EnsureSamplerOnDisk(uint hour)
     {
-        Current = _pipeline.Compute(populationScalar, distanceScalar, _wetPolygons);
-        return Current;
+        if (JourneySamplerCache.Exists(hour, _distanceScalar)) return;
+
+        var popScalar = GetScalers(hour);
+        var journeyDTO = _pipeline.ComputeDTO(popScalar, _distanceScalar, _wetPolygons);
+        JourneySamplerCache.Write(hour, journeyDTO, _distanceScalar);
+    }
+
+    private JourneySamplers LoadHourFromDisk(uint hour)
+    {
+        var journeyDTO = JourneySamplerCache.Read(hour, _distanceScalar);
+        return JourneyPipeline.FromDTO(journeyDTO);
+    }
+
+    private float GetScalers(Time time)
+    {
+        const float baseScaler = 0.8f;
+        const float maxVariance = 0.7f;
+
+        var dailyFluctuation = (float)(maxVariance * Math.Sin((Math.PI * time.Hours) / 12));
+
+        var populationScaler = baseScaler + dailyFluctuation;
+
+        return populationScaler;
     }
 }

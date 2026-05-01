@@ -5,6 +5,15 @@ using Engine.Grid;
 using Engine.Routing;
 using Serilog;
 
+public sealed record JourneySamplerDTO(
+    float[] SourceWeights,
+    float[][] DestinationWeights,
+    Position[] CellCenters,
+    Position[] CityCenters,
+    double HalfLat,
+    double HalfLon,
+    List<List<Position>> WetPolygons);
+
 /// <summary>
 /// JourneyPipeline computes the sampling distributions for source and destination points
 /// based on a grid of spawnable cells and a list of cities.
@@ -36,35 +45,27 @@ public class JourneyPipeline
     /// </param>
     /// <param name="wetPolygons">List of wet polygons used to ensure that sampled positions do not fall within wet areas.</param>
     /// <returns>Simulation samplers for source and destinations. If no cells are spawnable returns null.</returns>
-    public JourneySamplers Compute(float populationScaler, float distanceScaler, List<List<Position>> wetPolygons)
+    public JourneySamplerDTO ComputeDTO(
+    float populationScaler,
+    float distanceScaler,
+    List<List<Position>> wetPolygons)
     {
-        var cells = _grid.Cells
-            .SelectMany(g => g)
-            .ToArray();
+        var cells = _grid.Cells.SelectMany(g => g).ToList();
+        var count = cells.Count;
 
-        var sourceWeights = new float[cells.Length];
-        var destinationSamplers = new AliasSampler[cells.Length];
+        var sourceWeights = new float[count];
+        var destinationWeights = new float[count][];
 
-        for (var i = 0; i < cells.Length; i++)
+        for (var i = 0; i < count; i++)
         {
-            var cityInfo = cells[i].CityInfo;
-            var weights = new float[cityInfo.Count];
-            var totalWeight = 0f;
-
-            for (var j = 0; j < cityInfo.Count; j++)
-            {
-                var w = GravityWeight(cityInfo[j], populationScaler, distanceScaler);
-                weights[j] = w;
-                totalWeight += w;
-            }
-
-            sourceWeights[i] = totalWeight;
-            destinationSamplers[i] = new AliasSampler(weights);
+            var cell = cells[i];
+            sourceWeights[i] = SourceWeight(populationScaler, distanceScaler, cell);
+            destinationWeights[i] = GravityWeights(populationScaler, distanceScaler, cell);
         }
 
-        return new JourneySamplers(
-            new AliasSampler(sourceWeights),
-            destinationSamplers,
+        return new JourneySamplerDTO(
+            sourceWeights,
+            destinationWeights,
             _grid.CellCenters,
             _grid.CityCenters,
             _grid.HalfLat,
@@ -72,10 +73,74 @@ public class JourneyPipeline
             wetPolygons);
     }
 
-    private static float GravityWeight(CityInfo city, float populationScaler, float distanceScaler)
+    /// <summary>
+    /// Reconstructs JourneySamplers from a JourneySamplerDto. This is used to load samplers from disk, allowing us to cache expensive computations during development while still supporting dynamic sampling based on time of day.
+    /// The source and destination weights are used to create AliasSamplers, which are then used during the sampling of EV journeys.
+    /// The cell centers, city centers, and wet polygons are also included in the JourneySamplers for use during sampling.
+    /// If the DTO is malformed or contains invalid data, this method will throw an exception.
+    /// </summary>
+    /// <param name="journeyDTO">The journey sampler data transfer object containing weights and configuration.</param>
+    /// <returns>A new JourneySamplers instance populated from the DTO.</returns>
+    public static JourneySamplers FromDTO(JourneySamplerDTO journeyDTO)
     {
-        var distance = Math.Max(city.DistToCity, 1.0f);
-        return (float)(Math.Pow(city.Population, populationScaler) / Math.Pow(distance, distanceScaler));
+        var destSamplers = new AliasSampler[journeyDTO.DestinationWeights.Length];
+        for (var i = 0; i < destSamplers.Length; i++)
+            destSamplers[i] = new AliasSampler(journeyDTO.DestinationWeights[i]);
+
+        return new JourneySamplers(
+            new AliasSampler(journeyDTO.SourceWeights),
+            destSamplers,
+            journeyDTO.CellCenters,
+            journeyDTO.CityCenters,
+            journeyDTO.HalfLat,
+            journeyDTO.HalfLon,
+            journeyDTO.WetPolygons);
+    }
+
+    private static float SourceWeight(
+        float populationScaler,
+        float distanceScaler,
+        GravityCell cell)
+    {
+        var cities = cell.CityInfo;
+        var sum = 0f;
+        for (var i = 0; i < cities.Count; i++)
+        {
+            var cityInfo = cities[i];
+            var distance = MathF.Max(cityInfo.DistToCity, 1f);
+            sum += MathF.Pow(cityInfo.Population, populationScaler)
+                 / MathF.Pow(distance, distanceScaler);
+        }
+
+        return sum;
+    }
+
+    private static float[] GravityWeights(
+        float populationScaler,
+        float distanceScaler,
+        GravityCell c)
+    {
+        var cities = c.CityInfo;
+        var count = cities.Count;
+        var weights = new float[count];
+
+        var populationSum = 0f;
+        for (var i = 0; i < count; i++)
+        {
+            var pop = MathF.Pow(cities[i].Population, populationScaler);
+            weights[i] = pop;
+            populationSum += pop;
+        }
+
+        var inversePopulationSum = populationSum > 0f ? 1f / populationSum : 1f;
+
+        for (var i = 0; i < count; i++)
+        {
+            var distance = MathF.Max(cities[i].DistToCity, 1f);
+            weights[i] = weights[i] * inversePopulationSum / MathF.Pow(distance, distanceScaler);
+        }
+
+        return weights;
     }
 
     /// <summary>
