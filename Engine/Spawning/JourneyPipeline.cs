@@ -45,22 +45,7 @@ public class JourneyPipeline
 
         var perCellWeights = cells.Select(c =>
         {
-            // Population preference, normalised within the cell
-            var popPrefs = c.CityInfo
-                .Select(ci => (float)Math.Pow(ci.Population, populationScaler))
-                .ToArray();
-            var popSum = popPrefs.Sum();
-            if (popSum <= 0) popSum = 1f;
-
-            // Distance kernel — fixed, independent of bias
-            return c.CityInfo
-                .Select((ci, i) =>
-                {
-                    var d = Math.Max(ci.DistToCity, 1.0f);
-                    var distTerm = (float)(1.0 / Math.Pow(d, distanceScaler));
-                    return (popPrefs[i] / popSum) * distTerm;
-                })
-                .ToArray();
+            return GravityWeights(populationScaler, distanceScaler, c);
         }).ToList();
 
         var sourceWeights = perCellWeights.Select(w => w.Sum()).ToArray();
@@ -76,6 +61,36 @@ public class JourneyPipeline
             _grid.HalfLat,
             _grid.HalfLon,
             wetPolygons);
+    }
+
+    private static float[] GravityWeights(
+        float populationScaler,
+        float distanceScaler,
+        GravityCell c)
+    {
+        var cities = c.CityInfo;
+        var count = cities.Count;
+        var weights = new float[count];
+
+        // First pass: compute population terms and their sum
+        var popSum = 0f;
+        for (var i = 0; i < count; i++)
+        {
+            var pop = MathF.Pow(cities[i].Population, populationScaler);
+            weights[i] = pop;
+            popSum += pop;
+        }
+
+        var invPopSum = popSum > 0f ? 1f / popSum : 1f;
+
+        // Second pass: normalise and apply distance kernel
+        for (var i = 0; i < count; i++)
+        {
+            var d = MathF.Max(cities[i].DistToCity, 1f);
+            weights[i] = weights[i] * invPopSum / MathF.Pow(d, distanceScaler);
+        }
+
+        return weights;
     }
 
     /// <summary>
