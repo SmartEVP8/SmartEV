@@ -126,6 +126,11 @@ public sealed class DualCharger(int id, int maxPowerKW, Connectors connectors)
         };
     }
 
+    /// <summary>
+    /// Creates a list of connected EVs for this charger, including both active sessions and queued vehicles.
+    /// </summary>
+    /// <param name="currentTime">The current simulation time.</param>
+    /// <returns>A list of connected EVs.</returns>
     public IReadOnlyList<ConnectedEV> CreateConnectedEVs(Time currentTime)
     {
         var active = new List<ConnectedEV>();

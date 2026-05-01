@@ -149,7 +149,8 @@ public class EV(int id, Battery battery, Preferences preferences, Journey journe
 
         if (!float.IsFinite(desiredSoC))
         {
-            Log.Error("Calculated desired SoC is not finite. DesiredSoC={DesiredSoC}, EnergyToDestinationKWh={EnergyToDest}, RemainingDistanceKm={RemainingDistanceKm}, ArrivalAtStation={ArrivalAtStation}, {@EV}",
+            Log.Error(
+                "Calculated desired SoC is not finite. DesiredSoC={DesiredSoC}, EnergyToDestinationKWh={EnergyToDest}, RemainingDistanceKm={RemainingDistanceKm}, ArrivalAtStation={ArrivalAtStation}, {@EV}",
                 desiredSoC, energyToDest, remainingDistanceKm, arrivalAtStation, this);
             throw new InvalidOperationException($"Calculated desired SoC is not finite (desiredSoC={desiredSoC}, energyToDest={energyToDest}, remainingDistanceKm={remainingDistanceKm}, arrivalAtStation={arrivalAtStation}, {this})");
         }
@@ -179,7 +180,8 @@ public class EV(int id, Battery battery, Preferences preferences, Journey journe
 
         if (!float.IsFinite(desiredSoC))
         {
-            Log.Error("Calculated desired SoC is not finite. DesiredSoC={DesiredSoC}, EnergyToDestinationKWh={EnergyToDestinationKWh}, DistanceKM={DistanceKM}, {@EV}",
+            Log.Error(
+                "Calculated desired SoC is not finite. DesiredSoC={DesiredSoC}, EnergyToDestinationKWh={EnergyToDestinationKWh}, DistanceKM={DistanceKM}, {@EV}",
                 desiredSoC, energyToDestinationKWh, distanceKM, this);
             throw new InvalidOperationException($"Calculated desired SoC is not finite (desiredSoC={desiredSoC}, energyToDestinationKWh={energyToDestinationKWh}, distanceKM={distanceKM}, {this})");
         }
@@ -229,6 +231,11 @@ public class EV(int id, Battery battery, Preferences preferences, Journey journe
         return Math.Clamp(Battery.StateOfCharge - socDrop, 0f, 1f);
     }
 
+    /// <summary>
+    /// Starts a charging session for the given EV on the specified charger and schedules the corresponding EndCharging event.
+    /// </summary>
+    /// <param name="distanceToDestination">The distance to the destination.</param>
+    /// <returns> The desired SoC to charge to. </returns>
     public float CalcPreDesiredComputedSoC(float distanceToDestination)
     {
         if (Battery.MaxCapacityKWh <= 0)
@@ -266,7 +273,7 @@ public class EV(int id, Battery battery, Preferences preferences, Journey journe
     /// </summary>
     /// <param name="time">The amount of time an EV has to drive.</param>
     /// <returns>Returns the distance an EV can drive in a time period.</returns>
-    public float DistanceEVCanDrive(Time time) => journey.Current.DistanceKm / journey.Current.Duration.Milliseconds * time.Milliseconds;
+    public float DistanceEVCanDrive(Time time) => Journey.Current.DistanceKm / Journey.Current.Duration.Milliseconds * time.Milliseconds;
 
     /// <summary>
     /// Calculates the next time to check for candidate stations, which is the minimum of:

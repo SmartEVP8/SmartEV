@@ -184,8 +184,8 @@ public static class Program
             }
             catch (Exception ex)
             {
-                Log.Error("Error handling WebSocket connection");
-                throw ex;
+                Log.Error(ex, "Error handling WebSocket connection");
+                throw;
             }
             finally
             {

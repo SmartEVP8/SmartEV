@@ -111,8 +111,8 @@ public sealed class SimulationRunner(
         }
         catch (Exception ex)
         {
-            Log.Error("Error in SimulationRunner");
-            throw ex;
+            Log.Error(ex, "Error in SimulationRunner");
+            throw;
         }
         finally
         {

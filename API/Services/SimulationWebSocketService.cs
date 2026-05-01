@@ -51,8 +51,8 @@ public class SimulationWebSocketService(
                 }
                 catch (Exception ex)
                 {
-                    Log.Error("Error in snapshot loop");
-                    throw ex;
+                    Log.Error(ex, "Error in snapshot loop");
+                    throw;
                 }
             }
 
@@ -87,8 +87,8 @@ public class SimulationWebSocketService(
         }
         catch (Exception ex)
         {
-            Log.Error("Failed to send message over WebSocket");
-            throw ex;
+            Log.Error(ex, "Failed to send message over WebSocket");
+            throw;
         }
     }
 
@@ -126,8 +126,8 @@ public class SimulationWebSocketService(
         }
         catch (Exception ex)
         {
-            Log.Error("Error processing WebSocket connection");
-            throw ex;
+            Log.Error(ex, "Error processing WebSocket connection");
+            throw;
         }
     }
 
@@ -148,8 +148,8 @@ public class SimulationWebSocketService(
         }
         catch (Exception ex)
         {
-            Log.Error("Error in snapshot loop");
-            throw ex;
+            Log.Error(ex, "Error in snapshot loop");
+            throw;
         }
     }
 }

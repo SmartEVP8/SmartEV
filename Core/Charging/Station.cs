@@ -33,9 +33,9 @@ public class Station(ushort id,
     public string Address => address;
 
     /// <summary>
-    /// The stations reservations.
+    /// Gets the stations reservations.
     /// </summary>
-    public readonly Reservations Reservations = new();
+    public Reservations Reservations { get; } = new();
 
     /// <summary>
     /// Gets the current price of energy at this station based on the time of day.
@@ -95,6 +95,9 @@ public class Reservations()
     private uint _totalReservationsInPeriod;
     private uint _totalCancellationsInPeriod;
 
+    /// <summary>
+    /// Gets all reservations currently on the station, sorted by time of arrival.
+    /// </summary>
     public IEnumerable<Reservation> AllReservations => _reservations;
 
     /// <summary>

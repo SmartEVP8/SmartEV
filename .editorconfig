@@ -120,6 +120,9 @@ dotnet_diagnostic.SA1407.severity = none
 # SA1117: Parameters should be on same line or separate lines
 dotnet_diagnostic.SA1117.severity = none
 
+# SA1008: Opening parenthesis should not be preceded by a space
+dotnet_diagnostic.SA1008.severity = none
+
 [Tests/**/*.cs]
 dotnet_diagnostic.SA1600.severity = none
 dotnet_diagnostic.SA0001.severity = none

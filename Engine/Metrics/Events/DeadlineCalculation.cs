@@ -63,7 +63,7 @@ public static class DeadlineCalculator
     /// <para>
     /// <b>Formula:</b><br/>
     /// Energy Deficit: $E_{deficit} = \max(0, E_{journey} - (SoC_{spawn} - SoC_{min}) \cdot C_{bat})$<br/>
-    /// Charging Time: $T_{charge} = \frac{E_{deficit}}{P_{avg}} + (N_{stops} \cdot T_{stop})$
+    /// Charging Time: $T_{charge} = \frac{E_{deficit}}{P_{avg}} + (N_{stops} \cdot T_{stop})$.
     /// </para>
     /// </remarks>
     /// <param name="socAtSpawn">The State of Charge (0.0 to 1.0) at the start of the journey.</param>

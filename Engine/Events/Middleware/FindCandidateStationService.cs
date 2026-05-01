@@ -181,6 +181,7 @@ public class FindCandidateStationService : IFindCandidateStationService
                     Serilog.Log.Warning("Skipped {stationId}", stationId);
                     continue;
                 }
+
                 if (!ev.CanReachToStation(toStationDistance / 1000f, ev.Preferences.MinAcceptableCharge))
                     continue;
 

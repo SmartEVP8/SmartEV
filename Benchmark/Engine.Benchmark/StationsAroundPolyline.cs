@@ -25,7 +25,7 @@ public class StationsAroundPolyline
     private Dictionary<ushort, Station> _stations = null!;
     private SpatialGrid _spatialGrid = null!;
     private List<Position> _waypoints = null!;
-    private EV _ev = default;
+    private EV _ev = default!;
 
     /// <summary>
     /// Initializes the benchmark setup with stations and EV coordinates.
