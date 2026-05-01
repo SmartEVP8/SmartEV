@@ -44,9 +44,7 @@ public class StationMetricsCollector(List<Station> stations, StationService stat
                     charger,
                     station.Id,
                     simNow,
-                    utilizationInWindow,
-                    deliveredKWhInWindow,
-                    targetEVDemandKWh));
+                    utilizationInWindow));
 
                 totalDeliveredKWh += deliveredKWhInWindow;
                 totalMaxKWh += charger.MaxPowerKW * snapshotDurationHours;
@@ -70,8 +68,6 @@ public class StationMetricsCollector(List<Station> stations, StationService stat
             {
                 SimTime = simNow,
                 StationId = station.Id,
-                TotalDeliveredKWh = totalDeliveredKWh,
-                TotalMaxKWh = totalMaxKWh,
                 Price = station.GetPrice(simNow),
                 TotalChargers = station.Chargers.Count,
                 Reservations = reservations,
