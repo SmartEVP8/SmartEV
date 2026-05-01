@@ -19,7 +19,7 @@ public class StationFactory
     private readonly StationDistribution _distribution;
     private readonly EnergyPrices _energyPrices;
     private readonly FileInfo _stationsFile;
-    private readonly List<List<Position>> _highwayPolylines;
+    private readonly List<(Position A, Position B)> _highwaySegments;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="StationFactory"/> class with the specified options and random seed.
@@ -54,7 +54,7 @@ public class StationFactory
         _distribution = new StationDistribution(_stationRandom);
         _energyPrices = energyPrices;
         _stationsFile = stationsFile ?? throw new ArgumentNullException(nameof(stationsFile), "Stations file cannot be null.");
-        _highwayPolylines = HighwayPolylines;
+        _highwaySegments = [.. HighwayPolylines.SelectMany(polyline => polyline.Zip(polyline.Skip(1), (a, b) => (a, b)))];
     }
 
     /// <summary>
@@ -202,9 +202,7 @@ public class StationFactory
     }
 
     private bool IsNearHighway(Position position, double radius) =>
-        _highwayPolylines.Any(polyline =>
-                 polyline.Zip(polyline.Skip(1))
-                         .Any(segment => GeoMath.IsInRadius(position, segment.First, segment.Second, radius)));
+        _highwaySegments.Any(seg => GeoMath.IsInRadius(position, seg.A, seg.B, radius));
 
     private class StationDistribution(Random random)
     {

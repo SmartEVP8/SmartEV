@@ -45,7 +45,7 @@ public class EngineManager
 
             _engineServices.Clear();
             _engineServices.AddSingleton(mergedSettings);
-            Init.InitEngine(_engineServices);
+            Init.InitEngine(_engineServices, mergedSettings);
 
             configureServices?.Invoke(_engineServices);
             _engineProvider = _engineServices.BuildServiceProvider();
