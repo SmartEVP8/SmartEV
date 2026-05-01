@@ -12,8 +12,17 @@ public class PerformanceMetrics(string title = "Performance Metrics")
 {
     private record Section
     {
-        public uint Count;
-        public readonly List<double> Timings = [];
+        private uint _count;
+        private readonly List<double> _timings = [];
+
+        public uint Count => _count;
+        public IReadOnlyList<double> Timings => _timings;
+
+        public void AddTiming(double ms)
+        {
+            _count++;
+            _timings.Add(ms);
+        }
     }
 
     private readonly Dictionary<string, Section> _sections = [];
@@ -34,14 +43,14 @@ public class PerformanceMetrics(string title = "Performance Metrics")
     {
         if (!_sections.TryGetValue(section, out var s))
             _sections[section] = s = new Section();
-        s.Count++;
-        s.Timings.Add(ms);
+        s.AddTiming(ms);
         Interlocked.Increment(ref _totalCount);
     }
 
     /// <summary>
     /// Times the given function and records it under the given section name.
     /// </summary>
+    /// <typeparam name="T">The return type of the function.</typeparam>
     /// <param name="section">The name of the section to record.</param>
     /// <param name="func">The function to time.</param>
     /// <returns>The value returned by the function.</returns>
@@ -59,6 +68,7 @@ public class PerformanceMetrics(string title = "Performance Metrics")
     /// </summary>
     /// <param name="section">The name of the section to record.</param>
     /// <param name="action">The async action to time.</param>
+    /// <returns>A task representing the timed action.</returns>
     public async Task MeasureAsync(string section, Func<Task> action)
     {
         var sw = Stopwatch.StartNew();
@@ -70,6 +80,7 @@ public class PerformanceMetrics(string title = "Performance Metrics")
     /// <summary>
     /// Async version of <see cref="Measure{T}"/>.
     /// </summary>
+    /// <typeparam name="T">The return type of the function.</typeparam>
     /// <param name="section">The name of the section to record.</param>
     /// <param name="func">The async function to time.</param>
     /// <returns>The value returned by the function.</returns>
@@ -165,7 +176,7 @@ public class PerformanceMetrics(string title = "Performance Metrics")
         sb.AppendLine(ClearRight($"└{border}┘"));
 
         // Print empty padded lines to erase leftover visual rows if the underlying dictionary shrinks in size
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             sb.AppendLine(new string(' ', eraseWidth));
         }
@@ -175,8 +186,19 @@ public class PerformanceMetrics(string title = "Performance Metrics")
     }
 }
 
+/// <summary>
+/// Extension methods for measuring async functions with <see cref="PerformanceMetrics"/>.
+/// </summary>
 public static class PerformanceMetricsExtensions
 {
+    /// <summary>
+    /// Times the given async function and records it under the given section name.
+    /// </summary>
+    /// <typeparam name="T">The type of the result of the async function.</typeparam>
+    /// <param name="task">The async function to time.</param>
+    /// <param name="section">The section name under which to record the timing.</param>
+    /// <param name="metrics">The performance metrics instance to use for recording.</param>
+    /// <returns>A task representing the timed action.</returns>
     public static async Task<T> MeasureAsync<T>(this Task<T> task, string section, PerformanceMetrics? metrics)
     {
         if (metrics is null) return await task;

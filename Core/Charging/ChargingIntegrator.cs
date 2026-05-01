@@ -52,6 +52,11 @@ public record IntegrationResult(
     /// </summary>
     public double TotalEnergyKWh => CarA.EnergyDeliveredKWh + (CarB?.EnergyDeliveredKWh ?? 0.0);
 
+    /// <summary>
+    /// Gets the integration result for the specified charging side, or null if the side is invalid or not connected.
+    /// </summary>
+    /// <param name="side">The charging side for which to get the result.</param>
+    /// <returns>The integration result for the specified side, or null if the side is invalid or not connected.</returns>
     public VehicleIntegrationResult? GetResultFor(ChargingSide? side) => side switch
     {
         ChargingSide.Left => CarA,

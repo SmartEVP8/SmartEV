@@ -28,6 +28,7 @@ public class StationFactory
     /// <param name="random">The seed for random number generation to ensure deterministic output.</param>
     /// <param name="energyPrices">Dynamic energy prices based on time of day.</param>
     /// <param name="stationsFile">The file containing the station location data.</param>
+    /// <param name="HighwayPolylines">List of polylines representing highways, used to determine if a station is near a highway.</param>
     /// <exception cref="ArgumentNullException">Thrown if options is null.</exception>
     /// <exception cref="ArgumentOutOfRangeException">Thrown if TotalChargers is not greater than zero, or if probabilities are not between 0 and 1.</exception>
     /// <exception cref="ArgumentException">Thrown if SocketProbabilities is empty, contains negative probabilities, or does not sum to approximately 1.</exception>
@@ -137,18 +138,6 @@ public class StationFactory
         return station;
     }
 
-    /// <summary>
-    /// Creates a charger.
-    /// </summary>
-    /// <param name="chargerId">
-    /// The charger identifier within the station.
-    /// </param>
-    /// <param name="stationPowerKW">
-    /// The power rating of the charger.
-    /// </param>
-    /// <returns>
-    /// The created charger.
-    /// </returns>
     private ChargerBase CreateCharger(int chargerId, ushort stationPowerKW, bool isDualStation)
     {
         var connectors = CreateConnectorSet(stationPowerKW);

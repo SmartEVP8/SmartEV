@@ -37,6 +37,14 @@ public class ReachableStations
             })];
     }
 
+    /// <summary>
+    /// Filters the list of reachable stations to those that are actually worth detouring to based on the EV's current charge, the distance to the station, and the distance from the station to the destination.
+    /// </summary>
+    /// <param name="ev">The EV for which to filter candidates.</param>
+    /// <param name="detourLegs">The routing legs for the detour.</param>
+    /// <param name="reachableStationIds">The IDs of reachable stations.</param>
+    /// <param name="chargeBufferPercent">The percentage of charge to buffer for the detour.</param>
+    /// <returns>A dictionary of filtered station IDs and their corresponding durations.</returns>
     public static Dictionary<ushort, (float, float)> FilterCandidates(ref EV ev, RoutingLegsResult detourLegs, ushort[] reachableStationIds, float chargeBufferPercent)
     {
         var result = new Dictionary<ushort, (float, float)>();
@@ -56,7 +64,7 @@ public class ReachableStations
 
             if (socAtStation >= chargingThreshold)
             {
-                Console.WriteLine($"Station {reachableStationIds[i]} filtered out: SOC at station {socAtStation:P} is above threshold {chargingThreshold:P}.");
+                Log.Information("Station {StationId} filtered out: SOC at station {SOC:P} is above threshold {Threshold:P}.", reachableStationIds[i], socAtStation, chargingThreshold);
                 continue;
             }
 
@@ -64,6 +72,5 @@ public class ReachableStations
         }
 
         return result;
-
     }
 }

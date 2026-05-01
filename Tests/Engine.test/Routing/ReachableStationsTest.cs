@@ -1,4 +1,4 @@
-namespace Testing;
+namespace Enginge.test.Routing;
 
 using Core.Shared;
 using Core.Vehicles;
@@ -36,6 +36,4 @@ public class ReachableStationsTests
         Assert.DoesNotContain((ushort)2, reachableStations);
         Assert.Contains((ushort)3, reachableStations);
     }
-
-
 }
