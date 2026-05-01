@@ -100,16 +100,16 @@ public class JourneyPipeline
     private static float SourceWeight(
         float populationScaler,
         float distanceScaler,
-        GravityCell c)
+        GravityCell cell)
     {
-        var cities = c.CityInfo;
+        var cities = cell.CityInfo;
         var sum = 0f;
         for (var i = 0; i < cities.Count; i++)
         {
-            var ci = cities[i];
-            var d = MathF.Max(ci.DistToCity, 1f);
-            sum += MathF.Pow(ci.Population, populationScaler)
-                 / MathF.Pow(d, distanceScaler);
+            var cityInfo = cities[i];
+            var distance = MathF.Max(cityInfo.DistToCity, 1f);
+            sum += MathF.Pow(cityInfo.Population, populationScaler)
+                 / MathF.Pow(distance, distanceScaler);
         }
 
         return sum;
@@ -124,20 +124,20 @@ public class JourneyPipeline
         var count = cities.Count;
         var weights = new float[count];
 
-        var popSum = 0f;
+        var populationSum = 0f;
         for (var i = 0; i < count; i++)
         {
             var pop = MathF.Pow(cities[i].Population, populationScaler);
             weights[i] = pop;
-            popSum += pop;
+            populationSum += pop;
         }
 
-        var invPopSum = popSum > 0f ? 1f / popSum : 1f;
+        var inversePopulationSum = populationSum > 0f ? 1f / populationSum : 1f;
 
         for (var i = 0; i < count; i++)
         {
-            var d = MathF.Max(cities[i].DistToCity, 1f);
-            weights[i] = weights[i] * invPopSum / MathF.Pow(d, distanceScaler);
+            var distance = MathF.Max(cities[i].DistToCity, 1f);
+            weights[i] = weights[i] * inversePopulationSum / MathF.Pow(distance, distanceScaler);
         }
 
         return weights;

@@ -31,6 +31,7 @@ public class EVFactoryTest
 
         public void SetCurrent(Time time)
         {
+            throw new NotImplementedException();
         }
 
         public IJourneySampler Recompute(float distanceScalar, float populationScalar) => _fjs;
