@@ -5,6 +5,15 @@ using Engine.Grid;
 using Engine.Routing;
 using Serilog;
 
+public sealed record JourneySamplerDto(
+    float[] SourceWeights,
+    float[][] DestinationWeights,
+    Position[] CellCenters,
+    Position[] CityCenters,
+    double HalfLat,
+    double HalfLon,
+    List<List<Position>> WetPolygons);
+
 /// <summary>
 /// JourneyPipeline computes the sampling distributions for source and destination points
 /// based on a grid of spawnable cells and a list of cities.
@@ -36,7 +45,7 @@ public class JourneyPipeline
     /// </param>
     /// <param name="wetPolygons">List of wet polygons used to ensure that sampled positions do not fall within wet areas.</param>
     /// <returns>Simulation samplers for source and destinations. If no cells are spawnable returns null.</returns>
-    public JourneySamplers Compute(
+    public JourneySamplerDto ComputeDto(
     float populationScaler,
     float distanceScaler,
     List<List<Position>> wetPolygons)
@@ -45,24 +54,39 @@ public class JourneyPipeline
         var count = cells.Count;
 
         var sourceWeights = new float[count];
-        var destinationSamplers = new AliasSampler[count];
+        var destinationWeights = new float[count][];
 
         for (var i = 0; i < count; i++)
         {
             var cell = cells[i];
             sourceWeights[i] = SourceWeight(populationScaler, distanceScaler, cell);
-            destinationSamplers[i] = new AliasSampler(
-                GravityWeights(populationScaler, distanceScaler, cell));
+            destinationWeights[i] = GravityWeights(populationScaler, distanceScaler, cell);
         }
 
-        return new JourneySamplers(
-            new AliasSampler(sourceWeights),
-            destinationSamplers,
+        return new JourneySamplerDto(
+            sourceWeights,
+            destinationWeights,
             _grid.CellCenters,
             _grid.CityCenters,
             _grid.HalfLat,
             _grid.HalfLon,
             wetPolygons);
+    }
+
+    public static JourneySamplers FromDto(JourneySamplerDto dto)
+    {
+        var destSamplers = new AliasSampler[dto.DestinationWeights.Length];
+        for (var i = 0; i < destSamplers.Length; i++)
+            destSamplers[i] = new AliasSampler(dto.DestinationWeights[i]);
+
+        return new JourneySamplers(
+            new AliasSampler(dto.SourceWeights),
+            destSamplers,
+            dto.CellCenters,
+            dto.CityCenters,
+            dto.HalfLat,
+            dto.HalfLon,
+            dto.WetPolygons);
     }
 
     // Unnormalised classic gravity sum — drives source cell selection.
