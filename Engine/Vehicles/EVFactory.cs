@@ -23,7 +23,7 @@ public class EVFactory(Random random, IJourneySamplerProvider samplersProvider, 
     private int _nextId = 0;
 
     /// <summary>
-    /// Creates a single EV. For batch creation use <see crf="SampleParams"/> and <see cref="Create(SampledEVParams, Time)"/>.
+    /// Creates a single EV. For batch creation use <see cref="SampleParams"/> and <see cref="Create(SampledEVParams, Time)"/>.
     /// </summary>
     /// <param name="departure">The departure time of the created EV's journey.</param>
     /// <returns>An EV conforming to the supplied configs.</returns>

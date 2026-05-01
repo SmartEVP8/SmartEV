@@ -79,22 +79,22 @@ public class JourneyPipeline
     /// The cell centers, city centers, and wet polygons are also included in the JourneySamplers for use during sampling.
     /// If the DTO is malformed or contains invalid data, this method will throw an exception.
     /// </summary>
-    /// <param name="dto">The journey sampler data transfer object containing weights and configuration.</param>
+    /// <param name="journeyDTO">The journey sampler data transfer object containing weights and configuration.</param>
     /// <returns>A new JourneySamplers instance populated from the DTO.</returns>
-    public static JourneySamplers FromDTO(JourneySamplerDTO dto)
+    public static JourneySamplers FromDTO(JourneySamplerDTO journeyDTO)
     {
-        var destSamplers = new AliasSampler[dto.DestinationWeights.Length];
+        var destSamplers = new AliasSampler[journeyDTO.DestinationWeights.Length];
         for (var i = 0; i < destSamplers.Length; i++)
-            destSamplers[i] = new AliasSampler(dto.DestinationWeights[i]);
+            destSamplers[i] = new AliasSampler(journeyDTO.DestinationWeights[i]);
 
         return new JourneySamplers(
-            new AliasSampler(dto.SourceWeights),
+            new AliasSampler(journeyDTO.SourceWeights),
             destSamplers,
-            dto.CellCenters,
-            dto.CityCenters,
-            dto.HalfLat,
-            dto.HalfLon,
-            dto.WetPolygons);
+            journeyDTO.CellCenters,
+            journeyDTO.CityCenters,
+            journeyDTO.HalfLat,
+            journeyDTO.HalfLon,
+            journeyDTO.WetPolygons);
     }
 
     private static float SourceWeight(
