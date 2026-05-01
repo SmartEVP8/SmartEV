@@ -25,24 +25,26 @@ public class JourneySamplerProvider : IJourneySamplerProvider
         _wetPolygons = wetPolygons;
         Parallel.For(0, 24, hour =>
         {
-            var (popScalar, distScalar) = GetScalers((uint)hour, PopulationScalar, DistanceScalar);
-            _cachedSamplers[(uint)hour] = _pipeline.Compute(popScalar, distScalar, _wetPolygons);
+            var popScalar = GetScalers((uint)hour);
+            _cachedSamplers[(uint)hour] = _pipeline.Compute(popScalar, DistanceScalar, _wetPolygons);
         });
+        Current = _cachedSamplers[0];
     }
 
-    /// <inheritdoc/>
-    public IJourneySampler GetCurrent(Time time) => _cachedSamplers[time.Hours];
+    public IJourneySampler Current { get; private set; }
 
-    private (float populationScaler, float distanceScaler) GetScalers(Time time, float PopulationScalar, float DistanceScalar)
+    /// <inheritdoc/>
+    public IJourneySampler SetCurrent(Time time) => Current = _cachedSamplers[time.Hours];
+
+    private float GetScalers(Time time)
     {
-        const float baseScaler = 7f;
+        const float baseScaler = 0.7f;
         const float maxVariance = 0.7f;
 
         var dailyFluctuation = (float)(maxVariance * Math.Sin((Math.PI * time.Hours) / 12));
 
         var populationScaler = baseScaler + dailyFluctuation;
-        var distanceScaler = (baseScaler - dailyFluctuation) * DistanceScalar;
 
-        return (populationScaler, DistanceScalar);
+        return populationScaler;
     }
 }

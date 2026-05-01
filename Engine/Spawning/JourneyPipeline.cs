@@ -45,7 +45,22 @@ public class JourneyPipeline
 
         var perCellWeights = cells.Select(c =>
         {
-            return GravityWeights(populationScaler, distanceScaler, c);
+            // Population preference, normalised within the cell
+            var popPrefs = c.CityInfo
+                .Select(ci => (float)Math.Pow(ci.Population, populationScaler))
+                .ToArray();
+            var popSum = popPrefs.Sum();
+            if (popSum <= 0) popSum = 1f;
+
+            // Distance kernel — fixed, independent of bias
+            return c.CityInfo
+                .Select((ci, i) =>
+                {
+                    var d = Math.Max(ci.DistToCity, 1.0f);
+                    var distTerm = (float)(1.0 / Math.Pow(d, distanceScaler));
+                    return (popPrefs[i] / popSum) * distTerm;
+                })
+                .ToArray();
         }).ToList();
 
         var sourceWeights = perCellWeights.Select(w => w.Sum()).ToArray();
@@ -61,19 +76,6 @@ public class JourneyPipeline
             _grid.HalfLat,
             _grid.HalfLon,
             wetPolygons);
-    }
-
-    private static float[] GravityWeights(float populationScaler, float distanceScaler, GravityCell c)
-    {
-        var popPrefs = c.CityInfo.Select(ci => (float)Math.Pow(ci.Population, populationScaler)).ToArray();
-        var popSum = popPrefs.Sum();
-        if (popSum <= 0) popSum = 1f;
-
-        return [.. c.CityInfo.Select((ci, i) =>
-                        {
-                var d = Math.Max(ci.DistToCity, 1.0f);
-                return (float)(popPrefs[i] / popSum / Math.Pow(d, distanceScaler));
-                        })];
     }
 
     /// <summary>

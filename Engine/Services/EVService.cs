@@ -31,6 +31,7 @@ public class EVService(
     public void Handle(SpawnEVS e)
     {
         var amount = _carsInPeriod.GetCarsInPeriod(e.Time);
+        journeySampler.SetCurrent(e.Time);
         if (amount <= 0)
         {
             Log.Error("EVService was scheduled to spawn EVs at time {@Time}, but the amount to spawn was {Amount}.", e.Time, amount);

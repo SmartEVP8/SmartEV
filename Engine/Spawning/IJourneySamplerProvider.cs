@@ -13,5 +13,7 @@ public interface IJourneySamplerProvider
     /// </summary>
     /// <param name="time">The current simulation time used to determine which sampler to return.</param>
     /// <returns>The journey sampler corresponding to the current simulation time.</returns>
-    IJourneySampler GetCurrent(Time time);
+    IJourneySampler SetCurrent(Time time);
+
+    IJourneySampler Current { get; }
 }
