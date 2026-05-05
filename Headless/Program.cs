@@ -30,7 +30,7 @@ public static class Program
         var settings = EngineConfiguration.CreateDefaultSettings() ?? throw new InvalidOperationException("Failed to create default engine settings. This should not happen.");
         services.AddSingleton(settings);
         Init.InitEngine(services, settings);
-        var provider = services.BuildServiceProvider() ?? throw new InvalidOperationException("Failed to build service provider. This should not happen.");
+        await using var provider = services.BuildServiceProvider() ?? throw new InvalidOperationException("Failed to build service provider. This should not happen.");
         provider.GetRequiredService<EventScheduler>();
         provider.GetRequiredService<IOSRMRouter>();
         provider.GetRequiredService<ICostStore>();
