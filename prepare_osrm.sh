@@ -84,9 +84,25 @@ fi
 if [ ! -f "$OSRM_BACKEND/build/osrm-extract" ]; then
     cd "$OSRM_BACKEND"
     mkdir -p build && cd build
-    cmake .. -DCMAKE_BUILD_TYPE=Release
+    # Ensure POSIX prototypes (read/write/close/lseek) are visible to the build
+    # by having the compiler implicitly include <unistd.h>. 
+    # Also suppress unused-variable being promoted to error in third-party C files
+    # (some compilers treat certain -Wno-* flags as unsupported; these are best-effort)
+    cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS='-include unistd.h -Wno-error=unused-variable -Wno-unused-variable' -DCMAKE_CXX_FLAGS='-include unistd.h -Wno-error=unused-variable -Wno-unused-variable'
     make -j4
-    sudo make install
+    # Avoid blocking on an interactive sudo prompt during automated runs.
+    if command -v sudo >/dev/null 2>&1; then
+        sudo -n make install || echo "sudo install skipped or failed (non-interactive)"
+    else
+        echo "sudo not found; skipping make install"
+    fi
+    # locate any built osrm-extract binary so we can run it without requiring
+    # a system install. Prefer build/osrm-extract if present, else search.
+    if [ -x "$PWD/osrm-extract" ]; then
+        OSRM_EXTRACT_BIN="$PWD/osrm-extract"
+    else
+        OSRM_EXTRACT_BIN=$(find "$PWD" -type f -executable -name osrm-extract -print -quit 2>/dev/null || true)
+    fi
     cd ../..
 fi
 
@@ -103,7 +119,11 @@ fi
 
 
 echo "Running OSRM extract..."
-osrm-extract -p "$CAR_FILE" "$OSM_FILE"
+if [ -n "$OSRM_EXTRACT_BIN" ] && [ -x "$OSRM_EXTRACT_BIN" ]; then
+    "$OSRM_EXTRACT_BIN" -p "$CAR_FILE" "$OSM_FILE"
+else
+    osrm-extract -p "$CAR_FILE" "$OSM_FILE"
+fi
 
 echo "Running OSRM contract (CH pipeline)..."
 osrm-contract "$OSM_FILE"
