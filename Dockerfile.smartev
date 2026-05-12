@@ -2,7 +2,6 @@ ARG OSRM_BUILDER_TAG=latest
 FROM ghcr.io/smartevp8/smartev:${OSRM_BUILDER_TAG} AS osrm-data
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
-
 RUN apt-get update && apt-get install -y \
     build-essential cmake git \
     libboost-all-dev \
@@ -50,9 +49,7 @@ COPY --from=bufbuild/buf:latest /usr/local/bin/buf /usr/local/bin/buf
 
 # Copy everything and build
 COPY . .
-
 RUN buf generate
-
 RUN dotnet build --no-restore
 
 # Run tests
@@ -61,28 +58,19 @@ RUN dotnet test --no-build
 
 # Runtime image
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS runtime
-
 RUN apt-get update && apt-get install -y \
-    build-essential cmake git \
-    libboost-all-dev \
-    libtbb-dev \
-    liblua5.4-dev \
-    libluajit-5.1-dev \
-    libxml2-dev \
-    libzip-dev \
-    libbz2-dev \
-    libexpat1-dev \
-    libstxxl-dev \
-    libosmium2-dev \
-    libprotozero-dev \
-    libzmq3-dev \
-    pkg-config \
+    libboost-iostreams1.83.0 \
+    libboost-filesystem1.83.0 \
+    libboost-thread1.83.0 \
+    liblua5.4-0 \
+    libtbb12 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-
 COPY --from=build /app/Core/bin/ Core/bin/
 COPY --from=build /app/Engine/bin/ Engine/bin/
 COPY --from=build /app/Headless/bin/ Headless/bin/
 COPY --from=build /app/data/ data/
 COPY --from=ghcr.io/smartevp8/osrm_wrapper:latest /build/build/libosrm_wrapper.so Core/native/
+COPY --from=ghcr.io/smartevp8/osrm_wrapper:latest /usr/local/lib/libosrm* /usr/local/lib/
+RUN ldconfig
