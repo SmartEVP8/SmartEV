@@ -8,15 +8,17 @@ RUN apt-get update && apt-get install -y \
     libboost-all-dev liblua5.4-dev libtbb-dev \
     && rm -rf /var/lib/apt/lists/*
 
-RUN curl -L https://github.com/Project-OSRM/osrm-backend/archive/362b388d7e0582291662105d7bfc004a3a44a393.tar.gz \
+RUN curl -L https://github.com/Project-OSRM/osrm-backend/archive/v26.4.1.tar.gz \
     | tar -xz \
-    && cd osrm-backend-362b388d7e0582291662105d7bfc004a3a44a393 \
+    && cd osrm-backend-26.4.1 \
     && mkdir -p build && cd build \
     && cmake .. -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_C_FLAGS='-include unistd.h -Wno-error=unused-variable -Wno-unused-variable' \
+        -DCMAKE_CXX_FLAGS='-include unistd.h -Wno-error=unused-variable -Wno-unused-variable' \
     && make -j2 \
     && make install \
     && cd ../.. \
-    && rm -rf osrm-backend-362b388d7e0582291662105d7bfc004a3a44a393
+    && rm -rf osrm-backend-26.4.1
 
 WORKDIR /data
 
