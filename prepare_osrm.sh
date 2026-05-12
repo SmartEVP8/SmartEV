@@ -1,12 +1,10 @@
 #!/usr/bin/env bash
 set -e
 
-[ "${BASH_VERSINFO[0]}" -ge 4 ] || { echo "Bash 4+ required"; exit 1; }
-
 DATA_DIR="data/osrm"
 OSM_FILE="output.osm.pbf"
-OSRM_BACKEND="osrm-backend"
 OSRM_VERSION="26.4.1"
+OSRM_BACKEND="osrm-backend-${OSRM_VERSION}"
 CAR_FILE="../car/car.lua"
 
 declare -A PACKAGE_MAPS
@@ -60,7 +58,6 @@ check_dependencies
 
 if [ ! -d "$OSRM_BACKEND" ]; then
     curl -L "https://github.com/Project-OSRM/osrm-backend/archive/v${OSRM_VERSION}.tar.gz" | tar -xz
-    mv "osrm-backend-${OSRM_VERSION}" "$OSRM_BACKEND"
 fi
 
 if [ ! -f "$OSRM_BACKEND/build/osrm-extract" ]; then
