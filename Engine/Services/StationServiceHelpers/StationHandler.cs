@@ -8,6 +8,7 @@ using Serilog;
 using Engine.Events;
 using Engine.Metrics;
 using Engine.Utils;
+using Engine.Metrics.Events;
 
 /// <summary>
 /// Manages all charger state and charging logic for a single station.
@@ -21,6 +22,7 @@ public class StationHandler
     private readonly Station _station;
     private readonly IReadOnlyDictionary<int, EV> _evs;
     private readonly EventScheduler _scheduler;
+    private readonly MetricsService _metrics;
 
     /// <summary>
     /// Precomputed greedy assignment of all reservations to chargers, in arrival order.
@@ -61,13 +63,13 @@ public class StationHandler
         _station = station;
         _evs = evs;
         _scheduler = scheduler;
-
+        _metrics = metrics;
         foreach (var charger in station.Chargers)
         {
             IChargerHandler handler = charger switch
             {
-                SingleCharger s => new SingleChargerHandler(s, integrator, scheduler, metrics, evs),
-                DualCharger d => new DualChargerHandler(d, integrator, scheduler, metrics, evs),
+                SingleCharger s => new SingleChargerHandler(s, integrator, scheduler, evs),
+                DualCharger d => new DualChargerHandler(d, integrator, scheduler, evs),
                 _ => throw
                     new InvalidOperationException($"Unknown charger type: {charger.GetType()}")
             };
@@ -200,9 +202,6 @@ public class StationHandler
 
     private void EnsureCostPlan(Time simNow)
     {
-        if (_costPlan is not null && simNow - _costPlanCachedAt < _costPlanTtl)
-            return;
-
         _costPlanCachedAt = simNow;
         EnsurePlan(simNow);
         _costPlan = _plan;
@@ -278,7 +277,16 @@ public class StationHandler
 
         charger.AccumulateEnergy(simNow);
         _chargerIndex[charger.Id].Handler.StartNext(simNow, _station);
+
         _evs[top.EVId].EVState = EVState.Charging;
+
+        _metrics.RecordWaitTime(new WaitTimeInQueueMetric
+        {
+            EVId = top.EVId,
+            StationId = _station.Id,
+            ArrivalAtStationTime = top.ArrivalTime,
+            StartChargingTime = simNow,
+        });
         charger.UpdateWindowStats();
     }
 }

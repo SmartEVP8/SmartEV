@@ -23,7 +23,6 @@ public class DualChargerHandler(
     DualCharger charger,
     ChargingIntegrator integrator,
     EventScheduler scheduler,
-    MetricsService metrics,
     IReadOnlyDictionary<int, EV> evs)
     : IChargerHandler
 {
@@ -123,14 +122,6 @@ public class DualChargerHandler(
             if (side is null) break;
 
             charger.Queue.Dequeue();
-
-            metrics.RecordWaitTime(new WaitTimeInQueueMetric
-            {
-                EVId = candidate.EVId,
-                StationId = stationId,
-                ArrivalAtStationTime = candidate.ArrivalTime,
-                StartChargingTime = simNow,
-            });
 
             var session = new ActiveSession(candidate.EVId, candidate, simNow, side, null, null);
             charger.Window = charger.Window with { LastEnergyUpdateTime = simNow };

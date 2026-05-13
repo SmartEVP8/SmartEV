@@ -23,7 +23,6 @@ public class SingleChargerHandler(
     SingleCharger charger,
     ChargingIntegrator integrator,
     EventScheduler scheduler,
-    MetricsService metrics,
     IReadOnlyDictionary<int, EV> evs)
     : IChargerHandler
 {
@@ -56,14 +55,6 @@ public class SingleChargerHandler(
         }
 
         charger.Queue.Dequeue();
-
-        metrics.RecordWaitTime(new WaitTimeInQueueMetric
-        {
-            EVId = next.EVId,
-            StationId = station.Id,
-            ArrivalAtStationTime = next.ArrivalTime,
-            StartChargingTime = simNow,
-        });
 
         charger.Session = new ActiveSession(next.EVId, next, simNow, null, null, null);
         charger.Window = charger.Window with { LastEnergyUpdateTime = simNow };
