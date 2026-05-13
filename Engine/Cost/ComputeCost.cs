@@ -105,7 +105,7 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
         var expectedArrival = (Time)(uint)Math.Ceiling(time + duration);
         var availableAt = stationService.ExpectedWaitTime(stationId, time, expectedArrival);
         var wait = availableAt - expectedArrival;
-        var waitMinutes = Math.Max(0, wait.Minutes);
+        var waitMinutes = Math.Max(0, wait / Time.MillisecondsPerMinute);
         return weights.ExpectedWaitTime * waitMinutes;
     }
 
