@@ -33,7 +33,9 @@ public class StationHandler
     /// </summary>
     private Time _planInitialAvailability;
     private Time _costPlanInitialAvailability;
+    private Time _costPlanCachedAt = 0;
     private List<PlanEntry>? _costPlan;
+    private const uint _costPlanInit = 60_000;
 
     private readonly record struct PlanEntry(Time ArrivalTime, Time MinChargerAvailability);
 
@@ -190,11 +192,27 @@ public class StationHandler
     /// <returns>Absolute time when a charger side becomes available.</returns>
     public Time ExpectedWaitTime(Time simNow, Time arrival)
     {
-        EnsurePlan(simNow);
+        EnsureCostPlan(simNow);
         var index = _costPlan?.FindLastIndex(p => p.ArrivalTime <= arrival) ?? -1;
         return index >= 0
             ? _costPlan![index].MinChargerAvailability
             : _costPlanInitialAvailability;
+    }
+
+    public void UpdateCostPlan(Time simNow)
+    {
+        EnsureCostPlan(simNow);
+    }
+
+    private void EnsureCostPlan(Time simNow)
+    {
+        if(_costPlan is not null && simNow - _costPlanInitialAvailability < _costPlanInit)
+            return;
+
+        _costPlanCachedAt = simNow;
+        EnsurePlan(simNow);
+        _costPlan = _plan;
+        _costPlanInitialAvailability = _planInitialAvailability;
     }
 
     /// <summary>
@@ -206,7 +224,10 @@ public class StationHandler
     /// <param name="simNow">Current simulation time.</param>
     private void EnsurePlan(Time simNow)
     {
-        _costPlan = [];
+        if(_plan is not null)
+            return;
+
+        _plan = [];
 
         var waitTimes = new PriorityQueue<int, Time>();
         var reservationQueues = new Dictionary<int, List<ConnectedEV>>();
@@ -247,7 +268,7 @@ public class StationHandler
             var (availableAt, _) = handler.EstimateWaitTime(baseTime, queue);
             waitTimes.Enqueue(chargerId, availableAt + baseTime);
             waitTimes.TryPeek(out _, out var minAfter);
-            _costPlan.Add(new PlanEntry(reservation.TimeOfArrival, minAfter));
+            _plan.Add(new PlanEntry(reservation.TimeOfArrival, minAfter));
         }
     }
 

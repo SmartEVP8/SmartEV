@@ -114,6 +114,9 @@ public class StationService : IStationService
     public Time ExpectedWaitTime(ushort stationId, Time simNow, Time arrival)
         => GetStationHandler(stationId).ExpectedWaitTime(simNow, arrival);
 
+    public void UpdateCostPlan(ushort stationId, Time simNow)
+        => GetStationHandler(stationId).UpdateCostPlan(simNow);
+
     private StationHandler GetStationHandler(ushort stationId)
         => _stationHandlers.TryGetValue(stationId, out var handler)
             ? handler

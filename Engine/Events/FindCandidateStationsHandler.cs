@@ -72,6 +72,7 @@ public class FindCandidateStationsHandler(
         {
             {
                 sw.Restart();
+                stationService.UpdateCostPlan(bestStation.Id, e.Time);
                 evDetourPlanner.Update(
                     ref ev,
                     bestStation,
