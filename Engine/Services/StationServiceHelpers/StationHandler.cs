@@ -217,9 +217,6 @@ public class StationHandler
     /// <param name="simNow">Current simulation time.</param>
     private void EnsurePlan(Time simNow)
     {
-        if (_plan is not null)
-            return;
-
         _plan = [];
 
         var waitTimes = new PriorityQueue<int, Time>();
