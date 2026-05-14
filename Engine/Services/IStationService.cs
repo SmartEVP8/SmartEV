@@ -24,5 +24,7 @@ public interface IStationService
     /// <param name="arrival">The projected arrival time of the EV used to filter relevant prior reservations.</param>
     /// <param name="currentEV">Optional: the EV currently being evaluated. If provided, it is included in the wait projection to account for concurrent evaluations.</param>
     /// <returns>The expected absolute time a charger will become available for the arriving EV. Returns simNow if a charger is immediately available.</returns>
-    public Time ExpectedWaitTime(ushort stationId, Time simNow, Time arrival, ConnectedEV? currentEV = null);
+    public Time ExpectedWaitAtReservation(ushort stationId, Time simNow, Time arrival);
+
+    public Time ExpectedWaitTime(ushort stationId, Time simNow, Time arrival);
 }

@@ -110,9 +110,13 @@ public class StationService : IStationService
         GetStation(oldStationId).Reservations.Remove(e.EV.Id);
     }
 
-    /// <inheritdoc/>
-    public Time ExpectedWaitTime(ushort stationId, Time simNow, Time arrival, ConnectedEV? currentEV = null)
-        => GetStationHandler(stationId).ExpectedWaitTime(simNow, arrival, currentEV);
+    public Time ExpectedWaitAtReservation(ushort stationId, Time simNow, Time arrival)
+        => GetStationHandler(stationId).EstimatedReservationWait(simNow, arrival);
+
+     /// <inheritdoc/>
+    public Time ExpectedWaitTime(ushort stationId, Time simNow, Time arrival)
+        => GetStationHandler(stationId).ExpectedWaitTime(simNow, arrival);
+
 
     private StationHandler GetStationHandler(ushort stationId)
         => _stationHandlers.TryGetValue(stationId, out var handler)

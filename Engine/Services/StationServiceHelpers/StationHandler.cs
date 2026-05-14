@@ -192,25 +192,18 @@ public class StationHandler
     /// <param name="arrival">The projected arrival time of the EV.</param>
     /// <param name="currentEV">Optional: the EV being evaluated. If provided, included in wait projection.</param>
     /// <returns>Absolute time when a charger side becomes available.</returns>
-    public Time ExpectedWaitTime(Time simNow, Time arrival, ConnectedEV? currentEV = null)
+    public Time ExpectedWaitTime(Time simNow, Time arrival)
     {
-        if (currentEV is null)
-        {
             EnsureCostPlan(simNow);
             var index = _costPlan?.FindLastIndex(p => p.ArrivalTime <= arrival) ?? -1;
             return index >= 0
                 ? _costPlan![index].MinChargerAvailability
                 : _costPlanInitialAvailability;
-        }
-
-        var minAvailable = EstimatedReservationWait(simNow, arrival, currentEV);
-
-        return minAvailable != new Time(uint.MaxValue) ? minAvailable : simNow;
     }
 
-    private Time EstimatedReservationWait(Time simNow, Time arrival, ConnectedEV currentEV)
+    public Time EstimatedReservationWait(Time simNow, Time arrival)
     {
-        var reservationQueue = new List<ConnectedEV> { currentEV };
+        var reservationQueue = new List<ConnectedEV>();
         foreach (var res in _station.Reservations.AllReservations.Where(r => r.TimeOfArrival <= arrival))
         {
             var battery = _evs[res.EVId].Battery;
@@ -227,7 +220,7 @@ public class StationHandler
                 minAvailable = absoluteTime;
         }
 
-        return minAvailable;
+        return minAvailable != new Time(uint.MaxValue) ? minAvailable : simNow;
     }
 
     private void EnsureCostPlan(Time simNow)

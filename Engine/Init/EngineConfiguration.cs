@@ -40,14 +40,14 @@ public static class EngineConfiguration
             ProcessorCount = Environment.ProcessorCount,
             CostConfig = new CostWeights
             {
-                PathDeviation = ReadWeightFromEnvironment(_pathDeviationEnvVar, 1f, 0f, 100f, isPythonMode),
-                PriceSensitivity = ReadWeightFromEnvironment(_priceSensitivityEnvVar, 1f, 0f, 10f, isPythonMode),
-                ExpectedWaitTime = ReadWeightFromEnvironment(_expectedWaitTimeEnvVar, 80f, 0f, 100f, isPythonMode),
+                PathDeviation = ReadWeightFromEnvironment(_pathDeviationEnvVar, 0.4f, 0f, 100f, isPythonMode),
+                PriceSensitivity = ReadWeightFromEnvironment(_priceSensitivityEnvVar, 0.4f, 0f, 10f, isPythonMode),
+                ExpectedWaitTime = ReadWeightFromEnvironment(_expectedWaitTimeEnvVar, 0.4f, 0f, 100f, isPythonMode),
             },
             RunId = Guid.NewGuid(),
             MetricsConfig = new MetricsConfig
             {
-                BufferSize = 250,
+                BufferSize = 3000,
                 OutputDirectory = outputPath,
                 RecordArrivals = true,
                 RecordEVWaitTimeInQueue = true,

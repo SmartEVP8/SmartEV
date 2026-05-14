@@ -45,7 +45,7 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
             var pathDeviationCost = CalculatePathDeviationCost(ref ev, durations.DurToDest + durations.DurToStation, weights, time);
             var urgencyCost = CalculateChargeUrgency(ref ev, durations.DistToStationMeters);
             var priceCost = CalculatePriceCost(ref ev, station, weights, time, lowestPrice);
-            var effectiveWaitTimeCost = CalculateEffectiveWaitTimeCost(weights, time, durations.DurToStation, stationId, ref ev);
+            var effectiveWaitTimeCost = CalculateEffectiveWaitTimeCost(weights, time, durations.DurToStation, stationId);
             var cost = (1 - urgencyCost) * (pathDeviationCost + priceCost + effectiveWaitTimeCost);
 
             if (double.IsNaN(cost))
@@ -101,21 +101,10 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
         return weights.PriceSensitivity * ev.Preferences.PriceSensitivity * (currentPrice - lowestPrice);
     }
 
-    private float CalculateEffectiveWaitTimeCost(CostWeights weights, Time time, float duration, ushort stationId, ref EV ev)
+    private float CalculateEffectiveWaitTimeCost(CostWeights weights, Time time, float duration, ushort stationId)
     {
         var expectedArrival = (Time)(uint)Math.Ceiling(time + duration);
-        var currentSoC = ev.Battery.CurrentChargeKWh / ev.Battery.MaxCapacityKWh;
-        var targetSoC = Math.Max(currentSoC + 0.2, 0.8);
-
-        var connectedEV = new ConnectedEV(
-            ev.Id,
-            currentSoC,
-            targetSoC,
-            ev.Battery.MaxCapacityKWh,
-            ev.Battery.MaxChargeRateKW,
-            expectedArrival);
-
-        var availableAt = stationService.ExpectedWaitTime(stationId, time, expectedArrival, connectedEV);
+        var availableAt = stationService.ExpectedWaitAtReservation(stationId, time, expectedArrival);
         var waitMilliseconds = availableAt > expectedArrival ? availableAt - expectedArrival : new Time(0);
         var waitMinutes = waitMilliseconds / Time.MillisecondsPerMinute;
         return weights.ExpectedWaitTime * waitMinutes;
