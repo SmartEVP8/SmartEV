@@ -298,22 +298,8 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
 
         if (!ok)
         {
-            Log.Error("Failed to snap one or more stations to the road network. Performing diagnostic to identify problematic stations...");
-            var failedIndices = DiagnosticFindFailedStations(stations, coords);
-
-            if (failedIndices.Count > 0)
-            {
-                Log.Error("Failed to snap {FailedCount} stations to the road network:", failedIndices.Count);
-                foreach (var idx in failedIndices)
-                {
-                    var address = stations[idx].Address ?? "Unknown";
-                    var lon = coords[idx * 2];
-                    var lat = coords[(idx * 2) + 1];
-                    Console.WriteLine($"  Station {idx}: {address} at coordinates ({lon}, {lat})");
-                }
-            }
-
-            throw new InvalidOperationException($"Failed to snap {failedIndices.Count} stations to the road network. See logs for details.");
+          Log.Error("Failed to snap one or more stations to the road network with station coordinates: {@StationCoords}", coords);
+          throw new InvalidOperationException("Failed to snap one or more stations to the road network.");
         }
 
         for (var i = 0; i < stations.Count; i++)
@@ -321,33 +307,5 @@ public unsafe partial class OSRMRouter : IDisposable, IOSRMRouter
             var newPos = new Position(Longitude: snappedCoords[i * 2], Latitude: snappedCoords[(i * 2) + 1]);
             stations[i].SetPosition(newPos);
         }
-    }
-
-    /// <summary>
-    /// Diagnoses which stations failed to snap to the road network by testing subsets.
-    /// Uses binary search approach to efficiently isolate problematic stations.
-    /// </summary>
-    /// <param name="stations">The original list of stations.</param>
-    /// <param name="coords">The coordinate array (lon, lat for each station).</param>
-    /// <returns>List of station indices that failed to snap.</returns>
-    private List<int> DiagnosticFindFailedStations(List<Station> stations, double[] coords)
-    {
-        var failedIndices = new List<int>();
-
-        // Test each station individually to find failures
-        for (int i = 0; i < stations.Count; i++)
-        {
-            var singleCoords = new[] { coords[i * 2], coords[(i * 2) + 1] };
-            var singleSnapped = new double[2];
-
-            var ok = RegisterStations(_osrm, singleCoords, 1, singleSnapped);
-
-            if (!ok)
-            {
-                failedIndices.Add(i);
-            }
-        }
-
-        return failedIndices;
     }
 }

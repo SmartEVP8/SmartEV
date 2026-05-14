@@ -203,6 +203,13 @@ public class StationHandler
                 : _costPlanInitialAvailability;
         }
 
+        var minAvailable = EstimatedReservationWait(simNow, arrival, currentEV);
+
+        return minAvailable != new Time(uint.MaxValue) ? minAvailable : simNow;
+    }
+
+    private Time EstimatedReservationWait(Time simNow, Time arrival, ConnectedEV currentEV)
+    {
         var reservationQueue = new List<ConnectedEV> { currentEV };
         foreach (var res in _station.Reservations.AllReservations.Where(r => r.TimeOfArrival <= arrival))
         {
@@ -220,7 +227,7 @@ public class StationHandler
                 minAvailable = absoluteTime;
         }
 
-        return minAvailable != new Time(uint.MaxValue) ? minAvailable : simNow;
+        return minAvailable;
     }
 
     private void EnsureCostPlan(Time simNow)

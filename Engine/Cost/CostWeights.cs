@@ -33,7 +33,7 @@ public static class CostWeightFieldExtensions
 public record CostWeights(
     float PriceSensitivity = 0.4f,
     float PathDeviation = 0.8f,
-    float ExpectedWaitTime = 90
+    float ExpectedWaitTime = 1
 );
 
 public record WeightMetadata(int Id, float Min, float Max, string Name);
