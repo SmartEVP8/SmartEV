@@ -111,8 +111,8 @@ public class StationService : IStationService
     }
 
     /// <inheritdoc/>
-    public Time ExpectedWaitTime(ushort stationId, Time simNow, Time arrival)
-        => GetStationHandler(stationId).ExpectedWaitTime(simNow, arrival);
+    public Time ExpectedWaitTime(ushort stationId, Time simNow, Time arrival, ConnectedEV? currentEV = null)
+        => GetStationHandler(stationId).ExpectedWaitTime(simNow, arrival, currentEV);
 
     private StationHandler GetStationHandler(ushort stationId)
         => _stationHandlers.TryGetValue(stationId, out var handler)

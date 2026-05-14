@@ -40,14 +40,14 @@ public static class EngineConfiguration
             ProcessorCount = Environment.ProcessorCount,
             CostConfig = new CostWeights
             {
-                PathDeviation = ReadWeightFromEnvironment(_pathDeviationEnvVar, 0.4f, 0f, 100f, isPythonMode),
-                PriceSensitivity = ReadWeightFromEnvironment(_priceSensitivityEnvVar, 0.4f, 0f, 10f, isPythonMode),
-                ExpectedWaitTime = ReadWeightFromEnvironment(_expectedWaitTimeEnvVar, 0.4f, 0f, 100f, isPythonMode),
+                PathDeviation = ReadWeightFromEnvironment(_pathDeviationEnvVar, 1f, 0f, 100f, isPythonMode),
+                PriceSensitivity = ReadWeightFromEnvironment(_priceSensitivityEnvVar, 1f, 0f, 10f, isPythonMode),
+                ExpectedWaitTime = ReadWeightFromEnvironment(_expectedWaitTimeEnvVar, 80f, 0f, 100f, isPythonMode),
             },
             RunId = Guid.NewGuid(),
             MetricsConfig = new MetricsConfig
             {
-                BufferSize = 3000,
+                BufferSize = 250,
                 OutputDirectory = outputPath,
                 RecordArrivals = true,
                 RecordEVWaitTimeInQueue = true,
@@ -63,12 +63,12 @@ public static class EngineConfiguration
             },
             CurrentAmountOfEVsInDenmark = 583320,
             ChargingStepSeconds = 60 * 1000,
-            SimulationStartTime = (uint)ReadIntFromEnvironment(_simulationStartTimeEnvVar, (int)Time.MillisecondsPerDay, isPythonMode),
+            SimulationStartTime = (uint)ReadIntFromEnvironment(_simulationStartTimeEnvVar, (int)Time.MillisecondsPerDay + (int)Time.MillisecondsPerHour * 7, isPythonMode),
             SimulationEndTime = (uint)ReadIntFromEnvironment(_simulationEndTimeEnvVar, (int)Time.MillisecondsPerDay * 7, isPythonMode),
             SnapshotInterval = 1000 * 20 * 60,
             EnablePerformanceMetrics = true,
             EVDistributionWindowsSize = 30 * 60 * 1000,
-            EVSpawnFraction = 0.3,
+            EVSpawnFraction = 0.6,
             ChargeBufferPercent = 0.9f,
             DistanceScaler = 1.7f,
             GridSize = 0.025,

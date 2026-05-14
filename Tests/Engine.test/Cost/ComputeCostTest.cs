@@ -162,6 +162,49 @@ public class ComputeCostTest
         Assert.Equal(1, bestStation.Id);
     }
 
+    [Fact]
+    public void Compute_UsesZeroWait_WhenStationIsFreeBeforeArrival()
+    {
+        var costStore = new EngineTestData.StubCostStore(new CostWeights(PriceSensitivity: 0, PathDeviation: 0, ExpectedWaitTime: 90));
+        var energyPrices = new EngineTestData.FixedEnergyPrices(2.0f);
+        var stationService = new AbsoluteWaitStationService(
+            new Dictionary<ushort, Station>
+            {
+                { 1, CoreTestData.Station(id: 1, pos: new (0, 0)) },
+                { 2, CoreTestData.Station(id: 2, pos: new (0, 0)) },
+            },
+            new Dictionary<ushort, Time>
+            {
+                { 1, new Time(3_600_000) },
+                { 2, new Time(8_000_000) },
+            });
+        var computeCost = new CostFunction(costStore, stationService, energyPrices);
+        var ev = new EV(
+            1,
+            CoreTestData.Battery(stateOfCharge: 100),
+            CoreTestData.Preferences(PriceSensitivity: 0.0f, MinAcceptableCharge: 0f),
+            new Journey(new Time(0), new Time(5_000_000), 100, new List<Position>([new(0, 0), new(1, 1)])),
+            150);
+
+        var stationDurations = new Dictionary<ushort, DurToStationAndDest>
+        {
+            { 1, new DurToStationAndDest(5_000_000f, 5_000_000f, 0f, 0f) },
+            { 2, new DurToStationAndDest(5_000_000f, 5_000_000f, 0f, 0f) },
+        };
+
+        var bestStation = computeCost.Compute(ref ev, stationDurations, new Time(0));
+
+        Assert.Equal(1, bestStation.Id);
+    }
+
+    private sealed class AbsoluteWaitStationService(Dictionary<ushort, Station> stations, Dictionary<ushort, Time> waitTimes) : IStationService
+    {
+        public Station GetStation(ushort stationId) => stations[stationId];
+
+        public Time ExpectedWaitTime(ushort stationId, Time simNow, Time arrival, ConnectedEV? currentEV = null)
+            => waitTimes.TryGetValue(stationId, out var waitTime) ? waitTime : simNow;
+    }
+
     /// <summary>
     /// Test simulates multiple reroutes: Original route A->B, then detour to Station A, then detour again to Station B.
     /// Validates that path deviation cost is calculated based on the last updated route and departure time.

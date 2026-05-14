@@ -1,5 +1,53 @@
 [
   {
+    "name": "Vennelyst pl. (PowerGo)",
+    "address": "H\u00f8egh-Guldbergs Gade 101",
+    "town": "\u00c5rhus",
+    "postcode": "8000",
+    "latitude": 56.163818359375,
+    "longitude": 10.205721855163574
+  },
+  {
+    "name": "Torvet DC (PowerGo)",
+    "address": "Torvet 1",
+    "town": "N\u00f8rre Nebel",
+    "postcode": "6830",
+    "latitude": 55.780330657958984,
+    "longitude": 8.289451599121094
+  },
+  {
+    "name": "Lyngvej",
+    "address": "Lyngvej",
+    "town": null,
+    "postcode": "4600",
+    "latitude": 55.489209184384805,
+    "longitude": 12.161234034866766
+  },
+  {
+    "name": "Hedebygade",
+    "address": "Hedebygade",
+    "town": null,
+    "postcode": "1754",
+    "latitude": 55.669535489213644,
+    "longitude": 12.543789469905164
+  },
+  {
+    "name": "Herlev Bygade",
+    "address": "Herlev Bygade",
+    "town": "Herlev",
+    "postcode": "2730",
+    "latitude": 55.72481734941064,
+    "longitude": 12.437592234972954
+  },
+  {
+    "name": "Hovedgaden 11 (Indk\u00f8rsel)",
+    "address": "Hovedgaden 11",
+    "town": "Borup",
+    "postcode": "4140",
+    "latitude": 55.49311891531656,
+    "longitude": 11.972479244383976
+  },
+  {
     "name": "OK Aarselv, Logistikparken",
     "address": "Logistikparken 12",
     "town": "Brabrand",
@@ -28,392 +76,392 @@
     "address": "Fyrvej 104",
     "town": "Hanstholm",
     "postcode": "7730",
-    "latitude": 57.110466,
-    "longitude": 8.60850048
+    "latitude": 57.11046600341797,
+    "longitude": 8.608500480651855
   },
   {
     "name": "Thyhallen DC (PowerGo)",
     "address": "Lerpyttervej 50",
     "town": "Thisted",
     "postcode": "7700",
-    "latitude": 56.96760132,
-    "longitude": 8.70009826
+    "latitude": 56.96760177612305,
+    "longitude": 8.700098037719727
   },
   {
     "name": "Thisted Bibliotek DC (PowerGo)",
     "address": "Tingstrupvej 19",
     "town": "Thisted",
     "postcode": "7700",
-    "latitude": 56.95587158,
-    "longitude": 8.68543243
+    "latitude": 56.95587158203125,
+    "longitude": 8.685432434082031
   },
   {
     "name": "R\u00e5dhuset Thisted AC (PowerGo)",
     "address": "Asylgade 30",
     "town": "Thisted",
     "postcode": "7700",
-    "latitude": 56.95185471,
-    "longitude": 8.69109058
+    "latitude": 56.95185470581055,
+    "longitude": 8.69109058380127
   },
   {
     "name": "Snedsted Hallen (PowerGo)",
     "address": "\u00d8ster Alle 15",
     "town": "Snedsted",
     "postcode": "7752",
-    "latitude": 56.89133835,
-    "longitude": 8.52970695
+    "latitude": 56.89133834838867,
+    "longitude": 8.529706954956055
   },
   {
     "name": "Vestervig-Agger Hallen (PowerGo)",
     "address": "Teglg\u00e5rdsvej 5",
     "town": "Vestervig",
     "postcode": "7700",
-    "latitude": 56.76453781,
-    "longitude": 8.32347393
+    "latitude": 56.7645378112793,
+    "longitude": 8.323473930358887
   },
   {
     "name": "Limfjordscentret Doverodde (PowerGo)",
     "address": "Fjordstr\u00e6de 7",
     "town": "Hurup Thy",
     "postcode": "7760",
-    "latitude": 56.71809006,
-    "longitude": 8.47033024
+    "latitude": 56.71809005737305,
+    "longitude": 8.470330238342285
   },
   {
     "name": "Blicherskolen (PowerGo)",
     "address": "Haldvej 6",
     "town": "Spentrup",
     "postcode": "8981",
-    "latitude": 56.54140235,
-    "longitude": 10.03647095
+    "latitude": 56.54140090942383,
+    "longitude": 10.036471366882324
   },
   {
     "name": "Borup Stadion (PowerGo)",
     "address": "Borup Byvej 101",
     "town": "Randers",
     "postcode": "8920",
-    "latitude": 56.504463,
-    "longitude": 9.991913
+    "latitude": 56.50446319580078,
+    "longitude": 9.991912841796875
   },
   {
     "name": "Korsh\u00f8jskolen (PowerGo)",
     "address": "Skolev\u00e6nget 7",
     "town": "Randers",
     "postcode": "8930",
-    "latitude": 56.49891894,
-    "longitude": 10.13443738
+    "latitude": 56.49892044067383,
+    "longitude": 10.134437561035156
   },
   {
     "name": "Langvang Idr\u00e6tscenter (PowerGo)",
     "address": "Mariagervej 182",
     "town": "Randers",
     "postcode": "8900",
-    "latitude": 56.48931319,
-    "longitude": 10.02656029
+    "latitude": 56.489315032958984,
+    "longitude": 10.026559829711914
   },
   {
     "name": "CBR-Randers (PowerGo)",
     "address": "Ydervangen 1",
     "town": "Randers",
     "postcode": "8920",
-    "latitude": 56.485285,
-    "longitude": 10.024605
+    "latitude": 56.485286712646484,
+    "longitude": 10.024604797363281
   },
   {
     "name": "Tirsdalens Skole (PowerGo)",
     "address": "R. Houg\u00e5rds Vej 50",
     "town": "Randers",
     "postcode": "8960",
-    "latitude": 56.44007704,
-    "longitude": 10.06436641
+    "latitude": 56.44007873535156,
+    "longitude": 10.064366340637207
   },
   {
     "name": "Engesvang B\u00f8rnehus (PowerGo)",
     "address": "Gl Kongevej 107",
     "town": "Engesvang",
     "postcode": "7442",
-    "latitude": 56.174523,
-    "longitude": 9.3382
+    "latitude": 56.174522399902344,
+    "longitude": 9.338199615478516
   },
   {
     "name": "Ikast Stadome (PowerGo)",
     "address": "Hagelsk\u00e6rvej 35a",
     "town": "Ikast",
     "postcode": "7430",
-    "latitude": 56.148554,
-    "longitude": 9.140269
+    "latitude": 56.148555755615234,
+    "longitude": 9.14026927947998
   },
   {
     "name": "Ikast Nordre Skole (PowerGo)",
     "address": "Hagelsk\u00e6rvej 8",
     "town": "Ikast",
     "postcode": "7430",
-    "latitude": 56.148267,
-    "longitude": 9.145722
+    "latitude": 56.14826583862305,
+    "longitude": 9.145722389221191
   },
   {
     "name": "Stadion All\u00e9 (PowerGo)",
     "address": "Stadion Alle 2B",
     "town": "Ikast",
     "postcode": "7430",
-    "latitude": 56.14415,
-    "longitude": 9.144847
+    "latitude": 56.14414978027344,
+    "longitude": 9.14484691619873
   },
   {
     "name": "Parkeringsplads Svalegangen (PowerGo)",
     "address": "S\u00f8ndergade 43B",
     "town": "Bording",
     "postcode": "7441",
-    "latitude": 56.1411907,
-    "longitude": 9.27399
+    "latitude": 56.14118957519531,
+    "longitude": 9.2739896774292
   },
   {
     "name": "Sieferts Plads AC (PowerGo)",
     "address": "Sieferts Pl. 7",
     "town": "Ikast",
     "postcode": "7430",
-    "latitude": 56.14069916,
-    "longitude": 9.15605704
+    "latitude": 56.14069747924805,
+    "longitude": 9.156057357788086
   },
   {
     "name": "Dalgas Avenue P-B\u00e5se (PowerGo)",
     "address": "Dalgas Avenue 48",
     "town": "Aarhus C",
     "postcode": "8000",
-    "latitude": 56.1404453,
-    "longitude": 10.20480518
+    "latitude": 56.140445709228516,
+    "longitude": 10.204805374145508
   },
   {
     "name": "Rolighedsparken (PowerGo)",
     "address": "Rolighedsvej 1",
     "town": "Ikast",
     "postcode": "7430",
-    "latitude": 56.137553,
-    "longitude": 9.154622
+    "latitude": 56.13755416870117,
+    "longitude": 9.154622077941895
   },
   {
     "name": "Ikast Sv\u00f8mmecenter (PowerGo)",
     "address": "Frisenborgparken 24",
     "town": "Ikast",
     "postcode": "7430",
-    "latitude": 56.134902,
-    "longitude": 9.150497
+    "latitude": 56.13490295410156,
+    "longitude": 9.150497436523438
   },
   {
     "name": "Hj\u00e6lpemiddeldepot (PowerGo)",
     "address": "Thrigesvej 7",
     "town": "Ikast",
     "postcode": "7430",
-    "latitude": 56.124274,
-    "longitude": 9.144246
+    "latitude": 56.12427520751953,
+    "longitude": 9.144246101379395
   },
   {
     "name": "N\u00f8rre Snede Klubhus (PowerGo)",
     "address": "H\u00f8jtoftegade 13",
     "town": "N\u00f8rre Snede",
     "postcode": "8766",
-    "latitude": 55.961663,
-    "longitude": 9.399442
+    "latitude": 55.96166229248047,
+    "longitude": 9.399441719055176
   },
   {
     "name": "Parkeringsplads ved Fynbog\u00e5rden (PowerGo)",
     "address": "Torvegade 14",
     "town": "Brande",
     "postcode": "7330",
-    "latitude": 55.942937,
-    "longitude": 9.129569
+    "latitude": 55.942935943603516,
+    "longitude": 9.129569053649902
   },
   {
     "name": "H\u00f8jderyggens Daginstitutioner (PowerGo)",
     "address": "Fredensgade 4",
     "town": "Klovborg",
     "postcode": "8765",
-    "latitude": 55.931399,
-    "longitude": 9.488317
+    "latitude": 55.931400299072266,
+    "longitude": 9.488316535949707
   },
   {
     "name": "B\u00f8rnehuset Sm\u00f8rhullet (PowerGo)",
     "address": "M\u00f8llevangen 39",
     "town": "Birker\u00f8d",
     "postcode": "3460",
-    "latitude": 55.842372,
-    "longitude": 12.436632
+    "latitude": 55.84237289428711,
+    "longitude": 12.43663215637207
   },
   {
     "name": "Bistrupvang (PowerGo)",
     "address": "Bistrup Byvej 6",
     "town": "Birker\u00f8d",
     "postcode": "3460",
-    "latitude": 55.826238,
-    "longitude": 12.423718
+    "latitude": 55.826236724853516,
+    "longitude": 12.423718452453613
   },
   {
     "name": "Bagsv\u00e6rd Stadion (PowerGo)",
     "address": "Bagsv\u00e6rd Hovedgade 86-90",
     "town": "Bagsv\u00e6rd",
     "postcode": "2880",
-    "latitude": 55.75995216,
-    "longitude": 12.4579648
+    "latitude": 55.759952545166016,
+    "longitude": 12.457964897155762
   },
   {
     "name": "Gladsaxe Idr\u00e6tshaller (PowerGo)",
     "address": "Vandt\u00e5rnsvej 55",
     "town": "S\u00f8borg",
     "postcode": "2860",
-    "latitude": 55.73567982,
-    "longitude": 12.49536504
+    "latitude": 55.735679626464844,
+    "longitude": 12.495365142822266
   },
   {
     "name": "Gyngemosehallen (PowerGo)",
     "address": "Gyngemose Parkvej 28A",
     "town": "S\u00f8borg",
     "postcode": "2860",
-    "latitude": 55.72555279,
-    "longitude": 12.47995355
+    "latitude": 55.72555160522461,
+    "longitude": 12.47995376586914
   },
   {
     "name": "Parkeringshus Cronhammar Vejle (PowerGo)",
     "address": "Sj\u00e6llandsgade 10E",
     "town": "Vejle",
     "postcode": "7100",
-    "latitude": 55.703812,
-    "longitude": 9.538225
+    "latitude": 55.70381164550781,
+    "longitude": 9.538225173950195
   },
   {
     "name": "Birkely (PowerGo)",
     "address": "L\u00f8kkekrogen 11B",
     "town": "Vallensb\u00e6k",
     "postcode": "2625",
-    "latitude": 55.652516,
-    "longitude": 12.356798
+    "latitude": 55.65251541137695,
+    "longitude": 12.35679817199707
   },
   {
     "name": "Holme\u00e5 B\u00f8rnecenter (PowerGo)",
     "address": "Hovborgvej 5",
     "town": "Br\u00f8rup",
     "postcode": "6650",
-    "latitude": 55.565472,
-    "longitude": 9.017722
+    "latitude": 55.56547164916992,
+    "longitude": 9.017722129821777
   },
   {
     "name": "L\u00e6borg GU (PowerGo)",
     "address": "L\u00e6borgvej 16",
     "town": "L\u00e6borg",
     "postcode": "6600",
-    "latitude": 55.523986,
-    "longitude": 9.113413
+    "latitude": 55.52398681640625,
+    "longitude": 9.113412857055664
   },
   {
     "name": "Legepladsen \u00d8stergade (PowerGo)",
     "address": "\u00d8stergade 1",
     "town": "Holsted",
     "postcode": "6670",
-    "latitude": 55.51133369,
-    "longitude": 8.91816328
+    "latitude": 55.51133346557617,
+    "longitude": 8.918163299560547
   },
   {
     "name": "Vejen Hallen (PowerGo)",
     "address": "Fuglesangsalle 10",
     "town": "Vejen",
     "postcode": "6600",
-    "latitude": 55.475277,
-    "longitude": 9.144945
+    "latitude": 55.475276947021484,
+    "longitude": 9.14494514465332
   },
   {
     "name": "Vejen Apotek (PowerGo)",
     "address": "Mindevej 1",
     "town": "Vejen",
     "postcode": "6600",
-    "latitude": 55.47508201,
-    "longitude": 9.13765169
+    "latitude": 55.47508239746094,
+    "longitude": 9.137651443481445
   },
   {
     "name": "R\u00f8dding Aktivitetshus (PowerGo)",
     "address": "\u00d8stergade 28",
     "town": "R\u00f8dding",
     "postcode": "6630",
-    "latitude": 55.365538,
-    "longitude": 9.063244
+    "latitude": 55.36553955078125,
+    "longitude": 9.063243865966797
   },
   {
     "name": "Sus\u00e5skolen Glums\u00f8 (PowerGo)",
     "address": "\u00c5s\u00f8vej 5",
     "town": "Glums\u00f8",
     "postcode": "4171",
-    "latitude": 55.35713577,
-    "longitude": 11.68688202
+    "latitude": 55.35713577270508,
+    "longitude": 11.686882019042969
   },
   {
     "name": "Plejecenter Dixensminde (PowerGo)",
     "address": "Dixensvej 3",
     "town": "R\u00f8dding",
     "postcode": "6630",
-    "latitude": 55.355405,
-    "longitude": 9.208321
+    "latitude": 55.355403900146484,
+    "longitude": 9.208320617675781
   },
   {
     "name": "S\u00f8vang (PowerGo)",
     "address": "S\u00f8v\u00e6nget 1",
     "town": "Glums\u00f8",
     "postcode": "4171",
-    "latitude": 55.35380936,
-    "longitude": 11.68954563
+    "latitude": 55.35380935668945,
+    "longitude": 11.689545631408691
   },
   {
     "name": "Kroen (PowerGo)",
     "address": "Storegade 2",
     "town": "Glums\u00f8",
     "postcode": "4171",
-    "latitude": 55.3537674,
-    "longitude": 11.69191742
+    "latitude": 55.35376739501953,
+    "longitude": 11.691917419433594
   },
   {
     "name": "Bolig Orions B\u00e6lte (PowerGo)",
     "address": "Orionvej 60",
     "town": "N\u00e6stved",
     "postcode": "4700",
-    "latitude": 55.256954,
-    "longitude": 11.783221
+    "latitude": 55.256954193115234,
+    "longitude": 11.783221244812012
   },
   {
     "name": "Elleb\u00e6kskolen (PowerGo)",
     "address": "Kildemarksvej 67",
     "town": "N\u00e6stved",
     "postcode": "4700",
-    "latitude": 55.23186111,
-    "longitude": 11.78133583
+    "latitude": 55.23186111450195,
+    "longitude": 11.781335830688477
   },
   {
     "name": "Ved Stadion (PowerGo)",
     "address": "Rolighedsvej 18",
     "town": "N\u00e6stved",
     "postcode": "4700",
-    "latitude": 55.22248459,
-    "longitude": 11.76438713
+    "latitude": 55.22248458862305,
+    "longitude": 11.764387130737305
   },
   {
     "name": "Elverg\u00e5rden (PowerGo)",
     "address": "Ved \u00c5sen 12",
     "town": "N\u00e6stved",
     "postcode": "4700",
-    "latitude": 55.21893311,
-    "longitude": 11.77657318
+    "latitude": 55.21893310546875,
+    "longitude": 11.776573181152344
   },
   {
     "name": "\u00c6blelunden (PowerGo)",
     "address": "Nyg\u00e5rdsvej 220",
     "town": "N\u00e6stved",
     "postcode": "4700",
-    "latitude": 55.209089,
-    "longitude": 11.781673
+    "latitude": 55.20908737182617,
+    "longitude": 11.781673431396484
   },
   {
     "name": "Nattergalen (PowerGo)",
     "address": "Svingk\u00e6rvej 50",
     "town": "Tappern\u00f8je",
     "postcode": "4733",
-    "latitude": 55.168406,
-    "longitude": 11.971398
+    "latitude": 55.16840744018555,
+    "longitude": 11.97139835357666
   },
   {
     "name": "Uno-x",
@@ -436,2352 +484,2352 @@
     "address": "Birkev\u00e6nget 1",
     "town": "Herlufmagle",
     "postcode": "4160",
-    "latitude": 55.31637002,
-    "longitude": 11.75121027
+    "latitude": 55.31637191772461,
+    "longitude": 11.75121021270752
   },
   {
     "name": "B\u00f8rnehuset Himmelh\u00f8j (PowerGo)",
     "address": "Alfeh\u00f8j 85",
     "town": "Holmegaard",
     "postcode": "4684",
-    "latitude": 55.27257538,
-    "longitude": 11.80725193
+    "latitude": 55.27257537841797,
+    "longitude": 11.807251930236816
   },
   {
     "name": "N\u00e6stved Ungdomsskole (PowerGo)",
     "address": "Skellet 29",
     "town": "N\u00e6stved",
     "postcode": "4700",
-    "latitude": 55.22603989,
-    "longitude": 11.75092316
+    "latitude": 55.22603988647461,
+    "longitude": 11.750923156738281
   },
   {
     "name": "Sundhedscentret (PowerGo)",
     "address": "Pr\u00e6st\u00f8vej 67",
     "town": "N\u00e6stved",
     "postcode": "4700",
-    "latitude": 55.22450638,
-    "longitude": 11.77545834
+    "latitude": 55.22450637817383,
+    "longitude": 11.775458335876465
   },
   {
     "name": "Kulturhuset (PowerGo)",
     "address": "H C Andersens Vej 24",
     "town": "N\u00e6stved",
     "postcode": "4700",
-    "latitude": 55.23096466,
-    "longitude": 11.74626923
+    "latitude": 55.23096466064453,
+    "longitude": 11.746269226074219
   },
   {
     "name": "Plejeboligerne p\u00e5 Helgesvej (PowerGo)",
     "address": "Helgesvej 1",
     "town": "N\u00e6stved",
     "postcode": "4700",
-    "latitude": 55.22847748,
-    "longitude": 11.76806259
+    "latitude": 55.228477478027344,
+    "longitude": 11.768062591552734
   },
   {
     "name": "Sundhedshus Hanstholm (PowerGo)",
     "address": "B\u00e5dsg\u00e5rdsvej 12",
     "town": "Hanstholm",
     "postcode": "7730",
-    "latitude": 57.112787,
-    "longitude": 8.60706
+    "latitude": 57.11278533935547,
+    "longitude": 8.607060432434082
   },
   {
     "name": "Det Nordatlantiske Fyr (PowerGo)",
     "address": "T\u00e5rnvej 7",
     "town": "Hanstholm",
     "postcode": "7730",
-    "latitude": 57.112617,
-    "longitude": 8.598985
+    "latitude": 57.11261749267578,
+    "longitude": 8.598984718322754
   },
   {
     "name": "Hanstholm Skole (PowerGo)",
     "address": "B\u00e5dsg\u00e5rdsvej 55",
     "town": "Hanstholm",
     "postcode": "7730",
-    "latitude": 57.11225296,
-    "longitude": 8.60818029
+    "latitude": 57.11225128173828,
+    "longitude": 8.608180046081543
   },
   {
     "name": "Energipunkt Fr\u00f8strup (PowerGo)",
     "address": "Storkevej 11",
     "town": "Fr\u00f8strup",
     "postcode": "7741",
-    "latitude": 57.0863281,
-    "longitude": 8.99221377
+    "latitude": 57.086326599121094,
+    "longitude": 8.99221420288086
   },
   {
     "name": "T\u00f8mmerby-Lild Skole (PowerGo)",
     "address": "Skolevej 2",
     "town": "Fr\u00f8strup",
     "postcode": "7741",
-    "latitude": 57.07821364,
-    "longitude": 8.9931457
+    "latitude": 57.07821273803711,
+    "longitude": 8.993145942687988
   },
   {
     "name": "\u00d8sterild Skole (PowerGo)",
     "address": "Vesterbyvej 1",
     "town": "Thisted",
     "postcode": "7700",
-    "latitude": 57.028901,
-    "longitude": 8.841711
+    "latitude": 57.028900146484375,
+    "longitude": 8.841711044311523
   },
   {
     "name": "Nors Skole SFO (PowerGo)",
     "address": "Kirkebyvej 25",
     "town": "Thisted",
     "postcode": "7700",
-    "latitude": 57.023122,
-    "longitude": 8.670584
+    "latitude": 57.02312088012695,
+    "longitude": 8.670583724975586
   },
   {
     "name": "Sennels Skole (PowerGo)",
     "address": "Sennelsvej 122",
     "town": "Thisted",
     "postcode": "7700",
-    "latitude": 56.970259,
-    "longitude": 8.799692
+    "latitude": 56.97026062011719,
+    "longitude": 8.799692153930664
   },
   {
     "name": "P\u00e6dagoguddannelsen Thisted (PowerGo)",
     "address": "Lerpyttervej 43",
     "town": "Thisted",
     "postcode": "7700",
-    "latitude": 56.96825645,
-    "longitude": 8.69981827
+    "latitude": 56.968257904052734,
+    "longitude": 8.69981861114502
   },
   {
     "name": "PPR og dagpasning (PowerGo)",
     "address": "Ringvej 34",
     "town": "Thisted",
     "postcode": "7700",
-    "latitude": 56.96552276,
-    "longitude": 8.69675545
+    "latitude": 56.96552276611328,
+    "longitude": 8.696755409240723
   },
   {
     "name": "Thyv\u00e6rkstedet (afdeling Rosen) (PowerGo)",
     "address": "Kronborgvej 113",
     "town": "Thisted",
     "postcode": "7700",
-    "latitude": 56.964091,
-    "longitude": 8.703166
+    "latitude": 56.96409225463867,
+    "longitude": 8.703166007995605
   },
   {
     "name": "Plejecenter Fjordglimt (PowerGo)",
     "address": "Sennelsvej 65",
     "town": "Thisted",
     "postcode": "7700",
-    "latitude": 56.96393377,
-    "longitude": 8.78993197
+    "latitude": 56.963932037353516,
+    "longitude": 8.789932250976562
   },
   {
     "name": "Hjemmeplejen Nord (PowerGo)",
     "address": "Industrivej 5",
     "town": "Thisted",
     "postcode": "7700",
-    "latitude": 56.963696,
-    "longitude": 8.70903
+    "latitude": 56.96369552612305,
+    "longitude": 8.709030151367188
   },
   {
     "name": "Plejecenter Kristianslyst (PowerGo)",
     "address": "N\u00f8rrealle 53",
     "town": "Thisted",
     "postcode": "7700",
-    "latitude": 56.962207,
-    "longitude": 8.688412
+    "latitude": 56.96220779418945,
+    "longitude": 8.688411712646484
   },
   {
     "name": "Brandstation Hurup (PowerGo)",
     "address": "Fabriksvej 4",
     "town": "Thisted",
     "postcode": "7700",
-    "latitude": 56.961982,
-    "longitude": 8.725877
+    "latitude": 56.96198272705078,
+    "longitude": 8.725876808166504
   },
   {
     "name": "\u00d8stre Skole (PowerGo)",
     "address": "Kronborgvej 28",
     "town": "Thisted",
     "postcode": "7700",
-    "latitude": 56.960163,
-    "longitude": 8.70382
+    "latitude": 56.96016311645508,
+    "longitude": 8.70382022857666
   },
   {
     "name": "Koldby Skole (PowerGo)",
     "address": "Kastanievej 4",
     "town": "Thisted",
     "postcode": "7752",
-    "latitude": 56.84672546,
-    "longitude": 8.53020096
+    "latitude": 56.84672546386719,
+    "longitude": 8.530200958251953
   },
   {
     "name": "Tingstrup Skole og Tandklinik (PowerGo)",
     "address": "Thorstedvej 21",
     "town": "Thisted",
     "postcode": "7700",
-    "latitude": 56.95978,
-    "longitude": 8.66681
+    "latitude": 56.959781646728516,
+    "longitude": 8.666810035705566
   },
   {
     "name": "B\u00f8rnehuset Rolighed (PowerGo)",
     "address": "Lindevej 4",
     "town": "Thisted",
     "postcode": "7700",
-    "latitude": 56.957311,
-    "longitude": 8.729342
+    "latitude": 56.95730972290039,
+    "longitude": 8.729342460632324
   },
   {
     "name": "Rolighedsskolen (PowerGo)",
     "address": "Kastanievej 80",
     "town": "Thisted",
     "postcode": "7700",
-    "latitude": 56.957295,
-    "longitude": 8.725943
+    "latitude": 56.95729446411133,
+    "longitude": 8.725942611694336
   },
   {
     "name": "Munkehallen (PowerGo)",
     "address": "Munkevej 9E",
     "town": "Thisted",
     "postcode": "7700",
-    "latitude": 56.955851,
-    "longitude": 8.699602
+    "latitude": 56.95585250854492,
+    "longitude": 8.699602127075195
   },
   {
     "name": "Bof\u00e6llesskabet S\u00f8skr\u00e6nten (PowerGo)",
     "address": "Fredensvej 15",
     "town": "Thisted",
     "postcode": "7700",
-    "latitude": 56.953435,
-    "longitude": 8.586546
+    "latitude": 56.953433990478516,
+    "longitude": 8.586545944213867
   },
   {
     "name": "Sj\u00f8rring Skole (PowerGo)",
     "address": "Ebbesvej 3",
     "town": "Thisted",
     "postcode": "7700",
-    "latitude": 56.952964,
-    "longitude": 8.59297105
+    "latitude": 56.952964782714844,
+    "longitude": 8.592970848083496
   },
   {
     "name": "Vibedal Plejecenter (PowerGo)",
     "address": "Vibedalvej 1",
     "town": "Thisted",
     "postcode": "7700",
-    "latitude": 56.952754,
-    "longitude": 8.724486
+    "latitude": 56.952754974365234,
+    "longitude": 8.724486351013184
   },
   {
     "name": "Sj\u00f8rring B\u00f8rnehave (PowerGo)",
     "address": "Pr\u00e6steg\u00e5rdsvej 2",
     "town": "Thisted",
     "postcode": "7700",
-    "latitude": 56.95017024,
-    "longitude": 8.59430946
+    "latitude": 56.95016860961914,
+    "longitude": 8.59430980682373
   },
   {
     "name": "Tilsted Skole (PowerGo)",
     "address": "Silstrupvej 47",
     "town": "Thisted",
     "postcode": "7700",
-    "latitude": 56.949291,
-    "longitude": 8.642719
+    "latitude": 56.94929122924805,
+    "longitude": 8.642719268798828
   },
   {
     "name": "Dragb\u00e6kcentret (PowerGo)",
     "address": "Simons Bakke 37",
     "town": "Thisted",
     "postcode": "7700",
-    "latitude": 56.944734,
-    "longitude": 8.658424
+    "latitude": 56.944732666015625,
+    "longitude": 8.658424377441406
   },
   {
     "name": "L\u00e6gehuset Thyland (PowerGo)",
     "address": "Vorup\u00f8rvej 168",
     "town": "Thisted",
     "postcode": "7700",
-    "latitude": 56.927559,
-    "longitude": 8.506175
+    "latitude": 56.92755889892578,
+    "longitude": 8.50617504119873
   },
   {
     "name": "Solg\u00e5rden Plejecenter (PowerGo)",
     "address": "Solg\u00e5rdsvej 14",
     "town": "Thisted",
     "postcode": "7700",
-    "latitude": 56.92601863,
-    "longitude": 8.50848772
+    "latitude": 56.92601776123047,
+    "longitude": 8.508487701416016
   },
   {
     "name": "Materielg\u00e5rden Vilsund (PowerGo)",
     "address": "R\u00e6vebakken 7",
     "town": "Snedsted",
     "postcode": "7752",
-    "latitude": 56.883572,
-    "longitude": 8.608628
+    "latitude": 56.88357162475586,
+    "longitude": 8.608628273010254
   },
   {
     "name": "Vildsund B\u00f8rnehave (PowerGo)",
     "address": "Skyumvej 53",
     "town": "Thisted",
     "postcode": "7700",
-    "latitude": 56.87648064,
-    "longitude": 8.62856792
+    "latitude": 56.87648010253906,
+    "longitude": 8.628567695617676
   },
   {
     "name": "Bedsted Thy Skole (PowerGo)",
     "address": "Skolegade 1",
     "town": "Bedsted Thy",
     "postcode": "7755",
-    "latitude": 56.81163855,
-    "longitude": 8.40146445
+    "latitude": 56.81163787841797,
+    "longitude": 8.401464462280273
   },
   {
     "name": "Kulhuset Krik (PowerGo)",
     "address": "Krik Strandvej 68",
     "town": "Vestervig",
     "postcode": "7770",
-    "latitude": 56.772013,
-    "longitude": 8.274815
+    "latitude": 56.77201461791992,
+    "longitude": 8.27481460571289
   },
   {
     "name": "Omr\u00e5decentret Sct. Th\u00f8gersgaard (PowerGo)",
     "address": "Prins Burisvej 2",
     "town": "Vestervig",
     "postcode": "7770",
-    "latitude": 56.76409889,
-    "longitude": 8.31634313
+    "latitude": 56.76409912109375,
+    "longitude": 8.316343307495117
   },
   {
     "name": "Gjerlev Stadion (PowerGo)",
     "address": "Sognevej 59",
     "town": "Randers",
     "postcode": "8983",
-    "latitude": 56.595857,
-    "longitude": 10.134695
+    "latitude": 56.595855712890625,
+    "longitude": 10.134695053100586
   },
   {
     "name": "Gjerlev Aktivitetshus (PowerGo)",
     "address": "T\u00f8nagervej 13",
     "town": "Randers",
     "postcode": "8983",
-    "latitude": 56.588024,
-    "longitude": 10.135649
+    "latitude": 56.5880241394043,
+    "longitude": 10.135648727416992
   },
   {
     "name": "Gr\u00f8nh\u00f8jskolen (PowerGo)",
     "address": "N\u00f8rreled 3",
     "town": "Randers",
     "postcode": "8983",
-    "latitude": 56.58234677,
-    "longitude": 10.18909744
+    "latitude": 56.58234786987305,
+    "longitude": 10.18909740447998
   },
   {
     "name": "Purhus-Hallen (PowerGo)",
     "address": "Bakkev\u00e6nget 12",
     "town": "F\u00e5rup",
     "postcode": "8990",
-    "latitude": 56.54485194,
-    "longitude": 9.85682501
+    "latitude": 56.54485321044922,
+    "longitude": 9.85682487487793
   },
   {
     "name": "Spentruphallerne (PowerGo)",
     "address": "Skaldh\u00f8jvej 3",
     "town": "Spentrup",
     "postcode": "8981",
-    "latitude": 56.542615,
-    "longitude": 10.034577
+    "latitude": 56.5426139831543,
+    "longitude": 10.034577369689941
   },
   {
     "name": "F\u00e5rup Skole og B\u00f8rneby (PowerGo)",
     "address": "F\u00e5rup Skolevej 5",
     "town": "F\u00e5rup",
     "postcode": "8990",
-    "latitude": 56.54216915,
-    "longitude": 9.85462873
+    "latitude": 56.54216766357422,
+    "longitude": 9.854628562927246
   },
   {
     "name": "Randers Specialskole (PowerGo)",
     "address": "Borup Byvej 14",
     "town": "Randers",
     "postcode": "8920",
-    "latitude": 56.50376422,
-    "longitude": 9.96419702
+    "latitude": 56.50376510620117,
+    "longitude": 9.964197158813477
   },
   {
     "name": "Randers Specialskole (PowerGo)",
     "address": "Blommevej 50",
     "town": "Randers",
     "postcode": "8930",
-    "latitude": 56.492238,
-    "longitude": 10.053687
+    "latitude": 56.49223709106445,
+    "longitude": 10.05368709564209
   },
   {
     "name": "Bjerregrav Hallen (PowerGo)",
     "address": "Blish\u00f8nevej 31",
     "town": "Randers",
     "postcode": "8920",
-    "latitude": 56.48315,
-    "longitude": 9.906221
+    "latitude": 56.483150482177734,
+    "longitude": 9.906221389770508
   },
   {
     "name": "Helsted Stadion (PowerGo)",
     "address": "R\u00f8nneb\u00e6rvej 35",
     "town": "Randers",
     "postcode": "8920",
-    "latitude": 56.480563,
-    "longitude": 9.990867
+    "latitude": 56.48056411743164,
+    "longitude": 9.990866661071777
   },
   {
     "name": "B\u00f8rnehuset Lervangen (PowerGo)",
     "address": "Lervangen 43E",
     "town": "Randers",
     "postcode": "8930",
-    "latitude": 56.475853,
-    "longitude": 10.029773
+    "latitude": 56.475852966308594,
+    "longitude": 10.029772758483887
   },
   {
     "name": "Huset Nyvang (PowerGo)",
     "address": "Rindsvej 6",
     "town": "Randers",
     "postcode": "8920",
-    "latitude": 56.47527306,
-    "longitude": 10.02550685
+    "latitude": 56.47527313232422,
+    "longitude": 10.025506973266602
   },
   {
     "name": "B\u00f8rnehuset Rism\u00f8llen (PowerGo)",
     "address": "Rism\u00f8llegade 10",
     "town": "Randers",
     "postcode": "8930",
-    "latitude": 56.474602,
-    "longitude": 10.068296
+    "latitude": 56.47460174560547,
+    "longitude": 10.068296432495117
   },
   {
     "name": "Bostedet Marienborg (PowerGo)",
     "address": "Marienborgvej 17",
     "town": "Randers",
     "postcode": "8930",
-    "latitude": 56.47450959,
-    "longitude": 10.04506369
+    "latitude": 56.474510192871094,
+    "longitude": 10.045063972473145
   },
   {
     "name": "Dronningborg Aktivitetscenter (PowerGo)",
     "address": "Stenaltvej 1",
     "town": "Randers",
     "postcode": "8930",
-    "latitude": 56.473895,
-    "longitude": 10.071052
+    "latitude": 56.47389602661133,
+    "longitude": 10.071051597595215
   },
   {
     "name": "\u00d8stervangsskolen  (PowerGo)",
     "address": "Dronningborg Boulevard 33",
     "town": "Randers",
     "postcode": "8930",
-    "latitude": 56.473605,
-    "longitude": 10.050322
+    "latitude": 56.47360610961914,
+    "longitude": 10.050321578979492
   },
   {
     "name": "Randers Ungdomsskole (PowerGo)",
     "address": "Nyholmsvej 12",
     "town": "Randers",
     "postcode": "8930",
-    "latitude": 56.47124655,
-    "longitude": 10.08144761
+    "latitude": 56.47124481201172,
+    "longitude": 10.08144760131836
   },
   {
     "name": "Regionshospitalet Randers (PowerGo)",
     "address": "\u00d8stervangsvej 26A",
     "town": "Randers",
     "postcode": "8930",
-    "latitude": 56.4680873,
-    "longitude": 10.0471828
+    "latitude": 56.46808624267578,
+    "longitude": 10.0471830368042
   },
   {
     "name": "Vuggestuen Minimax (PowerGo)",
     "address": "Nyvangsvej 25",
     "town": "Randers",
     "postcode": "8900",
-    "latitude": 56.467173,
-    "longitude": 10.025448
+    "latitude": 56.4671745300293,
+    "longitude": 10.025447845458984
   },
   {
     "name": "Hobrovejens Skole (PowerGo)",
     "address": "Gethersvej 36",
     "town": "Randers",
     "postcode": "8900",
-    "latitude": 56.46679889,
-    "longitude": 10.02357721
+    "latitude": 56.466800689697266,
+    "longitude": 10.023576736450195
   },
   {
     "name": "Psykiatriens Hus (PowerGo)",
     "address": "Gammel Hadsundvej 3",
     "town": "Randers",
     "postcode": "8900",
-    "latitude": 56.46578721,
-    "longitude": 10.03914063
+    "latitude": 56.46578598022461,
+    "longitude": 10.039140701293945
   },
   {
     "name": "Randers FC / Water & Wellness AC (PowerGo)",
     "address": "Viborgvej 80",
     "town": "Randers",
     "postcode": "8920",
-    "latitude": 56.46498585,
-    "longitude": 10.00780306
+    "latitude": 56.46498489379883,
+    "longitude": 10.007802963256836
   },
   {
     "name": "B\u00f8rnehuset Overv\u00e6nget (PowerGo)",
     "address": "Overv\u00e6nget 27",
     "town": "Randers",
     "postcode": "8920",
-    "latitude": 56.464527,
-    "longitude": 9.965536
+    "latitude": 56.46452713012695,
+    "longitude": 9.965536117553711
   },
   {
     "name": "Randers Politig\u00e5rden (PowerGo)",
     "address": "Dragonvej 1",
     "town": "Randers",
     "postcode": "8900",
-    "latitude": 56.463294,
-    "longitude": 10.041362
+    "latitude": 56.463294982910156,
+    "longitude": 10.041361808776855
   },
   {
     "name": "Randers  Sundhedscenter (PowerGo)",
     "address": "Biografgade 3",
     "town": "Randers",
     "postcode": "8900",
-    "latitude": 56.463268,
-    "longitude": 10.03799
+    "latitude": 56.4632682800293,
+    "longitude": 10.037989616394043
   },
   {
     "name": "Vilhelm Thomsens Plads (PowerGo)",
     "address": "Vilhelm Thomsens Plads",
     "town": "Randers",
     "postcode": "8900",
-    "latitude": 56.4631207,
-    "longitude": 10.0226133
+    "latitude": 56.46311950683594,
+    "longitude": 10.022613525390625
   },
   {
     "name": "Hornb\u00e6k idr\u00e6t og kulturcenter (PowerGo)",
     "address": "Gamle Viborgvej 50",
     "town": "Randers",
     "postcode": "8920",
-    "latitude": 56.4610518,
-    "longitude": 9.9636206
+    "latitude": 56.46105194091797,
+    "longitude": 9.96362018585205
   },
   {
     "name": "Hornb\u00e6k Skole (PowerGo)",
     "address": "H. C. Andersens Vej 3",
     "town": "Randers",
     "postcode": "8920",
-    "latitude": 56.46083053,
-    "longitude": 9.97035826
+    "latitude": 56.46083068847656,
+    "longitude": 9.970357894897461
   },
   {
     "name": "Gl. Polititorv (PowerGo)",
     "address": "Vestergade 5",
     "town": "Randers",
     "postcode": "8900",
-    "latitude": 56.46044303,
-    "longitude": 10.03186473
+    "latitude": 56.46044158935547,
+    "longitude": 10.031865119934082
   },
   {
     "name": "Randers Naturcenter (PowerGo)",
     "address": "Guden\u00e5vej 20",
     "town": "Randers",
     "postcode": "8920",
-    "latitude": 56.45861111,
-    "longitude": 10.0203482
+    "latitude": 56.45861053466797,
+    "longitude": 10.02034854888916
   },
   {
     "name": "Laksetorvet Randers (PowerGo)",
     "address": "Laksetorvet 1",
     "town": "Randers",
     "postcode": "8900",
-    "latitude": 56.45729241,
-    "longitude": 10.03640568
+    "latitude": 56.45729064941406,
+    "longitude": 10.036405563354492
   },
   {
     "name": "B\u00f8rnehuset \u00c6blehaven (PowerGo)",
     "address": "Himmelbovej 2",
     "town": "Randers",
     "postcode": "8920",
-    "latitude": 56.448981,
-    "longitude": 9.964688
+    "latitude": 56.44898223876953,
+    "longitude": 9.964688301086426
   },
   {
     "name": "B\u00f8rnehaven Tryllefl\u00f8jten (PowerGo)",
     "address": "Romalt Boulevard 25",
     "town": "Randers",
     "postcode": "8960",
-    "latitude": 56.447568,
-    "longitude": 10.088854
+    "latitude": 56.447566986083984,
+    "longitude": 10.08885383605957
   },
   {
     "name": "B\u00f8rnehuset Troldh\u00f8j (PowerGo)",
     "address": "Gemsevej 1",
     "town": "Randers",
     "postcode": "8960",
-    "latitude": 56.446848,
-    "longitude": 10.076602
+    "latitude": 56.44684982299805,
+    "longitude": 10.0766019821167
   },
   {
     "name": "Kristrup Skole (PowerGo)",
     "address": "Skolegade 4",
     "town": "Randers",
     "postcode": "8960",
-    "latitude": 56.44606107,
-    "longitude": 10.05728225
+    "latitude": 56.44606018066406,
+    "longitude": 10.057282447814941
   },
   {
     "name": "Assentoftskolen (PowerGo)",
     "address": "Skolevej 14",
     "town": "Randers",
     "postcode": "8960",
-    "latitude": 56.44468417,
-    "longitude": 10.16495182
+    "latitude": 56.44468307495117,
+    "longitude": 10.164952278137207
   },
   {
     "name": "B\u00f8rnehaven Toftegaard (PowerGo)",
     "address": "Skolevej 22",
     "town": "Randers",
     "postcode": "8960",
-    "latitude": 56.444019,
-    "longitude": 10.168839
+    "latitude": 56.44401931762695,
+    "longitude": 10.168839454650879
   },
   {
     "name": "S\u00f8ndermarkskolen (PowerGo)",
     "address": "Skanderborggade 65A",
     "town": "Randers",
     "postcode": "8940",
-    "latitude": 56.43815199,
-    "longitude": 10.04183494
+    "latitude": 56.43815231323242,
+    "longitude": 10.041834831237793
   },
   {
     "name": "Munkholmskolen (PowerGo)",
     "address": "Bymarksvej 18",
     "town": "Lang\u00e5",
     "postcode": "8870",
-    "latitude": 56.43457198,
-    "longitude": 9.93731926
+    "latitude": 56.4345703125,
+    "longitude": 9.937318801879883
   },
   {
     "name": "B\u00f8rnehuset Guden\u00e5dalen (PowerGo)",
     "address": "Stavnagervej 2 D",
     "town": "Lang\u00e5",
     "postcode": "8870",
-    "latitude": 56.431908,
-    "longitude": 9.949639
+    "latitude": 56.431907653808594,
+    "longitude": 9.949639320373535
   },
   {
     "name": "Madservice  Kronjylland (PowerGo)",
     "address": "Falstersvej 2",
     "town": "Randers",
     "postcode": "8940",
-    "latitude": 56.42470106,
-    "longitude": 10.04469029
+    "latitude": 56.42470169067383,
+    "longitude": 10.044690132141113
   },
   {
     "name": "Ulveh\u00f8j Stadion (PowerGo)",
     "address": "M\u00f8llevangsvej 15",
     "town": "Randers",
     "postcode": "8940",
-    "latitude": 56.421186,
-    "longitude": 10.029057
+    "latitude": 56.42118453979492,
+    "longitude": 10.029056549072266
   },
   {
     "name": "FGU \u00d8stjylland (Brusg\u00e5rd) (PowerGo)",
     "address": "Brusg\u00e5rdsvej 17",
     "town": "Randers",
     "postcode": "8960",
-    "latitude": 56.405733,
-    "longitude": 10.112259
+    "latitude": 56.405731201171875,
+    "longitude": 10.112258911132812
   },
   {
     "name": "Lang\u00e5 Kulturhus (PowerGo)",
     "address": "Bredgade 4",
     "town": "Lang\u00e5",
     "postcode": "8870",
-    "latitude": 56.39165519,
-    "longitude": 9.89443041
+    "latitude": 56.39165496826172,
+    "longitude": 9.894430160522461
   },
   {
     "name": "Vejdirektoratet - Haderup (PowerGo)",
     "address": "Herningvej 3",
     "town": "Haderup",
     "postcode": "7540",
-    "latitude": 56.38761597,
-    "longitude": 8.99427803
+    "latitude": 56.38761520385742,
+    "longitude": 8.994277954101562
   },
   {
     "name": "Engesvang Skole (PowerGo)",
     "address": "Gl. Kongevej 97",
     "town": "Engesvang",
     "postcode": "7442",
-    "latitude": 56.170466,
-    "longitude": 9.343418
+    "latitude": 56.170467376708984,
+    "longitude": 9.34341812133789
   },
   {
     "name": "M\u00f8llestien P-B\u00e5se (PowerGo)",
     "address": "M\u00f8llestien 1",
     "town": "Aarhus C",
     "postcode": "8000",
-    "latitude": 56.15668884,
-    "longitude": 10.20086349
+    "latitude": 56.15668869018555,
+    "longitude": 10.2008638381958
   },
   {
     "name": "Louisevej P-B\u00e5se (PowerGo)",
     "address": "Louisevej 29",
     "town": "Brabrand",
     "postcode": "8220",
-    "latitude": 56.149775,
-    "longitude": 10.135969
+    "latitude": 56.149776458740234,
+    "longitude": 10.135969161987305
   },
   {
     "name": "STU Skovbjergparken Aktivitetscenter (PowerGo)",
     "address": "Hagelsk\u00e6rvej 15",
     "town": "Ikast",
     "postcode": "7430",
-    "latitude": 56.147704,
-    "longitude": 9.144366
+    "latitude": 56.147705078125,
+    "longitude": 9.144366264343262
   },
   {
     "name": "Jens Christensens Plads (PowerGo)",
     "address": "Str\u00e6det 2",
     "town": "Bording",
     "postcode": "7441",
-    "latitude": 56.145266,
-    "longitude": 9.276345
+    "latitude": 56.145267486572266,
+    "longitude": 9.276345252990723
   },
   {
     "name": "Ikast Station (PowerGo)",
     "address": "Ll Torv 3",
     "town": "Ikast",
     "postcode": "7430",
-    "latitude": 56.144721,
-    "longitude": 9.155258
+    "latitude": 56.14472198486328,
+    "longitude": 9.155258178710938
   },
   {
     "name": "Parkeringsplads ved Frisenborg All\u00e9 (PowerGo)",
     "address": "nygade 7",
     "town": "Ikast",
     "postcode": "7430",
-    "latitude": 56.14334,
-    "longitude": 9.156366
+    "latitude": 56.143341064453125,
+    "longitude": 9.156366348266602
   },
   {
     "name": "Autismetilbud (PowerGo)",
     "address": "Borgergade 25",
     "town": "Bording",
     "postcode": "7441",
-    "latitude": 56.142388,
-    "longitude": 9.276562
+    "latitude": 56.14238739013672,
+    "longitude": 9.276561737060547
   },
   {
     "name": "Jens Holdg\u00e5rds Vej (PowerGo)",
     "address": "Jens Holdgaards Vej 5",
     "town": "Ikast",
     "postcode": "7430",
-    "latitude": 56.142135,
-    "longitude": 9.153925
+    "latitude": 56.14213562011719,
+    "longitude": 9.153924942016602
   },
   {
     "name": "Bording B\u00f8rneby (PowerGo)",
     "address": "Bodholtvej 29",
     "town": "Bording",
     "postcode": "7441",
-    "latitude": 56.139502,
-    "longitude": 9.276272
+    "latitude": 56.139503479003906,
+    "longitude": 9.27627182006836
   },
   {
     "name": "R\u00e5dhuset DC (PowerGo)",
     "address": "R\u00e5dhusstr\u00e6det 6",
     "town": "Ikast",
     "postcode": "7430",
-    "latitude": 56.1391155,
-    "longitude": 9.15686478
+    "latitude": 56.13911437988281,
+    "longitude": 9.156865119934082
   },
   {
     "name": "Ikast \u00d8stre Skole (PowerGo)",
     "address": "Jyllandsgade 10",
     "town": "Ikast",
     "postcode": "7430",
-    "latitude": 56.13898,
-    "longitude": 9.1636353
+    "latitude": 56.138980865478516,
+    "longitude": 9.16363525390625
   },
   {
     "name": "Parkeringsplads R\u00e5dhusstr\u00e6det (PowerGo)",
     "address": "R\u00e5dhusstr\u00e6det 21",
     "town": "Ikast",
     "postcode": "7430",
-    "latitude": 56.13869005,
-    "longitude": 9.15299552
+    "latitude": 56.13869094848633,
+    "longitude": 9.152995109558105
   },
   {
     "name": "Administration Vest (PowerGo)",
     "address": "Sj\u00e6llandsgade 6",
     "town": "Ikast",
     "postcode": "7430",
-    "latitude": 56.138284,
-    "longitude": 9.148695
+    "latitude": 56.138282775878906,
+    "longitude": 9.14869499206543
   },
   {
     "name": "Daginstitution Frisenborg (PowerGo)",
     "address": "Frisenborgparken 32",
     "town": "Ikast",
     "postcode": "7430",
-    "latitude": 56.134217,
-    "longitude": 9.149605
+    "latitude": 56.13421630859375,
+    "longitude": 9.149604797363281
   },
   {
     "name": "Daginstitution Lysholt (PowerGo)",
     "address": "Lysholt Alle 16",
     "town": "Ikast",
     "postcode": "7430",
-    "latitude": 56.131156,
-    "longitude": 9.179554
+    "latitude": 56.13115692138672,
+    "longitude": 9.179553985595703
   },
   {
     "name": "Marienlund Centret (PowerGo)",
     "address": "Kirkegade 102",
     "town": "Ikast",
     "postcode": "7430",
-    "latitude": 56.130952,
-    "longitude": 9.149404
+    "latitude": 56.130950927734375,
+    "longitude": 9.14940357208252
   },
   {
     "name": "Plejecenteret B\u00f8gildlund (PowerGo)",
     "address": "B\u00f8gildlund 100",
     "town": "Ikast",
     "postcode": "7430",
-    "latitude": 56.127628,
-    "longitude": 9.121662
+    "latitude": 56.127628326416016,
+    "longitude": 9.121662139892578
   },
   {
     "name": "PowerGo - Hyldg\u00e5rdsskolen",
     "address": "Hyldg\u00e5rds Alle 9",
     "town": "Ikast",
     "postcode": "7430",
-    "latitude": 56.126257,
-    "longitude": 9.154152
+    "latitude": 56.126258850097656,
+    "longitude": 9.154151916503906
   },
   {
     "name": "Pendlerplads Jyllandsgade DC (PowerGo)",
     "address": "Jyllandsgade 30",
     "town": "Ikast",
     "postcode": "7430",
-    "latitude": 56.12111524,
-    "longitude": 9.17429939
+    "latitude": 56.121116638183594,
+    "longitude": 9.174299240112305
   },
   {
     "name": "Isenvad Skole (PowerGo)",
     "address": "Bygaden 37",
     "town": "Ikast",
     "postcode": "7430",
-    "latitude": 56.098751,
-    "longitude": 9.201529
+    "latitude": 56.098751068115234,
+    "longitude": 9.201528549194336
   },
   {
     "name": "Ejstrupholm B\u00f8rnehave (PowerGo)",
     "address": "Vestergade 59A",
     "town": "Ejstrupholm",
     "postcode": "7361",
-    "latitude": 55.985097,
-    "longitude": 9.28013
+    "latitude": 55.9850959777832,
+    "longitude": 9.280130386352539
   },
   {
     "name": "Ejstrupholm Skole (PowerGo)",
     "address": "Gr\u00f8nningen 3",
     "town": "Ejstrupholm",
     "postcode": "7361",
-    "latitude": 55.984639,
-    "longitude": 9.284331
+    "latitude": 55.98463821411133,
+    "longitude": 9.284331321716309
   },
   {
     "name": "Parkeringsplads S\u00f8ndergade (PowerGo)",
     "address": "S\u00f8ndergade 13",
     "town": "Ejstrupholm",
     "postcode": "7361",
-    "latitude": 55.983603,
-    "longitude": 9.288188
+    "latitude": 55.983604431152344,
+    "longitude": 9.288187980651855
   },
   {
     "name": "Gr\u00f8nnevang Skole (PowerGo)",
     "address": "Skolevej 2",
     "town": "Fredensborg",
     "postcode": "3480",
-    "latitude": 55.97829456,
-    "longitude": 12.34425089
+    "latitude": 55.978294372558594,
+    "longitude": 12.344250679016113
   },
   {
     "name": "Parkeringsplads ved Busterminalen (PowerGo)",
     "address": "Engholmvej  9A",
     "town": "N\u00f8rre Snede",
     "postcode": "8766",
-    "latitude": 55.966515,
-    "longitude": 9.392788
+    "latitude": 55.966514587402344,
+    "longitude": 9.39278793334961
   },
   {
     "name": "Dagcenter Bavneh\u00f8j (PowerGo)",
     "address": "Bavneh\u00f8j 19",
     "town": "N\u00f8rre Snede",
     "postcode": "8766",
-    "latitude": 55.962458,
-    "longitude": 9.387755
+    "latitude": 55.962459564208984,
+    "longitude": 9.387755393981934
   },
   {
     "name": "N\u00f8rre Snede Skole (PowerGo)",
     "address": "Skovbakken 7",
     "town": "N\u00f8rre Snede",
     "postcode": "8766",
-    "latitude": 55.962336,
-    "longitude": 9.394448
+    "latitude": 55.962337493896484,
+    "longitude": 9.394448280334473
   },
   {
     "name": "Brande \u00c5center (PowerGo)",
     "address": "Ny Sandfeldvej 7",
     "town": "Brande",
     "postcode": "7330",
-    "latitude": 55.955509,
-    "longitude": 9.102444
+    "latitude": 55.955509185791016,
+    "longitude": 9.10244369506836
   },
   {
     "name": "Social Psykiatrisk Center Syd \u00d8rb\u00e6klund (PowerGo)",
     "address": "\u00d8rb\u00e6klund 1",
     "town": "Brande",
     "postcode": "7330",
-    "latitude": 55.946405,
-    "longitude": 9.120185
+    "latitude": 55.94640350341797,
+    "longitude": 9.120184898376465
   },
   {
     "name": "Remisen (PowerGo)",
     "address": "Remisevej 1",
     "town": "Brande",
     "postcode": "7330",
-    "latitude": 55.944876,
-    "longitude": 9.131908
+    "latitude": 55.94487762451172,
+    "longitude": 9.131908416748047
   },
   {
     "name": "Brandlundparken (PowerGo)",
     "address": "Brandlundparken 1",
     "town": "Brande",
     "postcode": "7330",
-    "latitude": 55.943824,
-    "longitude": 9.117819
+    "latitude": 55.943824768066406,
+    "longitude": 9.117818832397461
   },
   {
     "name": "Dalgasskolen (PowerGo)",
     "address": "Elme Alle 2",
     "town": "Brande",
     "postcode": "7330",
-    "latitude": 55.942901,
-    "longitude": 9.136799
+    "latitude": 55.942901611328125,
+    "longitude": 9.136798858642578
   },
   {
     "name": "B\u00f8rnehuset Labyrinten (PowerGo)",
     "address": "Nonnebuen 1",
     "town": "Hiller\u00f8d",
     "postcode": "3400",
-    "latitude": 55.94235202,
-    "longitude": 12.25864257
+    "latitude": 55.942352294921875,
+    "longitude": 12.258642196655273
   },
   {
     "name": "Gr\u00f8nnevang Skole (PowerGo)",
     "address": "Jespervej 171",
     "town": "Hiller\u00f8d",
     "postcode": "3400",
-    "latitude": 55.94138338,
-    "longitude": 12.33388701
+    "latitude": 55.941383361816406,
+    "longitude": 12.333887100219727
   },
   {
     "name": "Brande B\u00f8rnehave Tumleh\u00f8j (PowerGo)",
     "address": "\u00c5gade 14",
     "town": "Brande",
     "postcode": "7330",
-    "latitude": 55.940852,
-    "longitude": 9.12145
+    "latitude": 55.940853118896484,
+    "longitude": 9.121450424194336
   },
   {
     "name": "Artium Skole (PowerGo)",
     "address": "Hyvildvej 16",
     "town": "Brande",
     "postcode": "7330",
-    "latitude": 55.93966277,
-    "longitude": 9.12692526
+    "latitude": 55.93966293334961,
+    "longitude": 9.126925468444824
   },
   {
     "name": "Klubhus Brande Stadion (PowerGo)",
     "address": "\u00c5gade 16",
     "town": "Brande",
     "postcode": "7330",
-    "latitude": 55.939187,
-    "longitude": 9.118614
+    "latitude": 55.939186096191406,
+    "longitude": 9.118614196777344
   },
   {
     "name": "B\u00f8rnehuset Clausensvej (PowerGo)",
     "address": "Clausensvej 4",
     "town": "Hiller\u00f8d",
     "postcode": "3400",
-    "latitude": 55.93892256,
-    "longitude": 12.33250611
+    "latitude": 55.93892288208008,
+    "longitude": 12.33250617980957
   },
   {
     "name": "Kornmarkenskolen Li. Lyngby (PowerGo)",
     "address": "Skolevej 1",
     "town": "Sk\u00e6vinge",
     "postcode": "3320",
-    "latitude": 55.937246,
-    "longitude": 12.153166
+    "latitude": 55.9372444152832,
+    "longitude": 12.153165817260742
   },
   {
     "name": "Klovborg Forsamlingshus & Kino (PowerGo)",
     "address": "Gr\u00f8nnev\u00e6nget 17",
     "town": "Klovborg",
     "postcode": "8765",
-    "latitude": 55.932065,
-    "longitude": 9.49091
+    "latitude": 55.932064056396484,
+    "longitude": 9.490909576416016
   },
   {
     "name": "K\u00f8kkenet (PowerGo)",
     "address": "Lokesvej 12",
     "town": "Hiller\u00f8d",
     "postcode": "3400",
-    "latitude": 55.92923287,
-    "longitude": 12.25752799
+    "latitude": 55.92923355102539,
+    "longitude": 12.257528305053711
   },
   {
     "name": "Trollesbro (PowerGo)",
     "address": "Slangerupgade 60",
     "town": "Hiller\u00f8d",
     "postcode": "3400",
-    "latitude": 55.92715824,
-    "longitude": 12.29142698
+    "latitude": 55.92715835571289,
+    "longitude": 12.291426658630371
   },
   {
     "name": "B\u00f8rnehuset Kildedalen (PowerGo)",
     "address": "Roskildevej 155",
     "town": "Hiller\u00f8d",
     "postcode": "3400",
-    "latitude": 55.91564234,
-    "longitude": 12.28941286
+    "latitude": 55.91564178466797,
+    "longitude": 12.289412498474121
   },
   {
     "name": "Favrholm Station AC (PowerGo)",
     "address": "Hestehavevej 1",
     "town": "Hiller\u00f8d",
     "postcode": "3400",
-    "latitude": 55.91021057,
-    "longitude": 12.31341352
+    "latitude": 55.91020965576172,
+    "longitude": 12.313413619995117
   },
   {
     "name": "Plejecenter Baunehaven (PowerGo)",
     "address": "Ny Harl\u00f8sevej 24",
     "town": "Sk\u00e6vinge",
     "postcode": "3320",
-    "latitude": 55.91009738,
-    "longitude": 12.15704845
+    "latitude": 55.910099029541016,
+    "longitude": 12.157048225402832
   },
   {
     "name": "Kornmarkenskolen (PowerGo)",
     "address": "Ny Harl\u00f8sevej 17",
     "town": "Sk\u00e6vinge",
     "postcode": "3320",
-    "latitude": 55.91001967,
-    "longitude": 12.15563442
+    "latitude": 55.91001892089844,
+    "longitude": 12.155634880065918
   },
   {
     "name": "Favrholm Station DC (PowerGo)",
     "address": "Farvholm Stationsvej",
     "town": "Hiller\u00f8d",
     "postcode": "3400",
-    "latitude": 55.90944063,
-    "longitude": 12.31209328
+    "latitude": 55.90943908691406,
+    "longitude": 12.312093734741211
   },
   {
     "name": "Hanebjerg Skole (PowerGo)",
     "address": "Br\u00f8deskovvej 39",
     "town": "Hiller\u00f8d",
     "postcode": "3400",
-    "latitude": 55.8888673,
-    "longitude": 12.28949981
+    "latitude": 55.88886642456055,
+    "longitude": 12.28950023651123
   },
   {
     "name": "Hanebjerg Skole G\u00f8rl\u00f8se (PowerGo)",
     "address": "Str\u00f8vej 107",
     "town": "G\u00f8rl\u00f8se",
     "postcode": "3330",
-    "latitude": 55.88662387,
-    "longitude": 12.19445281
+    "latitude": 55.88662338256836,
+    "longitude": 12.194453239440918
   },
   {
     "name": "Br\u00f8deskov klubhus og Idr\u00e6tshal (PowerGo)",
     "address": "Koller\u00f8dvej 1A",
     "town": "Hiller\u00f8d",
     "postcode": "3400",
-    "latitude": 55.886475,
-    "longitude": 12.287591
+    "latitude": 55.886474609375,
+    "longitude": 12.287590980529785
   },
   {
     "name": "Rude Skov Skole (PowerGo)",
     "address": "Ravnsn\u00e6svej 126",
     "town": "Birker\u00f8d",
     "postcode": "3460",
-    "latitude": 55.853908,
-    "longitude": 12.454093
+    "latitude": 55.85390853881836,
+    "longitude": 12.454092979431152
   },
   {
     "name": "Vedb\u00e6k Skole (PowerGo)",
     "address": "Henriksholms Alle 2",
     "town": "Vedb\u00e6k",
     "postcode": "2950",
-    "latitude": 55.85292053,
-    "longitude": 12.56095695
+    "latitude": 55.85292053222656,
+    "longitude": 12.560956954956055
   },
   {
     "name": "B\u00f8rnehuset G\u00f8ngehuset (PowerGo)",
     "address": "G\u00f8ngehusvej 38",
     "town": "Vedb\u00e6k",
     "postcode": "2950",
-    "latitude": 55.850468,
-    "longitude": 12.561191
+    "latitude": 55.850467681884766,
+    "longitude": 12.561190605163574
   },
   {
     "name": "S\u00f8holmskolen afdeling Toftevang (PowerGo)",
     "address": "Teglporten 9",
     "town": "Birker\u00f8d",
     "postcode": "3460",
-    "latitude": 55.8414138,
-    "longitude": 12.43284917
+    "latitude": 55.84141540527344,
+    "longitude": 12.432848930358887
   },
   {
     "name": "Birker\u00f8d Skole (PowerGo)",
     "address": "Birker\u00f8d Parkvej 8-12",
     "town": "Birker\u00f8d",
     "postcode": "3460",
-    "latitude": 55.84103984,
-    "longitude": 12.41512968
+    "latitude": 55.841041564941406,
+    "longitude": 12.415129661560059
   },
   {
     "name": "Administrationscentret (PowerGo)",
     "address": "Stationsvej 36-38",
     "town": "Birker\u00f8d",
     "postcode": "3460",
-    "latitude": 55.84102532,
-    "longitude": 12.42566303
+    "latitude": 55.841026306152344,
+    "longitude": 12.425662994384766
   },
   {
     "name": "Birker\u00f8d Station Syd (PowerGo)",
     "address": "Banev\u00e6nget 15",
     "town": "Birker\u00f8d",
     "postcode": "3460",
-    "latitude": 55.839666,
-    "longitude": 12.42436
+    "latitude": 55.839664459228516,
+    "longitude": 12.424360275268555
   },
   {
     "name": "B\u00f8rnehuset Pileg\u00e5rden (PowerGo)",
     "address": "Bregner\u00f8dvej 122",
     "town": "Birker\u00f8d",
     "postcode": "3460",
-    "latitude": 55.839277,
-    "longitude": 12.405978
+    "latitude": 55.83927536010742,
+    "longitude": 12.405978202819824
   },
   {
     "name": "Tr\u00f8r\u00f8d B\u00f8rnehus (PowerGo)",
     "address": "Kohavevej 72",
     "town": "Vedb\u00e6k",
     "postcode": "2950",
-    "latitude": 55.83648901,
-    "longitude": 12.53049314
+    "latitude": 55.836490631103516,
+    "longitude": 12.530492782592773
   },
   {
     "name": "B\u00f8rnehuset Lyngborghave (PowerGo)",
     "address": "Lyngborghave 42",
     "town": "Birker\u00f8d",
     "postcode": "3460",
-    "latitude": 55.836258,
-    "longitude": 12.415104
+    "latitude": 55.83625793457031,
+    "longitude": 12.415103912353516
   },
   {
     "name": "Birker\u00f8d Badmintonhal (PowerGo)",
     "address": "Topstykket 26",
     "town": "Birker\u00f8d",
     "postcode": "3460",
-    "latitude": 55.83347593,
-    "longitude": 12.40628376
+    "latitude": 55.83347702026367,
+    "longitude": 12.406283378601074
   },
   {
     "name": "B\u00f8rnehuset Marieh\u00f8j (PowerGo)",
     "address": "\u00d8ver\u00f8dvej 246 A",
     "town": "Holte",
     "postcode": "2840",
-    "latitude": 55.830579,
-    "longitude": 12.519396
+    "latitude": 55.8305778503418,
+    "longitude": 12.51939582824707
   },
   {
     "name": "S\u00f8ller\u00f8d Golfklub (PowerGo)",
     "address": "Brillerne 9",
     "town": "Holte",
     "postcode": "2840",
-    "latitude": 55.829296,
-    "longitude": 12.513998
+    "latitude": 55.82929611206055,
+    "longitude": 12.513998031616211
   },
   {
     "name": "Rundforbi Idr\u00e6tsanl\u00e6g og Sv\u00f8mmehal (PowerGo)",
     "address": "Rundforbiparken 1A",
     "town": "N\u00e6rum",
     "postcode": "2850",
-    "latitude": 55.826623,
-    "longitude": 12.542217
+    "latitude": 55.826622009277344,
+    "longitude": 12.542217254638672
   },
   {
     "name": "Bistrup Have B\u00f8rnehus (PowerGo)",
     "address": "Abildg\u00e5rdsparken 8C",
     "town": "Birker\u00f8d",
     "postcode": "3460",
-    "latitude": 55.82485242,
-    "longitude": 12.42261002
+    "latitude": 55.824851989746094,
+    "longitude": 12.42261028289795
   },
   {
     "name": "B\u00f8rnehuset H\u00f8jbjergg\u00e5rd (PowerGo)",
     "address": "H\u00f8jbjergg\u00e5rdsvej 16",
     "town": "Holte",
     "postcode": "2840",
-    "latitude": 55.824368,
-    "longitude": 12.494426
+    "latitude": 55.82436752319336,
+    "longitude": 12.494425773620605
   },
   {
     "name": "P-areal ved Skodsborg Station (PowerGo)",
     "address": "Skodsborgparken",
     "town": "Skodsborg",
     "postcode": "2942",
-    "latitude": 55.8234905,
-    "longitude": 12.5716763
+    "latitude": 55.823490142822266,
+    "longitude": 12.571676254272461
   },
   {
     "name": "N\u00e6rum Hovedgade (PowerGo)",
     "address": "Kirke\u00e5sen 31",
     "town": "N\u00e6rum",
     "postcode": "2850",
-    "latitude": 55.820986,
-    "longitude": 12.536091
+    "latitude": 55.820987701416016,
+    "longitude": 12.536090850830078
   },
   {
     "name": "P-areal Rudersdalvej \u00d8ver\u00f8d (PowerGo)",
     "address": "Rudersdalsvej 110",
     "town": "Holte",
     "postcode": "2840",
-    "latitude": 55.81807592,
-    "longitude": 12.48796703
+    "latitude": 55.818077087402344,
+    "longitude": 12.487967491149902
   },
   {
     "name": "Holte Skole (PowerGo)",
     "address": "R\u00f8nneb\u00e6rvej 33",
     "town": "Holte",
     "postcode": "2840",
-    "latitude": 55.81546553,
-    "longitude": 12.46578006
+    "latitude": 55.81546401977539,
+    "longitude": 12.465780258178711
   },
   {
     "name": "N\u00e6rum Ungdomsg\u00e5rd (PowerGo)",
     "address": "Biblioteksalleen 5",
     "town": "N\u00e6rum",
     "postcode": "2850",
-    "latitude": 55.81533542,
-    "longitude": 12.5387019
+    "latitude": 55.81533432006836,
+    "longitude": 12.538702011108398
   },
   {
     "name": "N\u00e6rum Centrum (PowerGo)",
     "address": "N\u00e6rumv\u00e6nge 2",
     "town": "N\u00e6rum",
     "postcode": "2850",
-    "latitude": 55.814649,
-    "longitude": 12.532804
+    "latitude": 55.81464767456055,
+    "longitude": 12.532803535461426
   },
   {
     "name": "N\u00e6rum Station (PowerGo)",
     "address": "Langebjerg 14",
     "town": "N\u00e6rum",
     "postcode": "2850",
-    "latitude": 55.81348485,
-    "longitude": 12.52745387
+    "latitude": 55.81348419189453,
+    "longitude": 12.527453422546387
   },
   {
     "name": "R\u00e5dhuset (PowerGo)",
     "address": "\u00d8ver\u00f8dvej 2",
     "town": "Holte",
     "postcode": "2840",
-    "latitude": 55.81050511,
-    "longitude": 12.47435872
+    "latitude": 55.81050491333008,
+    "longitude": 12.474358558654785
   },
   {
     "name": "\u00d8lgod Skole (PowerGo)",
     "address": "Skolegade 11",
     "town": "\u00d8lgod",
     "postcode": "6870",
-    "latitude": 55.809741,
-    "longitude": 8.61151
+    "latitude": 55.80974197387695,
+    "longitude": 8.611510276794434
   },
   {
     "name": "Ravnholm Skole og institutioner (PowerGo)",
     "address": "Vangeboled 9",
     "town": "Holte",
     "postcode": "2840",
-    "latitude": 55.80869846,
-    "longitude": 12.51108417
+    "latitude": 55.80869674682617,
+    "longitude": 12.51108455657959
   },
   {
     "name": "Rudeg\u00e5rd Idr\u00e6tsanl\u00e6g (PowerGo)",
     "address": "Kongevejen 468",
     "town": "Holte",
     "postcode": "2840",
-    "latitude": 55.82581329,
-    "longitude": 12.46202278
+    "latitude": 55.82581329345703,
+    "longitude": 12.46202278137207
   },
   {
     "name": "Torvet AC (PowerGo)",
     "address": "Torvet 1",
     "town": "N\u00f8rre Nebel",
     "postcode": "6830",
-    "latitude": 55.78026581,
-    "longitude": 8.2884016
+    "latitude": 55.78026580810547,
+    "longitude": 8.28840160369873
   },
   {
     "name": "P-b\u00e5se langs Strandvejen (PowerGo)",
     "address": "Strandvejen 347",
     "town": "Klampenborg",
     "postcode": "2930",
-    "latitude": 55.76463704,
-    "longitude": 12.59665062
+    "latitude": 55.7646369934082,
+    "longitude": 12.596651077270508
   },
   {
     "name": "Akademisk Boldklub (PowerGo)",
     "address": "Skovdiget 1",
     "town": "Bagsv\u00e6rd",
     "postcode": "2880",
-    "latitude": 55.7634334,
-    "longitude": 12.43268692
+    "latitude": 55.763431549072266,
+    "longitude": 12.432686805725098
   },
   {
     "name": "P-b\u00e5se langs J\u00e6gersborg Alle (PowerGo)",
     "address": "J\u00e6gersborg Alle 185",
     "town": "Gentofte",
     "postcode": "2820",
-    "latitude": 55.762363,
-    "longitude": 12.529983
+    "latitude": 55.76236343383789,
+    "longitude": 12.529982566833496
   },
   {
     "name": "P-b\u00e5se langs \u00d8rneg\u00e5rdsvej (PowerGo)",
     "address": "\u00d8rneg\u00e5rdsvej 36",
     "town": "Gentofte",
     "postcode": "2820",
-    "latitude": 55.76019545,
-    "longitude": 12.52030619
+    "latitude": 55.760196685791016,
+    "longitude": 12.520306587219238
   },
   {
     "name": "Morescosvej P-B\u00e5se (PowerGo)",
     "address": "Morescosvej 11",
     "town": "Charlottelund",
     "postcode": "2920",
-    "latitude": 55.76008316,
-    "longitude": 12.57173605
+    "latitude": 55.76008224487305,
+    "longitude": 12.571736335754395
   },
   {
     "name": "Bagsv\u00e6rd Sv\u00f8mmehal (PowerGo)",
     "address": "V\u00e6rebrovej 158",
     "town": "Bagsv\u00e6rd",
     "postcode": "2880",
-    "latitude": 55.757346,
-    "longitude": 12.432181
+    "latitude": 55.757347106933594,
+    "longitude": 12.432181358337402
   },
   {
     "name": "M\u00e5l\u00f8vh\u00f8j Skole (PowerGo)",
     "address": "Kratvej 14",
     "town": "M\u00e5l\u00f8v",
     "postcode": "2760",
-    "latitude": 55.75134281,
-    "longitude": 12.32038751
+    "latitude": 55.7513427734375,
+    "longitude": 12.320387840270996
   },
   {
     "name": "B\u00f8rnehuset M\u00e5l\u00f8v By (PowerGo)",
     "address": "Liljevangsvej 38B",
     "town": "M\u00e5l\u00f8v",
     "postcode": "2760",
-    "latitude": 55.75109585,
-    "longitude": 12.31806798
+    "latitude": 55.751094818115234,
+    "longitude": 12.31806755065918
   },
   {
     "name": "Vangede Bibliotek (PowerGo)",
     "address": "Vangede Bygade 45",
     "town": "Gentofte",
     "postcode": "2820",
-    "latitude": 55.75093426,
-    "longitude": 12.51901524
+    "latitude": 55.75093460083008,
+    "longitude": 12.519015312194824
   },
   {
     "name": "Skovvejens Skole (PowerGo)",
     "address": "Egebjergvang 80",
     "town": "Ballerup",
     "postcode": "2750",
-    "latitude": 55.74968868,
-    "longitude": 12.3792223
+    "latitude": 55.74968719482422,
+    "longitude": 12.37922191619873
   },
   {
     "name": "M\u00e5l\u00f8vhallen (PowerGo)",
     "address": "M\u00e5l\u00f8v Hovedgade 50",
     "town": "M\u00e5l\u00f8v",
     "postcode": "2760",
-    "latitude": 55.749633,
-    "longitude": 12.323871
+    "latitude": 55.7496337890625,
+    "longitude": 12.323870658874512
   },
   {
     "name": "Gentofte R\u00e5dhus (PowerGo)",
     "address": "Bernstorffsvej 161",
     "town": "Charlottelund",
     "postcode": "2920",
-    "latitude": 55.74911499,
-    "longitude": 12.55800629
+    "latitude": 55.749114990234375,
+    "longitude": 12.558006286621094
   },
   {
     "name": "Ballerup Rideklub (PowerGo)",
     "address": "Kildesvinget 16",
     "town": "Ballerup",
     "postcode": "2750",
-    "latitude": 55.748906,
-    "longitude": 12.366335
+    "latitude": 55.748905181884766,
+    "longitude": 12.366334915161133
   },
   {
     "name": "Egebjerghallen (PowerGo)",
     "address": "Agernhaven 12",
     "town": "Ballerup",
     "postcode": "2750",
-    "latitude": 55.74737523,
-    "longitude": 12.37916618
+    "latitude": 55.74737548828125,
+    "longitude": 12.379166603088379
   },
   {
     "name": "P-b\u00e5se langs Sognegr\u00e6nsen (PowerGo)",
     "address": "Sognegr\u00e6nsen 6",
     "town": "Gentofte",
     "postcode": "2820",
-    "latitude": 55.747277,
-    "longitude": 12.506848
+    "latitude": 55.747276306152344,
+    "longitude": 12.506848335266113
   },
   {
     "name": "Plejecenter Egely (PowerGo)",
     "address": "Egebjerg Bygade 52",
     "town": "Ballerup",
     "postcode": "2750",
-    "latitude": 55.74702673,
-    "longitude": 12.37915549
+    "latitude": 55.74702835083008,
+    "longitude": 12.379155158996582
   },
   {
     "name": "P-Plads (PowerGo)",
     "address": "Bregneg\u00e5rdsvej 25",
     "town": "Hellerup",
     "postcode": "2900",
-    "latitude": 55.74558605,
-    "longitude": 12.57052714
+    "latitude": 55.74558639526367,
+    "longitude": 12.570527076721191
   },
   {
     "name": "B\u00f8rnehuset S\u00f8nderg\u00e5rden (PowerGo)",
     "address": "Tueholmen 4",
     "town": "M\u00e5l\u00f8v",
     "postcode": "2760",
-    "latitude": 55.74331009,
-    "longitude": 12.32369269
+    "latitude": 55.743309020996094,
+    "longitude": 12.323692321777344
   },
   {
     "name": "P-pladsen p\u00e5 Kongedybet og Lyngbyvej (PowerGo)",
     "address": "Lyngbyvej 315A",
     "town": "Gentofte",
     "postcode": "2820",
-    "latitude": 55.738251,
-    "longitude": 12.538364
+    "latitude": 55.738250732421875,
+    "longitude": 12.53836441040039
   },
   {
     "name": "Elleg\u00e5rdsvej/Ellemosevej P-B\u00e5se (PowerGo)",
     "address": "Elleg\u00e5rdsvej 35",
     "town": "Gentofte",
     "postcode": "2820",
-    "latitude": 55.737128,
-    "longitude": 12.531755
+    "latitude": 55.73712921142578,
+    "longitude": 12.531755447387695
   },
   {
     "name": "Botilbuddet R\u00f8dbo (PowerGo)",
     "address": "Klausdalsbrovej 621E",
     "town": "Ballerup",
     "postcode": "2750",
-    "latitude": 55.736046,
-    "longitude": 12.401125
+    "latitude": 55.736045837402344,
+    "longitude": 12.401124954223633
   },
   {
     "name": "Stokholtbuen (PowerGo)",
     "address": "Stokholtbuen 17",
     "town": "Herlev",
     "postcode": "2730",
-    "latitude": 55.73533489,
-    "longitude": 12.40806164
+    "latitude": 55.73533630371094,
+    "longitude": 12.408061981201172
   },
   {
     "name": "Munkeg\u00e5rdskole (PowerGo)",
     "address": "Vangedevej 178",
     "town": "Dysseg\u00e5rd",
     "postcode": "2870",
-    "latitude": 55.735239,
-    "longitude": 12.522109
+    "latitude": 55.73523712158203,
+    "longitude": 12.522109031677246
   },
   {
     "name": "Rytterg\u00e5rden (PowerGo)",
     "address": "Pederstrupvej 49",
     "town": "Ballerup",
     "postcode": "2750",
-    "latitude": 55.73395813,
-    "longitude": 12.33668623
+    "latitude": 55.73395919799805,
+    "longitude": 12.336686134338379
   },
   {
     "name": "P-b\u00e5se langs Thulevej (PowerGo)",
     "address": "Thulevej 6",
     "town": "Dysseg\u00e5rd",
     "postcode": "2870",
-    "latitude": 55.732392,
-    "longitude": 12.535336
+    "latitude": 55.732391357421875,
+    "longitude": 12.535335540771484
   },
   {
     "name": "Ryg\u00e5rds Alle P-B\u00e5se (PowerGo)",
     "address": "Ryg\u00e5rds Alle 25",
     "town": "Hellerup",
     "postcode": "2900",
-    "latitude": 55.73225403,
-    "longitude": 12.56291103
+    "latitude": 55.73225402832031,
+    "longitude": 12.562911033630371
   },
   {
     "name": "Gladsaxe Stadion (PowerGo)",
     "address": "Gladsaxevej 200",
     "town": "S\u00f8borg",
     "postcode": "2860",
-    "latitude": 55.73140625,
-    "longitude": 12.49760237
+    "latitude": 55.731407165527344,
+    "longitude": 12.497602462768555
   },
   {
     "name": "P-b\u00e5se langs Plantevej  (PowerGo)",
     "address": "Plantevej 43",
     "town": "Dysseg\u00e5rd",
     "postcode": "2870",
-    "latitude": 55.730485,
-    "longitude": 12.522053
+    "latitude": 55.73048400878906,
+    "longitude": 12.522052764892578
   },
   {
     "name": "Brydehuset (PowerGo)",
     "address": "Brydehusvej 12",
     "town": "Ballerup",
     "postcode": "2750",
-    "latitude": 55.72969504,
-    "longitude": 12.37535998
+    "latitude": 55.72969436645508,
+    "longitude": 12.375359535217285
   },
   {
     "name": "Aktivitetscenter Ballerup (PowerGo)",
     "address": "Rolighedsvej 12",
     "town": "Ballerup",
     "postcode": "2750",
-    "latitude": 55.72894139,
-    "longitude": 12.36288409
+    "latitude": 55.72894287109375,
+    "longitude": 12.362884521484375
   },
   {
     "name": "Balleruphallen (PowerGo)",
     "address": "Rugv\u00e6nget 10",
     "town": "Ballerup",
     "postcode": "2750",
-    "latitude": 55.726514,
-    "longitude": 12.360689
+    "latitude": 55.72651290893555,
+    "longitude": 12.360689163208008
   },
   {
     "name": "Grantoftehallen (PowerGo)",
     "address": "Platanbuen 1",
     "town": "Ballerup",
     "postcode": "2750",
-    "latitude": 55.724018,
-    "longitude": 12.343783
+    "latitude": 55.72401809692383,
+    "longitude": 12.343783378601074
   },
   {
     "name": "Skovlundehallen (PowerGo)",
     "address": "Lundebjergg\u00e5rdsvej 7",
     "town": "Skovlunde",
     "postcode": "2740",
-    "latitude": 55.72136188,
-    "longitude": 12.41203583
+    "latitude": 55.72136306762695,
+    "longitude": 12.412035942077637
   },
   {
     "name": "Hedeg\u00e5rdshallen (PowerGo)",
     "address": "Magleparken 8",
     "town": "Ballerup",
     "postcode": "2750",
-    "latitude": 55.72029234,
-    "longitude": 12.36029446
+    "latitude": 55.72029113769531,
+    "longitude": 12.360294342041016
   },
   {
     "name": "Tapeten (PowerGo)",
     "address": "Magleparken 5",
     "town": "Ballerup",
     "postcode": "2750",
-    "latitude": 55.719646,
-    "longitude": 12.363686
+    "latitude": 55.71964645385742,
+    "longitude": 12.363685607910156
   },
   {
     "name": "Hodde-Tistrup Hallen (PowerGo)",
     "address": "L\u00e6rkevej 23",
     "town": "Tistrup",
     "postcode": "6862",
-    "latitude": 55.719588,
-    "longitude": 8.607625
+    "latitude": 55.71958923339844,
+    "longitude": 8.607625007629395
   },
   {
     "name": "B\u00f8rnehuset M\u00f8llehuset (PowerGo)",
     "address": "M\u00f8lleg\u00e5rdsvej 9",
     "town": "Tistrup",
     "postcode": "6862",
-    "latitude": 55.718766,
-    "longitude": 8.600711
+    "latitude": 55.71876525878906,
+    "longitude": 8.60071086883545
   },
   {
     "name": "B\u00f8rnehuset Birkeg\u00e5rden (PowerGo)",
     "address": "Hold-An Vej 158B",
     "town": "Ballerup",
     "postcode": "2750",
-    "latitude": 55.718118,
-    "longitude": 12.355036
+    "latitude": 55.718116760253906,
+    "longitude": 12.355035781860352
   },
   {
     "name": "Rosenlundhallen (PowerGo)",
     "address": "Ejbyvej 47Z",
     "town": "Skovlunde",
     "postcode": "2740",
-    "latitude": 55.715653,
-    "longitude": 12.403549
+    "latitude": 55.71565246582031,
+    "longitude": 12.403549194335938
   },
   {
     "name": "BFO Distriktskontor Skovlunde Skole (PowerGo)",
     "address": "Ejbyvej 55",
     "town": "Ballerup",
     "postcode": "2740",
-    "latitude": 55.71417904,
-    "longitude": 12.40081866
+    "latitude": 55.71417999267578,
+    "longitude": 12.400818824768066
   },
   {
     "name": "Ansager Hallen (PowerGo)",
     "address": "L\u00e6rkevej 16",
     "town": "Ansager",
     "postcode": "6823",
-    "latitude": 55.71215466,
-    "longitude": 8.74325628
+    "latitude": 55.712154388427734,
+    "longitude": 8.743256568908691
   },
   {
     "name": "Ejbyhallen Glostrup (PowerGo)",
     "address": "Mosetoften 37",
     "town": "Glostrup",
     "postcode": "2600",
-    "latitude": 55.704693,
-    "longitude": 12.414247
+    "latitude": 55.70469284057617,
+    "longitude": 12.414246559143066
   },
   {
     "name": "Ejby Skole Glostrup (PowerGo)",
     "address": "Ejby Torvevej 13",
     "town": "Glostrup",
     "postcode": "2600",
-    "latitude": 55.695911,
-    "longitude": 12.406931
+    "latitude": 55.6959114074707,
+    "longitude": 12.406930923461914
   },
   {
     "name": "\u00c6ldrecenter Hvissinge (PowerGo)",
     "address": "Stenager 2",
     "town": "Glostrup",
     "postcode": "2600",
-    "latitude": 55.68093042,
-    "longitude": 12.40901897
+    "latitude": 55.680931091308594,
+    "longitude": 12.409018516540527
   },
   {
     "name": "Glostrup Amat\u00f8rscene (PowerGo)",
     "address": "V\u00e6ldeg\u00e5rdsvej 30",
     "town": "Glostrup",
     "postcode": "2600",
-    "latitude": 55.678846,
-    "longitude": 12.41196364
+    "latitude": 55.6788444519043,
+    "longitude": 12.41196346282959
   },
   {
     "name": "Nordvangsskolen (PowerGo)",
     "address": "Sofielundsvej 120",
     "town": "Glostrup",
     "postcode": "2600",
-    "latitude": 55.67845801,
-    "longitude": 12.39827872
+    "latitude": 55.67845916748047,
+    "longitude": 12.398279190063477
   },
   {
     "name": "Parkv\u00e6nget Botilbud (PowerGo)",
     "address": "Byparkvej 87",
     "town": "Glostrup",
     "postcode": "2600",
-    "latitude": 55.67402408,
-    "longitude": 12.40982914
+    "latitude": 55.67402267456055,
+    "longitude": 12.409829139709473
   },
   {
     "name": "Glostrup Stadion (PowerGo)",
     "address": "Stadionvej 80",
     "town": "Glostrup",
     "postcode": "2600",
-    "latitude": 55.66782843,
-    "longitude": 12.37506112
+    "latitude": 55.66782760620117,
+    "longitude": 12.37506103515625
   },
   {
     "name": "Glostrup Sv\u00f8mmehal (PowerGo)",
     "address": "Christiansvej 5B",
     "town": "Glostrup",
     "postcode": "2600",
-    "latitude": 55.66444384,
-    "longitude": 12.38728789
+    "latitude": 55.66444396972656,
+    "longitude": 12.387288093566895
   },
   {
     "name": "Glostrup Station (PowerGo)",
     "address": "Stationstorvet 1a",
     "town": "Glostrup",
     "postcode": "2600",
-    "latitude": 55.66224619,
-    "longitude": 12.39963204
+    "latitude": 55.66224670410156,
+    "longitude": 12.399632453918457
   },
   {
     "name": "Kirkeb\u00e6kskolen (PowerGo)",
     "address": "Kl\u00f8verv\u00e6nget 57",
     "town": "Vallensb\u00e6k",
     "postcode": "2625",
-    "latitude": 55.654517,
-    "longitude": 12.360184
+    "latitude": 55.654518127441406,
+    "longitude": 12.360183715820312
   },
   {
     "name": "Sundhedshuset Nordmarken (PowerGo)",
     "address": "Tv\u00e6rb\u00e6kvej 1",
     "town": "Vallensb\u00e6k",
     "postcode": "2625",
-    "latitude": 55.64774769,
-    "longitude": 12.35852616
+    "latitude": 55.64774703979492,
+    "longitude": 12.358526229858398
   },
   {
     "name": "Idr\u00e6tscenter (PowerGo)",
     "address": "Idr\u00e6ts Alle 2",
     "town": "Vallensb\u00e6k",
     "postcode": "2625",
-    "latitude": 55.629473,
-    "longitude": 12.371835
+    "latitude": 55.62947463989258,
+    "longitude": 12.371834754943848
   },
   {
     "name": "Bl\u00e5vandshuk Skole (PowerGo)",
     "address": "Skolev\u00e6nget 12",
     "town": "Oksb\u00f8l",
     "postcode": "6840",
-    "latitude": 55.629473,
-    "longitude": 8.273789
+    "latitude": 55.62947463989258,
+    "longitude": 8.273789405822754
   },
   {
     "name": "Sportspark Bl\u00e5vandshuk (PowerGo)",
     "address": "Strandvejen 2",
     "town": "Oksb\u00f8l",
     "postcode": "6840",
-    "latitude": 55.626855,
-    "longitude": 8.275036
+    "latitude": 55.626853942871094,
+    "longitude": 8.275035858154297
   },
   {
     "name": "Egholmskolen (PowerGo)",
     "address": "Egholmvej 19",
     "town": "Vallensb\u00e6k Strand",
     "postcode": "2665",
-    "latitude": 55.620632,
-    "longitude": 12.390413
+    "latitude": 55.62063217163086,
+    "longitude": 12.390413284301758
   },
   {
     "name": "Varde Station (PowerGo)",
     "address": "Stationspladsen 3",
     "town": "Varde",
     "postcode": "6800",
-    "latitude": 55.616097,
-    "longitude": 8.484267
+    "latitude": 55.61609649658203,
+    "longitude": 8.484267234802246
   },
   {
     "name": "Helle Hallen (PowerGo)",
     "address": "Vrenderupvej 40C",
     "town": "\u00c5rre",
     "postcode": "6818",
-    "latitude": 55.615182,
-    "longitude": 8.727758
+    "latitude": 55.61518096923828,
+    "longitude": 8.727758407592773
   },
   {
     "name": "Hovborg Kulturhus (PowerGo)",
     "address": "Lindevej 7A",
     "town": "Hovborg",
     "postcode": "6682",
-    "latitude": 55.600749,
-    "longitude": 8.940879
+    "latitude": 55.60074996948242,
+    "longitude": 8.940878868103027
   },
   {
     "name": "Bl\u00e5vand Centrum AC (PowerGo)",
     "address": "Bl\u00e5vandvej 29A",
     "town": "Bl\u00e5vand",
     "postcode": "6857",
-    "latitude": 55.55623245,
-    "longitude": 8.13315105
+    "latitude": 55.55623245239258,
+    "longitude": 8.133151054382324
   },
   {
     "name": "Materialeg\u00e5rden Br\u00f8rup (PowerGo)",
     "address": "Stenbro All\u00e9 6",
     "town": "Br\u00f8rup",
     "postcode": "6650",
-    "latitude": 55.500814,
-    "longitude": 9.025373
+    "latitude": 55.50081253051758,
+    "longitude": 9.025373458862305
   },
   {
     "name": "Plejecenter Lundtoft (PowerGo)",
     "address": "Magnolievej 28",
     "town": "Br\u00f8rup",
     "postcode": "6650",
-    "latitude": 55.49180425,
-    "longitude": 9.02033317
+    "latitude": 55.49180603027344,
+    "longitude": 9.020333290100098
   },
   {
     "name": "Plejecenter Blomsterengen (PowerGo)",
     "address": "Blomsterengen 42",
     "town": "Holsted",
     "postcode": "6670",
-    "latitude": 55.485704,
-    "longitude": 8.917321
+    "latitude": 55.48570251464844,
+    "longitude": 8.91732120513916
   },
   {
     "name": "Br\u00f8rup Bibliotek (PowerGo)",
     "address": "M\u00f8lleparken 1",
     "town": "Br\u00f8rup",
     "postcode": "6650",
-    "latitude": 55.484098,
-    "longitude": 9.015886
+    "latitude": 55.48409652709961,
+    "longitude": 9.015886306762695
   },
   {
     "name": "\u00d8ster Alle (PowerGo)",
     "address": "\u00d8ster Alle 92A",
     "town": "Vejen",
     "postcode": "6600",
-    "latitude": 55.482413,
-    "longitude": 9.14443
+    "latitude": 55.48241424560547,
+    "longitude": 9.144430160522461
   },
   {
     "name": "S\u00f8ndergade / Vestergade (PowerGo)",
     "address": "S\u00f8ndergade 16",
     "town": "Br\u00f8rup",
     "postcode": "6650",
-    "latitude": 55.481839,
-    "longitude": 9.017896
+    "latitude": 55.48183822631836,
+    "longitude": 9.017895698547363
   },
   {
     "name": "Br\u00f8rup Tandklinik (PowerGo)",
     "address": "Skolegade 16",
     "town": "Br\u00f8rup",
     "postcode": "6650",
-    "latitude": 55.480991,
-    "longitude": 9.024626
+    "latitude": 55.48099136352539,
+    "longitude": 9.024625778198242
   },
   {
     "name": "Sundhedshuset Vejen (PowerGo)",
     "address": "Fredensvej 3A",
     "town": "Br\u00f8rup",
     "postcode": "6650",
-    "latitude": 55.480272,
-    "longitude": 9.022377
+    "latitude": 55.48027038574219,
+    "longitude": 9.022377014160156
   },
   {
     "name": "R\u00e5dhuset Vejen (PowerGo)",
     "address": "R\u00e5dhuspassagen 3",
     "town": "Vejen",
     "postcode": "6600",
-    "latitude": 55.47753021,
-    "longitude": 9.13682928
+    "latitude": 55.47753143310547,
+    "longitude": 9.136829376220703
   },
   {
     "name": "Lilleb\u00e6lt Syd (PowerGo)",
     "address": "Fynske Motorvej 571",
     "town": "N\u00f8rre Aaby",
     "postcode": "5580",
-    "latitude": 55.47745633,
-    "longitude": 9.87819513
+    "latitude": 55.477455139160156,
+    "longitude": 9.878194808959961
   },
   {
     "name": "Lindetorvet (PowerGo)",
     "address": "Lindetorvet 2",
     "town": "Vejen",
     "postcode": "6600",
-    "latitude": 55.476496,
-    "longitude": 9.139128
+    "latitude": 55.476497650146484,
+    "longitude": 9.139127731323242
   },
   {
     "name": "Vejen Bibliotek (PowerGo)",
     "address": "Vestergade 2",
     "town": "Vejen",
     "postcode": "6600",
-    "latitude": 55.475453,
-    "longitude": 9.134975
+    "latitude": 55.4754524230957,
+    "longitude": 9.13497543334961
   },
   {
     "name": "Gr\u00f8nvangskolen (PowerGo)",
     "address": "Jacob Gades All\u00e9 16",
     "town": "Vejen",
     "postcode": "6600",
-    "latitude": 55.474958,
-    "longitude": 9.126393
+    "latitude": 55.47495651245117,
+    "longitude": 9.12639331817627
   },
   {
     "name": "Jyllandsgade (PowerGo)",
     "address": "Jyllandsgade 2",
     "town": "Vejen",
     "postcode": "6600",
-    "latitude": 55.474888,
-    "longitude": 9.136926
+    "latitude": 55.47488784790039,
+    "longitude": 9.13692569732666
   },
   {
     "name": "N\u00f8rb\u00f8lling Kursuscenter (PowerGo)",
     "address": "Bromindevej 3",
     "town": "Br\u00f8rup",
     "postcode": "6650",
-    "latitude": 55.467017,
-    "longitude": 9.000316
+    "latitude": 55.467018127441406,
+    "longitude": 9.00031566619873
   },
   {
     "name": "GT Biler (PowerGo)",
     "address": "Ambolten 7",
     "town": "Kolding",
     "postcode": "6000",
-    "latitude": 55.465384,
-    "longitude": 9.474644
+    "latitude": 55.46538543701172,
+    "longitude": 9.47464370727539
   },
   {
     "name": "Skodborg Stadion (PowerGo)",
     "address": "Skodborg Stadionvej 16A",
     "town": "R\u00f8dding",
     "postcode": "6630",
-    "latitude": 55.412356,
-    "longitude": 9.15456
+    "latitude": 55.412357330322266,
+    "longitude": 9.154560089111328
   },
   {
     "name": "Lintrup Aktivitetscenter (PowerGo)",
     "address": "N\u00f8rretoft 4",
     "town": "Lintrup",
     "postcode": "6660",
-    "latitude": 55.409979,
-    "longitude": 8.973491
+    "latitude": 55.40998077392578,
+    "longitude": 8.973490715026855
   },
   {
     "name": "S\u00f8ndergyden (PowerGo)",
     "address": "S\u00f8ndergyden 23",
     "town": "R\u00f8dding",
     "postcode": "6630",
-    "latitude": 55.365881,
-    "longitude": 9.051996
+    "latitude": 55.365882873535156,
+    "longitude": 9.051996231079102
   },
   {
     "name": "R\u00f8dding Friskole (PowerGo)",
     "address": "sdr tingvej 9",
     "town": "R\u00f8dding",
     "postcode": "6630",
-    "latitude": 55.365474,
-    "longitude": 9.061906
+    "latitude": 55.365474700927734,
+    "longitude": 9.061905860900879
   },
   {
     "name": "Sdr. Hygum Aktivitetscenter (PowerGo)",
     "address": "Skolegade 1",
     "town": "R\u00f8dding",
     "postcode": "6630",
-    "latitude": 55.35339474,
-    "longitude": 8.98327215
+    "latitude": 55.3533935546875,
+    "longitude": 8.983272552490234
   },
   {
     "name": "Lejeboliger (PowerGo)",
     "address": "Gartnerv\u00e6nget 4",
     "town": "Herlufmagle",
     "postcode": "4160",
-    "latitude": 55.31334305,
-    "longitude": 11.75026989
+    "latitude": 55.3133430480957,
+    "longitude": 11.750269889831543
   },
   {
     "name": "Sognefogedg\u00e5rden (PowerGo)",
     "address": "Sor\u00f8vej 11",
     "town": "Fuglebjerg",
     "postcode": "4250",
-    "latitude": 55.30704328,
-    "longitude": 11.54630629
+    "latitude": 55.307044982910156,
+    "longitude": 11.546306610107422
   },
   {
     "name": "Sor\u00f8vej P-B\u00e5se (PowerGo)",
     "address": "Sor\u00f8vej 1",
     "town": "Fuglebjerg",
     "postcode": "4250",
-    "latitude": 55.30645719,
-    "longitude": 11.54770877
+    "latitude": 55.30645751953125,
+    "longitude": 11.547708511352539
   },
   {
     "name": "Fuglebjerg Bibliotek (PowerGo)",
     "address": "Byagervej 1",
     "town": "Fuglebjerg",
     "postcode": "4250",
-    "latitude": 55.30281078,
-    "longitude": 11.54340903
+    "latitude": 55.30281066894531,
+    "longitude": 11.54340934753418
   },
   {
     "name": "Rosenhaven (PowerGo)",
     "address": "Nattergalevej 1",
     "town": "N\u00e6stved",
     "postcode": "4700",
-    "latitude": 55.30014801,
-    "longitude": 11.54638577
+    "latitude": 55.300148010253906,
+    "longitude": 11.546385765075684
   },
   {
     "name": "B\u00f8rnehj\u00f8rnet (PowerGo)",
     "address": "S\u00f8g\u00e5rdsvej 7",
     "town": "Herlufmagle",
     "postcode": "4160",
-    "latitude": 55.296243,
-    "longitude": 11.753363
+    "latitude": 55.296241760253906,
+    "longitude": 11.753362655639648
   },
   {
     "name": "Holmegaardskolens SFO (PowerGo)",
     "address": "Trollesgave 5",
     "town": "Holmegaard",
     "postcode": "4684",
-    "latitude": 55.281576,
-    "longitude": 11.801772
+    "latitude": 55.28157424926758,
+    "longitude": 11.801772117614746
   },
   {
     "name": "Kroppeloppen (PowerGo)",
     "address": "Klaksvej 1",
     "town": "Sandved",
     "postcode": "4262",
-    "latitude": 55.266972,
-    "longitude": 11.518612
+    "latitude": 55.266971588134766,
+    "longitude": 11.518611907958984
   },
   {
     "name": "Haderslev Havn (PowerGo)",
     "address": "Aar\u00f8sund Havn 10",
     "town": "Haderslev",
     "postcode": "6100",
-    "latitude": 55.261427,
-    "longitude": 9.711375
+    "latitude": 55.26142883300781,
+    "longitude": 9.71137523651123
   },
   {
     "name": "Louiseskolen (PowerGo)",
     "address": "Christiansfeldvej 31A-D",
     "town": "Haderslev",
     "postcode": "6100",
-    "latitude": 55.26078468,
-    "longitude": 9.49333564
+    "latitude": 55.26078414916992,
+    "longitude": 9.493335723876953
   },
   {
     "name": "Hyllinge B\u00f8rnehave (PowerGo)",
     "address": "Jenstrupvej 19",
     "town": "N\u00e6stved",
     "postcode": "4700",
-    "latitude": 55.257969,
-    "longitude": 11.604433
+    "latitude": 55.25796890258789,
+    "longitude": 11.604433059692383
   },
   {
     "name": "Vesterlandsskolen (PowerGo)",
     "address": "S\u00f8ndergade 20",
     "town": "N\u00e6stved",
     "postcode": "4700",
-    "latitude": 55.25734392,
-    "longitude": 11.5977962
+    "latitude": 55.25734329223633,
+    "longitude": 11.597796440124512
   },
   {
     "name": "Sus\u00e5skolen (PowerGo)",
     "address": "Holsted Alle 30",
     "town": "N\u00e6stved",
     "postcode": "4700",
-    "latitude": 55.25675592,
-    "longitude": 11.766738
+    "latitude": 55.25675582885742,
+    "longitude": 11.766737937927246
   },
   {
     "name": "Legeteket (PowerGo)",
     "address": "Lembckesvej 2a",
     "town": "Haderslev",
     "postcode": "6100",
-    "latitude": 55.254592,
-    "longitude": 9.485799
+    "latitude": 55.25459289550781,
+    "longitude": 9.485798835754395
   },
   {
     "name": "B\u00f8rnehuset Elleb\u00e6k (PowerGo)",
     "address": "Toksv\u00e6rd Bygade 2",
     "town": "Holmegaard",
     "postcode": "4684",
-    "latitude": 55.254522,
-    "longitude": 11.884576
+    "latitude": 55.254520416259766,
+    "longitude": 11.884575843811035
   },
   {
     "name": "Gammelting Parkeringsplads (PowerGo)",
     "address": "Gammelting 7K",
     "town": "Haderslev",
     "postcode": "6100",
-    "latitude": 55.254349,
-    "longitude": 9.490221
+    "latitude": 55.25434875488281,
+    "longitude": 9.49022102355957
   },
   {
     "name": "F\u00e6llesskolen Hammelev (PowerGo)",
     "address": "Moltrupvej 1A",
     "town": "Haderslev",
     "postcode": "6100",
-    "latitude": 55.254152,
-    "longitude": 9.477745
+    "latitude": 55.254150390625,
+    "longitude": 9.477745056152344
   },
   {
     "name": "D\u00f8gndiamanten (PowerGo)",
     "address": "Stationsvej 49A",
     "town": "Holmegaard",
     "postcode": "4684",
-    "latitude": 55.254078,
-    "longitude": 11.840859
+    "latitude": 55.25407791137695,
+    "longitude": 11.840859413146973
   },
   {
     "name": "Lejeboliger (PowerGo)",
     "address": "Tokesvej 22",
     "town": "Holmegaard",
     "postcode": "4684",
-    "latitude": 55.253327,
-    "longitude": 11.880199
+    "latitude": 55.253326416015625,
+    "longitude": 11.880199432373047
   },
   {
     "name": "Torvet (PowerGo)",
     "address": "Gravene 10A",
     "town": "Haderslev",
     "postcode": "6100",
-    "latitude": 55.251271,
-    "longitude": 9.487219
+    "latitude": 55.25127029418945,
+    "longitude": 9.487218856811523
   },
   {
     "name": "Ungeuniverset-Vojens (PowerGo)",
     "address": "Jyllandsgade 29",
     "town": "Vojens",
     "postcode": "6500",
-    "latitude": 55.247436,
-    "longitude": 9.311941
+    "latitude": 55.2474365234375,
+    "longitude": 9.311941146850586
   },
   {
     "name": "Hammelev Forsamlingshus (PowerGo)",
     "address": "Hamisg\u00e5rdvej 1",
     "town": "Vojens",
     "postcode": "6500",
-    "latitude": 55.245036,
-    "longitude": 9.385583
+    "latitude": 55.24503707885742,
+    "longitude": 9.38558292388916
   },
   {
     "name": "B\u00f8rnehaven Sommerfugl (PowerGo)",
     "address": "Skovburren 1",
     "town": "N\u00e6stved",
     "postcode": "4700",
-    "latitude": 55.240319,
-    "longitude": 11.779468
+    "latitude": 55.240318298339844,
+    "longitude": 11.779467582702637
   },
   {
     "name": "B\u00f8rnehus Troldhaven (PowerGo)",
     "address": "T\u00e5singevej 125",
     "town": "Haderslev",
     "postcode": "6100",
-    "latitude": 55.237503,
-    "longitude": 9.532693
+    "latitude": 55.23750305175781,
+    "longitude": 9.532692909240723
   },
   {
     "name": "Kornblomsten (PowerGo)",
     "address": "Ejlersvej 22",
     "town": "N\u00e6stved",
     "postcode": "4700",
-    "latitude": 55.23245621,
-    "longitude": 11.77540112
+    "latitude": 55.23245620727539,
+    "longitude": 11.77540111541748
   },
   {
     "name": "Kulturcenter (PowerGo)",
     "address": "Gr\u00f8nnegade 10",
     "town": "N\u00e6stved",
     "postcode": "4700",
-    "latitude": 55.2316246,
-    "longitude": 11.76229191
+    "latitude": 55.231624603271484,
+    "longitude": 11.76229190826416
   },
   {
     "name": "Digterhuset (PowerGo)",
     "address": "Holbergsvej 20",
     "town": "N\u00e6stved",
     "postcode": "4700",
-    "latitude": 55.2309761,
-    "longitude": 11.74353218
+    "latitude": 55.23097610473633,
+    "longitude": 11.743532180786133
   },
   {
     "name": "Kildesalen (PowerGo)",
     "address": "Kildemarksvej 70",
     "town": "N\u00e6stved",
     "postcode": "4700",
-    "latitude": 55.2306,
-    "longitude": 11.77969
+    "latitude": 55.23059844970703,
+    "longitude": 11.77968978881836
   },
   {
     "name": "Lindeg\u00e5rden (PowerGo)",
     "address": "Fodbyg\u00e5rdsvej 137",
     "town": "N\u00e6stved",
     "postcode": "4700",
-    "latitude": 55.22850037,
-    "longitude": 11.73200417
+    "latitude": 55.22850036621094,
+    "longitude": 11.732004165649414
   },
   {
     "name": "Munkebocentret (PowerGo)",
     "address": "Farimagsvej 44",
     "town": "N\u00e6stved",
     "postcode": "4700",
-    "latitude": 55.22806549,
-    "longitude": 11.76647854
+    "latitude": 55.228065490722656,
+    "longitude": 11.766478538513184
   },
   {
     "name": "M\u00f8llen (PowerGo)",
     "address": "Maglem\u00f8lle 10-12",
     "town": "N\u00e6stved",
     "postcode": "4700",
-    "latitude": 55.2235103,
-    "longitude": 11.7505913
+    "latitude": 55.2235107421875,
+    "longitude": 11.750591278076172
   },
   {
     "name": "Akutpladserne p\u00e5 Marskvej (PowerGo)",
     "address": "Marskvej 20",
     "town": "N\u00e6stved",
     "postcode": "4700",
-    "latitude": 55.223037,
-    "longitude": 11.74442
+    "latitude": 55.22303771972656,
+    "longitude": 11.744420051574707
   },
   {
     "name": "Kobberbakkeskolen Sj\u00f8lund (PowerGo)",
     "address": "Nyg\u00e5rdsvej 62",
     "town": "N\u00e6stved",
     "postcode": "4700",
-    "latitude": 55.21944046,
-    "longitude": 11.76601887
+    "latitude": 55.21944046020508,
+    "longitude": 11.766018867492676
   },
   {
     "name": "Socialp\u00e6dagogisk Center N\u00e6stved (PowerGo)",
     "address": "Ved \u00c5sen 1",
     "town": "N\u00e6stved",
     "postcode": "4700",
-    "latitude": 55.219361,
-    "longitude": 11.777338
+    "latitude": 55.2193603515625,
+    "longitude": 11.777338027954102
   },
   {
     "name": "Marvede Skole (PowerGo)",
     "address": "Menstrup Bygade 60",
     "town": "N\u00e6stved",
     "postcode": "4700",
-    "latitude": 55.21822739,
-    "longitude": 11.56889439
+    "latitude": 55.21822738647461,
+    "longitude": 11.568894386291504
   },
   {
     "name": "B\u00f8lgen (PowerGo)",
     "address": "Grimstrupvej 131",
     "town": "N\u00e6stved",
     "postcode": "4700",
-    "latitude": 55.21825409,
-    "longitude": 11.74095249
+    "latitude": 55.21825408935547,
+    "longitude": 11.740952491760254
   },
   {
     "name": "Politistation (PowerGo)",
     "address": "Parkvej 48",
     "town": "N\u00e6stved",
     "postcode": "4700",
-    "latitude": 55.21554565,
-    "longitude": 11.75924873
+    "latitude": 55.215545654296875,
+    "longitude": 11.759248733520508
   },
   {
     "name": "Sct. J\u00f8rgen Skole (PowerGo)",
     "address": "Man\u00f8vej 22",
     "town": "N\u00e6stved",
     "postcode": "4700",
-    "latitude": 55.21434,
-    "longitude": 11.750613
+    "latitude": 55.21434020996094,
+    "longitude": 11.75061321258545
   },
   {
     "name": "N\u00e6stved Sv\u00f8mmehal (PowerGo)",
     "address": "Nyg\u00e5rdsvej 100",
     "town": "N\u00e6stved",
     "postcode": "4700",
-    "latitude": 55.2134285,
-    "longitude": 11.77203274
+    "latitude": 55.21342849731445,
+    "longitude": 11.772032737731934
   },
   {
     "name": "Uglebroskolen (PowerGo)",
     "address": "Nyg\u00e5rdsvej 110",
     "town": "N\u00e6stved",
     "postcode": "4700",
-    "latitude": 55.21087,
-    "longitude": 11.776236
+    "latitude": 55.21086883544922,
+    "longitude": 11.776235580444336
   },
   {
     "name": "Kobberbakkeskolen (PowerGo)",
     "address": "Englebjergvej 12",
     "town": "N\u00e6stved",
     "postcode": "4700",
-    "latitude": 55.20617294,
-    "longitude": 11.80011463
+    "latitude": 55.206172943115234,
+    "longitude": 11.800114631652832
   },
   {
     "name": "Klubhuset (PowerGo)",
     "address": "Nyvej 2",
     "town": "Tappern\u00f8je",
     "postcode": "4733",
-    "latitude": 55.201014,
-    "longitude": 11.95956
+    "latitude": 55.20101547241211,
+    "longitude": 11.95956039428711
   },
   {
     "name": "B\u00f8rnehuset Noah's Ark (PowerGo)",
     "address": "Plantevej 27A",
     "town": "N\u00e6stved",
     "postcode": "4700",
-    "latitude": 55.19797445,
-    "longitude": 11.75527532
+    "latitude": 55.197975158691406,
+    "longitude": 11.75527572631836
   },
   {
     "name": "Kirkebakken (PowerGo)",
     "address": "Kirkebakken 41",
     "town": "Karreb\u00e6ksminde",
     "postcode": "4736",
-    "latitude": 55.19326658,
-    "longitude": 11.64644764
+    "latitude": 55.193267822265625,
+    "longitude": 11.64644718170166
   },
   {
     "name": "Omsorgsboliger p\u00e5 Kildeg\u00e5rdsvej (PowerGo)",
     "address": "Kildeg\u00e5rdsvej 3",
     "town": "Karreb\u00e6ksminde",
     "postcode": "4736",
-    "latitude": 55.190948,
-    "longitude": 11.651002
+    "latitude": 55.190948486328125,
+    "longitude": 11.651001930236816
   },
   {
     "name": "Korskildehallen (PowerGo)",
     "address": "Br\u00f8derupvej 2 A",
     "town": "Tappern\u00f8je",
     "postcode": "4733",
-    "latitude": 55.17906952,
-    "longitude": 11.97790623
+    "latitude": 55.17906951904297,
+    "longitude": 11.977906227111816
   },
   {
     "name": "Flads\u00e5skolen (PowerGo)",
     "address": "Korskildevej 2A",
     "town": "Tappern\u00f8je",
     "postcode": "4733",
-    "latitude": 55.178999,
-    "longitude": 11.975438
+    "latitude": 55.17900085449219,
+    "longitude": 11.975438117980957
   },
   {
     "name": "Tappern\u00f8je B\u00f8rnehus (PowerGo)",
     "address": "Svingk\u00e6rvej 1",
     "town": "Tappern\u00f8je",
     "postcode": "4733",
-    "latitude": 55.175141,
-    "longitude": 11.979038
+    "latitude": 55.175140380859375,
+    "longitude": 11.97903823852539
   },
   {
     "name": "Evigglad (PowerGo)",
     "address": "Lovv\u00e6nget 3",
     "town": "N\u00e6stved",
     "postcode": "4700",
-    "latitude": 55.163377,
-    "longitude": 11.856931
+    "latitude": 55.16337585449219,
+    "longitude": 11.85693073272705
   },
   {
     "name": "Fabriksvej 1",
@@ -4478,6 +4526,14 @@
     "postcode": "9610",
     "latitude": 56.702347,
     "longitude": 9.644723
+  },
+  {
+    "name": "ACE0107473",
+    "address": "Havnegade 54",
+    "town": "THYBOR\u00d8N",
+    "postcode": "7680",
+    "latitude": 56.702269,
+    "longitude": 8.216941
   },
   {
     "name": "ACE0107499",
@@ -15838,5 +15894,1469 @@
     "postcode": "8660",
     "latitude": 55.978567,
     "longitude": 9.870253
+  },
+  {
+    "name": "Ejer Bavneh\u00f8j Vest",
+    "address": "Ejer Bavneh\u00f8j Vest ",
+    "town": "SKANDERBORG",
+    "postcode": "8660",
+    "latitude": 55.978155,
+    "longitude": 9.865452
+  },
+  {
+    "name": "Circle K Kongevejen, Fredensborg",
+    "address": "Kongevejen 42",
+    "town": "Fredensborg",
+    "postcode": "3480",
+    "latitude": 55.96808,
+    "longitude": 12.40374
+  },
+  {
+    "name": "Ny Versterg\u00e5rdsvej",
+    "address": "Ny Versterg\u00e5rdsvej 7",
+    "town": "V\u00c6RL\u00d8SE",
+    "postcode": "3500",
+    "latitude": 55.783417,
+    "longitude": 12.36587
+  },
+  {
+    "name": "Stiager",
+    "address": "Stiager 2",
+    "town": "V\u00c6RL\u00d8SE",
+    "postcode": "3500",
+    "latitude": 55.78323,
+    "longitude": 12.3768
+  },
+  {
+    "name": "Circle K Lyngby",
+    "address": "Lyngbyg\u00e5rdsvej 138",
+    "town": "Kongens Lyngby",
+    "postcode": "2800",
+    "latitude": 55.775006,
+    "longitude": 12.521535
+  },
+  {
+    "name": "Firskovvej",
+    "address": "Firskovvej 20",
+    "town": "KONGENS LYNGBY",
+    "postcode": "2800",
+    "latitude": 55.769811,
+    "longitude": 12.517464
+  },
+  {
+    "name": "Circle K Gentofte",
+    "address": "Nybrovej 45",
+    "town": "Gentofte",
+    "postcode": "2820",
+    "latitude": 55.754687,
+    "longitude": 12.513027
+  },
+  {
+    "name": "Q8 Herlev",
+    "address": "Herlev Hovedgade 234",
+    "town": "HERLEV",
+    "postcode": "2730",
+    "latitude": 55.72552,
+    "longitude": 12.41697
+  },
+  {
+    "name": "\u00d8ster All\u00e9",
+    "address": "\u00d8ster All\u00e9 48",
+    "town": "K\u00d8BENHAVN \u00d8",
+    "postcode": "2100",
+    "latitude": 55.70259,
+    "longitude": 12.57399
+  },
+  {
+    "name": "Springstrup Nord",
+    "address": "Springstrup Nord ",
+    "town": "HOLB\u00c6K",
+    "postcode": "4300",
+    "latitude": 55.701969,
+    "longitude": 11.656799
+  },
+  {
+    "name": "Springstrup Syd",
+    "address": "Springstrup Syd ",
+    "town": "HOLB\u00c6K",
+    "postcode": "4300",
+    "latitude": 55.700529,
+    "longitude": 11.651832
+  },
+  {
+    "name": "R\u00f8dovre Centrum",
+    "address": "R\u00f8dovre Centrum 202",
+    "town": "R\u00d8DOVRE",
+    "postcode": "2610",
+    "latitude": 55.680175,
+    "longitude": 12.45859
+  },
+  {
+    "name": "IKEA Taastrup",
+    "address": "M\u00e5rk\u00e6rvej 15",
+    "town": "TAASTRUP",
+    "postcode": "2630",
+    "latitude": 55.660179,
+    "longitude": 12.285447
+  },
+  {
+    "name": "Circle K Sydhavns Plads",
+    "address": "Sydhavns Plads 10",
+    "town": "K\u00f8benhavn SV",
+    "postcode": "2450",
+    "latitude": 55.6534,
+    "longitude": 12.54133
+  },
+  {
+    "name": "Circle K Hvidovre",
+    "address": "Kettevej 2",
+    "town": "Hvidovre",
+    "postcode": "2650",
+    "latitude": 55.645402,
+    "longitude": 12.4604
+  },
+  {
+    "name": "Sk\u00e6rup Vest",
+    "address": "Sk\u00e6rup Vest ",
+    "town": "VEJLE",
+    "postcode": "7100",
+    "latitude": 55.642086,
+    "longitude": 9.557892
+  },
+  {
+    "name": "Shell Express K\u00f8benhavnsvej",
+    "address": "K\u00f8benhavnsvej 13",
+    "town": "ROSKILDE",
+    "postcode": "4000",
+    "latitude": 55.64123,
+    "longitude": 12.096604
+  },
+  {
+    "name": "Sk\u00e6rup \u00d8st",
+    "address": "Sk\u00e6rup \u00d8st ",
+    "town": "VEJLE",
+    "postcode": "7100",
+    "latitude": 55.64043,
+    "longitude": 9.563143
+  },
+  {
+    "name": "Q8 Kolding",
+    "address": "Vejlevej 355",
+    "town": "KOLDING",
+    "postcode": "6000",
+    "latitude": 55.526273,
+    "longitude": 9.464403
+  },
+  {
+    "name": "Harte Syd",
+    "address": "Esbjerg Motorvejen ",
+    "town": "KOLDING",
+    "postcode": "6000",
+    "latitude": 55.511951,
+    "longitude": 9.395441
+  },
+  {
+    "name": "Circle K Gammelby Ringvej",
+    "address": "Gammelby Ringvej 13",
+    "town": "Esbjerg",
+    "postcode": "6700",
+    "latitude": 55.462801,
+    "longitude": 8.467732
+  },
+  {
+    "name": "Tuels\u00f8 Nord",
+    "address": "Tuels\u00f8 Nord ",
+    "town": "SOR\u00d8",
+    "postcode": "4180",
+    "latitude": 55.455355,
+    "longitude": 11.607393
+  },
+  {
+    "name": "Tuels\u00f8 Syd",
+    "address": "Tuels\u00f8 Syd ",
+    "town": "SOR\u00d8",
+    "postcode": "4180",
+    "latitude": 55.455278,
+    "longitude": 11.596377
+  },
+  {
+    "name": "Ringsted Kongrescenter",
+    "address": "N\u00f8rretorv 45",
+    "town": "RINGSTED",
+    "postcode": "4100",
+    "latitude": 55.450855,
+    "longitude": 11.789034
+  },
+  {
+    "name": "Halskov Lynlader",
+    "address": "Storeb\u00e6ltsvej 60A",
+    "town": "KORS\u00d8R",
+    "postcode": "4220",
+    "latitude": 55.34769,
+    "longitude": 11.12026
+  },
+  {
+    "name": "Kildebjerg Syd",
+    "address": "Kildebjerg Syd ",
+    "town": "VISSENBJERG",
+    "postcode": "5492",
+    "latitude": 55.297478,
+    "longitude": 10.842722
+  },
+  {
+    "name": "Vesterg\u00e5rdsvej 28",
+    "address": "Vesterg\u00e5rdsvej 28",
+    "town": "N\u00c6STVED",
+    "postcode": "4700",
+    "latitude": 55.254265,
+    "longitude": 11.790581
+  },
+  {
+    "name": "Tesla Superlader R\u00f8dekro",
+    "address": "Kometvej Aabenraa 1",
+    "town": "R\u00d8DEKRO",
+    "postcode": "6230",
+    "latitude": 55.07312,
+    "longitude": 9.36328
+  },
+  {
+    "name": "Fr\u00f8slev Vest",
+    "address": "S\u00f8nderjyske Motorvei ",
+    "town": "PADBORG",
+    "postcode": "6330",
+    "latitude": 54.832847,
+    "longitude": 9.333189
+  },
+  {
+    "name": "Fr\u00f8slev \u00d8st",
+    "address": "S\u00f8nderjyske Motorvej ",
+    "town": "PADBORG",
+    "postcode": "6330",
+    "latitude": 54.8263,
+    "longitude": 9.329815
+  },
+  {
+    "name": "Superbrugsen Fjerritslev",
+    "address": "\u00d8stergade 23",
+    "town": "Fjerritslev",
+    "postcode": "9690",
+    "latitude": 57.088622,
+    "longitude": 9.26874
+  },
+  {
+    "name": "Ikast Supercharger",
+    "address": "La Cours Vej 14",
+    "town": "Ikast",
+    "postcode": " 7430",
+    "latitude": 56.1216209999998,
+    "longitude": 9.17279943944072
+  },
+  {
+    "name": "JO Safety A/S",
+    "address": "Skovalleen 24",
+    "town": "Nyk\u00f8bing F",
+    "postcode": "4800",
+    "latitude": 54.77671553654858,
+    "longitude": 11.881575926463483
+  },
+  {
+    "name": "Henne Kirkeby Kro",
+    "address": "Strandvejen 234",
+    "town": "Henne",
+    "postcode": "6854",
+    "latitude": 55.726714,
+    "longitude": 8.241968
+  },
+  {
+    "name": "Hotel L\u00f8kken Strand",
+    "address": "N\u00f8rregade 28",
+    "town": "L\u00f8kken",
+    "postcode": "9480",
+    "latitude": 57.372654,
+    "longitude": 9.714259
+  },
+  {
+    "name": "Sonnerupgaard Gods (Hotel)",
+    "address": "T\u00f8ll\u00f8sevej 53",
+    "town": "Hvals\u00f8",
+    "postcode": "4330",
+    "latitude": 55.6015,
+    "longitude": 11.837799
+  },
+  {
+    "name": "Burger King",
+    "address": "Industriparken 11",
+    "town": "N\u00f8rager",
+    "postcode": "9610",
+    "latitude": 56.78399898295683,
+    "longitude": 9.695295429156431
+  },
+  {
+    "name": "IONITY Aabenraa",
+    "address": "Egevej 6",
+    "town": "Aabenraa",
+    "postcode": "6200",
+    "latitude": 55.06505,
+    "longitude": 9.3663
+  },
+  {
+    "name": "Hotel Hornb\u00e6khus",
+    "address": "7 Skovvej Hornb\u00e6k",
+    "town": "Hornb\u00e6k",
+    "postcode": "3100",
+    "latitude": 56.090312,
+    "longitude": 12.451216
+  },
+  {
+    "name": "IONITY Fredericia",
+    "address": "Snaremosevej 180",
+    "town": "Snogh\u00f8j",
+    "postcode": "7000",
+    "latitude": 55.536950290136815,
+    "longitude": 9.717774050095727
+  },
+  {
+    "name": "Clever Charging Station - Bilka Herning",
+    "address": "Golfvej 5",
+    "town": "Herning",
+    "postcode": "7400",
+    "latitude": 56.135327805760085,
+    "longitude": 9.006844059670925
+  },
+  {
+    "name": "Helsing\u00f8r Jernbanevej e.on",
+    "address": "Jernbanevej 13",
+    "town": "Helsing\u00f8r",
+    "postcode": "3000",
+    "latitude": 56.03188045710513,
+    "longitude": 12.609969356454485
+  },
+  {
+    "name": "Helsing\u00f8r Allegade P-plads e.on",
+    "address": "Allegade",
+    "town": "Helsing\u00f8r",
+    "postcode": "3000",
+    "latitude": 56.03878825990475,
+    "longitude": 12.611393753319817
+  },
+  {
+    "name": "Borgergade - Landgreven e.on",
+    "address": "Borgergade, 13",
+    "town": "Copenaghen",
+    "postcode": "1300",
+    "latitude": 55.6833190826353,
+    "longitude": 12.5847399996486
+  },
+  {
+    "name": "Gasoline Grill Landgreven",
+    "address": "Landgreven 10",
+    "town": "Copenaghen",
+    "postcode": "1300",
+    "latitude": 55.683213117808094,
+    "longitude": 12.585099842478826
+  },
+  {
+    "name": "Mercur Hotel",
+    "address": "Vester Farimagsgade 17",
+    "town": "Copenaghen",
+    "postcode": "1606",
+    "latitude": 55.6765132656448,
+    "longitude": 12.5620389176502
+  },
+  {
+    "name": "Circle K Copenaghen",
+    "address": "Borgmester Christiansens Gade 59",
+    "town": "Copenaghen",
+    "postcode": "2450",
+    "latitude": 55.6470110888361,
+    "longitude": 12.5405636735725
+  },
+  {
+    "name": "CLEVER A/S",
+    "address": "St\u00f8berigade 14",
+    "town": "Copenaghen",
+    "postcode": "2450",
+    "latitude": 55.6489400237232,
+    "longitude": 12.5509818853531
+  },
+  {
+    "name": "Amager hospital",
+    "address": "Italiensvej 1",
+    "town": "Copenaghen",
+    "postcode": "2300",
+    "latitude": 55.6546439173607,
+    "longitude": 12.6204763496987
+  },
+  {
+    "name": "Crowne Plaza Copenhagen Towers",
+    "address": "\u00d8restads Blvd. 114 - 118",
+    "town": "K\u00f8benhavn",
+    "postcode": "2300",
+    "latitude": 55.6267775710813,
+    "longitude": 12.5756931940863
+  },
+  {
+    "name": "Karise Permatopia",
+    "address": "Permatopia 1",
+    "town": "Karise",
+    "postcode": "4653",
+    "latitude": 55.301683955996936,
+    "longitude": 12.194099434143482
+  },
+  {
+    "name": "Rigshospitalet-Tagensvej",
+    "address": "Tagensvej 22",
+    "town": "K\u00f8benhavn",
+    "postcode": "2200",
+    "latitude": 55.6979906287792,
+    "longitude": 12.5570336292293
+  },
+  {
+    "name": "Clever charging station - Bilka",
+    "address": "Hobrovej 450",
+    "town": "Aalborg Sv ",
+    "postcode": "9200",
+    "latitude": 57.0056606015532,
+    "longitude": 9.87638653407225
+  },
+  {
+    "name": "f\u00f8tex Eternitten",
+    "address": "Synergivej 5",
+    "town": "Aalborg",
+    "postcode": "9000",
+    "latitude": 57.0367165202631,
+    "longitude": 9.93478916884862
+  },
+  {
+    "name": "Sallingsundvej",
+    "address": "Sallingsundvej",
+    "town": "Aalborg",
+    "postcode": "9220",
+    "latitude": 57.0254027207697,
+    "longitude": 9.99541674472653
+  },
+  {
+    "name": "IONITY Greve",
+    "address": "Mosede Landevej 64",
+    "town": "Greve",
+    "postcode": "2670",
+    "latitude": 55.5847374120105,
+    "longitude": 12.2576344182219
+  },
+  {
+    "name": "IONITY Nyborg",
+    "address": "Storeb\u00e6ltsvej 1",
+    "town": "Nyborg",
+    "postcode": "5800",
+    "latitude": 55.3091912930062,
+    "longitude": 10.8048999990787
+  },
+  {
+    "name": "IONITY Skanderborg",
+    "address": "\u00d8rstedsvej 6",
+    "town": "Skanderborg",
+    "postcode": "8660",
+    "latitude": 56.068124,
+    "longitude": 9.978392
+  },
+  {
+    "name": "IONITY N\u00f8rager",
+    "address": "Industriparken 2",
+    "town": "N\u00f8rager",
+    "postcode": "9610",
+    "latitude": 56.7828563259055,
+    "longitude": 9.695064787516
+  },
+  {
+    "name": "Clever Charger",
+    "address": "S\u00f8ndre Ringvej 10",
+    "town": "Assens",
+    "postcode": "5610",
+    "latitude": 55.2672283867345,
+    "longitude": 9.89135938653612
+  },
+  {
+    "name": "Elholm 23",
+    "address": "Elholm 23",
+    "town": "S\u00f8nderborg",
+    "postcode": null,
+    "latitude": 54.9264677819474,
+    "longitude": 9.79064565187377
+  },
+  {
+    "name": "Powered by E.ON & Clever Fredericia ",
+    "address": "Strevelinsvej",
+    "town": "Fredericia",
+    "postcode": "7000",
+    "latitude": 55.5357293332331,
+    "longitude": 9.71849289367685
+  },
+  {
+    "name": "Hotel Europa",
+    "address": "H.p. Hanssens Gade 10",
+    "town": "Aabenraa",
+    "postcode": "6200",
+    "latitude": 55.046943,
+    "longitude": 9.419725
+  },
+  {
+    "name": "Netto Ringk\u00f8bing",
+    "address": "Godthaabsvej",
+    "town": "Ringk\u00f8bing",
+    "postcode": "6950",
+    "latitude": 56.0920612783708,
+    "longitude": 8.24255971742389
+  },
+  {
+    "name": "Hotel Bredal Kro",
+    "address": "Horsensvej 581",
+    "town": "Vejle",
+    "postcode": "7120",
+    "latitude": 55.747708,
+    "longitude": 9.642224
+  },
+  {
+    "name": "The Scandinavian",
+    "address": "Oldvej 3",
+    "town": "Farum",
+    "postcode": "3520",
+    "latitude": 55.836257,
+    "longitude": 12.33954
+  },
+  {
+    "name": "Tyrstrup Kro",
+    "address": "Vestervang 6",
+    "town": "Christiansfeld",
+    "postcode": "6070",
+    "latitude": 55.35998,
+    "longitude": 9.466997
+  },
+  {
+    "name": " Q-Park Industriens Hus",
+    "address": "H. C. Andersens Blvd. 18",
+    "town": "K\u00f8benhavn ",
+    "postcode": "1787",
+    "latitude": 55.675114,
+    "longitude": 12.568064
+  },
+  {
+    "name": "G\u00f8rdinglund Herreg\u00e5rd",
+    "address": "Hessellundvej 5",
+    "town": "G\u00f8rding",
+    "postcode": "6690",
+    "latitude": 55.482692,
+    "longitude": 8.790114
+  },
+  {
+    "name": "Seng Og Kaffe B&B",
+    "address": "Thors\u00f8vej 87",
+    "town": "F\u00e5rvang",
+    "postcode": "8882",
+    "latitude": 56.284123,
+    "longitude": 9.758948
+  },
+  {
+    "name": "Vejls\u00f8hus Hotel Og Konferencecenter",
+    "address": "Vejls\u00f8vej 51",
+    "town": "Silkeborg",
+    "postcode": "8600",
+    "latitude": 56.153797,
+    "longitude": 9.560601
+  },
+  {
+    "name": "Restaurant S\u00f8gaarden",
+    "address": "S\u00f8g\u00e5rdvej 1",
+    "town": "Sunds",
+    "postcode": "7451",
+    "latitude": 56.208311,
+    "longitude": 9.023338
+  },
+  {
+    "name": "Bellingegaard Bed and Breakfast",
+    "address": "Bellingeg\u00e5rdsvej 7",
+    "town": "Nyk\u00f8bing Falster",
+    "postcode": "4800",
+    "latitude": 54.785042,
+    "longitude": 12.002743
+  },
+  {
+    "name": "GL. Skovridergaard Hotel & Konferencecenter",
+    "address": "Marienlundsvej 36",
+    "town": "Silkeborg",
+    "postcode": "8600",
+    "latitude": 56.15652,
+    "longitude": 9.556231
+  },
+  {
+    "name": "City2",
+    "address": "Cityringen 4",
+    "town": "Taastrup",
+    "postcode": "2630",
+    "latitude": 55.643775,
+    "longitude": 12.276232
+  },
+  {
+    "name": "Hotel Randers",
+    "address": "Torvegade 11",
+    "town": null,
+    "postcode": "8900",
+    "latitude": 56.460056,
+    "longitude": 10.036619
+  },
+  {
+    "name": "Kragerup Gods",
+    "address": "Kragerupg\u00e5rdsvej 33",
+    "town": "Ruds Vedby",
+    "postcode": "4291",
+    "latitude": 55.51016,
+    "longitude": 11.379574
+  },
+  {
+    "name": "Brundtland Golfcenter",
+    "address": "Brundtland All\u00e9 3",
+    "town": "Toftlund",
+    "postcode": "6520",
+    "latitude": 55.193999,
+    "longitude": 9.075816
+  },
+  {
+    "name": "Hotel Fredericia",
+    "address": "Vestre Ringvej 96",
+    "town": "Fredericia",
+    "postcode": "7000",
+    "latitude": 55.576118,
+    "longitude": 9.727365
+  },
+  {
+    "name": "Clever in Kolding (Hyundai)",
+    "address": "Korsvej 1",
+    "town": "Kolding",
+    "postcode": null,
+    "latitude": 55.5381934631684,
+    "longitude": 9.48929352768573
+  },
+  {
+    "name": "Hotel Kong Arthur",
+    "address": "N\u00f8rre S\u00f8gade 11",
+    "town": "Copenhagen",
+    "postcode": "1370",
+    "latitude": 55.684732,
+    "longitude": 12.564948
+  },
+  {
+    "name": "Haverslev Supercharger",
+    "address": "60 Jyllandsgade",
+    "town": "Haverslev",
+    "postcode": "9610",
+    "latitude": 56.783309,
+    "longitude": 9.690891
+  },
+  {
+    "name": "Troldebo Vacation Home",
+    "address": "Hans Thuesensvej 48",
+    "town": "Bl\u00e5vand",
+    "postcode": "6857",
+    "latitude": 55.548798,
+    "longitude": 8.127239
+  },
+  {
+    "name": "Hotel Inger",
+    "address": "Hulsigvej 17",
+    "town": "Skagen",
+    "postcode": "9990",
+    "latitude": 57.658334,
+    "longitude": 10.461285
+  },
+  {
+    "name": "Hotel Skivehus",
+    "address": "Sdr.boulevard 1",
+    "town": "Skive",
+    "postcode": "7800",
+    "latitude": 56.564766,
+    "longitude": 9.0309
+  },
+  {
+    "name": "Det Gamle R\u00e5dhus",
+    "address": "August Kraags Plads 10B",
+    "town": "Gr\u00e5sten",
+    "postcode": "6300",
+    "latitude": 54.92177,
+    "longitude": 9.594382
+  },
+  {
+    "name": "Idr\u00e6tsvej",
+    "address": "Idr\u00e6tsvej 3",
+    "town": "Thybor\u00f8n",
+    "postcode": "7680",
+    "latitude": 56.695182838997,
+    "longitude": 8.2054140296641
+  },
+  {
+    "name": "Vammen Camping",
+    "address": "Langs\u00f8vej 15",
+    "town": "Tjele",
+    "postcode": "8830",
+    "latitude": 56.522710000000004,
+    "longitude": 9.594874
+  },
+  {
+    "name": "SKT. Petri",
+    "address": "Krystalgade 22",
+    "town": "K\u00f8benhavn K",
+    "postcode": "1172",
+    "latitude": 55.68064,
+    "longitude": 12.572009
+  },
+  {
+    "name": "Helenekilde Badehotel",
+    "address": "Strandvejen 25",
+    "town": "Tisvildeleje",
+    "postcode": "3220",
+    "latitude": 56.063563,
+    "longitude": 12.078385
+  },
+  {
+    "name": "Hotel Skagen Strand",
+    "address": "Tranevej 108",
+    "town": "Hulsig",
+    "postcode": "9990",
+    "latitude": 57.660439,
+    "longitude": 10.465391
+  },
+  {
+    "name": "Karlslunde Vest, Karlslunde Rasteplads",
+    "address": "Karlslunde Vest,",
+    "town": "Karlslunde Landsby",
+    "postcode": "2690",
+    "latitude": 55.5609126879846,
+    "longitude": 12.2291769958619
+  },
+  {
+    "name": "K\u00f8ge Bugt Motorvejen",
+    "address": "Karlslunde rasteplads nordg\u00e5ende",
+    "town": "Karlslunde Landsby",
+    "postcode": "2690",
+    "latitude": 55.5599511094447,
+    "longitude": 12.2303400255005
+  },
+  {
+    "name": "Vejen Idr\u00e6tscenter",
+    "address": "Petersmindevej 1",
+    "town": "Vejen",
+    "postcode": "6600",
+    "latitude": 55.474771,
+    "longitude": 9.120926
+  },
+  {
+    "name": "Sportshotel Vejen",
+    "address": "Jacob Gades All\u00e9 1",
+    "town": "Vejen",
+    "postcode": "6600",
+    "latitude": 55.472737,
+    "longitude": 9.124493
+  },
+  {
+    "name": "Agerb\u00e6k Hotel",
+    "address": "Storegade 7",
+    "town": "Agerb\u00e6k",
+    "postcode": "6753",
+    "latitude": 55.600119,
+    "longitude": 8.802662
+  },
+  {
+    "name": "Lidl Aabenraa",
+    "address": "Langebro 44",
+    "town": "Aabenraa",
+    "postcode": "6200",
+    "latitude": 55.0351203265934,
+    "longitude": 9.41658595747867
+  },
+  {
+    "name": "Latterly",
+    "address": "Smingeg\u00e5rdsvej 15",
+    "town": "Silkeborg",
+    "postcode": "8600",
+    "latitude": 56.203168,
+    "longitude": 9.689767
+  },
+  {
+    "name": "Mejerigaarden.com",
+    "address": "GL. Landevej 87",
+    "town": "Gedser",
+    "postcode": "4874",
+    "latitude": 54.638876,
+    "longitude": 11.893949
+  },
+  {
+    "name": "Strand- Og Badehotel Marienlyst",
+    "address": "NDR. Strandvej 2",
+    "town": "Helsing\u00f8r",
+    "postcode": "3000",
+    "latitude": 56.045327,
+    "longitude": 12.603641
+  },
+  {
+    "name": "Energimuseet",
+    "address": "Bjerringbrovej 44",
+    "town": "Bjerringbro",
+    "postcode": "8850",
+    "latitude": 56.355755,
+    "longitude": 9.603211
+  },
+  {
+    "name": "Skjalm Hvide Hotel",
+    "address": "Bygaden 1",
+    "town": "J\u00f8rlunde",
+    "postcode": "3550",
+    "latitude": 55.830936,
+    "longitude": 12.16535
+  },
+  {
+    "name": "Hotel Amerika",
+    "address": "Amerikavej 48",
+    "town": "Hobro",
+    "postcode": "9500",
+    "latitude": 56.634493,
+    "longitude": 9.836403
+  },
+  {
+    "name": "Hedensted Supercharger",
+    "address": "10 Kildeparken",
+    "town": "Hedensted",
+    "postcode": null,
+    "latitude": 55.786395,
+    "longitude": 9.667926
+  },
+  {
+    "name": "SyltExpress F\u00e4hre",
+    "address": "Kilebryggen 1",
+    "town": "Havneby",
+    "postcode": "6792",
+    "latitude": 55.0854026,
+    "longitude": 8.56929600000001
+  },
+  {
+    "name": "Ranum Efterskole College",
+    "address": "Ranum Efterskole College",
+    "town": "Ranum",
+    "postcode": "9681",
+    "latitude": 56.897878,
+    "longitude": 9.233687
+  },
+  {
+    "name": "Dayz S\u00f8h\u00f8jlandet",
+    "address": "Lille Amerika 10",
+    "town": "Gjern",
+    "postcode": "8883",
+    "latitude": 56.217768,
+    "longitude": 9.729402
+  },
+  {
+    "name": "Hotel Falster",
+    "address": "150 Stubbek\u00f8bingvej",
+    "town": "Nyk\u00f8bing Falster",
+    "postcode": "4800",
+    "latitude": 54.778378,
+    "longitude": 11.880572
+  },
+  {
+    "name": "Hotel Jutlandia",
+    "address": "Havnepladsen 1",
+    "town": "Frederikshavn",
+    "postcode": "9900",
+    "latitude": 57.437072,
+    "longitude": 10.536516
+  },
+  {
+    "name": "Dayz Seawest",
+    "address": "Vesterhavsvej 81",
+    "town": "Nr. Nebel",
+    "postcode": "6830",
+    "latitude": 55.787851,
+    "longitude": 8.248732
+  },
+  {
+    "name": "Dayz R\u00f8nbjerg",
+    "address": "Liv\u00f8vej 80",
+    "town": "Ranum",
+    "postcode": "9681",
+    "latitude": 56.892784,
+    "longitude": 9.171168
+  },
+  {
+    "name": "Dayz Gr\u00f8nh\u00f8j Strand",
+    "address": "Ingeborgvej 2",
+    "town": "L\u00f8kken",
+    "postcode": "9480",
+    "latitude": 57.331402,
+    "longitude": 9.679009
+  },
+  {
+    "name": "Hotel Munkebo Kro",
+    "address": "56 Fjordvej",
+    "town": "Munkebo",
+    "postcode": "5330",
+    "latitude": 55.456505,
+    "longitude": 10.556839
+  },
+  {
+    "name": "Lille Restrup Hovedg\u00e5rd",
+    "address": "71 LL. Restrupvej",
+    "town": "Aalestrup",
+    "postcode": "9620",
+    "latitude": 56.690196,
+    "longitude": 9.512551
+  },
+  {
+    "name": "R\u00f8dovre Centrum",
+    "address": "238 R\u00f8dovre Centrum",
+    "town": "R\u00f8dovre",
+    "postcode": "2610",
+    "latitude": 55.678114,
+    "longitude": 12.457891
+  },
+  {
+    "name": "Hotel Fjordg\u00e5rden A/S",
+    "address": "28 Vester K\u00c6R",
+    "town": "Ringk\u00f8bing",
+    "postcode": "6950",
+    "latitude": 56.095343,
+    "longitude": 8.236418
+  },
+  {
+    "name": "Radisson Blu Limfjord Hotel",
+    "address": "14-16 Ved Stranden",
+    "town": "Aalborg",
+    "postcode": "9000",
+    "latitude": 57.050947,
+    "longitude": 9.919999
+  },
+  {
+    "name": "Nymindegab Kro",
+    "address": "327 Vesterhavsvej",
+    "town": "Nymindegab",
+    "postcode": "6830",
+    "latitude": 55.816931,
+    "longitude": 8.191983
+  },
+  {
+    "name": "Bandholm Hotel",
+    "address": "37 Havnegade",
+    "town": "Bandholm",
+    "postcode": "4941",
+    "latitude": 54.837681,
+    "longitude": 11.486069
+  },
+  {
+    "name": "DTU diplom",
+    "address": "Lautrupvang",
+    "town": "Ballerup Kommune",
+    "postcode": "2740",
+    "latitude": 55.7308426443882,
+    "longitude": 12.3971645445579
+  },
+  {
+    "name": "Lynge Drive in Bio",
+    "address": "Nym\u00f8llevej 5",
+    "town": "Lynge",
+    "postcode": "3540",
+    "latitude": 55.823872,
+    "longitude": 12.305142
+  },
+  {
+    "name": "Aalborg Lufthavn",
+    "address": "100 Ny Lufthavnsvej",
+    "town": "N\u00f8rresundby",
+    "postcode": "9400",
+    "latitude": 57.086968,
+    "longitude": 9.872268
+  },
+  {
+    "name": "Hotel Christiansminde",
+    "address": "16 Christiansmindevej",
+    "town": "Svendborg",
+    "postcode": "5700",
+    "latitude": 55.060427,
+    "longitude": 10.635765
+  },
+  {
+    "name": "Ledreborg Palace Golf Club",
+    "address": "12 Skottehusvej",
+    "town": "Lejre",
+    "postcode": "4320",
+    "latitude": 55.606843,
+    "longitude": 11.947801
+  },
+  {
+    "name": "Stella Maris Hotel de Luxe",
+    "address": "3 Kogtvedv\u00e6nget",
+    "town": "Svendborg",
+    "postcode": "5700",
+    "latitude": 55.044064,
+    "longitude": 10.578424
+  },
+  {
+    "name": "Gammel Brydegaard",
+    "address": "4 Heln\u00e6svej",
+    "town": "Haarby",
+    "postcode": "5683",
+    "latitude": 55.208725,
+    "longitude": 9.993191
+  },
+  {
+    "name": "Hotel Tannishus",
+    "address": "123 Tannisbugtvej",
+    "town": "Bindslev",
+    "postcode": "9881",
+    "latitude": 57.592876,
+    "longitude": 10.183893
+  },
+  {
+    "name": "Hjerting Badehotel",
+    "address": "1 Strandpromenaden",
+    "town": "Esbjerg",
+    "postcode": "6710",
+    "latitude": 55.523337,
+    "longitude": 8.354164
+  },
+  {
+    "name": "Restaurant Noli",
+    "address": "1 \u00d8stergade",
+    "town": "Ikast",
+    "postcode": "7430",
+    "latitude": 56.13954,
+    "longitude": 9.15545
+  },
+  {
+    "name": "Kal\u00f8vig Center",
+    "address": "46 Pr\u00e6stekravevej",
+    "town": "R\u00f8nde",
+    "postcode": "8410",
+    "latitude": 56.292278,
+    "longitude": 10.444698
+  },
+  {
+    "name": "Sinatur Hotel Skarrildhus",
+    "address": "4 SDR. Ommevej",
+    "town": "Kib\u00e6k",
+    "postcode": "6933",
+    "latitude": 55.950206,
+    "longitude": 8.880079
+  },
+  {
+    "name": "Sinatur Hotel Storeb\u00e6lt",
+    "address": "121 \u00d8ster\u00f8vej",
+    "town": "Nyborg",
+    "postcode": "5800",
+    "latitude": 55.309709,
+    "longitude": 10.81619
+  },
+  {
+    "name": "Hotel Hovborg Kro",
+    "address": "2 Holme\u00e5vej",
+    "town": "Hovborg",
+    "postcode": "6682",
+    "latitude": 55.606428,
+    "longitude": 8.939806
+  },
+  {
+    "name": "Sinatur Hotel GL. Avern\u00e6s",
+    "address": "9 Heln\u00e6svej",
+    "town": "Ebberup",
+    "postcode": "5631",
+    "latitude": 55.196664,
+    "longitude": 9.991377
+  },
+  {
+    "name": "Sinatur Hotel Sixtus",
+    "address": "73 Teglg\u00e5rdsvej",
+    "town": "Middelfart",
+    "postcode": "5500",
+    "latitude": 55.494591,
+    "longitude": 9.72145599999999
+  },
+  {
+    "name": "Hotel SCT Thomas",
+    "address": "7 Frederiksberg All\u00e9",
+    "town": "K\u00f8benhavn",
+    "postcode": "1621",
+    "latitude": 55.672981,
+    "longitude": 12.548267
+  },
+  {
+    "name": "Himmerland Golf & Spa Resort",
+    "address": "1 Centervej",
+    "town": " Gatten",
+    "postcode": "9640",
+    "latitude": 56.873424,
+    "longitude": 9.395291
+  },
+  {
+    "name": "Middelfart Supercharger",
+    "address": "Comwell",
+    "town": "Middelfart",
+    "postcode": "5500",
+    "latitude": 55.51121513425642,
+    "longitude": 9.76452144830239
+  },
+  {
+    "name": "Slagelse Supercharger",
+    "address": "4 Trafikcenter Alle",
+    "town": "Slagelse",
+    "postcode": "4200",
+    "latitude": 55.388,
+    "longitude": 11.3622
+  },
+  {
+    "name": "Montra Skaga Hotel",
+    "address": "1 Willemoesvej",
+    "town": "Hirtshals",
+    "postcode": "9850",
+    "latitude": 57.58666,
+    "longitude": 9.97738
+  },
+  {
+    "name": "Montra Hotel Hanstholm",
+    "address": "2 Chr. Hansensvej",
+    "town": "Hanstholm",
+    "postcode": "7730",
+    "latitude": 57.116371,
+    "longitude": 8.607167
+  },
+  {
+    "name": "K\u00f8ge Supercharger",
+    "address": "2 Servicevej",
+    "town": "K\u00f8ge",
+    "postcode": "4600",
+    "latitude": 55.489365,
+    "longitude": 12.162954
+  },
+  {
+    "name": "Benniksgaard Hotel",
+    "address": "101 Sejrsvej",
+    "town": "Gr\u00e5sten",
+    "postcode": "6300",
+    "latitude": 54.890943,
+    "longitude": 9.548592
+  },
+  {
+    "name": "N\u00f8rre Alslev Supercharger",
+    "address": "4 Cargovej",
+    "town": "N\u00f8rre Alslev",
+    "postcode": "4840",
+    "latitude": 54.899885,
+    "longitude": 11.89693
+  },
+  {
+    "name": "Tannisby Camping",
+    "address": "86 Tannisbugtvej",
+    "town": "Bindslev",
+    "postcode": "9881",
+    "latitude": 57.590651,
+    "longitude": 10.188783
+  },
+  {
+    "name": "Montra Hotel Sabro",
+    "address": "780 Viborgvej",
+    "town": "Sabro",
+    "postcode": "8471",
+    "latitude": 56.2122,
+    "longitude": 10.01566
+  },
+  {
+    "name": "Hotel Vejlefjord",
+    "address": "26 Sanatorievej",
+    "town": "Stouby",
+    "postcode": "7140",
+    "latitude": 55.684288,
+    "longitude": 9.7601
+  },
+  {
+    "name": "Sinatur Hotel Haraldsk\u00e6r",
+    "address": "140 Skibetvej",
+    "town": "Vejle",
+    "postcode": "7100",
+    "latitude": 55.702401,
+    "longitude": 9.439544
+  },
+  {
+    "name": "Hj\u00f8rring Supercharger",
+    "address": "1 Sprog\u00f8vej",
+    "town": "Hj\u00f8rring",
+    "postcode": "9800",
+    "latitude": 57.45554462,
+    "longitude": 10.04067481
+  },
+  {
+    "name": "Montra Odder Parkhotel",
+    "address": "25 Torvald K\u00f8hlsvej",
+    "town": "Odder",
+    "postcode": "8300",
+    "latitude": 55.97534,
+    "longitude": 10.14683
+  },
+  {
+    "name": "Hotel Hesselet",
+    "address": "119 Christianslundsvej",
+    "town": "Nyborg",
+    "postcode": "5800",
+    "latitude": 55.31994,
+    "longitude": 10.81034
+  },
+  {
+    "name": "R\u00f8dekro Supercharger",
+    "address": "1 Kometvej",
+    "town": "R\u00f8dekro",
+    "postcode": "6230",
+    "latitude": 55.067331,
+    "longitude": 9.361081
+  },
+  {
+    "name": "Ny Kirstineberg Gods",
+    "address": "7 Ny Kirstinebergvej",
+    "town": "Nyk\u00f8bing Falster",
+    "postcode": "4800",
+    "latitude": 54.790727,
+    "longitude": 11.852076
+  },
+  {
+    "name": "Best Western Hotel Knudsens Gaard",
+    "address": "2 Hunderupgade",
+    "town": "Odense",
+    "postcode": "5230",
+    "latitude": 55.381026,
+    "longitude": 10.394767
+  },
+  {
+    "name": "E.ON @ Mimersgade 7A",
+    "address": "Mimersgade 7A",
+    "town": "Horsens",
+    "postcode": "8700",
+    "latitude": 55.8556903,
+    "longitude": 9.8336176
+  },
+  {
+    "name": "Meterbuen 27",
+    "address": "Meterbuen 27",
+    "town": "Ballerup Kommune",
+    "postcode": "2740",
+    "latitude": 55.719112,
+    "longitude": 12.416672
+  },
+  {
+    "name": "Borgergade",
+    "address": "Borgergade",
+    "town": "K\u00f8benhavns Kommune",
+    "postcode": "1301",
+    "latitude": 55.683262,
+    "longitude": 12.584494
+  },
+  {
+    "name": "Englandsvej 391",
+    "address": "Englandsvej 391",
+    "town": "T\u00e5rnby Kommune",
+    "postcode": "2770",
+    "latitude": 55.62138,
+    "longitude": 12.605158
+  },
+  {
+    "name": "Egetoften",
+    "address": "Egetoften 7",
+    "town": "Hellerup",
+    "postcode": "2900",
+    "latitude": 55.725299,
+    "longitude": 12.549383
+  },
+  {
+    "name": "E-on",
+    "address": "Torvet 28",
+    "town": "Koge",
+    "postcode": "4600",
+    "latitude": 55.4568737,
+    "longitude": 12.1804632
+  },
+  {
+    "name": "OK",
+    "address": "Ulsn\u00e6s 10",
+    "town": "Gr\u00e5sten ",
+    "postcode": "6300",
+    "latitude": 54.911538,
+    "longitude": 9.58851000000004
+  },
+  {
+    "name": "kirkestien 1",
+    "address": "kirkestien 1",
+    "town": "Alling\u00e5bro",
+    "postcode": "8961",
+    "latitude": 56.464416,
+    "longitude": 10.3341643
+  },
+  {
+    "name": "Vester K\u00e6r 28",
+    "address": "Vester K\u00e6r 28",
+    "town": "Ringk\u00f8bing",
+    "postcode": "6950",
+    "latitude": 56.095501,
+    "longitude": 8.236466
+  },
+  {
+    "name": "Skovlytoften 4",
+    "address": "Skovlytoften 4",
+    "town": "Holte",
+    "postcode": "2840",
+    "latitude": 55.820492,
+    "longitude": 12.488974
+  },
+  {
+    "name": "Anker Engelunds Vej 101A",
+    "address": "Anker Engelunds Vej 101A",
+    "town": "Kongens Lyngby",
+    "postcode": "2800",
+    "latitude": 55.785738,
+    "longitude": 12.523288
+  },
+  {
+    "name": "Richard Petersens Plads",
+    "address": "Richard Petersens Plads",
+    "town": "Kongens Lyngby",
+    "postcode": "2800",
+    "latitude": 55.783602,
+    "longitude": 12.517022
+  },
+  {
+    "name": "Diplomvej",
+    "address": "Diplomvej",
+    "town": "Kongens Lyngby",
+    "postcode": "2800",
+    "latitude": 55.782813,
+    "longitude": 12.513143
+  },
+  {
+    "name": "Edel Sauntes All\u00e9 19",
+    "address": "Edel Sauntes All\u00e9 19",
+    "town": "K\u00f8benhavn",
+    "postcode": "2100",
+    "latitude": 55.702292,
+    "longitude": 12.563456
+  },
+  {
+    "name": "Hvidkildevej 64",
+    "address": "Hvidkildevej 64",
+    "town": "K\u00f8benhavn",
+    "postcode": "2400",
+    "latitude": 55.699845,
+    "longitude": 12.515309
+  },
+  {
+    "name": "Holb\u00e6kvej 141",
+    "address": "Holb\u00e6kvej 141",
+    "town": "Kalundborg",
+    "postcode": "4400",
+    "latitude": 55.680464,
+    "longitude": 11.126944
+  },
+  {
+    "name": "Christiansborg Ridebane",
+    "address": "Christiansborg Ridebane",
+    "town": "K\u00f8benhavn",
+    "postcode": "1213",
+    "latitude": 55.675823,
+    "longitude": 12.579796
+  },
+  {
+    "name": "Digevej 129",
+    "address": "Digevej 129",
+    "town": "K\u00f8benhavn",
+    "postcode": "2300",
+    "latitude": 55.641593,
+    "longitude": 12.585985
+  },
+  {
+    "name": "Arne Jacobsens All\u00e9 21",
+    "address": "Arne Jacobsens All\u00e9 21",
+    "town": "K\u00f8benhavn",
+    "postcode": "2300",
+    "latitude": 55.631083,
+    "longitude": 12.581352
+  },
+  {
+    "name": "E.on Kildebjerg East",
+    "address": "Fynske Motorvej 532A",
+    "town": "Visenbjerg",
+    "postcode": "5492",
+    "latitude": 55.393119,
+    "longitude": 10.190108
+  },
+  {
+    "name": "E.on Kildebjerg West",
+    "address": "Fynske Motorvej 531A",
+    "town": "Vissenbjerg",
+    "postcode": "5492",
+    "latitude": 55.395433,
+    "longitude": 10.187888
+  },
+  {
+    "name": "Tesla Superlader, Randers",
+    "address": "Graceland Randers Vej 3",
+    "town": "Randers S\u00d8",
+    "postcode": "8960",
+    "latitude": 56.4336125999393,
+    "longitude": 10.055558681488
+  },
+  {
+    "name": "Tesla Superlader, Middelfart",
+    "address": "Karensmindevej 3",
+    "town": "Middelfart",
+    "postcode": "5500",
+    "latitude": 55.511561506690384,
+    "longitude": 9.765399128587205
+  },
+  {
+    "name": "Udby Kro",
+    "address": "K\u00f8benhavnsvej 558",
+    "town": "Lundby",
+    "postcode": "4750",
+    "latitude": 55.080424,
+    "longitude": 11.9595256
+  },
+  {
+    "name": "Tesla Superladerstasjon K\u00f8ge",
+    "address": "Servicevej 2",
+    "town": "K\u00f8ge",
+    "postcode": "4600",
+    "latitude": 55.48895,
+    "longitude": 12.16229
+  },
+  {
+    "name": "Br\u00f8nsh\u00f8j",
+    "address": "Astersvej 11",
+    "town": "Br\u00f8nsh\u00f8j",
+    "postcode": "2700",
+    "latitude": 55.7090308,
+    "longitude": 12.4850761
+  },
+  {
+    "name": "Copenhagen Marriott hotel",
+    "address": "Kalvebod Brygge 5",
+    "town": " Copenhagen",
+    "postcode": "1560 ",
+    "latitude": 55.6685362,
+    "longitude": 12.57370990000004
+  },
+  {
+    "name": "Tesla Copenhagen",
+    "address": "Bredgade 35",
+    "town": "K\u00f8benhavn",
+    "postcode": "1260 ",
+    "latitude": 55.6826455,
+    "longitude": 12.588667399999963
+  },
+  {
+    "name": "BEST WESTERN Hotel Knudsens Gaard",
+    "address": "Hunderupgade 2",
+    "town": "Odense ",
+    "postcode": "5230 ",
+    "latitude": 55.38140569999999,
+    "longitude": 10.394466400000056
   }
 ]

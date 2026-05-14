@@ -2,6 +2,7 @@ namespace Engine.Cost;
 
 using System.Data;
 using Core.Charging;
+using Core.Charging.ChargingModel;
 using Core.Shared;
 using Core.Vehicles;
 using Engine.Services;
@@ -44,7 +45,7 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
             var pathDeviationCost = CalculatePathDeviationCost(ref ev, durations.DurToDest + durations.DurToStation, weights, time);
             var urgencyCost = CalculateChargeUrgency(ref ev, durations.DistToStationMeters);
             var priceCost = CalculatePriceCost(ref ev, station, weights, time, lowestPrice);
-            var effectiveWaitTimeCost = CalculateEffectiveWaitTimeCost(weights, time, durations.DurToStation, stationId);
+            var effectiveWaitTimeCost = CalculateEffectiveWaitTimeCost(weights, time, durations.DurToStation, stationId, ref ev);
             var cost = (1 - urgencyCost) * (pathDeviationCost + priceCost + effectiveWaitTimeCost);
 
             if (double.IsNaN(cost))
@@ -100,12 +101,23 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
         return weights.PriceSensitivity * ev.Preferences.PriceSensitivity * (currentPrice - lowestPrice);
     }
 
-    private float CalculateEffectiveWaitTimeCost(CostWeights weights, Time time, float duration, ushort stationId)
+    private float CalculateEffectiveWaitTimeCost(CostWeights weights, Time time, float duration, ushort stationId, ref EV ev)
     {
         var expectedArrival = (Time)(uint)Math.Ceiling(time + duration);
-        var availableAt = stationService.ExpectedWaitTime(stationId, time, expectedArrival);
-        var wait = availableAt - expectedArrival;
-        var waitMinutes = Math.Max(0, wait / Time.MillisecondsPerMinute);
+        var currentSoC = ev.Battery.CurrentChargeKWh / ev.Battery.MaxCapacityKWh;
+        var targetSoC = Math.Max(currentSoC + 0.2, 0.8);
+
+        var connectedEV = new ConnectedEV(
+            ev.Id,
+            currentSoC,
+            targetSoC,
+            ev.Battery.MaxCapacityKWh,
+            ev.Battery.MaxChargeRateKW,
+            expectedArrival);
+
+        var availableAt = stationService.ExpectedWaitTime(stationId, time, expectedArrival, connectedEV);
+        var waitMilliseconds = availableAt > expectedArrival ? availableAt - expectedArrival : new Time(0);
+        var waitMinutes = waitMilliseconds / Time.MillisecondsPerMinute;
         return weights.ExpectedWaitTime * waitMinutes;
     }
 
