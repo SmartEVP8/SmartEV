@@ -185,49 +185,17 @@ public class StationHandler
     /// Returns the earliest absolute simulation time at which a charger will be free for an EV
     /// arriving at <paramref name="arrival"/>, using a time-based cached plan so that frequent
     /// arrivals/departures do not cause constant recomputation during cost evaluation.
-    /// If <paramref name="currentEV"/> is provided, it is included in the projection to account
-    /// for concurrent station evaluations.
     /// </summary>
     /// <param name="simNow">Current simulation time.</param>
     /// <param name="arrival">The projected arrival time of the EV.</param>
-    /// <param name="currentEV">Optional: the EV being evaluated. If provided, included in wait projection.</param>
     /// <returns>Absolute time when a charger side becomes available.</returns>
-    public Time ExpectedWaitTime(Time simNow, Time arrival, ConnectedEV? currentEV = null)
+    public Time ExpectedWaitTime(Time simNow, Time arrival)
     {
-        if (currentEV is null)
-        {
-            EnsureCostPlan(simNow);
-            var index = _costPlan?.FindLastIndex(p => p.ArrivalTime <= arrival) ?? -1;
-            return index >= 0
-                ? _costPlan![index].MinChargerAvailability
-                : _costPlanInitialAvailability;
-        }
-
-        var minAvailable = EstimatedReservationWait(simNow, arrival, currentEV);
-
-        return minAvailable != new Time(uint.MaxValue) ? minAvailable : simNow;
-    }
-
-    private Time EstimatedReservationWait(Time simNow, Time arrival, ConnectedEV currentEV)
-    {
-        var reservationQueue = new List<ConnectedEV> { currentEV };
-        foreach (var res in _station.Reservations.AllReservations.Where(r => r.TimeOfArrival <= arrival))
-        {
-            var battery = _evs[res.EVId].Battery;
-            reservationQueue.Add(new ConnectedEV(res.EVId, res.SoCAtArrival, res.TargetSoC, battery.MaxCapacityKWh, battery.MaxChargeRateKW, arrival));
-        }
-
-        var minAvailable = new Time(uint.MaxValue);
-        foreach (var charger in _station.Chargers)
-        {
-            var handler = _chargerIndex[charger.Id].Handler;
-            var (availableAt, _) = handler.EstimateWaitTime(simNow, reservationQueue);
-            var absoluteTime = availableAt + simNow;
-            if (absoluteTime < minAvailable)
-                minAvailable = absoluteTime;
-        }
-
-        return minAvailable;
+        EnsureCostPlan(simNow);
+        var index = _costPlan?.FindLastIndex(p => p.ArrivalTime <= arrival) ?? -1;
+        return index >= 0
+            ? _costPlan![index].MinChargerAvailability
+            : _costPlanInitialAvailability;
     }
 
     private void EnsureCostPlan(Time simNow)

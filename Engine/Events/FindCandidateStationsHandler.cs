@@ -57,7 +57,7 @@ public class FindCandidateStationsHandler(
         }
 
         var sw = Stopwatch.StartNew();
-        var bestStation = costFunction.Compute(ref ev, candidateStations, e.Time);
+        var bestStation = costFunction.Compute(ev, candidateStations, e.Time);
 
         if (bestStation is null)
         {

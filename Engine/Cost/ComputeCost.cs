@@ -2,7 +2,6 @@ namespace Engine.Cost;
 
 using System.Data;
 using Core.Charging;
-using Core.Charging.ChargingModel;
 using Core.Shared;
 using Core.Vehicles;
 using Engine.Services;
@@ -25,7 +24,7 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
     /// <param name="time">The current time.</param>
     /// <returns>The station with the lowest cost.</returns>
     /// <exception cref="NoNullAllowedException">If no suitable station is found.</exception>
-    public Station Compute(ref EV ev, Dictionary<ushort, DurToStationAndDest> stationDurations, Time time)
+    public Station Compute(EV ev, Dictionary<ushort, DurToStationAndDest> stationDurations, Time time)
     {
         var bestCost = double.MaxValue;
         var weights = costStore.GetWeights();
@@ -42,10 +41,10 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
         {
             var station = stationService.GetStation(stationId);
 
-            var pathDeviationCost = CalculatePathDeviationCost(ref ev, durations.DurToDest + durations.DurToStation, weights, time);
-            var urgencyCost = CalculateChargeUrgency(ref ev, durations.DistToStationMeters);
-            var priceCost = CalculatePriceCost(ref ev, station, weights, time, lowestPrice);
-            var effectiveWaitTimeCost = CalculateEffectiveWaitTimeCost(weights, time, durations.DurToStation, stationId, ref ev);
+            var pathDeviationCost = CalculatePathDeviationCost(ev, durations.DurToDest + durations.DurToStation, weights, time);
+            var urgencyCost = CalculateChargeUrgency(ev, durations.DistToStationMeters);
+            var priceCost = CalculatePriceCost(ev, station, weights, time, lowestPrice);
+            var effectiveWaitTimeCost = CalculateEffectiveWaitTimeCost(weights, time, durations.DurToStation, stationId, ev);
             var cost = (1 - urgencyCost) * (pathDeviationCost + priceCost + effectiveWaitTimeCost);
 
             if (double.IsNaN(cost))
@@ -78,7 +77,7 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
     /// <returns>
     /// The path deviation cost in minutes.
     /// </returns>
-    private static float CalculatePathDeviationCost(ref EV ev, float detourDuration, CostWeights weights, Time time)
+    private static float CalculatePathDeviationCost(EV ev, float detourDuration, CostWeights weights, Time time)
     {
         var remainingCurrentRoute = ev.Journey.RemainingCurrentRoute(time);
         if (remainingCurrentRoute <= 0)
@@ -95,27 +94,16 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
         return weights.PathDeviation * Math.Clamp(extraTimeCostMinutes, 0, float.MaxValue);
     }
 
-    private static float CalculatePriceCost(ref EV ev, Station station, CostWeights weights, Time time, float lowestPrice)
+    private static float CalculatePriceCost(EV ev, Station station, CostWeights weights, Time time, float lowestPrice)
     {
         var currentPrice = station.GetPrice(time);
         return weights.PriceSensitivity * ev.Preferences.PriceSensitivity * (currentPrice - lowestPrice);
     }
 
-    private float CalculateEffectiveWaitTimeCost(CostWeights weights, Time time, float duration, ushort stationId, ref EV ev)
+    private float CalculateEffectiveWaitTimeCost(CostWeights weights, Time time, float duration, ushort stationId, EV ev)
     {
         var expectedArrival = (Time)(uint)Math.Ceiling(time + duration);
-        var currentSoC = ev.Battery.CurrentChargeKWh / ev.Battery.MaxCapacityKWh;
-        var targetSoC = Math.Max(currentSoC + 0.2, 0.8);
-
-        var connectedEV = new ConnectedEV(
-            ev.Id,
-            currentSoC,
-            targetSoC,
-            ev.Battery.MaxCapacityKWh,
-            ev.Battery.MaxChargeRateKW,
-            expectedArrival);
-
-        var availableAt = stationService.ExpectedWaitTime(stationId, time, expectedArrival, connectedEV);
+        var availableAt = stationService.ExpectedWaitTime(stationId, time, expectedArrival);
         var waitMilliseconds = availableAt > expectedArrival ? availableAt - expectedArrival : new Time(0);
         var waitMinutes = waitMilliseconds / Time.MillisecondsPerMinute;
         return weights.ExpectedWaitTime * waitMinutes;
@@ -130,7 +118,7 @@ public class CostFunction(ICostStore costStore, IStationService stationService, 
     /// <returns>
     /// The urgency of charging as a value between 0 and 1, where a higher value indicates a more urgent need for charging.
     /// </returns>
-    private static double CalculateChargeUrgency(ref EV ev, float distanceToStationMeter)
+    private static double CalculateChargeUrgency(EV ev, float distanceToStationMeter)
     {
         const double upperChargeLimit = 0.80;
 

@@ -32,10 +32,11 @@ public sealed class JourneySamplerProvider : IJourneySamplerProvider
 
         JourneySamplerCache.EnsureDirectory();
 
-        Parallel.For(0, 24, hour => EnsureSamplerOnDisk((uint)hour));
-
-        // Keep hourly samplers in memory so SetCurrent avoids disk IO and JSON deserialization.
-        Parallel.For(0, 24, hour => _hourlySamplers[hour] = LoadHourFromDisk((uint)hour));
+        Parallel.For(0, 24, hour =>
+        {
+            EnsureSamplerOnDisk((uint)hour);
+            _hourlySamplers[hour] = LoadHourFromDisk((uint)hour);
+        });
 
         Current = _hourlySamplers[0];
     }

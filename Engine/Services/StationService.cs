@@ -1,7 +1,6 @@
 namespace Engine.Services;
 
 using Core.Charging;
-using Core.Charging.ChargingModel;
 using Core.Shared;
 using Engine.Events;
 using Engine.Metrics;
@@ -9,6 +8,7 @@ using Engine.Utils;
 using Engine.Services.StationServiceHelpers;
 using Serilog;
 using Core.Vehicles;
+using Core.Charging.ChargingModel;
 
 /// <summary>
 /// Coordinates station handlers and manages cross-station state (reservations, charger routing).
@@ -111,8 +111,8 @@ public class StationService : IStationService
     }
 
     /// <inheritdoc/>
-    public Time ExpectedWaitTime(ushort stationId, Time simNow, Time arrival, ConnectedEV? currentEV = null)
-        => GetStationHandler(stationId).ExpectedWaitTime(simNow, arrival, currentEV);
+    public Time ExpectedWaitTime(ushort stationId, Time simNow, Time arrival)
+        => GetStationHandler(stationId).ExpectedWaitTime(simNow, arrival);
 
     private StationHandler GetStationHandler(ushort stationId)
         => _stationHandlers.TryGetValue(stationId, out var handler)

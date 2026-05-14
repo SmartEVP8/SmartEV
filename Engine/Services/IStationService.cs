@@ -1,7 +1,6 @@
 namespace Engine.Services;
 
 using Core.Charging;
-using Core.Charging.ChargingModel;
 using Core.Shared;
 
 /// <summary>
@@ -22,7 +21,6 @@ public interface IStationService
     /// <param name="stationId">The unique identifier of the target station.</param>
     /// <param name="simNow">The current simulation time, used as the baseline for evaluating active and physically queued sessions.</param>
     /// <param name="arrival">The projected arrival time of the EV used to filter relevant prior reservations.</param>
-    /// <param name="currentEV">Optional: the EV currently being evaluated. If provided, it is included in the wait projection to account for concurrent evaluations.</param>
     /// <returns>The expected absolute time a charger will become available for the arriving EV. Returns simNow if a charger is immediately available.</returns>
-    public Time ExpectedWaitTime(ushort stationId, Time simNow, Time arrival, ConnectedEV? currentEV = null);
+    public Time ExpectedWaitTime(ushort stationId, Time simNow, Time arrival);
 }

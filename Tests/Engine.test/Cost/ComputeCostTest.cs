@@ -39,7 +39,7 @@ public class ComputeCostTest
             { 2, new DurToStationAndDest(600000f, 600000f, 100f, 100f) }, // Deviation = 100
         };
 
-        var bestStation = computeCost.Compute(ref ev, stationDurations, _time);
+        var bestStation = computeCost.Compute(ev, stationDurations, _time);
 
         Assert.Same(stationA, bestStation);
     }
@@ -70,7 +70,7 @@ public class ComputeCostTest
             { 2, new DurToStationAndDest(500000f, 500000f, 0f, 0f) },
         };
 
-        var bestStation = computeCost.Compute(ref ev, stationDurations, _time);
+        var bestStation = computeCost.Compute(ev, stationDurations, _time);
 
         // Both have cost 0, so first in iteration order wins
         Assert.Same(stationA, bestStation);
@@ -102,7 +102,7 @@ public class ComputeCostTest
                 { 2, new DurToStationAndDest(500000f, 500000f, 0f, 0f) },
             };
 
-        var bestStation = computeCost.Compute(ref ev, stationDurations, _time);
+        var bestStation = computeCost.Compute(ev, stationDurations, _time);
 
         // Cheaper station (2.0 DKK/kWh) should be selected over expensive (4.0 DKK/kWh)
         Assert.Same(cheapStation, bestStation);
@@ -125,7 +125,7 @@ public class ComputeCostTest
         var stationDurations = new Dictionary<ushort, DurToStationAndDest>();
 
         Assert.Throws<ArgumentNullException>(() =>
-            computeCost.Compute(ref ev, stationDurations, _time));
+            computeCost.Compute(ev, stationDurations, _time));
     }
 
     /// <summary>
@@ -157,7 +157,7 @@ public class ComputeCostTest
             newDistanceKm: 150);
 
         var stationDurations = new Dictionary<ushort, DurToStationAndDest> { { 1, new DurToStationAndDest(600000f, 600000f, 0f, 0f) }, { 2, new DurToStationAndDest(650000f, 650000f, 50f, 50f) } };
-        var bestStation = computeCost.Compute(ref ev, stationDurations, new Time(250000));
+        var bestStation = computeCost.Compute(ev, stationDurations, new Time(250000));
 
         Assert.Equal(1, bestStation.Id);
     }
@@ -208,7 +208,7 @@ public class ComputeCostTest
         // Station 20: 600 second detour = 0 deviation (perfect match)
         // Station 30: 650 second detour = ~0.83 min deviation
         var stationDurations = new Dictionary<ushort, DurToStationAndDest> { { 20, new DurToStationAndDest(600000f, 600000f, 0f, 0f) }, { 30, new DurToStationAndDest(650000f, 650000f, 50f, 50f) } };
-        var bestStation = computeCost.Compute(ref ev, stationDurations, new Time(600000));
+        var bestStation = computeCost.Compute(ev, stationDurations, new Time(600000));
 
         Assert.Equal(20, bestStation.Id);
     }
