@@ -36,7 +36,6 @@ public static class Polygooner
         var halfLon = lonSize / 2.0;
 
         var spawnBounded = PrecomputeBounds(polygons);
-        var wetBounded = PrecomputeBounds(wetPolygons);
         var stationsBounded = ComputeStationExclusionBounds(stationPositions);
 
         var gridCells = new List<List<GridCell>>(latSteps);
@@ -50,9 +49,8 @@ public static class Polygooner
                 var centerPos = new Position(centerLon, centerLat);
 
                 var inSpawnPolygon = IntersectsAnyPolygon(spawnBounded, centerLon, centerLat, halfLon, halfLat);
-                var inWetPolygon = IntersectsAnyPolygon(wetBounded, centerLon, centerLat, halfLon, halfLat);
                 var inStationsPolygon = IntersectsAnyPolygon(stationsBounded, centerLon, centerLat, halfLon, halfLat);
-                var spawnable = inSpawnPolygon && !inWetPolygon && !inStationsPolygon;
+                var spawnable = inSpawnPolygon && !inStationsPolygon;
 
                 row.Add(new GridCell(spawnable, centerPos));
             }
