@@ -75,9 +75,11 @@ public class StationService : IStationService
         if (_evReservations.TryGetValue(reservation.EVId, out var oldStationId))
         {
             GetStation(oldStationId).Reservations.Cancel(reservation.EVId);
+            GetStationHandler(oldStationId).InvalidatePlan();
         }
 
         _evReservations[reservation.EVId] = stationId;
+        GetStationHandler(stationId).InvalidatePlan();
         GetStation(stationId).Reservations.Reserve(reservation);
     }
 
@@ -113,6 +115,9 @@ public class StationService : IStationService
     /// <inheritdoc/>
     public Time ExpectedWaitTime(ushort stationId, Time simNow, Time arrival)
         => GetStationHandler(stationId).ExpectedWaitTime(simNow, arrival);
+
+    public void InvalidatePlan(ushort stationId)
+        => GetStationHandler(stationId).InvalidatePlan();
 
     private StationHandler GetStationHandler(ushort stationId)
         => _stationHandlers.TryGetValue(stationId, out var handler)

@@ -14,8 +14,6 @@ using Engine.Utils;
 /// </summary>
 public class StationHandler
 {
-    private const uint _costPlanTtl = 60_000;
-
     private readonly Dictionary<int, (ChargerBase State, IChargerHandler Handler)> _chargerIndex = [];
     private readonly Dictionary<int, uint> _arrivalTimes = [];
     private readonly Station _station;
@@ -33,7 +31,6 @@ public class StationHandler
     /// </summary>
     private Time _planInitialAvailability;
     private Time _costPlanInitialAvailability;
-    private Time _costPlanCachedAt = 0;
     private List<PlanEntry>? _costPlan;
 
     private readonly record struct PlanEntry(Time ArrivalTime, Time MinChargerAvailability);
@@ -200,10 +197,6 @@ public class StationHandler
 
     private void EnsureCostPlan(Time simNow)
     {
-        if (_costPlan is not null && simNow - _costPlanCachedAt < _costPlanTtl)
-            return;
-
-        _costPlanCachedAt = simNow;
         EnsurePlan(simNow);
         _costPlan = _plan;
         _costPlanInitialAvailability = _planInitialAvailability;
