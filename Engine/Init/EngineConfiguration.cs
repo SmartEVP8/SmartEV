@@ -63,7 +63,7 @@ public static class EngineConfiguration
             },
             CurrentAmountOfEVsInDenmark = 583320,
             ChargingStepSeconds = 60 * 1000,
-            SimulationStartTime = (uint)ReadIntFromEnvironment(_simulationStartTimeEnvVar, (int)Time.MillisecondsPerDay + (int)Time.MillisecondsPerHour * 7, isPythonMode),
+            SimulationStartTime = (uint)ReadIntFromEnvironment(_simulationStartTimeEnvVar, (int)Time.MillisecondsPerDay, isPythonMode),
             SimulationEndTime = (uint)ReadIntFromEnvironment(_simulationEndTimeEnvVar, (int)Time.MillisecondsPerDay * 7, isPythonMode),
             SnapshotInterval = 1000 * 20 * 60,
             EnablePerformanceMetrics = true,
