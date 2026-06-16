@@ -38,7 +38,7 @@ internal static class JourneySamplerCache
     /// <param name="hour">The hour for which time the sampler was computed for.</param>
     /// <param name="journeyDTO">The sampler the should be written to file.</param>
     /// <param name="distanceScaler">The distance scaler used in the sampler, used to differentiate files when the scaler is changed.</param>
-    public static void Write(uint hour, JourneySamplerDTO journeyDTO, float distanceScaler)
+    public static JourneySamplerDTO Write(uint hour, JourneySamplerDTO journeyDTO, float distanceScaler)
     {
         var json = JsonSerializer.Serialize(journeyDTO, _jsonOpts);
         if (json.Length < 10)
@@ -48,6 +48,7 @@ internal static class JourneySamplerCache
         }
 
         File.WriteAllText(PathFor(hour, distanceScaler), json);
+        return journeyDTO;
     }
 
     /// <summary>

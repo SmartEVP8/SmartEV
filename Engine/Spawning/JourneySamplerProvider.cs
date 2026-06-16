@@ -32,10 +32,7 @@ public sealed class JourneySamplerProvider : IJourneySamplerProvider
 
         JourneySamplerCache.EnsureDirectory();
 
-        Parallel.For(0, 24, hour => EnsureSamplerOnDisk((uint)hour));
-
-        // Keep hourly samplers in memory so SetCurrent avoids disk IO and JSON deserialization.
-        Parallel.For(0, 24, hour => _hourlySamplers[hour] = LoadHourFromDisk((uint)hour));
+        Parallel.For(0, 24, hour => _hourlySamplers[hour] = EnsureSamplerOnDisk((uint)hour));
 
         Current = _hourlySamplers[0];
     }
@@ -53,13 +50,14 @@ public sealed class JourneySamplerProvider : IJourneySamplerProvider
         }
     }
 
-    private void EnsureSamplerOnDisk(uint hour)
+    private JourneySamplers EnsureSamplerOnDisk(uint hour)
     {
-        if (JourneySamplerCache.Exists(hour, _distanceScalar)) return;
+        if (JourneySamplerCache.Exists(hour, _distanceScalar)) return LoadHourFromDisk(hour);
 
         var popScalar = GetScalers(hour);
         var journeyDTO = _pipeline.ComputeDTO(popScalar, _distanceScalar, _wetPolygons);
-        JourneySamplerCache.Write(hour, journeyDTO, _distanceScalar);
+        var sampler = JourneySamplerCache.Write(hour, journeyDTO, _distanceScalar);
+        return JourneyPipeline.FromDTO(sampler);
     }
 
     private JourneySamplers LoadHourFromDisk(uint hour)
