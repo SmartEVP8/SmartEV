@@ -5,13 +5,14 @@ using Engine.Events;
 using Engine.Cost;
 using API.EngineManager;
 using API.Protocol;
+using Core.Charging;
+using Core.Shared;
+using Core.Vehicles;
 using Google.Protobuf;
 using Microsoft.Extensions.Logging;
-using Core.Charging;
 using Serilog;
 using Serilog.Events;
 using Serilog.Templates;
-using Core.Vehicles;
 
 /// <summary>
 /// Entry point for the SmartEV API application.
@@ -66,7 +67,57 @@ public static class Program
                 services.AddSingleton<SnapshotHandler>();
                 services.AddSingleton<SimulationWebSocketService>();
                 services.AddSingleton<IEventSender>(sp => sp.GetRequiredService<SimulationWebSocketService>());
-                services.AddSingleton<SimulationRunner>();
+                services.AddSingleton(sp =>
+                {
+                    var simulation = sp.GetRequiredService<Engine.Simulation>();
+                    var snapshotHandler = sp.GetRequiredService<SnapshotHandler>();
+                    var evStore = sp.GetRequiredService<Dictionary<int, EV>>();
+                    var eventScheduler = sp.GetRequiredService<EventScheduler>();
+
+                    var lastPublishMs = 0u;
+                    const uint snapshotIntervalMs = 1000;
+
+                    Action onTick = () =>
+                    {
+                        var now = eventScheduler.CurrentTime;
+                        if (now.Milliseconds - lastPublishMs < snapshotIntervalMs)
+                            return;
+                        lastPublishMs = now.Milliseconds;
+
+                        var evPositions = new List<EVPositionEntry>();
+                        foreach (var (_, ev) in evStore)
+                        {
+                            if (ev.DriveDirectlyToDestination)
+                                continue;
+
+                            if (ev.EVState != EVState.Driving)
+                                continue;
+
+                            if (now < ev.Journey.Current.Departure)
+                                continue;
+
+                            if (now > ev.Journey.Current.EtaToNextStop)
+                                continue;
+
+                            try
+                            {
+                                var pos = ev.Journey.GetCurrentPosition(now);
+                                evPositions.Add(new EVPositionEntry(ev.Id, pos.Latitude, pos.Longitude));
+                            }
+                            catch (ArgumentException)
+                            {
+                            }
+                        }
+
+                        snapshotHandler.PublishPositions(evPositions.ToArray());
+                        snapshotHandler.PublishStats(new SimulationSnapshotData(
+                            (uint)evStore.Count,
+                            (uint)evStore.Count(ev => ev.Value.EVState == EVState.Charging),
+                            now));
+                    };
+
+                    return new SimulationRunner(simulation, onTick);
+                });
             });
 
             if (!result)

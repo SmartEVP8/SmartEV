@@ -45,10 +45,12 @@ public class Simulation(
     /// </summary>
     /// <param name="cancelToken">A CancellationToken to allow graceful shutdown of the simulation.</param>
     /// <param name="waitWhilePausedAsync">A callback that blocks progress while the simulation is paused.</param>
+    /// <param name="onTick">Optional callback invoked on the simulation thread after each handled event. Useful for safe state reads.</param>
     /// <returns>A task representing the asynchronous simulation run.</returns>
     public async Task Run(
         CancellationToken cancelToken = default,
-        Func<Task>? waitWhilePausedAsync = null)
+        Func<Task>? waitWhilePausedAsync = null,
+        Action? onTick = null)
     {
         Log.Information("Simulation started.");
         Log.Information("Cost weights configured values: {@CostConfig}", EngineConfiguration.CreateDefaultSettings().CostConfig);
@@ -73,6 +75,8 @@ public class Simulation(
                     Log.Information("Reached end of simulation time.");
                     return;
                 }
+
+                onTick?.Invoke();
             }
         }
         catch (OperationCanceledException)

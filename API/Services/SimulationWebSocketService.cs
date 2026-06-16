@@ -140,6 +140,9 @@ public class SimulationWebSocketService(
             {
                 var envelope = snapshotHandler.BuildSimulationSnapshot();
                 await SendAsync(envelope, cancelToken);
+
+                var evPosEnvelope = snapshotHandler.BuildEVPositionSnapshot();
+                await SendAsync(evPosEnvelope, cancelToken);
             }
         }
         catch (OperationCanceledException)

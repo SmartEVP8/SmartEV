@@ -17,8 +17,10 @@ public enum SimulationState
 /// Manages the execution of the simulation in a background task, allowing it to run concurrently with the API server.
 /// </summary>
 /// <param name="simulation">The simulation instance to run.</param>
+/// <param name="onTick">Optional callback invoked on the simulation thread after each handled event.</param>
 public sealed class SimulationRunner(
-    Simulation simulation)
+    Simulation simulation,
+    Action? onTick = null)
 {
     private Task? _simulationTask;
     private CancellationTokenSource? _cts;
@@ -103,7 +105,7 @@ public sealed class SimulationRunner(
     {
         try
         {
-            await simulation.Run(cancelToken, () => WaitWhilePausedAsync(cancelToken));
+            await simulation.Run(cancelToken, () => WaitWhilePausedAsync(cancelToken), onTick);
         }
         catch (OperationCanceledException)
         {
