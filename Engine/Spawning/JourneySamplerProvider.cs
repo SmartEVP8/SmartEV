@@ -56,8 +56,8 @@ public sealed class JourneySamplerProvider : IJourneySamplerProvider
 
         var popScalar = GetScalers(hour);
         var journeyDTO = _pipeline.ComputeDTO(popScalar, _distanceScalar, _wetPolygons);
-        var sampler = JourneySamplerCache.Write(hour, journeyDTO, _distanceScalar);
-        return JourneyPipeline.FromDTO(sampler);
+        JourneySamplerCache.Write(hour, journeyDTO, _distanceScalar);
+        return JourneyPipeline.FromDTO(journeyDTO);
     }
 
     private JourneySamplers LoadHourFromDisk(uint hour)
@@ -66,15 +66,13 @@ public sealed class JourneySamplerProvider : IJourneySamplerProvider
         return JourneyPipeline.FromDTO(journeyDTO);
     }
 
-    private float GetScalers(Time time)
+    private float GetScalers(uint hour)
     {
         const float baseScaler = 0.8f;
         const float maxVariance = 0.7f;
 
-        var dailyFluctuation = (float)(maxVariance * Math.Sin((Math.PI * time.Hours) / 12));
+        var dailyFluctuation = (float)(maxVariance * Math.Sin((Math.PI * hour) / 12));
 
-        var populationScaler = baseScaler + dailyFluctuation;
-
-        return populationScaler;
+        return baseScaler + dailyFluctuation;
     }
 }
