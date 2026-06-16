@@ -32,10 +32,7 @@ public sealed class JourneySamplerProvider : IJourneySamplerProvider
 
         JourneySamplerCache.EnsureDirectory();
 
-        Parallel.For(0, 24, hour => EnsureSamplerOnDisk((uint)hour));
-
-        // Keep hourly samplers in memory so SetCurrent avoids disk IO and JSON deserialization.
-        Parallel.For(0, 24, hour => _hourlySamplers[hour] = LoadHourFromDisk((uint)hour));
+        Parallel.For(0, 24, hour => _hourlySamplers[hour] = EnsureSamplerOnDisk((uint)hour));
 
         Current = _hourlySamplers[0];
     }
@@ -53,13 +50,14 @@ public sealed class JourneySamplerProvider : IJourneySamplerProvider
         }
     }
 
-    private void EnsureSamplerOnDisk(uint hour)
+    private JourneySamplers EnsureSamplerOnDisk(uint hour)
     {
-        if (JourneySamplerCache.Exists(hour, _distanceScalar)) return;
+        if (JourneySamplerCache.Exists(hour, _distanceScalar)) return LoadHourFromDisk(hour);
 
         var popScalar = GetScalers(hour);
         var journeyDTO = _pipeline.ComputeDTO(popScalar, _distanceScalar, _wetPolygons);
         JourneySamplerCache.Write(hour, journeyDTO, _distanceScalar);
+        return JourneyPipeline.FromDTO(journeyDTO);
     }
 
     private JourneySamplers LoadHourFromDisk(uint hour)
@@ -68,15 +66,13 @@ public sealed class JourneySamplerProvider : IJourneySamplerProvider
         return JourneyPipeline.FromDTO(journeyDTO);
     }
 
-    private float GetScalers(Time time)
+    private float GetScalers(uint hour)
     {
         const float baseScaler = 0.8f;
         const float maxVariance = 0.7f;
 
-        var dailyFluctuation = (float)(maxVariance * Math.Sin((Math.PI * time.Hours) / 12));
+        var dailyFluctuation = (float)(maxVariance * Math.Sin((Math.PI * hour) / 12));
 
-        var populationScaler = baseScaler + dailyFluctuation;
-
-        return populationScaler;
+        return baseScaler + dailyFluctuation;
     }
 }

@@ -28,10 +28,16 @@ public static class Init
     /// Initializes the Engine with the required services and configurations.
     /// </summary>
     /// <param name="services">The service collection to initialize.</param>
+    /// <param name="settings">The engine settings used to configure services.</param>
     public static void InitEngine(IServiceCollection services, EngineSettings settings)
     {
         if (settings.EnablePerformanceMetrics)
             services.AddSingleton(new PerformanceMetrics());
+
+        var polygons = InitPolygons(settings.PolygonPath);
+        var wetPolygons = InitWetPolygons(settings.WetPolygonPath);
+        var cities = InitCities(settings.CitiesPath);
+        var spawnGrid = InitSpawnGrid(polygons, wetPolygons, settings.StationsPath, settings.GridSize);
 
         services.AddSingleton(_ => new EventScheduler());
         services.AddSingleton(sp =>
@@ -85,9 +91,6 @@ public static class Init
         services.AddSingleton<IJourneySamplerProvider>(sp =>
         {
             var router = sp.GetRequiredService<IOSRMRouter>();
-            var spawnGrid = InitSpawnGrid(settings.PolygonPath, settings.WetPolygonPath, settings.StationsPath, settings.GridSize);
-            var cities = InitCities(settings.CitiesPath);
-            var wetPolygons = PolygonParser.Parse(File.ReadAllText(settings.WetPolygonPath.ToString()));
             var journeyPipeline = new JourneyPipeline(spawnGrid, cities, router);
             return new JourneySamplerProvider(journeyPipeline, (float)settings.DistanceScaler, wetPolygons);
         });
@@ -104,7 +107,6 @@ public static class Init
         services.AddSingleton(sp =>
         {
             var stations = sp.GetRequiredService<Dictionary<ushort, Station>>();
-            var spawnGrid = InitSpawnGrid(settings.PolygonPath, settings.WetPolygonPath, settings.StationsPath, settings.GridSize);
             return new SpatialGrid(spawnGrid, stations);
         });
 
@@ -217,13 +219,25 @@ public static class Init
         });
     }
 
-    private static SpawnGrid InitSpawnGrid(FileInfo polygonPath, FileInfo wetPolygonPath, FileInfo stationsPath, double size)
+    private static SpawnGrid InitSpawnGrid(
+        List<List<Position>> polygons,
+        List<List<Position>> wetPolygons,
+        FileInfo stationsPath,
+        double size)
     {
-        var polygons = PolygonParser.Parse(File.ReadAllText(polygonPath.ToString()));
-        var wetPolygons = PolygonParser.Parse(File.ReadAllText(wetPolygonPath.ToString()));
         var stations = StationParser.Parse(File.ReadAllText(stationsPath.ToString()));
 
         return Polygooner.GenerateGrid(size, polygons, wetPolygons, stations);
+    }
+
+    private static List<List<Position>> InitPolygons(FileInfo polygonPath)
+    {
+        return PolygonParser.Parse(File.ReadAllText(polygonPath.ToString()));
+    }
+
+    private static List<List<Position>> InitWetPolygons(FileInfo wetPolygonPath)
+    {
+        return PolygonParser.Parse(File.ReadAllText(wetPolygonPath.ToString()));
     }
 
     private static List<City> InitCities(FileInfo citiesPath)
