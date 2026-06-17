@@ -190,6 +190,10 @@ public static class Program
                 _ => throw new ArgumentOutOfRangeException(nameof(costId))
             };
 
+            var costStore = engineManager.GetEngineService<ICostStore>();
+            var seq = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            costStore.TrySet(updatedCostConfig, seq);
+
             return Results.Ok(new CostWeightDTO(costId, weight.Value));
         });
 
