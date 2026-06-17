@@ -8,30 +8,78 @@ using API.Protocol;
 using Core.Vehicles;
 
 /// <summary>
-/// Handles snapshot requests from the client by querying the engine.
+/// Pre-built EV position data, published from the simulation thread.
 /// </summary>
-/// <param name="evStore">The store for managing electric vehicles.</param>
-/// <param name="stationService">The service for managing charging stations.</param>
-/// <param name="eventScheduler">The event scheduler for getting the current simulation time.</param>
+public record EVPositionEntry(int EvId, double Lat, double Lon);
+
+/// <summary>
+/// Pre-built simulation aggregate stats, published from the simulation thread.
+/// </summary>
+public record SimulationSnapshotData(uint TotalEvs, uint TotalCharging, uint SimulationTimeMs);
+
+/// <summary>
+/// Handles snapshot requests from the client.
+/// Simulation-level snapshots (state + EV positions) are pre-built on the
+/// simulation thread via <see cref="PublishStats"/> and <see cref="PublishPositions"/>.
+/// Per-station snapshots are built on demand (safe: called from sim thread).
+/// </summary>
 public class SnapshotHandler(
-    IReadOnlyDictionary<int, EV> evStore,
     StationService stationService,
+    IReadOnlyDictionary<int, EV> evStore,
     EventScheduler eventScheduler)
 {
+    private SimulationSnapshotData? _latestStats;
+    private EVPositionEntry[] _latestPositions = [];
+
     /// <summary>
-    /// Builds a simulation snapshot response by querying the engine for the current state of the simulation.
+    /// Publishes the latest simulation stats snapshot. Called from the simulation thread.
+    /// </summary>
+    /// <param name="data">The snapshot data.</param>
+    public void PublishStats(SimulationSnapshotData data) => _latestStats = data;
+
+    /// <summary>
+    /// Publishes the latest EV position snapshot. Called from the simulation thread.
+    /// </summary>
+    /// <param name="data">The snapshot data.</param>
+    public void PublishPositions(EVPositionEntry[] data) => _latestPositions = data;
+
+    /// <summary>
+    /// Reads the pre-built simulation stats snapshot and converts to protobuf.
     /// </summary>
     /// <returns>The envelope containing the simulation snapshot response.</returns>
     public Envelope BuildSimulationSnapshot()
     {
-        var snapshot = new SimulationSnapshot
-        {
-            TotalEvs = (uint)evStore.Count,
-            TotalCharging = (uint)evStore.Count(ev => ev.Value.EVState == EVState.Charging),
-            SimulationTimeMs = eventScheduler.CurrentTime,
-        };
+        var stats = _latestStats;
 
-        return new Envelope { StateUpdate = snapshot };
+        return new Envelope
+        {
+            StateUpdate = new SimulationSnapshot
+            {
+                TotalEvs = stats?.TotalEvs ?? 0,
+                TotalCharging = stats?.TotalCharging ?? 0,
+                SimulationTimeMs = stats?.SimulationTimeMs ?? 0,
+            },
+        };
+    }
+
+    /// <summary>
+    /// Reads the pre-built EV position snapshot and converts to protobuf.
+    /// </summary>
+    /// <returns>The envelope containing the EV positions.</returns>
+    public Envelope BuildEVPositionSnapshot()
+    {
+        var result = new GetEVsInViewPort();
+
+        foreach (var ev in _latestPositions)
+        {
+            result.EvPositions.Add(new EVPosition
+            {
+                EvId = ev.EvId,
+                Pos = new Position { Lat = ev.Lat, Lon = ev.Lon },
+            });
+        }
+
+        return new Envelope { GetEvsInViewport = result };
     }
 
     /// <summary>
@@ -129,6 +177,7 @@ public class SnapshotHandler(
             EvId = session.EVId,
             Soc = (float)session.EV.CurrentSoC,
             TargetSoc = (float)session.EV.TargetSoC,
+            StartTimeMs = session.StartTime,
             FinishTimeMs = finishTime ?? 0,
         };
 

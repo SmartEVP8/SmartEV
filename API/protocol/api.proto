@@ -20,6 +20,12 @@ message CostWeight {
   float updated_value = 2;
 }
 
+// Represents the position of an EV as it is in the simulation.
+message EVPosition {
+  int32 ev_id = 1;
+  Position pos = 2;
+}
+
 // ============================================================================
 // INITIALIZATION TYPES
 // ============================================================================
@@ -49,12 +55,18 @@ message InitEngineData {
 // Snapshots
 // ============================================================================
 
+// Represents a request from the client to get a snapshot of EVs currently within a specific viewport.
+message GetEVsInViewPort {
+  repeated EVPosition ev_positions = 1;
+}
+
 // Represents the state of a single EV in a charger queue.
 message EVChargerState {
   int32 ev_id = 1;
   float soc = 2;
   float target_soc = 3;
-  uint32 finish_time_ms = 4;
+  optional uint32 start_time_ms = 4;
+  uint32 finish_time_ms = 5;
 }
 
 // Represents the state of a single charger.
@@ -100,6 +112,9 @@ message SimulationSnapshot {
 */
 message Envelope {
   oneof payload {
+    // Client Requests (0-9)
+    GetEVsInViewPort get_evs_in_viewport = 1;
+
     // Server Responses (20-29)
     InitEngineData init_engine_data = 10;
     StationState station_state_response = 11; // response to GetStationSnapshot
