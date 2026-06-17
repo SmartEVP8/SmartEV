@@ -83,7 +83,7 @@ public static class Program
             return Results.File(data, "application/octet-stream");
         });
 
-        app.MapPatch("/update-weights/{costId}", (
+        app.MapPatch("/update-weights/{costId:int}", (
             EngineManager.EngineManager engineManager,
             int costId,
             CostWeightDTO weight) =>
@@ -98,9 +98,48 @@ public static class Program
                 return Results.BadRequest("Route costId does not match body costId.");
             }
 
+            if (!Enum.IsDefined(typeof(CostWeightField), costId))
+            {
+                return Results.NotFound($"No cost weight found with id {costId}.");
+            }
+
+            var field = (CostWeightField)costId;
+            var metadata = CostWeightMetadata.All[field];
+
+            if (!double.IsFinite(weight.Value))
+            {
+                return Results.BadRequest("Weight value must be a finite number.");
+            }
+
+            if (weight.Value < metadata.Min || weight.Value > metadata.Max)
+            {
+                return Results.BadRequest(
+                    $"{metadata.Name} must be between {metadata.Min} and {metadata.Max}.");
+            }
+
             var settings = engineManager.GetEngineService<Engine.Init.EngineSettings>();
 
-            return Results.Ok();
+            var updatedCostConfig = field switch
+            {
+                CostWeightField.PriceSensitivity => settings.CostConfig with
+                {
+                    PriceSensitivity = (float)weight.Value
+                },
+
+                CostWeightField.PathDeviation => settings.CostConfig with
+                {
+                    PathDeviation = (float)weight.Value
+                },
+
+                CostWeightField.ExpectedWaitTime => settings.CostConfig with
+                {
+                    ExpectedWaitTime = (float)weight.Value
+                },
+
+                _ => throw new ArgumentOutOfRangeException(nameof(costId))
+            };
+
+            return Results.Ok(new CostWeightDTO(costId, weight.Value));
         });
 
         app.MapPost("/simulation/stop", async (EngineManager.EngineManager engineManager) =>
